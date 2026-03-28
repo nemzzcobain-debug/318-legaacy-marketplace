@@ -47,18 +47,11 @@ export async function POST(request: Request) {
     const finalPrice = auction.finalPrice || calculateFinalPrice(auction.currentBid, auction.winningLicense || 'BASIC')
     const split = calculatePaymentSplit(finalPrice)
 
-    // Verifier que le producteur a un compte Stripe Connect
+    // Verifier si le producteur a un compte Stripe Connect
     const producerStripeAccount = auction.beat.producer.stripeAccountId
 
-    if (!producerStripeAccount) {
-      return NextResponse.json(
-        { error: 'Le producteur n\'a pas encore configure son compte de paiement' },
-        { status: 400 }
-      )
-    }
-
-    // Creer la session de paiement Stripe avec split
-    const checkoutSession = await stripe.checkout.sessions.create({
+    // Configuration de base du checkout
+    const checkoutConfig: any = {
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: [
@@ -74,13 +67,6 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      // Split de paiement avec Stripe Connect
-      payment_intent_data: {
-        application_fee_amount: Math.round(split.commission * 100), // Commission plateforme
-        transfer_data: {
-          destination: producerStripeAccount, // Le producteur recoit le reste
-        },
-      },
       success_url: `${process.env.NEXTAUTH_URL}/dashboard?payment=success&auction=${auctionId}`,
       cancel_url: `${process.env.NEXTAUTH_URL}/dashboard?payment=cancelled&auction=${auctionId}`,
       metadata: {
@@ -91,7 +77,20 @@ export async function POST(request: Request) {
         commission: String(split.commission),
         producerPayout: String(split.producerPayout),
       },
-    })
+    }
+
+    // Si le producteur a un compte Connect, activer le split de paiement
+    if (producerStripeAccount) {
+      checkoutConfig.payment_intent_data = {
+        application_fee_amount: Math.round(split.commission * 100),
+        transfer_data: {
+          destination: producerStripeAccount,
+        },
+      }
+    }
+
+    // Creer la session de paiement Stripe
+    const checkoutSession = await stripe.checkout.sessions.create(checkoutConfig)
 
     return NextResponse.json({
       url: checkoutSession.url,
