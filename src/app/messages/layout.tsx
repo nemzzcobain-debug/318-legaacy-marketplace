@@ -3,9 +3,13 @@ import { Suspense } from 'react'
 export const dynamic = 'force-dynamic'
 
 export default function MessagesLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode
+  children: React.ReactNode
 }) {
-    return <Suspense fallback={<div>Chargement...</div>div>}>{children}</Suspense>Suspense>
-      }</div>
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      {children}
+    </Suspense>
+  )
+}
