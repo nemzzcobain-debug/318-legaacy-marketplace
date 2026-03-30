@@ -7,7 +7,7 @@ import Header from '@/components/layout/Header';
 import AudioPlayer from '@/components/audio/AudioPlayer';
 import { Upload, Music, Image, X, Check, Loader2 } from 'lucide-react';
 import { GENRES, MOODS } from '@/types';
-import { getSupabaseClient } from '@/lib/supabase-client';
+// Upload utilise des signed URLs generees par l'API (contourne RLS + limite 4.5MB Vercel)
 
 const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
               'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm'];
@@ -87,52 +87,68 @@ export default function UploadBeatPage() {
     setError('');
 
     try {
-      const supabase = getSupabaseClient();
       const timestamp = Date.now();
       const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const audioExt = audioFile.name.split('.').pop() || 'mp3';
       const audioFileName = `${timestamp}-${slug}.${audioExt}`;
 
-      // 1. Upload audio directement vers Supabase Storage
-      setUploadProgress('Upload du fichier audio...');
-      const { error: audioError } = await supabase.storage
-        .from('beats')
-        .upload(audioFileName, audioFile, {
-          contentType: audioFile.type,
-          upsert: false,
-        });
+      let coverFileName: string | null = null;
+      if (coverFile && coverFile.size > 0) {
+        const coverExt = coverFile.name.split('.').pop() || 'jpg';
+        coverFileName = `${timestamp}-cover.${coverExt}`;
+      }
 
-      if (audioError) {
-        setError(`Erreur upload audio: ${audioError.message}`);
+      // 1. Obtenir les signed URLs depuis l'API
+      setUploadProgress('Preparation de l\'upload...');
+      const signedRes = await fetch('/api/beats/signed-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audioFileName,
+          audioContentType: audioFile.type,
+          coverFileName,
+          coverContentType: coverFile?.type || null,
+        }),
+      });
+
+      const signedData = await signedRes.json();
+      if (!signedRes.ok) {
+        setError(signedData.error || 'Erreur preparation upload');
         setUploading(false);
         return;
       }
 
-      // Obtenir l'URL publique
-      const { data: audioUrlData } = supabase.storage.from('beats').getPublicUrl(audioFileName);
-      const audioUrl = audioUrlData.publicUrl;
+      // 2. Upload audio directement vers Supabase avec le signed URL
+      setUploadProgress('Upload du fichier audio...');
+      const audioUploadRes = await fetch(signedData.audio.signedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': audioFile.type },
+        body: audioFile,
+      });
 
-      // 2. Upload cover si fournie
+      if (!audioUploadRes.ok) {
+        setError('Erreur lors de l\'upload du fichier audio');
+        setUploading(false);
+        return;
+      }
+
+      const audioUrl = signedData.audio.publicUrl;
+
+      // 3. Upload cover si fournie
       let coverUrl: string | null = null;
-      if (coverFile && coverFile.size > 0) {
+      if (coverFile && coverFile.size > 0 && signedData.cover) {
         setUploadProgress('Upload de la cover...');
-        const coverExt = coverFile.name.split('.').pop() || 'jpg';
-        const coverFileName = `${timestamp}-cover.${coverExt}`;
-
-        const { error: coverError } = await supabase.storage
-          .from('covers')
-          .upload(coverFileName, coverFile, {
-            contentType: coverFile.type,
-            upsert: false,
-          });
-
-        if (!coverError) {
-          const { data: coverUrlData } = supabase.storage.from('covers').getPublicUrl(coverFileName);
-          coverUrl = coverUrlData.publicUrl;
+        const coverUploadRes = await fetch(signedData.cover.signedUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': coverFile.type },
+          body: coverFile,
+        });
+        if (coverUploadRes.ok) {
+          coverUrl = signedData.cover.publicUrl;
         }
       }
 
-      // 3. Envoyer seulement les metadonnees a l'API (pas de fichier = pas de limite 4.5MB)
+      // 4. Envoyer les metadonnees a l'API
       setUploadProgress('Enregistrement du beat...');
       const res = await fetch('/api/beats/upload', {
         method: 'POST',
