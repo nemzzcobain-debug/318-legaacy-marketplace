@@ -168,7 +168,7 @@ export default function Home() {
                           {auction.beat.title}
                         </h3>
                         <p className="text-gray-500 text-xs truncate">
-                          {auction.beat.producer.displayName || auction.beat.producer.name} &middot; {auction.beat.bpm} BPM{auction.beat.key ? ` &middot; ${auction.beat.key}` : ''}
+                          {auction.beat.producer.displayName || auction.beat.producer.name} · {auction.beat.bpm} BPM{auction.beat.key ? ` · ${auction.beat.key}` : ''}
                         </p>
                       </div>
                     </div>
