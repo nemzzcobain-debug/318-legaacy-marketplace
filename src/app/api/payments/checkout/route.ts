@@ -36,11 +36,11 @@ export async function POST(request: Request) {
     }
 
     if (auction.winnerId !== userId) {
-      return NextResponse.json({ error: 'Tu n\'es pas le gagnant de cette enchere' }, { status: 403 })
+      return NextResponse.json({ error: "Tu n'es pas le gagnant de cette enchere" }, { status: 403 })
     }
 
     if (auction.status !== 'ENDED') {
-      return NextResponse.json({ error: 'Cette enchere n\'est pas terminee' }, { status: 400 })
+      return NextResponse.json({ error: "Cette enchere n'est pas terminee" }, { status: 400 })
     }
 
     // Calculer le prix final
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
     const producerStripeAccount = auction.beat.producer.stripeAccountId
 
     // Configuration de base du checkout
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const checkoutConfig: any = {
       mode: 'payment',
       payment_method_types: ['card'],
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
               name: `${auction.beat.title} - Licence ${auction.winningLicense || 'BASIC'}`,
               description: `Beat par ${auction.beat.producer.name} | Enchere #${auction.id.slice(-6)}`,
             },
-            unit_amount: Math.round(finalPrice * 100), // Stripe utilise les centimes
+            unit_amount: Math.round(finalPrice * 100),
           },
           quantity: 1,
         },

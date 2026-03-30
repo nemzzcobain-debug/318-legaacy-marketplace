@@ -1,3 +1,4 @@
+<!-- Deploy trigger: initial Vercel deployment -->
 # 318 LEGAACY Marketplace — Guide de Deploiement
 <!-- Deploy trigger: initial Vercel deployment -->
 
