@@ -7,6 +7,7 @@ import Header from '@/components/layout/Header';
 import AudioPlayer from '@/components/audio/AudioPlayer';
 import { Upload, Music, Image, X, Check, Loader2 } from 'lucide-react';
 import { GENRES, MOODS } from '@/types';
+import { getSupabaseClient } from '@/lib/supabase-client';
 
 const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
               'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm'];
@@ -73,6 +74,8 @@ export default function UploadBeatPage() {
     setCoverPreview(URL.createObjectURL(file));
   };
 
+  const [uploadProgress, setUploadProgress] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!audioFile || !title || !genre || !bpm) {
@@ -84,35 +87,86 @@ export default function UploadBeatPage() {
     setError('');
 
     try {
-      const formData = new FormData();
-      formData.append('audio', audioFile);
-      formData.append('title', title);
-      formData.append('genre', genre);
-      formData.append('bpm', bpm);
-      if (key) formData.append('key', key);
-      if (mood) formData.append('mood', mood);
-      if (description) formData.append('description', description);
-      if (tags) formData.append('tags', JSON.stringify(tags.split(',').map(t => t.trim()).filter(Boolean)));
-      if (coverFile) formData.append('cover', coverFile);
+      const supabase = getSupabaseClient();
+      const timestamp = Date.now();
+      const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const audioExt = audioFile.name.split('.').pop() || 'mp3';
+      const audioFileName = `${timestamp}-${slug}.${audioExt}`;
 
+      // 1. Upload audio directement vers Supabase Storage
+      setUploadProgress('Upload du fichier audio...');
+      const { error: audioError } = await supabase.storage
+        .from('beats')
+        .upload(audioFileName, audioFile, {
+          contentType: audioFile.type,
+          upsert: false,
+        });
+
+      if (audioError) {
+        setError(`Erreur upload audio: ${audioError.message}`);
+        setUploading(false);
+        return;
+      }
+
+      // Obtenir l'URL publique
+      const { data: audioUrlData } = supabase.storage.from('beats').getPublicUrl(audioFileName);
+      const audioUrl = audioUrlData.publicUrl;
+
+      // 2. Upload cover si fournie
+      let coverUrl: string | null = null;
+      if (coverFile && coverFile.size > 0) {
+        setUploadProgress('Upload de la cover...');
+        const coverExt = coverFile.name.split('.').pop() || 'jpg';
+        const coverFileName = `${timestamp}-cover.${coverExt}`;
+
+        const { error: coverError } = await supabase.storage
+          .from('covers')
+          .upload(coverFileName, coverFile, {
+            contentType: coverFile.type,
+            upsert: false,
+          });
+
+        if (!coverError) {
+          const { data: coverUrlData } = supabase.storage.from('covers').getPublicUrl(coverFileName);
+          coverUrl = coverUrlData.publicUrl;
+        }
+      }
+
+      // 3. Envoyer seulement les metadonnees a l'API (pas de fichier = pas de limite 4.5MB)
+      setUploadProgress('Enregistrement du beat...');
       const res = await fetch('/api/beats/upload', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          genre,
+          bpm: parseInt(bpm),
+          key: key || null,
+          mood: mood || null,
+          description: description || null,
+          tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+          audioUrl,
+          coverUrl,
+          audioFileName: audioFile.name,
+          audioSize: audioFile.size,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Erreur lors de l\'upload');
+        setError(data.error || 'Erreur lors de l\'enregistrement');
         return;
       }
 
       setSuccess(true);
       setTimeout(() => router.push('/dashboard'), 2000);
     } catch (err) {
+      console.error('Upload error:', err);
       setError('Erreur de connexion');
     } finally {
       setUploading(false);
+      setUploadProgress('');
     }
   };
 
@@ -374,7 +428,7 @@ export default function UploadBeatPage() {
           >
             {uploading ? (
               <>
-                <Loader2 size={20} className="animate-spin" /> Upload en cours...
+                <Loader2 size={20} className="animate-spin" /> {uploadProgress || 'Upload en cours...'}
               </>
             ) : (
               <>
