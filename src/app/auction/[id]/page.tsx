@@ -6,7 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import AudioPlayer from '@/components/audio/AudioPlayer';
 import CountdownTimer from '@/components/ui/CountdownTimer';
-import { Gavel, Shield, TrendingUp, Clock, AlertTriangle, Zap, Music, ArrowLeft } from 'lucide-react';
+import { useRealtimeAuction, useRealtimeBids } from '@/hooks/useRealtimeAuction';
+import { formatTimeLeft, isEndingCritical } from '@/lib/realtime-utils';
+import { Gavel, Shield, TrendingUp, Clock, AlertTriangle, Zap, Music, ArrowLeft, Wifi } from 'lucide-react';
 import Link from 'next/link';
 
 interface BidItem {
@@ -74,6 +76,26 @@ export default function AuctionDetailPage() {
   const [bidSuccess, setBidSuccess] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Realtime hooks
+  const realtimeState = useRealtimeAuction(id as string);
+  const realtimeBids = useRealtimeBids(id as string, (newBid) => {
+    // Flash animation on new bid
+    setBidSuccess(`Nouvelle enchere : ${newBid.amount} EUR par ${newBid.user?.displayName || 'Anonyme'}`);
+    setTimeout(() => setBidSuccess(''), 4000);
+  });
+
+  // Sync realtime state into auction object
+  useEffect(() => {
+    if (auction && realtimeState.currentBid > 0) {
+      setAuction(prev => prev ? {
+        ...prev,
+        currentBid: realtimeState.currentBid,
+        totalBids: realtimeState.bidCount,
+        status: realtimeState.status,
+      } : prev);
+    }
+  }, [realtimeState.currentBid, realtimeState.bidCount, realtimeState.status]);
+
   const fetchAuction = useCallback(async () => {
     try {
       const res = await fetch(`/api/auctions/${id}`);
@@ -91,11 +113,9 @@ export default function AuctionDetailPage() {
     }
   }, [id, bidAmount]);
 
+  // Initial load only - realtime handles updates
   useEffect(() => {
     fetchAuction();
-    // Poll for updates every 3 seconds
-    const interval = setInterval(fetchAuction, 3000);
-    return () => clearInterval(interval);
   }, [fetchAuction]);
 
   const placeBid = async () => {
@@ -132,6 +152,7 @@ export default function AuctionDetailPage() {
         setBidSuccess(prev => prev + ' Anti-snipe active: temps prolonge!');
       }
 
+      // Realtime will handle the update, but also refresh for full bid history
       fetchAuction();
       setTimeout(() => setBidSuccess(''), 5000);
     } catch (e) {
@@ -282,12 +303,22 @@ export default function AuctionDetailPage() {
             {/* Auction Status Card */}
             <div className="bg-[#111] border border-[#222] rounded-2xl p-5 sticky top-20">
 
+              {/* Realtime indicator */}
+              <div className="flex items-center justify-end gap-1.5 mb-2">
+                <Wifi size={10} className="text-green-400" />
+                <span className="text-[10px] text-green-400 font-medium">Temps reel</span>
+              </div>
+
               {/* Timer */}
-              <div className={`flex items-center justify-between mb-4 p-3 rounded-xl ${isEndingSoon ? 'bg-red-600/10 border border-red-600/30' : 'bg-white/[0.03] border border-[#222]'}`}>
+              <div className={`flex items-center justify-between mb-4 p-3 rounded-xl ${isEndingCritical(realtimeState.timeLeft) ? 'bg-red-600/10 border border-red-600/30 animate-pulse' : 'bg-white/[0.03] border border-[#222]'}`}>
                 <span className="text-sm text-gray-400 flex items-center gap-1">
                   <Clock size={14} /> {isActive ? 'Fin dans' : 'Terminee'}
                 </span>
-                {isActive && <CountdownTimer endTime={auction.endTime} size="lg" showIcon={false} />}
+                {isActive && (
+                  <span className={`text-lg font-mono font-bold ${isEndingCritical(realtimeState.timeLeft) ? 'text-red-500' : 'text-white'}`}>
+                    {formatTimeLeft(realtimeState.timeLeft)}
+                  </span>
+                )}
               </div>
 
               {/* Current Bid */}
