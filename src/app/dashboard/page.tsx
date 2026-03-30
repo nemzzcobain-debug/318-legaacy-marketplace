@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Header from '@/components/layout/Header'
+import CreateAuctionForm from '@/components/dashboard/CreateAuctionForm'
 import {
   BarChart3, DollarSign, Gavel, Music, TrendingUp, Plus, Clock,
   Package, Users, Settings, Bell, ChevronRight, ArrowUpRight
@@ -161,15 +162,9 @@ export default function DashboardPage() {
 
         {/* Auctions Tab */}
         {activeTab === 'auctions' && (
-          <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
-            <div className="text-center py-12">
-              <Gavel size={48} className="mx-auto mb-4 text-gray-600" />
-              <h3 className="text-lg font-bold text-white mb-2">Tes encheres apparaitront ici</h3>
-              <p className="text-sm text-gray-400">
-                Cree une enchere sur un de tes beats pour commencer
-              </p>
-            </div>
-          </div>
+          <CreateAuctionForm onCreated={() => {
+            // Refresh stats or show notification
+          }} />
         )}
 
         {/* Earnings Tab */}

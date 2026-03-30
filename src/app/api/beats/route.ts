@@ -12,11 +12,20 @@ export async function GET(request: Request) {
     const mood = searchParams.get('mood')
     const search = searchParams.get('search')
     const producerId = searchParams.get('producerId')
+    const mine = searchParams.get('mine')
     const page = Number(searchParams.get('page') || 1)
     const limit = Number(searchParams.get('limit') || 20)
 
-    const where: any = {
-      status: 'ACTIVE',
+    const where: any = {}
+
+    // Si mine=true, recuperer les beats du producteur connecte (tout status)
+    if (mine === 'true') {
+      const session = await getServerSession(authOptions)
+      if (session?.user) {
+        where.producerId = (session.user as any).id
+      }
+    } else {
+      where.status = 'ACTIVE'
     }
 
     if (genre) where.genre = genre
