@@ -18,7 +18,7 @@ export async function GET(
         },
         bids: {
           include: {
-            user: { select: { name: true, displayName: true, avatar: true } }
+            user: { select: { id: true, name: true, displayName: true, avatar: true } }
           },
           orderBy: { createdAt: 'desc' },
           take: 20

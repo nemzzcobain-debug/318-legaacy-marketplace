@@ -8,7 +8,7 @@ import AudioPlayer from '@/components/audio/AudioPlayer';
 import CountdownTimer from '@/components/ui/CountdownTimer';
 import { useRealtimeAuction, useRealtimeBids } from '@/hooks/useRealtimeAuction';
 import { formatTimeLeft, isEndingCritical } from '@/lib/realtime-utils';
-import { Gavel, Shield, TrendingUp, Clock, AlertTriangle, Zap, Music, ArrowLeft, Wifi } from 'lucide-react';
+import { Gavel, Shield, TrendingUp, Clock, AlertTriangle, Zap, Music, ArrowLeft, Wifi, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 
 interface BidItem {
@@ -17,7 +17,7 @@ interface BidItem {
   finalAmount: number;
   licenseType: string;
   createdAt: string;
-  user: { name: string; displayName: string | null; avatar: string | null };
+  user: { id?: string; name: string; displayName: string | null; avatar: string | null };
 }
 
 interface AuctionDetail {
@@ -407,8 +407,28 @@ export default function AuctionDetailPage() {
               )}
 
               {!isActive && (
-                <div className="text-center py-4 text-gray-500">
-                  Cette enchere est terminee
+                <div className="text-center py-6">
+                  <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
+                    <Gavel size={24} className="text-gray-500" />
+                  </div>
+                  <p className="text-lg font-bold text-white mb-1">Enchere terminee</p>
+                  {auction.bids.length > 0 ? (
+                    <>
+                      <p className="text-sm text-gray-400 mb-4">
+                        Gagnant : <span className="text-white font-semibold">{auction.bids[0].user.displayName || auction.bids[0].user.name}</span> — {auction.currentBid} EUR
+                      </p>
+                      {session?.user && (session.user as any).id === auction.bids[0].user?.id && (
+                        <button
+                          onClick={() => router.push(`/checkout/${auction.id}`)}
+                          className="w-full py-4 rounded-xl font-bold text-white text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] bg-gradient-to-r from-green-600 to-green-800"
+                        >
+                          <CreditCard size={20} /> Proceder au paiement
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500">Aucune enchere placee</p>
+                  )}
                 </div>
               )}
             </div>

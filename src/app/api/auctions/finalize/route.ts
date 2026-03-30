@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// POST — Finaliser les encheres terminees (appele par cron ou manuellement)
-// Cette route peut etre appelee par un cron job toutes les minutes
-// ou par un admin manuellement
+// GET — Appele par Vercel Cron toutes les minutes
+export async function GET(req: NextRequest) {
+  return handleFinalize(req)
+}
+
+// POST — Appele manuellement par un admin
 export async function POST(req: NextRequest) {
+  return handleFinalize(req)
+}
+
+async function handleFinalize(req: NextRequest) {
   try {
     // Verification par secret API (pour cron jobs)
     const authHeader = req.headers.get('authorization')
