@@ -3,16 +3,16 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { UserPlus, Eye, EyeOff, AlertCircle, Music, Mic } from 'lucide-react'
+import { signIn } from 'next-auth/react'
+import { UserPlus, Eye, EyeOff, AlertCircle, Music, Mic2 } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'ARTIST' as 'ARTIST' | 'PRODUCER',
-  })
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [role, setRole] = useState<'ARTIST' | 'PRODUCER'>('ARTIST')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,33 +20,57 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (password !== confirmPassword) {
+      setError('Les mots de passe ne correspondent pas')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caracteres')
+      return
+    }
+
     setLoading(true)
 
     try {
+      // Create account
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ name, email, password, role }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Erreur lors de l\'inscription')
+        setError(data.error)
         return
       }
 
-      // Rediriger vers login
-      router.push('/login?registered=true')
+      // Auto-login after registration
+      const loginResult = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (loginResult?.error) {
+        // Account created but login failed — redirect to login
+        router.push('/login')
+      } else {
+        router.push('/marketplace')
+        router.refresh()
+      }
     } catch {
-      setError('Erreur serveur')
+      setError('Erreur de connexion au serveur')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-2.5 mb-10">
@@ -67,73 +91,81 @@ export default function RegisterPage() {
         {/* Card */}
         <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-8">
           <h1 className="text-2xl font-extrabold text-white mb-1">Creer un compte</h1>
-          <p className="text-sm text-gray-400 mb-6">Rejoins la marketplace</p>
+          <p className="text-sm text-gray-400 mb-6">Rejoins la premiere marketplace d&apos;encheres de beats en France</p>
 
           {error && (
             <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-[#ff475715] border border-[#ff475730] text-[#ff4757] text-sm">
-              <AlertCircle size={16} />
+              <AlertCircle size={16} className="shrink-0" />
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Role Selection */}
+            {/* Role selector */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">Je suis</label>
               <div className="grid grid-cols-2 gap-3">
-                {[
-                  { value: 'ARTIST', label: 'Artiste / Rappeur', icon: Mic, desc: 'J\'achete des beats' },
-                  { value: 'PRODUCER', label: 'Producteur', icon: Music, desc: 'Je vends mes beats' },
-                ].map(({ value, label, icon: Icon, desc }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setForm({ ...form, role: value as any })}
-                    className={`p-3.5 rounded-xl text-left transition-all border ${
-                      form.role === value
-                        ? 'bg-[#e11d4810] border-[#e11d4840] text-[#e11d48]'
-                        : 'bg-white/[0.02] border-[#1e1e2e] text-gray-400 hover:border-gray-600'
-                    }`}
-                  >
-                    <Icon size={20} className="mb-1.5" />
-                    <div className="text-sm font-bold">{label}</div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">{desc}</div>
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => setRole('ARTIST')}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+                    role === 'ARTIST'
+                      ? 'bg-[#e11d48]/20 border-2 border-[#e11d48] text-white'
+                      : 'bg-white/5 border-2 border-transparent text-gray-400 hover:border-[#333]'
+                  }`}
+                >
+                  <Music size={16} /> Artiste / Acheteur
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('PRODUCER')}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+                    role === 'PRODUCER'
+                      ? 'bg-[#e11d48]/20 border-2 border-[#e11d48] text-white'
+                      : 'bg-white/5 border-2 border-transparent text-gray-400 hover:border-[#333]'
+                  }`}
+                >
+                  <Mic2 size={16} /> Beatmaker
+                </button>
               </div>
             </div>
 
+            {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Nom / Pseudo</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1.5">Nom d&apos;artiste</label>
               <input
                 type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ton nom d'artiste"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ton pseudo"
                 required
+                minLength={2}
+                maxLength={50}
                 className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4850] transition-colors"
               />
             </div>
 
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Email</label>
               <input
                 type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="ton@email.com"
                 required
                 className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4850] transition-colors"
               />
             </div>
 
+            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Mot de passe</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 8 caracteres"
                   required
                   minLength={8}
@@ -149,17 +181,29 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {form.role === 'PRODUCER' && (
-              <div className="p-3 rounded-lg bg-[#e11d4808] border border-[#e11d4815] text-xs text-gray-400">
-                En tant que producteur, ton compte devra etre approuve par notre equipe
-                avant de pouvoir mettre des beats en vente. Tu seras notifie par email.
-              </div>
+            {/* Confirm password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1.5">Confirmer le mot de passe</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Retape ton mot de passe"
+                required
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4850] transition-colors"
+              />
+            </div>
+
+            {role === 'PRODUCER' && (
+              <p className="text-xs text-gray-500 bg-white/5 p-3 rounded-lg">
+                En tant que beatmaker, ton compte sera en attente de validation par l&apos;equipe 318 LEGAACY avant de pouvoir mettre des beats en vente.
+              </p>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl font-extrabold text-black text-base flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3.5 rounded-xl font-extrabold text-black text-base flex items-center justify-center gap-2 disabled:opacity-50 transition-all hover:scale-[1.02]"
               style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
             >
               {loading ? (
