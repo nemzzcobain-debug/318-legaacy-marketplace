@@ -1,0 +1,81 @@
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+
+/**
+ * Client Supabase côté serveur (Service Role Key)
+ * Utilisé pour les uploads de fichiers et les opérations admin
+ * Initialisation lazy pour ne pas crasher au démarrage si les vars ne sont pas définies
+ */
+
+let _client: SupabaseClient | null = null
+
+function getClient(): SupabaseClient {
+  if (_client) return _client
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    throw new Error(
+      'Variables Supabase manquantes. Ajouter NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY dans .env'
+    )
+  }
+
+  _client = createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+
+  return _client
+}
+
+/**
+ * Upload un fichier vers Supabase Storage
+ * @param bucket - Nom du bucket (ex: 'beats', 'covers')
+ * @param filePath - Chemin du fichier dans le bucket
+ * @param fileData - Buffer du fichier
+ * @param contentType - Type MIME du fichier
+ */
+export async function uploadFile(
+  bucket: string,
+  filePath: string,
+  fileData: Buffer,
+  contentType: string
+): Promise<string> {
+  const client = getClient()
+
+  const { error } = await client.storage
+    .from(bucket)
+    .upload(filePath, fileData, {
+      contentType,
+      upsert: false,
+    })
+
+  if (error) {
+    throw new Error(`Erreur upload Supabase (${bucket}/${filePath}): ${error.message}`)
+  }
+
+  return filePath
+}
+
+/**
+ * Obtenir l'URL publique d'un fichier
+ */
+export function getPublicUrl(bucket: string, filePath: string): string {
+  const client = getClient()
+  const { data } = client.storage.from(bucket).getPublicUrl(filePath)
+  return data.publicUrl
+}
+
+/**
+ * Supprimer un fichier de Supabase Storage
+ */
+export async function deleteFile(bucket: string, filePath: string): Promise<void> {
+  try {
+    const client = getClient()
+    const { error } = await client.storage.from(bucket).remove([filePath])
+    if (error) {
+      console.error(`Erreur suppression (${bucket}/${filePath}): ${error.message}`)
+    }
+  } catch (err) {
+    console.error('Erreur suppression fichier:', err)
+  }
+}

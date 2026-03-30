@@ -108,7 +108,7 @@ export async function POST(request: Request) {
     const beat = await prisma.beat.create({
       data: {
         ...validated.data,
-        tags: validated.data.tags || [],
+        tags: JSON.stringify(validated.data.tags || []),
         producerId: user.id,
         audioUrl: body.audioUrl || '',
         status: 'PENDING', // Necessite validation admin

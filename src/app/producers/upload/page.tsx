@@ -33,6 +33,7 @@ export default function UploadBeatPage() {
   const [error, setError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const [dragOver, setDragOver] = useState(false);
   const audioInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -115,6 +116,29 @@ export default function UploadBeatPage() {
     }
   };
 
+  const handleAudioDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    // Simulate change event by creating a synthetic target
+    const fakeEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+    handleAudioSelect(fakeEvent);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  };
+
   const removeAudio = () => {
     setAudioFile(null);
     setAudioPreview(null);
@@ -162,7 +186,14 @@ export default function UploadBeatPage() {
             {!audioFile ? (
               <div
                 onClick={() => audioInputRef.current?.click()}
-                className="border-2 border-dashed border-[#1e1e2e] rounded-2xl p-10 text-center cursor-pointer hover:border-[#e11d4840] transition group"
+                onDrop={handleAudioDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition group ${
+                  dragOver
+                    ? 'border-[#e11d48] bg-[#e11d4810]'
+                    : 'border-[#1e1e2e] hover:border-[#e11d4840]'
+                }`}
               >
                 <div className="w-16 h-16 rounded-full bg-[#e11d4810] flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition">
                   <Music size={28} className="text-[#e11d48]" />

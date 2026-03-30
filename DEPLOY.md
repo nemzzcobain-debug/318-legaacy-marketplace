@@ -1,4 +1,5 @@
 # 318 LEGAACY Marketplace — Guide de Deploiement
+<!-- Deploy trigger: initial Vercel deployment -->
 
 ## Stack Production
 - **Hosting**: Vercel (Next.js optimise)
