@@ -13,19 +13,21 @@ export async function POST(req: NextRequest) {
 
 async function handleFinalize(req: NextRequest) {
   try {
-    // Verification par secret API (pour cron jobs)
-    const authHeader = req.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET || process.env.NEXTAUTH_SECRET
+    // Verification par secret API (pour cron jobs Vercel)
+    // POST requests from client-side are allowed (safe: only finalizes expired auctions)
+    // GET requests require cron secret or admin session
+    if (req.method === 'GET') {
+      const authHeader = req.headers.get('authorization')
+      const cronSecret = process.env.CRON_SECRET || process.env.NEXTAUTH_SECRET
 
-    // Accepter soit le cron secret, soit une session admin
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      // Verifier si c'est un admin via session
-      const { getServerSession } = await import('next-auth')
-      const { authOptions } = await import('@/lib/auth')
-      const session = await getServerSession(authOptions)
+      if (authHeader !== `Bearer ${cronSecret}`) {
+        const { getServerSession } = await import('next-auth')
+        const { authOptions } = await import('@/lib/auth')
+        const session = await getServerSession(authOptions)
 
-      if (!session?.user || (session.user as any).role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
+        if (!session?.user || (session.user as any).role !== 'ADMIN') {
+          return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
+        }
       }
     }
 
