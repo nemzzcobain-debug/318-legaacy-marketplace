@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import CreateAuctionForm from '@/components/dashboard/CreateAuctionForm'
+import AnalyticsTab from '@/components/dashboard/AnalyticsTab'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 import {
   BarChart3, DollarSign, Gavel, Music, TrendingUp, Plus, Clock,
@@ -13,7 +14,7 @@ import {
   AlertCircle, Loader2, Package, CreditCard, ExternalLink, CheckCircle
 } from 'lucide-react'
 
-type Tab = 'overview' | 'beats' | 'auctions' | 'earnings' | 'settings'
+type Tab = 'overview' | 'beats' | 'auctions' | 'earnings' | 'analytics' | 'settings'
 
 interface DashboardData {
   stats: {
@@ -86,6 +87,7 @@ export default function DashboardPage() {
     { id: 'beats', label: 'Mes Beats', icon: Music },
     { id: 'auctions', label: 'Mes Encheres', icon: Gavel },
     { id: 'earnings', label: 'Revenus', icon: DollarSign },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     { id: 'settings', label: 'Parametres', icon: Settings },
   ]
 
@@ -533,6 +535,9 @@ export default function DashboardPage() {
             </p>
           </div>
         )}
+
+        {/* ═══ ANALYTICS TAB ═══ */}
+        {activeTab === 'analytics' && <AnalyticsTab />}
 
         {/* ═══ SETTINGS TAB ═══ */}
         {activeTab === 'settings' && <SettingsTab userName={userName} />}
