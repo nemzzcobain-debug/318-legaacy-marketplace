@@ -10,6 +10,7 @@ import { useRealtimeAuction, useRealtimeBids } from '@/hooks/useRealtimeAuction'
 import { formatTimeLeft, isEndingCritical } from '@/lib/realtime-utils';
 import { Gavel, Shield, TrendingUp, Clock, AlertTriangle, Zap, Music, ArrowLeft, Wifi, CreditCard, Trophy, CheckCircle, XCircle, Download, FileText } from 'lucide-react';
 import Link from 'next/link';
+import ShareButton from '@/components/ui/ShareButton';
 
 interface BidItem {
   id: string;
@@ -253,7 +254,10 @@ export default function AuctionDetailPage() {
               </div>
 
               <div className="p-5">
-                <h1 className="text-2xl font-black text-white mb-2">{beat.title}</h1>
+                <div className="flex items-center justify-between mb-2">
+                  <h1 className="text-2xl font-black text-white">{beat.title}</h1>
+                  <ShareButton url={`/auction/${auction.id}`} title={`${beat.title} - Enchere sur 318 LEGAACY`} description={`Encheris sur "${beat.title}" par ${producer.displayName || producer.name} sur 318 LEGAACY Marketplace`} />
+                </div>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center text-xs font-bold text-white">
                     {producer.name[0]}
