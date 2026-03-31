@@ -12,6 +12,7 @@ import {
   Disc, Headphones, Award, BarChart3, MessageCircle
 } from 'lucide-react'
 import LikeButton from '@/components/ui/LikeButton'
+import FollowButton from '@/components/ui/FollowButton'
 
 interface ProducerProfile {
   id: string
@@ -30,6 +31,7 @@ interface ProducerProfile {
     completedAuctions: number
     totalPlays: number
     totalLikes: number
+    totalFollowers: number
     totalRevenue: number
     memberSince: string
   }
@@ -187,9 +189,7 @@ export default function ProducerProfilePage() {
                 >
                   <MessageCircle size={16} /> Contacter
                 </Link>
-                <button className="px-5 py-2.5 rounded-xl font-bold text-sm text-white border border-red-500/30 hover:bg-red-500/10 transition flex items-center gap-2">
-                  <Heart size={16} /> Suivre
-                </button>
+                <FollowButton producerId={producer.id} size="md" />
               </div>
             </div>
 
@@ -208,7 +208,7 @@ export default function ProducerProfilePage() {
             { label: 'Beats', value: producer.stats.totalBeats, icon: Disc, color: 'text-red-500 bg-red-500/10' },
             { label: 'Ventes', value: producer.stats.completedAuctions, icon: DollarSign, color: 'text-green-400 bg-green-500/10' },
             { label: 'Ecoutes', value: producer.stats.totalPlays.toLocaleString(), icon: Headphones, color: 'text-blue-400 bg-blue-500/10' },
-            { label: 'Likes', value: producer.stats.totalLikes, icon: Heart, color: 'text-pink-400 bg-pink-500/10' },
+            { label: 'Followers', value: producer.stats.totalFollowers, icon: Users, color: 'text-purple-400 bg-purple-500/10' },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-[#111111] border border-[#222222] rounded-xl p-4">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${color}`}>
@@ -410,6 +410,7 @@ export default function ProducerProfilePage() {
                       {renderStars(producer.rating)}
                     </div>
                   </div>
+                  <div className="flex justify-between"><span>Followers</span><span className="text-white">{producer.stats.totalFollowers}</span></div>
                   <div className="flex justify-between"><span>Total likes</span><span className="text-white">{producer.stats.totalLikes}</span></div>
                   <div className="flex justify-between"><span>Ventes totales</span><span className="text-white">{producer.totalSales}</span></div>
                   <div className="flex justify-between">

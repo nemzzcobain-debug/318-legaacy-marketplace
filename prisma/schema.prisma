@@ -50,6 +50,10 @@ model User {
   accounts       Account[]
   sessions       Session[]
 
+  // Follows
+  followers             Follow[] @relation("Following")
+  following             Follow[] @relation("Followers")
+
   // Chat
   conversationsAsUser1  Conversation[] @relation("ConvUser1")
   conversationsAsUser2  Conversation[] @relation("ConvUser2")
@@ -221,6 +225,19 @@ model Like {
   createdAt DateTime @default(now())
 
   @@unique([userId, beatId])
+}
+
+// ─── FOLLOWS ───
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
 }
 
 // ─── NOTIFICATIONS ───

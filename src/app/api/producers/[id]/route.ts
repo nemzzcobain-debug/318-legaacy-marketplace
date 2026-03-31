@@ -91,6 +91,10 @@ export async function GET(
       where: { beat: { producerId: params.id } },
     })
 
+    const totalFollowers = await prisma.follow.count({
+      where: { followingId: params.id },
+    })
+
     // Revenue totale
     const revenue = await prisma.auction.aggregate({
       where: {
@@ -108,6 +112,7 @@ export async function GET(
         completedAuctions,
         totalPlays: totalPlays._sum.plays || 0,
         totalLikes,
+        totalFollowers,
         totalRevenue: revenue._sum.producerPayout || 0,
         memberSince: producer.createdAt,
       },
