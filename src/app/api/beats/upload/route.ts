@@ -76,6 +76,25 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    // Notifier tous les followers du producteur
+    const followers = await prisma.follow.findMany({
+      where: { followingId: user.id },
+      select: { followerId: true },
+    });
+
+    if (followers.length > 0) {
+      const producerName = user.displayName || user.name;
+      await prisma.notification.createMany({
+        data: followers.map(f => ({
+          type: 'NEW_BEAT',
+          title: `Nouveau beat de ${producerName}`,
+          message: `${producerName} a publie "${title}" (${genre}, ${bpm} BPM)`,
+          link: `/producer/${user.id}`,
+          userId: f.followerId,
+        })),
+      });
+    }
+
     return NextResponse.json({
       success: true,
       beat,
