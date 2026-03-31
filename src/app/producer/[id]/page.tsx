@@ -14,6 +14,7 @@ import {
 import LikeButton from '@/components/ui/LikeButton'
 import FollowButton from '@/components/ui/FollowButton'
 import ReviewSection from '@/components/reviews/ReviewSection'
+import { BadgeRow, BadgeGrid } from '@/components/badges/BadgeDisplay'
 
 interface ProducerProfile {
   id: string
@@ -179,6 +180,7 @@ export default function ProducerProfilePage() {
                     <Calendar size={11} /> Membre depuis {memberSince(producer.stats.memberSince)}
                   </span>
                 </div>
+                <BadgeRow userId={producer.id} />
               </div>
 
               {/* Action buttons */}
@@ -427,6 +429,14 @@ export default function ProducerProfilePage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Badges & Level */}
+            <div className="mt-6 pt-6 border-t border-[#222222]">
+              <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                <Award size={16} className="text-yellow-400" /> Badges & Niveau
+              </h3>
+              <BadgeGrid userId={producer.id} />
             </div>
           </div>
         )}

@@ -7,14 +7,15 @@ import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import CreateAuctionForm from '@/components/dashboard/CreateAuctionForm'
 import AnalyticsTab from '@/components/dashboard/AnalyticsTab'
+import { BadgesFullView } from '@/components/badges/BadgeDisplay'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 import {
   BarChart3, DollarSign, Gavel, Music, TrendingUp, Plus, Clock,
   Settings, ChevronRight, ArrowUpRight, Play, Pause, Eye,
-  AlertCircle, Loader2, Package, CreditCard, ExternalLink, CheckCircle
+  AlertCircle, Loader2, Package, CreditCard, ExternalLink, CheckCircle, Award
 } from 'lucide-react'
 
-type Tab = 'overview' | 'beats' | 'auctions' | 'earnings' | 'analytics' | 'settings'
+type Tab = 'overview' | 'beats' | 'auctions' | 'earnings' | 'analytics' | 'badges' | 'settings'
 
 interface DashboardData {
   stats: {
@@ -88,6 +89,7 @@ export default function DashboardPage() {
     { id: 'auctions', label: 'Mes Encheres', icon: Gavel },
     { id: 'earnings', label: 'Revenus', icon: DollarSign },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+    { id: 'badges', label: 'Badges', icon: Award },
     { id: 'settings', label: 'Parametres', icon: Settings },
   ]
 
@@ -538,6 +540,11 @@ export default function DashboardPage() {
 
         {/* ═══ ANALYTICS TAB ═══ */}
         {activeTab === 'analytics' && <AnalyticsTab />}
+
+        {/* ═══ BADGES TAB ═══ */}
+        {activeTab === 'badges' && session?.user && (
+          <BadgesFullView userId={(session.user as any).id} />
+        )}
 
         {/* ═══ SETTINGS TAB ═══ */}
         {activeTab === 'settings' && <SettingsTab userName={userName} />}
