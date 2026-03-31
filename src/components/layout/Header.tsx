@@ -78,6 +78,9 @@ export default function Header() {
                 </Link>
               )}
 
+              <Link href="/my-auctions" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Mes Enchères">
+                <Gavel size={20} className="text-gray-400" />
+              </Link>
               <Link href="/messages" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Messages">
                 <MessageCircle size={20} className="text-gray-400" />
               </Link>
