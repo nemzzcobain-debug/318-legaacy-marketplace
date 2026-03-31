@@ -243,7 +243,7 @@ export default function DashboardPage() {
                       <div className="text-right">
                         <div className="text-sm font-bold text-[#e11d48]">{auction.currentBid}&euro;</div>
                         <div className="text-xs text-[#2ed573] flex items-center gap-1">
-                          <Clock size={10} /> <CountdownTimer endTime={auction.endTime} compact />
+                          <Clock size={10} /> <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
                         </div>
                       </div>
                     </Link>
@@ -401,7 +401,7 @@ export default function DashboardPage() {
                       <div className="text-right">
                         <div className="text-lg font-extrabold text-[#e11d48]">{auction.currentBid}&euro;</div>
                         <div className="text-xs text-[#2ed573] flex items-center gap-1 justify-end">
-                          <Clock size={10} /> <CountdownTimer endTime={auction.endTime} compact />
+                          <Clock size={10} /> <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
                         </div>
                       </div>
                     </Link>
