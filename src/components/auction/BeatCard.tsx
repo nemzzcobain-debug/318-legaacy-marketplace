@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Play, Pause, Heart, Flame, Shield, Gavel, TrendingUp, Clock } from 'lucide-react'
+import { Play, Pause, Flame, Shield, Gavel, TrendingUp, Clock, Heart } from 'lucide-react'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 import AudioPlayer from '@/components/audio/AudioPlayer'
+import LikeButton from '@/components/ui/LikeButton'
 import type { Auction } from '@/types'
 
 interface Props {
@@ -15,7 +16,6 @@ interface Props {
 
 export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
   const [hovering, setHovering] = useState(false)
-  const [liked, setLiked] = useState(false)
 
   const { beat } = auction
   const producer = beat.producer
@@ -98,23 +98,14 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
           </div>
 
           {/* Like Button */}
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              setLiked(!liked)
-            }}
-            className={`
-              absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center
-              ${liked ? 'bg-[#ff475720] border border-[#ff4757]' : 'bg-black/60'}
-            `}
-          >
-            <Heart
-              size={14}
-              className={liked ? 'text-[#ff4757]' : 'text-gray-400'}
-              fill={liked ? '#ff4757' : 'none'}
+          <div className="absolute bottom-2.5 right-2.5">
+            <LikeButton
+              beatId={beat.id}
+              initialCount={beat._count?.likes || 0}
+              size="sm"
+              showCount={false}
             />
-          </button>
+          </div>
         </div>
 
         {/* Content */}

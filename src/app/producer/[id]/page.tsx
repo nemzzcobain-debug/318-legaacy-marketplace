@@ -11,6 +11,7 @@ import {
   Clock, DollarSign, Users, Calendar, Loader2, ExternalLink,
   Disc, Headphones, Award, BarChart3, MessageCircle
 } from 'lucide-react'
+import LikeButton from '@/components/ui/LikeButton'
 
 interface ProducerProfile {
   id: string
@@ -283,7 +284,7 @@ export default function ProducerProfilePage() {
                       {/* Stats */}
                       <div className="hidden sm:flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1"><Play size={11} /> {beat.plays}</span>
-                        <span className="flex items-center gap-1"><Heart size={11} /> {beat._count.likes}</span>
+                        <LikeButton beatId={beat.id} initialCount={beat._count.likes} size="sm" />
                       </div>
 
                       {/* Auction CTA */}
