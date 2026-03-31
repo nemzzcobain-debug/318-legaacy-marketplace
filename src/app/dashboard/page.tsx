@@ -10,7 +10,7 @@ import CountdownTimer from '@/components/ui/CountdownTimer'
 import {
   BarChart3, DollarSign, Gavel, Music, TrendingUp, Plus, Clock,
   Settings, ChevronRight, ArrowUpRight, Play, Pause, Eye,
-  AlertCircle, Loader2, Package
+  AlertCircle, Loader2, Package, CreditCard, ExternalLink, CheckCircle
 } from 'lucide-react'
 
 type Tab = 'overview' | 'beats' | 'auctions' | 'earnings' | 'settings'
@@ -146,7 +146,7 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-400 mt-1">Bienvenue, {userName}</p>
           </div>
           <Link
-            href="/dashboard/upload"
+            href="/producers/upload"
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-black"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
           >
@@ -306,7 +306,7 @@ export default function DashboardPage() {
                   Upload ton premier beat pour commencer a le vendre aux encheres
                 </p>
                 <Link
-                  href="/dashboard/upload"
+                  href="/producers/upload"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
                   style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
                 >
@@ -320,7 +320,7 @@ export default function DashboardPage() {
                     Mes Beats ({data!.beats.length})
                   </h2>
                   <Link
-                    href="/dashboard/upload"
+                    href="/producers/upload"
                     className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs text-black"
                     style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
                   >
@@ -535,46 +535,157 @@ export default function DashboardPage() {
         )}
 
         {/* ═══ SETTINGS TAB ═══ */}
-        {activeTab === 'settings' && (
-          <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
-            <h2 className="text-lg font-bold text-white mb-6">Parametres du compte</h2>
+        {activeTab === 'settings' && <SettingsTab userName={userName} />}
+      </main>
+    </div>
+  )
+}
 
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1.5">Nom d&apos;affichage</label>
-                <input
-                  type="text"
-                  defaultValue={userName}
-                  className="w-full max-w-md px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white text-sm outline-none focus:border-[#e11d4850]"
-                />
-              </div>
+// ─── SETTINGS TAB COMPONENT ───
+function SettingsTab({ userName }: { userName: string }) {
+  const [stripeStatus, setStripeStatus] = useState<'loading' | 'not_connected' | 'pending' | 'active'>('loading')
+  const [stripeDashboard, setStripeDashboard] = useState<string | null>(null)
+  const [connecting, setConnecting] = useState(false)
 
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1.5">Bio</label>
-                <textarea
-                  rows={3}
-                  defaultValue=""
-                  className="w-full max-w-md px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white text-sm outline-none focus:border-[#e11d4850] resize-none"
-                />
-              </div>
+  useEffect(() => {
+    async function checkStripe() {
+      try {
+        const res = await fetch('/api/stripe/connect')
+        const data = await res.json()
+        setStripeStatus(data.status || 'not_connected')
+        if (data.dashboardUrl) setStripeDashboard(data.dashboardUrl)
+      } catch {
+        setStripeStatus('not_connected')
+      }
+    }
+    checkStripe()
+  }, [])
 
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1.5">Compte Stripe</label>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500 font-semibold">Non connecte</span>
-                </div>
-              </div>
+  const connectStripe = async () => {
+    setConnecting(true)
+    try {
+      const res = await fetch('/api/stripe/connect', { method: 'POST' })
+      const data = await res.json()
+      if (data.onboardingUrl) {
+        window.location.href = data.onboardingUrl
+      } else if (data.status === 'active') {
+        setStripeStatus('active')
+      }
+    } catch {
+      setConnecting(false)
+    }
+  }
 
-              <button
-                className="px-6 py-2.5 rounded-xl font-bold text-sm text-black"
-                style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
-              >
-                Sauvegarder
-              </button>
+  return (
+    <div className="space-y-6">
+      {/* Stripe Connect */}
+      <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-lg bg-[#635BFF15] flex items-center justify-center">
+            <CreditCard size={20} className="text-[#635BFF]" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white">Paiements Stripe</h2>
+            <p className="text-xs text-gray-500">Recois 85% de chaque vente directement sur ton compte</p>
+          </div>
+        </div>
+
+        {stripeStatus === 'loading' ? (
+          <div className="flex items-center gap-2 text-gray-400 text-sm">
+            <Loader2 size={16} className="animate-spin" /> Verification...
+          </div>
+        ) : stripeStatus === 'active' ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle size={18} className="text-[#2ed573]" />
+              <span className="text-sm font-semibold text-[#2ed573]">Compte Stripe actif</span>
             </div>
+            <p className="text-xs text-gray-500">
+              Ton compte est configure. Les paiements sont transferes automatiquement chaque semaine.
+            </p>
+            {stripeDashboard && (
+              <a
+                href={stripeDashboard}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#635BFF15] text-[#635BFF] text-xs font-semibold hover:bg-[#635BFF25] transition"
+              >
+                <ExternalLink size={14} /> Acceder au dashboard Stripe
+              </a>
+            )}
+          </div>
+        ) : stripeStatus === 'pending' ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={18} className="text-yellow-400" />
+              <span className="text-sm font-semibold text-yellow-400">Configuration en cours</span>
+            </div>
+            <p className="text-xs text-gray-500">
+              Tu dois completer ton inscription Stripe pour recevoir des paiements.
+            </p>
+            <button
+              onClick={connectStripe}
+              disabled={connecting}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-black disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+            >
+              {connecting
+                ? <><Loader2 size={14} className="animate-spin" /> Redirection...</>
+                : <><CreditCard size={14} /> Completer l&apos;inscription Stripe</>
+              }
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-400">
+              Connecte ton compte Stripe pour commencer a recevoir tes paiements quand tes beats sont vendus.
+            </p>
+            <button
+              onClick={connectStripe}
+              disabled={connecting}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-black disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+            >
+              {connecting
+                ? <><Loader2 size={14} className="animate-spin" /> Redirection...</>
+                : <><CreditCard size={14} /> Connecter Stripe</>
+              }
+            </button>
+            <p className="text-[11px] text-gray-600">
+              Stripe est notre partenaire de paiement securise. Tu seras redirige vers Stripe pour configurer ton compte.
+            </p>
           </div>
         )}
-      </main>
+      </div>
+
+      {/* Profile settings */}
+      <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
+        <h2 className="text-lg font-bold text-white mb-6">Profil</h2>
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1.5">Nom d&apos;affichage</label>
+            <input
+              type="text"
+              defaultValue={userName}
+              className="w-full max-w-md px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white text-sm outline-none focus:border-[#e11d4850]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1.5">Bio</label>
+            <textarea
+              rows={3}
+              defaultValue=""
+              className="w-full max-w-md px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white text-sm outline-none focus:border-[#e11d4850] resize-none"
+            />
+          </div>
+          <button
+            className="px-6 py-2.5 rounded-xl font-bold text-sm text-black"
+            style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+          >
+            Sauvegarder
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
