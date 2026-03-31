@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle } from 'lucide-react'
+import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle, Search } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
 
 export default function Header() {
@@ -17,6 +17,7 @@ export default function Header() {
 
   const navItems = [
     { href: '/marketplace', label: 'Encheres', icon: Gavel },
+    { href: '/search', label: 'Recherche', icon: Search },
     { href: '/producers', label: 'Producteurs', icon: Users },
   ]
 
