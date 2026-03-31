@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import LikeButton from '@/components/ui/LikeButton'
 import FollowButton from '@/components/ui/FollowButton'
+import ReviewSection from '@/components/reviews/ReviewSection'
 
 interface ProducerProfile {
   id: string
@@ -73,7 +74,7 @@ export default function ProducerProfilePage() {
   const [producer, setProducer] = useState<ProducerProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState<'beats' | 'auctions' | 'about'>('beats')
+  const [activeTab, setActiveTab] = useState<'beats' | 'auctions' | 'reviews' | 'about'>('beats')
   const [playingId, setPlayingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -225,6 +226,7 @@ export default function ProducerProfilePage() {
           {[
             { id: 'beats' as const, label: 'Beats', icon: Music, count: allBeats.length },
             { id: 'auctions' as const, label: 'Encheres actives', icon: Gavel, count: beatsWithAuctions.length },
+            { id: 'reviews' as const, label: 'Avis', icon: Star },
             { id: 'about' as const, label: 'A propos', icon: Users },
           ].map(({ id, label, icon: Icon, count }) => (
             <button
@@ -372,6 +374,10 @@ export default function ProducerProfilePage() {
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === 'reviews' && (
+          <ReviewSection producerId={producer.id} producerName={displayName} />
         )}
 
         {activeTab === 'about' && (

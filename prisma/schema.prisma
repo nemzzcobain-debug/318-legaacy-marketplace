@@ -54,6 +54,10 @@ model User {
   followers             Follow[] @relation("Following")
   following             Follow[] @relation("Followers")
 
+  // Reviews
+  reviewsGiven          Review[] @relation("ReviewAuthor")
+  reviewsReceived       Review[] @relation("ReviewProducer")
+
   // Chat
   conversationsAsUser1  Conversation[] @relation("ConvUser1")
   conversationsAsUser2  Conversation[] @relation("ConvUser2")
@@ -192,6 +196,7 @@ model Auction {
 
   // Relations
   bids           Bid[]
+  review         Review?
 }
 
 // ─── BIDS ───
@@ -225,6 +230,31 @@ model Like {
   createdAt DateTime @default(now())
 
   @@unique([userId, beatId])
+}
+
+// ─── REVIEWS ───
+
+model Review {
+  id          String   @id @default(cuid())
+  rating      Int      // 1-5
+  comment     String?
+
+  // Author (buyer who won an auction)
+  authorId    String
+  author      User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Producer being reviewed
+  producerId  String
+  producer    User     @relation("ReviewProducer", fields: [producerId], references: [id], onDelete: Cascade)
+
+  // Linked auction (proof of purchase)
+  auctionId   String   @unique
+  auction     Auction  @relation(fields: [auctionId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([authorId, auctionId])
 }
 
 // ─── FOLLOWS ───
