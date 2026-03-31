@@ -8,7 +8,7 @@ import AudioPlayer from '@/components/audio/AudioPlayer';
 import CountdownTimer from '@/components/ui/CountdownTimer';
 import { useRealtimeAuction, useRealtimeBids } from '@/hooks/useRealtimeAuction';
 import { formatTimeLeft, isEndingCritical } from '@/lib/realtime-utils';
-import { Gavel, Shield, TrendingUp, Clock, AlertTriangle, Zap, Music, ArrowLeft, Wifi, CreditCard } from 'lucide-react';
+import { Gavel, Shield, TrendingUp, Clock, AlertTriangle, Zap, Music, ArrowLeft, Wifi, CreditCard, Trophy, CheckCircle, XCircle, Download, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 interface BidItem {
@@ -31,6 +31,13 @@ interface AuctionDetail {
   endTime: string;
   totalBids: number;
   antiSnipeMinutes: number;
+  winnerId: string | null;
+  winningLicense: string | null;
+  finalPrice: number | null;
+  paidAt: string | null;
+  commissionAmount: number | null;
+  producerPayout: number | null;
+  winner: { name: string; displayName: string | null } | null;
   beat: {
     id: string;
     title: string;
@@ -421,31 +428,135 @@ export default function AuctionDetailPage() {
                 </>
               )}
 
-              {!isActive && (
-                <div className="text-center py-6">
-                  <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
-                    <Gavel size={24} className="text-gray-500" />
-                  </div>
-                  <p className="text-lg font-bold text-white mb-1">Enchere terminee</p>
-                  {auction.bids.length > 0 ? (
-                    <>
-                      <p className="text-sm text-gray-400 mb-4">
-                        Gagnant : <span className="text-white font-semibold">{auction.bids[0].user.displayName || auction.bids[0].user.name}</span> — {auction.currentBid} EUR
-                      </p>
-                      {session?.user && (session.user as any).id === auction.bids[0].user?.id && (
-                        <button
-                          onClick={() => router.push(`/checkout/${auction.id}`)}
-                          className="w-full py-4 rounded-xl font-bold text-white text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] bg-gradient-to-r from-green-600 to-green-800"
-                        >
-                          <CreditCard size={20} /> Proceder au paiement
-                        </button>
+              {!isActive && (() => {
+                const userId = session?.user ? (session.user as any).id : null;
+                const isWinner = userId && auction.winnerId === userId;
+                const isParticipant = userId && auction.bids.some(b => b.user.id === userId);
+                const isPaid = !!auction.paidAt;
+                const winnerName = auction.winner
+                  ? (auction.winner.displayName || auction.winner.name)
+                  : auction.bids[0]
+                    ? (auction.bids[0].user.displayName || auction.bids[0].user.name)
+                    : null;
+                const winLicense = auction.winningLicense ? LICENSE_INFO[auction.winningLicense] : null;
+
+                return (
+                  <div className="py-4 space-y-4">
+                    {/* Status banner */}
+                    <div className={`rounded-xl p-4 text-center ${
+                      isWinner
+                        ? isPaid
+                          ? 'bg-green-500/10 border border-green-500/30'
+                          : 'bg-yellow-500/10 border border-yellow-500/30 animate-pulse'
+                        : 'bg-white/5 border border-[#222]'
+                    }`}>
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 ${
+                        isWinner
+                          ? isPaid ? 'bg-green-500/20' : 'bg-yellow-500/20'
+                          : 'bg-white/5'
+                      }`}>
+                        {isWinner ? (
+                          isPaid ? <CheckCircle size={28} className="text-green-400" /> : <Trophy size={28} className="text-yellow-400" />
+                        ) : (
+                          <Gavel size={24} className="text-gray-500" />
+                        )}
+                      </div>
+
+                      {isWinner && !isPaid && (
+                        <>
+                          <p className="text-lg font-black text-yellow-400 mb-1">Tu as gagne cette enchere !</p>
+                          <p className="text-sm text-gray-400">Finalise ton achat pour recevoir le beat</p>
+                        </>
                       )}
-                    </>
-                  ) : (
-                    <p className="text-sm text-gray-500">Aucune enchere placee</p>
-                  )}
-                </div>
-              )}
+                      {isWinner && isPaid && (
+                        <>
+                          <p className="text-lg font-black text-green-400 mb-1">Achat confirme !</p>
+                          <p className="text-sm text-gray-400">Tu peux telecharger ton beat depuis "Mes Achats"</p>
+                        </>
+                      )}
+                      {!isWinner && winnerName && (
+                        <>
+                          <p className="text-lg font-bold text-white mb-1">Enchere terminee</p>
+                          <p className="text-sm text-gray-400">
+                            Remportee par <span className="text-white font-semibold">{winnerName}</span>
+                          </p>
+                        </>
+                      )}
+                      {!winnerName && auction.bids.length === 0 && (
+                        <>
+                          <p className="text-lg font-bold text-white mb-1">Enchere terminee</p>
+                          <p className="text-sm text-gray-500">Aucune enchere placee</p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Price recap */}
+                    {auction.bids.length > 0 && (
+                      <div className="bg-[#0a0a0a] rounded-xl border border-[#222] p-4 space-y-2.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">Prix final</span>
+                          <span className="text-white font-bold text-lg">{auction.finalPrice || auction.currentBid} EUR</span>
+                        </div>
+                        {winLicense && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500">Licence</span>
+                            <span className="font-bold" style={{ color: winLicense.color }}>
+                              {winLicense.name} — {winLicense.rights}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">Nombre d&apos;encheres</span>
+                          <span className="text-white">{auction.totalBids}</span>
+                        </div>
+                        {isPaid && (
+                          <div className="flex items-center justify-between text-sm pt-2 border-t border-[#222]">
+                            <span className="text-gray-500">Statut</span>
+                            <span className="text-green-400 font-bold flex items-center gap-1">
+                              <CheckCircle size={13} /> Paye
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Winner CTA: Pay button */}
+                    {isWinner && !isPaid && (
+                      <button
+                        onClick={() => router.push(`/checkout/${auction.id}`)}
+                        className="w-full py-4 rounded-xl font-bold text-white text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] shadow-lg shadow-green-900/30"
+                        style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' }}
+                      >
+                        <CreditCard size={20} /> Payer {auction.finalPrice || auction.currentBid} EUR
+                      </button>
+                    )}
+
+                    {/* Winner CTA: Go to purchases */}
+                    {isWinner && isPaid && (
+                      <Link
+                        href="/purchases"
+                        className="w-full py-4 rounded-xl font-bold text-white text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] bg-gradient-to-r from-blue-600 to-blue-800"
+                      >
+                        <Download size={20} /> Telecharger mon beat
+                      </Link>
+                    )}
+
+                    {/* Participant but lost */}
+                    {!isWinner && isParticipant && (
+                      <div className="bg-white/[0.02] rounded-xl border border-[#222] p-4 text-center">
+                        <XCircle size={20} className="text-gray-500 mx-auto mb-2" />
+                        <p className="text-sm text-gray-400 mb-3">Tu n&apos;as pas remporte cette enchere</p>
+                        <Link
+                          href="/marketplace"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-red-500 border border-red-500/20 hover:bg-red-500/5 transition"
+                        >
+                          <Music size={14} /> Voir d&apos;autres encheres
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
