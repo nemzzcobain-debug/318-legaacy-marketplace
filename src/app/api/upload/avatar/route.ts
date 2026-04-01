@@ -4,10 +4,15 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-)
+// Initialisation lazy pour éviter le crash au build si les env vars sont absentes
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_KEY
+  if (!url || !key) {
+    throw new Error('SUPABASE_URL ou SUPABASE_SERVICE_KEY manquant')
+  }
+  return createClient(url, key)
+}
 
 export async function POST(request: Request) {
   try {
@@ -40,6 +45,7 @@ export async function POST(request: Request) {
     const filename = `avatars/${userId}-${Date.now()}.${ext}`
 
     // Upload to Supabase Storage
+    const supabase = getSupabase()
     const buffer = Buffer.from(await file.arrayBuffer())
     const { data, error } = await supabase.storage
       .from('uploads')
