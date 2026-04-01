@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle, Search, ShoppingBag, Eye, User } from 'lucide-react'
+import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle, Search, ShoppingBag, Eye, User, ListMusic } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
 
 export default function Header() {
@@ -79,6 +79,9 @@ export default function Header() {
                 </Link>
               )}
 
+              <Link href="/playlists" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Mes Playlists">
+                <ListMusic size={20} className="text-gray-400" />
+              </Link>
               <Link href="/watchlist" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Ma Watchlist">
                 <Eye size={20} className="text-gray-400" />
               </Link>

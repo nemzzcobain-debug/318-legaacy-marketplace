@@ -13,6 +13,7 @@ import Link from 'next/link';
 import ShareButton from '@/components/ui/ShareButton';
 import ReportButton from '@/components/ui/ReportButton';
 import WatchlistButton from '@/components/ui/WatchlistButton';
+import AddToPlaylistButton from '@/components/playlist/AddToPlaylistButton';
 
 interface BidItem {
   id: string;
@@ -259,6 +260,7 @@ export default function AuctionDetailPage() {
                 <div className="flex items-center justify-between mb-2">
                   <h1 className="text-2xl font-black text-white">{beat.title}</h1>
                   <div className="flex items-center gap-1">
+                    <AddToPlaylistButton beatId={beat.id} />
                     <WatchlistButton auctionId={auction.id} />
                     <ShareButton url={`/auction/${auction.id}`} title={`${beat.title} - Enchere sur 318 LEGAACY`} description={`Encheris sur "${beat.title}" par ${producer.displayName || producer.name} sur 318 LEGAACY Marketplace`} />
                     <ReportButton type="AUCTION" targetAuctionId={auction.id} />
