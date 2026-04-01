@@ -17,6 +17,23 @@ export const metadata: Metadata = {
   keywords: ['beats', 'instrumentales', 'encheres', 'marketplace', 'production musicale', 'rap', 'trap', 'drill', 'beatmaker', 'producteur', '318 legaacy'],
   authors: [{ name: '318 LEGAACY Studio' }],
   creator: '318 LEGAACY Studio',
+  manifest: '/manifest.json',
+  themeColor: '#e11d48',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: '318 LEGAACY',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   openGraph: {
     title: '318 LEGAACY Marketplace — Encheres de Beats',
     description: 'Premiere plateforme d\'encheres d\'instrumentales en France. Encheris en temps reel sur des beats uniques.',
