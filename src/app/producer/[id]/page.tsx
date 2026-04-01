@@ -16,6 +16,7 @@ import FollowButton from '@/components/ui/FollowButton'
 import ReviewSection from '@/components/reviews/ReviewSection'
 import { BadgeRow, BadgeGrid } from '@/components/badges/BadgeDisplay'
 import ShareButton from '@/components/ui/ShareButton'
+import ReportButton from '@/components/ui/ReportButton'
 
 interface ProducerProfile {
   id: string
@@ -195,6 +196,7 @@ export default function ProducerProfilePage() {
                 </Link>
                 <FollowButton producerId={producer.id} size="md" />
                 <ShareButton url={`/producer/${producer.id}`} title={`${displayName} - Producteur sur 318 LEGAACY`} description={`Decouvre les beats de ${displayName} sur 318 LEGAACY Marketplace`} />
+                <ReportButton type="USER" targetUserId={producer.id} />
               </div>
             </div>
 

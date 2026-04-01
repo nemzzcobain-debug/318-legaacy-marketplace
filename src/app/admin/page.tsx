@@ -57,6 +57,21 @@ interface UserItem {
   _count: { beats: number; bids: number };
 }
 
+interface ReportItem {
+  id: string;
+  type: string;
+  reason: string;
+  description: string | null;
+  status: string;
+  targetUserId: string | null;
+  targetAuctionId: string | null;
+  targetBeatId: string | null;
+  adminNote: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  reporter: { id: string; name: string; displayName: string | null; avatar: string | null };
+}
+
 function StatCard({ label, value, color = 'purple' }: { label: string; value: string | number; color?: string }) {
   const colors: Record<string, string> = {
     purple: 'from-purple-600 to-purple-800',
@@ -83,6 +98,8 @@ export default function AdminPage() {
   const [producers, setProducers] = useState<Producer[]>([]);
   const [auctions, setAuctions] = useState<AuctionItem[]>([]);
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [reports, setReports] = useState<ReportItem[]>([]);
+  const [reportsPagination, setReportsPagination] = useState({ page: 1, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -122,6 +139,20 @@ export default function AdminPage() {
     } catch (e) { console.error(e); }
   }, [search]);
 
+  const fetchReports = useCallback(async (page = 1) => {
+    try {
+      const params = new URLSearchParams();
+      if (filterStatus) params.set('status', filterStatus);
+      params.set('page', String(page));
+      const res = await fetch(`/api/reports?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setReports(data.reports);
+        setReportsPagination(data.pagination);
+      }
+    } catch (e) { console.error(e); }
+  }, [filterStatus]);
+
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
     if (status === 'authenticated') {
@@ -138,8 +169,9 @@ export default function AdminPage() {
       if (activeTab === 'producers') fetchProducers();
       if (activeTab === 'auctions') fetchAuctions();
       if (activeTab === 'users') fetchUsers();
+      if (activeTab === 'reports') fetchReports();
     }
-  }, [activeTab, loading, fetchProducers, fetchAuctions, fetchUsers]);
+  }, [activeTab, loading, fetchProducers, fetchAuctions, fetchUsers, fetchReports]);
 
   const updateProducerStatus = async (producerId: string, newStatus: string) => {
     try {
@@ -163,6 +195,17 @@ export default function AdminPage() {
     } catch (e) { console.error(e); }
   };
 
+  const updateReportStatus = async (reportId: string, newStatus: string, adminNote?: string) => {
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId, status: newStatus, adminNote })
+      });
+      if (res.ok) fetchReports(reportsPagination.page);
+    } catch (e) { console.error(e); }
+  };
+
   if (loading || status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -175,7 +218,8 @@ export default function AdminPage() {
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'producers', label: 'Producteurs' },
     { id: 'auctions', label: 'Encheres' },
-    { id: 'users', label: 'Utilisateurs' }
+    { id: 'users', label: 'Utilisateurs' },
+    { id: 'reports', label: 'Signalements' }
   ];
 
   const statusColors: Record<string, string> = {
@@ -188,7 +232,25 @@ export default function AdminPage() {
     ENDED: 'bg-gray-500',
     COMPLETED: 'bg-purple-500',
     CANCELLED: 'bg-red-500',
-    ENDING_SOON: 'bg-orange-500'
+    ENDING_SOON: 'bg-orange-500',
+    REVIEWED: 'bg-blue-500',
+    RESOLVED: 'bg-green-500',
+    DISMISSED: 'bg-gray-500'
+  };
+
+  const reportReasonLabels: Record<string, string> = {
+    SPAM: 'Spam',
+    INAPPROPRIATE: 'Contenu inapproprie',
+    FRAUD: 'Fraude',
+    COPYRIGHT: 'Droits d\'auteur',
+    OTHER: 'Autre'
+  };
+
+  const reportTypeLabels: Record<string, string> = {
+    BEAT: 'Beat',
+    AUCTION: 'Enchere',
+    USER: 'Utilisateur',
+    MESSAGE: 'Message'
   };
 
   return (
@@ -409,6 +471,125 @@ export default function AdminPage() {
               </table>
               {users.length === 0 && <p className="text-gray-500 text-center py-8">Aucun utilisateur trouve</p>}
             </div>
+          </div>
+        )}
+
+        {/* REPORTS TAB */}
+        {activeTab === 'reports' && (
+          <div>
+            <div className="flex flex-wrap gap-3 mb-6">
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
+              >
+                <option value="">Tous les statuts</option>
+                <option value="PENDING">En attente</option>
+                <option value="REVIEWED">Examine</option>
+                <option value="RESOLVED">Resolu</option>
+                <option value="DISMISSED">Rejete</option>
+              </select>
+              <span className="text-gray-400 text-sm self-center">
+                {reportsPagination.total} signalement(s)
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {reports.map(r => (
+                <div key={r.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex-1 min-w-[250px]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`text-xs px-2 py-1 rounded-full text-white ${statusColors[r.status] || 'bg-gray-500'}`}>
+                          {r.status}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-400">
+                          {reportTypeLabels[r.type] || r.type}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400">
+                          {reportReasonLabels[r.reason] || r.reason}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-300 mb-1">
+                        <span className="text-gray-500">Par:</span> {r.reporter.displayName || r.reporter.name}
+                      </p>
+                      {r.description && (
+                        <p className="text-sm text-gray-400 italic">&quot;{r.description}&quot;</p>
+                      )}
+                      <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                        {r.targetUserId && <span>User: {r.targetUserId.slice(0, 8)}...</span>}
+                        {r.targetAuctionId && <span>Enchere: {r.targetAuctionId.slice(0, 8)}...</span>}
+                        {r.targetBeatId && <span>Beat: {r.targetBeatId.slice(0, 8)}...</span>}
+                        <span>{new Date(r.createdAt).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                      {r.adminNote && (
+                        <p className="text-xs text-blue-400 mt-2 bg-blue-500/10 px-2 py-1 rounded">
+                          Note admin: {r.adminNote}
+                        </p>
+                      )}
+                    </div>
+                    {r.status === 'PENDING' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updateReportStatus(r.id, 'REVIEWED')}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition"
+                        >
+                          Examiner
+                        </button>
+                        <button
+                          onClick={() => updateReportStatus(r.id, 'RESOLVED')}
+                          className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition"
+                        >
+                          Resoudre
+                        </button>
+                        <button
+                          onClick={() => updateReportStatus(r.id, 'DISMISSED')}
+                          className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded-lg transition"
+                        >
+                          Rejeter
+                        </button>
+                      </div>
+                    )}
+                    {r.status === 'REVIEWED' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updateReportStatus(r.id, 'RESOLVED')}
+                          className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition"
+                        >
+                          Resoudre
+                        </button>
+                        <button
+                          onClick={() => updateReportStatus(r.id, 'DISMISSED')}
+                          className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded-lg transition"
+                        >
+                          Rejeter
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {reports.length === 0 && <p className="text-gray-500 text-center py-8">Aucun signalement</p>}
+            </div>
+
+            {/* Pagination */}
+            {reportsPagination.totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-6">
+                {Array.from({ length: reportsPagination.totalPages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => fetchReports(p)}
+                    className={`px-3 py-1.5 rounded-lg text-sm transition ${
+                      p === reportsPagination.page
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
