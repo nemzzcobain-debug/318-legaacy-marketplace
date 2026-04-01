@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // ─── 318 LEGAACY Marketplace - Watchlist API ───
 // GET: mes enchères suivies
 // POST: ajouter une enchère à la watchlist

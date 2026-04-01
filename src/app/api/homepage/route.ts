@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // ─── 318 LEGAACY Marketplace - Homepage API ───
 // Returns: platform stats, featured producers, top genres
 

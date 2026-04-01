@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // ─── 318 LEGAACY Marketplace - Reporting/Signalement API ───
 // POST: créer un signalement
 // GET: lister les signalements (admin only)

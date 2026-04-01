@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // ─── 318 LEGAACY Marketplace - Advanced Search API ───
 // Searches across beats and auctions with advanced filters
 // Supports: query, genre, bpmMin/bpmMax, key, mood, priceMin/priceMax, producerId, licenseType, status, sort

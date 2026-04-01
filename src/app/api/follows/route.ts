@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // ─── 318 LEGAACY Marketplace - Follow System API ───
 // POST: follow/unfollow toggle
 // GET: check follow status + counts, supports batch

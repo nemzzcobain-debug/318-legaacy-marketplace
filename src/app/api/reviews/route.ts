@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // ─── 318 LEGAACY Marketplace - Reviews API ───
 // POST: create a review (only for auction winners who paid)
 // GET: list reviews for a producer, or check eligibility

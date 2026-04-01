@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // ─── 318 LEGAACY Marketplace - My Auctions API ───
 // GET: returns auctions where user has placed bids
 // Categories: active (en cours), won (gagnées), lost (perdues), pending_payment

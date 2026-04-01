@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // ─── 318 LEGAACY Marketplace - Promo Codes API ───
 // POST /api/promo — Valider un code promo
 // GET /api/promo — Lister les codes promo (admin)

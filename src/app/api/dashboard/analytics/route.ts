@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // ─── 318 LEGAACY Marketplace - Dashboard Analytics API ───
 // Returns revenue over time, top beats, audience stats, bid activity
 
