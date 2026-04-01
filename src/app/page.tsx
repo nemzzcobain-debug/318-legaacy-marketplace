@@ -155,7 +155,15 @@ export default function Home() {
     ])
       .then(([auctionsData, homepageData]) => {
         setAuctions(auctionsData.auctions || [])
-        setHomepage(homepageData)
+        if (homepageData && homepageData.stats) {
+          setHomepage(homepageData)
+        } else {
+          setHomepage({
+            stats: { totalBeats: 0, totalAuctions: 0, totalProducers: 0, totalBids: 0, totalCompleted: 0, totalRevenue: 0 },
+            featuredProducers: [],
+            topGenres: [],
+          })
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false))

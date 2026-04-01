@@ -79,12 +79,12 @@ export async function GET(req: NextRequest) {
         orderBy: { plays: 'desc' },
       }),
 
-      // Follower growth
+      // Follower growth (table may not exist yet)
       prisma.follow.findMany({
         where: { followingId: userId, createdAt: { gte: startDate } },
         select: { createdAt: true },
         orderBy: { createdAt: 'asc' },
-      }),
+      }).catch(() => []),
 
       // Total plays
       prisma.beat.aggregate({
@@ -147,9 +147,12 @@ export async function GET(req: NextRequest) {
     }))
 
     // ─── Follower growth ───
-    let followerCount = await prisma.follow.count({
-      where: { followingId: userId, createdAt: { lt: startDate } },
-    })
+    let followerCount = 0
+    try {
+      followerCount = await prisma.follow.count({
+        where: { followingId: userId, createdAt: { lt: startDate } },
+      })
+    } catch {}
     const followersByDay: Record<string, number> = {}
     followers.forEach(f => {
       const day = f.createdAt.toISOString().split('T')[0]

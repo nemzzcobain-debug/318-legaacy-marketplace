@@ -96,9 +96,12 @@ export async function GET(
       where: { beat: { producerId: params.id } },
     })
 
-    const totalFollowers = await prisma.follow.count({
-      where: { followingId: params.id },
-    })
+    let totalFollowers = 0
+    try {
+      totalFollowers = await prisma.follow.count({
+        where: { followingId: params.id },
+      })
+    } catch {}
 
     // Only fetch revenue if viewing own profile
     let stats: any = {

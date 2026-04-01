@@ -46,7 +46,7 @@ export async function GET() {
         _sum: { finalPrice: true },
       }),
 
-      // Featured producers: top by completed sales + followers
+      // Featured producers: top by completed sales
       prisma.user.findMany({
         where: {
           role: 'PRODUCER',
@@ -62,7 +62,6 @@ export async function GET() {
           _count: {
             select: {
               beats: true,
-              followers: true,
             },
           },
         },
@@ -95,7 +94,7 @@ export async function GET() {
         bio: p.producerBio,
         totalSales: p.totalSales,
         totalBeats: p._count.beats,
-        totalFollowers: p._count.followers,
+        totalFollowers: 0,
       })),
       topGenres: topGenres.map(g => ({
         name: g.genre,

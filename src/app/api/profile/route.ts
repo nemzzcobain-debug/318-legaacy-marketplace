@@ -43,8 +43,6 @@ export async function GET() {
         createdAt: true,
         _count: {
           select: {
-            followers: true,
-            following: true,
             beats: true,
             bids: true,
           }
@@ -56,7 +54,20 @@ export async function GET() {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
     }
 
-    return NextResponse.json(user)
+    // Add follower/following counts safely (table may not exist yet)
+    let followCounts = { followers: 0, following: 0 }
+    try {
+      const [frs, fng] = await Promise.all([
+        prisma.follow.count({ where: { followingId: userId } }),
+        prisma.follow.count({ where: { followerId: userId } }),
+      ])
+      followCounts = { followers: frs, following: fng }
+    } catch {}
+
+    return NextResponse.json({
+      ...user,
+      _count: { ...user._count, ...followCounts },
+    })
   } catch (error) {
     console.error('Profile GET error:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

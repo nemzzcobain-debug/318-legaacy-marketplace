@@ -178,23 +178,25 @@ export async function POST(request: Request) {
     })
 
     // Notifier tous les followers du producteur
-    const followers = await prisma.follow.findMany({
-      where: { followingId: userId },
-      select: { followerId: true },
-    })
-
-    if (followers.length > 0) {
-      const producerName = user.displayName || user.name
-      await prisma.notification.createMany({
-        data: followers.map(f => ({
-          type: 'NEW_AUCTION',
-          title: `Nouvelle enchere de ${producerName}`,
-          message: `${producerName} a lance une enchere sur "${beat.title}" a partir de ${startPrice} EUR`,
-          link: `/auction/${auction.id}`,
-          userId: f.followerId,
-        })),
+    try {
+      const followers = await prisma.follow.findMany({
+        where: { followingId: userId },
+        select: { followerId: true },
       })
-    }
+
+      if (followers.length > 0) {
+        const producerName = user.displayName || user.name
+        await prisma.notification.createMany({
+          data: followers.map(f => ({
+            type: 'NEW_AUCTION',
+            title: `Nouvelle enchere de ${producerName}`,
+            message: `${producerName} a lance une enchere sur "${beat.title}" a partir de ${startPrice} EUR`,
+            link: `/auction/${auction.id}`,
+            userId: f.followerId,
+          })),
+        })
+      }
+    } catch {}
 
     return NextResponse.json({ auction }, { status: 201 })
   } catch (error) {
