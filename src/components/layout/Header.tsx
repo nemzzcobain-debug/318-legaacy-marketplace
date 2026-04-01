@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle, Search, ShoppingBag, Eye, User, ListMusic } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 export default function Header() {
   const pathname = usePathname()
@@ -98,6 +99,7 @@ export default function Header() {
                 <LayoutDashboard size={20} className="text-gray-400" />
               </Link>
               <NotificationBell />
+              <ThemeToggle />
 
               {/* User avatar + logout */}
               <div className="flex items-center gap-2">
@@ -115,6 +117,7 @@ export default function Header() {
             </>
           ) : (
             <>
+              <ThemeToggle />
               <Link
                 href="/login"
                 className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#1e1e2e] text-sm font-semibold text-white hover:border-red-500 transition-colors"
