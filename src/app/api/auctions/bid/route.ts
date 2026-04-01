@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { placeBidSchema } from '@/lib/validations'
 import { calculateFinalPrice } from '@/lib/stripe'
+import { sendOutbidEmail } from '@/lib/emails/resend'
 
 // POST /api/auctions/bid?auctionId=xxx - Placer une enchere
 export async function POST(request: Request) {
@@ -130,6 +131,27 @@ export async function POST(request: Request) {
           link: `/auction/${auctionId}`,
         },
       })
+
+      // Send outbid email (non-blocking, outside transaction)
+      if (previousBidder && previousBidder.userId !== userId) {
+        const prevUser = await tx.user.findUnique({
+          where: { id: previousBidder.userId },
+          select: { email: true, name: true, displayName: true }
+        })
+        if (prevUser?.email) {
+          // Fire and forget - will be sent after transaction
+          setTimeout(() => {
+            sendOutbidEmail({
+              to: prevUser.email,
+              userName: prevUser.displayName || prevUser.name,
+              beatTitle: auction.beat.title,
+              yourBid: auction.currentBid,
+              newBid: amount,
+              auctionId,
+            }).catch(() => {})
+          }, 0)
+        }
+      }
 
       return { bid, auction: updatedAuction }
     })

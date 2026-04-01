@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendNewFollowerEmail } from '@/lib/emails/resend'
 
 // ─── POST: Toggle follow/unfollow ───
 export async function POST(req: NextRequest) {
@@ -79,6 +80,20 @@ export async function POST(req: NextRequest) {
       const count = await prisma.follow.count({
         where: { followingId: producerId }
       })
+
+      // Send email notification (non-blocking)
+      const producerData = await prisma.user.findUnique({
+        where: { id: producerId },
+        select: { email: true, displayName: true, name: true }
+      })
+      if (producerData?.email) {
+        sendNewFollowerEmail({
+          to: producerData.email,
+          producerName: producerData.displayName || producerData.name,
+          followerName: session.user.name || 'Un utilisateur',
+          totalFollowers: count,
+        }).catch(() => {})
+      }
 
       return NextResponse.json({ followed: true, count })
     }

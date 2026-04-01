@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { registerSchema } from '@/lib/validations'
+import { sendWelcomeEmail } from '@/lib/emails/resend'
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +50,9 @@ export async function POST(request: Request) {
         createdAt: true,
       },
     })
+
+    // Envoyer l'email de bienvenue (non-bloquant)
+    sendWelcomeEmail({ to: email, name }).catch(() => {})
 
     // Si producteur, creer une notification pour les admins
     if (role === 'PRODUCER') {

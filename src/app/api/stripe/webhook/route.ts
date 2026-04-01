@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
+import { sendAuctionWonEmail, sendPaymentReceivedEmail } from '@/lib/emails/resend'
 
 /**
  * WEBHOOK CONSOLIDÉ STRIPE
@@ -208,6 +209,38 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           userId: userId || auction.winnerId || '',
         },
       })
+    }
+
+    // Envoyer les emails transactionnels (non-bloquant)
+    const payoutAmount = producerPayout ? parseFloat(producerPayout) : (auction.producerPayout || 0)
+    const commissionAmount = commission ? parseFloat(commission) : (auction.commissionAmount || 0)
+    const finalPrice = auction.finalPrice || auction.currentBid
+
+    // Email au producteur: vente réalisée
+    if (auction.beat.producer?.email) {
+      sendPaymentReceivedEmail({
+        to: auction.beat.producer.email,
+        producerName: auction.beat.producer.displayName || auction.beat.producer.name,
+        beatTitle: auction.beat.title,
+        buyerName: auction.winner?.displayName || auction.winner?.name || 'Acheteur',
+        finalPrice,
+        commission: commissionAmount,
+        payout: payoutAmount,
+        license: auction.winningLicense || auction.licenseType,
+      }).catch(() => {})
+    }
+
+    // Email à l'acheteur: achat confirmé
+    if (auction.winner?.email) {
+      sendAuctionWonEmail({
+        to: auction.winner.email,
+        winnerName: auction.winner.displayName || auction.winner.name,
+        beatTitle: auction.beat.title,
+        producerName: auction.beat.producer?.displayName || auction.beat.producer?.name || 'Producteur',
+        finalPrice,
+        license: auction.winningLicense || auction.licenseType,
+        auctionId,
+      }).catch(() => {})
     }
 
     console.log(`[WEBHOOK] ✓ Enchère ${auctionId} complétée avec succès`)
