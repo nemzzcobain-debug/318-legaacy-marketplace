@@ -7,6 +7,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://318-legaacy-marketplace.vercel.app'
+
   try {
     const producer = await prisma.user.findUnique({
       where: { id: params.id },
@@ -15,7 +17,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName: true,
         producerBio: true,
         bio: true,
-        _count: { select: { beats: true } },
+        totalSales: true,
+        rating: true,
+        _count: { select: { beats: true, followers: true } },
       },
     })
 
@@ -24,8 +28,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const name = producer.displayName || producer.name
-    const title = `${name} — Producteur verifie`
-    const description = producer.producerBio || producer.bio || `Decouvre les beats de ${name} sur 318 LEGAACY Marketplace. ${producer._count.beats} beat${producer._count.beats > 1 ? 's' : ''} disponible${producer._count.beats > 1 ? 's' : ''}.`
+    const title = `${name} — Producteur verifie sur 318 LEGAACY`
+    const bio = producer.producerBio || producer.bio || ''
+    const description = `${name} est producteur verifie sur 318 LEGAACY. ${producer._count.beats} beats, ${producer._count.followers} abonnes, ${producer.totalSales} ventes.${bio ? ' ' + bio.slice(0, 120) : ''}`
+    const ogUrl = `${siteUrl}/api/og?title=${encodeURIComponent(name)}&producer=Producteur%20verifie`
 
     return {
       title,
@@ -33,12 +39,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title,
         description,
+        url: `${siteUrl}/producer/${params.id}`,
+        siteName: '318 LEGAACY Marketplace',
         type: 'profile',
+        locale: 'fr_FR',
+        images: [{ url: ogUrl, width: 1200, height: 630, alt: name }],
       },
       twitter: {
-        card: 'summary',
+        card: 'summary_large_image',
         title,
         description,
+        images: [ogUrl],
+      },
+      alternates: {
+        canonical: `${siteUrl}/producer/${params.id}`,
       },
     }
   } catch {

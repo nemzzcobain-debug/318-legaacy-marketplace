@@ -41,7 +41,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title,
         description,
         url: `${siteUrl}/auction/${params.id}`,
+        siteName: '318 LEGAACY Marketplace',
         type: 'website',
+        locale: 'fr_FR',
         images: [
           {
             url: ogUrl,
@@ -56,6 +58,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title,
         description,
         images: [ogUrl],
+      },
+      alternates: {
+        canonical: `${siteUrl}/auction/${params.id}`,
+      },
+      other: {
+        'product:price:amount': String(auction.currentBid),
+        'product:price:currency': 'EUR',
       },
     }
   } catch {

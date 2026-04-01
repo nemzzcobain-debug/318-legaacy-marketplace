@@ -8,7 +8,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages = [
     { url: siteUrl, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 1.0 },
     { url: `${siteUrl}/marketplace`, lastModified: new Date(), changeFrequency: 'hourly' as const, priority: 0.9 },
+    { url: `${siteUrl}/search`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${siteUrl}/producers`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${siteUrl}/playlists`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
+    { url: `${siteUrl}/stats`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.5 },
     { url: `${siteUrl}/login`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.3 },
     { url: `${siteUrl}/register`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.4 },
   ]
@@ -45,5 +48,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   } catch {}
 
-  return [...staticPages, ...auctionPages, ...producerPages]
+  // Public playlists
+  let playlistPages: MetadataRoute.Sitemap = []
+  try {
+    const playlists = await prisma.playlist.findMany({
+      where: { visibility: 'PUBLIC' },
+      select: { id: true, updatedAt: true },
+      take: 100,
+    })
+    playlistPages = playlists.map(p => ({
+      url: `${siteUrl}/playlists/${p.id}`,
+      lastModified: p.updatedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.5,
+    }))
+  } catch {}
+
+  return [...staticPages, ...auctionPages, ...producerPages, ...playlistPages]
 }
