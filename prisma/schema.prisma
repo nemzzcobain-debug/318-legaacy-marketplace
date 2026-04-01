@@ -65,6 +65,9 @@ model User {
 
   // Reports
   reportsGiven          Report[] @relation("ReportsGiven")
+
+  // Watchlist
+  watchlist             Watchlist[]
 }
 
 model Account {
@@ -200,6 +203,7 @@ model Auction {
   // Relations
   bids           Bid[]
   review         Review?
+  watchlist      Watchlist[]
 }
 
 // ─── BIDS ───
@@ -354,4 +358,20 @@ model Report {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ─── WATCHLIST (FAVORIS ENCHERES) ───
+
+model Watchlist {
+  id        String   @id @default(cuid())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  auctionId String
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, auctionId])
 }
