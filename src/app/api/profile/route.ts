@@ -102,7 +102,25 @@ export async function PUT(request: Request) {
         if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
           url = 'https://' + url
         }
-        updateData[field] = url
+
+        // Validate URL using URL constructor
+        try {
+          const parsedUrl = new URL(url)
+          // Only allow http:// and https:// protocols
+          if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            return NextResponse.json(
+              { error: `Protocole invalide pour le champ ${field}. Seuls http:// et https:// sont autorisés.` },
+              { status: 400 }
+            )
+          }
+          updateData[field] = url
+        } catch {
+          // Invalid URL
+          return NextResponse.json(
+            { error: `URL invalide pour le champ ${field}` },
+            { status: 400 }
+          )
+        }
       } else if (updateData[field] === '') {
         updateData[field] = null
       }

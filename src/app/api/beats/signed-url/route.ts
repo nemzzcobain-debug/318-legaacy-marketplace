@@ -42,6 +42,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate MIME type for audio uploads
+    const allowedAudioMimes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/aac', 'audio/mp4', 'audio/x-wav'];
+    if (!allowedAudioMimes.includes(audioContentType)) {
+      return NextResponse.json(
+        { error: 'Type MIME audio invalide. Types acceptes: ' + allowedAudioMimes.join(', ') },
+        { status: 400 }
+      );
+    }
+
     // Créer un client Supabase avec la service role key
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -57,7 +66,7 @@ export async function POST(req: NextRequest) {
     if (audioError) {
       console.error('Signed URL audio error:', audioError);
       return NextResponse.json(
-        { error: `Erreur generation URL audio: ${audioError.message}` },
+        { error: 'Erreur serveur' },
         { status: 500 }
       );
     }
@@ -100,6 +109,6 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur inconnue';
     console.error('Erreur signed URL:', message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

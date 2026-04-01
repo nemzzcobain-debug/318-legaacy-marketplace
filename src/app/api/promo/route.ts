@@ -9,9 +9,42 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+// ─── Rate limiting for promo code attempts ───
+const promoRateLimitMap = new Map<string, { count: number; resetTime: number }>()
+
+function checkPromoRateLimit(ip: string, maxAttempts: number = 5, windowMs: number = 5 * 60 * 1000): boolean {
+  const now = Date.now()
+  const entry = promoRateLimitMap.get(ip)
+
+  if (!entry || now > entry.resetTime) {
+    promoRateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
+    return true
+  }
+
+  if (entry.count < maxAttempts) {
+    entry.count++
+    return true
+  }
+
+  return false
+}
+
 // ─── POST: Valider un code promo ───
 export async function POST(req: NextRequest) {
   try {
+    // Get client IP for rate limiting
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('x-real-ip')
+      || 'unknown'
+
+    // Check promo code rate limit (5 attempts per 5 minutes)
+    if (!checkPromoRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Trop de tentatives de code promo. Réessayez dans quelques instants.' },
+        { status: 429, headers: { 'Retry-After': '300' } }
+      )
+    }
+
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })

@@ -50,6 +50,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate BPM range (40-300)
+    const bpmNum = typeof bpm === 'number' ? bpm : parseInt(bpm);
+    if (isNaN(bpmNum) || bpmNum < 40 || bpmNum > 300) {
+      return NextResponse.json(
+        { error: 'Le BPM doit etre entre 40 et 300' },
+        { status: 400 }
+      );
+    }
+
     // Calcul approximatif de la durée basé sur la taille du fichier
     const estimatedDuration = audioSize ? Math.round(audioSize / 16000) : 0;
 

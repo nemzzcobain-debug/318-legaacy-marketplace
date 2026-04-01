@@ -74,6 +74,35 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // ─── CSRF Origin Validation (for state-changing requests) ───
+  const method = request.method
+  const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
+
+  if (isStateChanging) {
+    // Allow Stripe webhooks and cron jobs (no origin validation)
+    const isWebhook = pathname.startsWith('/api/stripe/webhook') || pathname.startsWith('/api/payments/webhook')
+    const isCronJob = pathname.startsWith('/api/auctions/finalize')
+
+    if (!isWebhook && !isCronJob) {
+      const origin = request.headers.get('origin')
+      const referer = request.headers.get('referer')
+      const host = request.headers.get('host')
+
+      // Allow requests with no origin (same-origin, non-browser clients)
+      if (origin || referer) {
+        const requestOrigin = origin || (referer ? new URL(referer).origin : null)
+        const expectedOrigin = `${request.nextUrl.protocol}//${host}`
+
+        if (requestOrigin && !requestOrigin.startsWith(expectedOrigin)) {
+          return NextResponse.json(
+            { error: 'CSRF validation failed' },
+            { status: 403 }
+          )
+        }
+      }
+    }
+  }
+
   // ─── Rate Limiting ───
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || request.headers.get('x-real-ip')

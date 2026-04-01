@@ -19,14 +19,28 @@ export async function POST(
       return NextResponse.json({ error: 'Non connecte' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user?.email || '' }
-    });
+    // Use session.user.id if available, fallback to email only if needed
+    let user = null;
+    if (session.user?.id) {
+      user = await prisma.user.findUnique({
+        where: { id: session.user.id }
+      });
+    } else if (session.user?.email) {
+      user = await prisma.user.findUnique({
+        where: { email: session.user.email }
+      });
+    }
+
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
     }
 
     const { amount, licenseType = 'BASIC' } = await req.json();
+
+    // Validate license type
+    if (!['BASIC', 'PREMIUM', 'EXCLUSIVE'].includes(licenseType)) {
+      return NextResponse.json({ error: 'Type de licence invalide' }, { status: 400 });
+    }
 
     const auction = await prisma.auction.findUnique({
       where: { id: params.id },

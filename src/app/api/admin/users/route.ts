@@ -3,6 +3,18 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// Helper function to mask email addresses
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return email;
+
+  const localMasked = local.charAt(0) + '*'.repeat(Math.max(1, local.length - 2)) + (local.length > 1 ? local.charAt(local.length - 1) : '');
+  const [domainName, ...domainParts] = domain.split('.');
+  const domainMasked = domainName.charAt(0) + '*'.repeat(Math.max(1, domainName.length - 2)) + domainParts.join('.');
+
+  return `${localMasked}@${domainMasked}`;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -42,7 +54,13 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' }
     });
 
-    return NextResponse.json(users);
+    // Mask email addresses for security
+    const maskedUsers = users.map(user => ({
+      ...user,
+      email: maskEmail(user.email),
+    }));
+
+    return NextResponse.json(maskedUsers);
   } catch (error) {
     console.error('Admin users error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

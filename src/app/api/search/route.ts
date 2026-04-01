@@ -113,9 +113,9 @@ export async function GET(req: NextRequest) {
 
     // Get available filter options for the sidebar
     const [genres, keys, moods] = await Promise.all([
-      prisma.beat.groupBy({ by: ['genre'], _count: true, orderBy: { _count: { genre: 'desc' } }, take: 20 }),
-      prisma.beat.groupBy({ by: ['key'], where: { key: { not: null } }, _count: true, orderBy: { _count: { key: 'desc' } }, take: 15 }),
-      prisma.beat.groupBy({ by: ['mood'], where: { mood: { not: null } }, _count: true, orderBy: { _count: { mood: 'desc' } }, take: 15 }),
+      prisma.beat.groupBy({ by: ['genre'], _count: true, orderBy: { _count: { genre: 'desc' } }, take: 50 }),
+      prisma.beat.groupBy({ by: ['key'], where: { key: { not: null } }, _count: true, orderBy: { _count: { key: 'desc' } }, take: 50 }),
+      prisma.beat.groupBy({ by: ['mood'], where: { mood: { not: null } }, _count: true, orderBy: { _count: { mood: 'desc' } }, take: 50 }),
     ])
 
     return NextResponse.json({

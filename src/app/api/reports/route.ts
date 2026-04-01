@@ -97,8 +97,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status') // PENDING, REVIEWED, RESOLVED, DISMISSED
     const type = searchParams.get('type') // BEAT, AUCTION, USER, MESSAGE
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = 20
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '20')))
 
     const where: any = {}
     if (status) where.status = status

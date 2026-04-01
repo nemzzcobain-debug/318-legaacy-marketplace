@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // GET — Recuperer le profil public d'un producteur
 export async function GET(
@@ -7,6 +9,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions)
     const producer = await prisma.user.findUnique({
       where: { id: params.id },
       select: {
@@ -95,27 +98,32 @@ export async function GET(
       where: { followingId: params.id },
     })
 
-    // Revenue totale
-    const revenue = await prisma.auction.aggregate({
-      where: {
-        beat: { producerId: params.id },
-        status: 'COMPLETED',
-      },
-      _sum: { producerPayout: true },
-    })
+    // Only fetch revenue if viewing own profile
+    let stats: any = {
+      totalBeats: producer._count.beats,
+      totalAuctions,
+      completedAuctions,
+      totalPlays: totalPlays._sum.plays || 0,
+      totalLikes,
+      totalFollowers,
+      memberSince: producer.createdAt,
+    }
+
+    // Only include revenue data if the requesting user IS the producer
+    if (session?.user?.id === params.id) {
+      const revenue = await prisma.auction.aggregate({
+        where: {
+          beat: { producerId: params.id },
+          status: 'COMPLETED',
+        },
+        _sum: { producerPayout: true },
+      })
+      stats.totalRevenue = revenue._sum.producerPayout || 0
+    }
 
     return NextResponse.json({
       ...producer,
-      stats: {
-        totalBeats: producer._count.beats,
-        totalAuctions,
-        completedAuctions,
-        totalPlays: totalPlays._sum.plays || 0,
-        totalLikes,
-        totalFollowers,
-        totalRevenue: revenue._sum.producerPayout || 0,
-        memberSince: producer.createdAt,
-      },
+      stats,
     })
   } catch (error: any) {
     console.error('Erreur profil producteur:', error)

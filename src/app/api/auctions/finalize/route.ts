@@ -58,60 +58,80 @@ async function handleFinalize(req: NextRequest) {
       try {
         const topBid = auction.bids[0]
 
-        if (topBid) {
-          // Il y a un gagnant
-          const reserveMet = !auction.reservePrice || topBid.amount >= auction.reservePrice
+        await prisma.$transaction(async (tx) => {
+          if (topBid) {
+            // Il y a un gagnant
+            const reserveMet = !auction.reservePrice || topBid.amount >= auction.reservePrice
 
-          if (reserveMet) {
-            // Enchere gagnee — en attente de paiement
-            await prisma.auction.update({
-              where: { id: auction.id },
-              data: {
-                status: 'ENDED',
-                winnerId: topBid.userId,
-                winningLicense: topBid.licenseType,
-                finalPrice: topBid.finalAmount,
-                commissionAmount: Math.round(topBid.finalAmount * (auction.commissionPercent / 100) * 100) / 100,
-                producerPayout: Math.round(topBid.finalAmount * (1 - auction.commissionPercent / 100) * 100) / 100,
-              },
-            })
+            if (reserveMet) {
+              // Enchere gagnee — en attente de paiement
+              await tx.auction.update({
+                where: { id: auction.id },
+                data: {
+                  status: 'ENDED',
+                  winnerId: topBid.userId,
+                  winningLicense: topBid.licenseType,
+                  finalPrice: topBid.finalAmount,
+                  commissionAmount: Math.round(topBid.finalAmount * (auction.commissionPercent / 100) * 100) / 100,
+                  producerPayout: Math.round(topBid.finalAmount * (1 - auction.commissionPercent / 100) * 100) / 100,
+                },
+              })
 
-            // Notifier le gagnant
-            await prisma.notification.create({
-              data: {
-                type: 'AUCTION_WON',
-                title: 'Felicitations ! Vous avez gagne !',
-                message: `Vous avez remporte "${auction.beat.title}" pour ${topBid.finalAmount}\u20AC. Procedez au paiement pour obtenir votre beat.`,
-                link: `/checkout/${auction.id}`,
-                userId: topBid.userId,
-              },
-            })
+              // Notifier le gagnant
+              await tx.notification.create({
+                data: {
+                  type: 'AUCTION_WON',
+                  title: 'Felicitations ! Vous avez gagne !',
+                  message: `Vous avez remporte "${auction.beat.title}" pour ${topBid.finalAmount}\u20AC. Procedez au paiement pour obtenir votre beat.`,
+                  link: `/checkout/${auction.id}`,
+                  userId: topBid.userId,
+                },
+              })
 
-            // Notifier le producteur
-            await prisma.notification.create({
-              data: {
-                type: 'AUCTION_ENDED',
-                title: 'Enchere terminee !',
-                message: `Votre beat "${auction.beat.title}" a ete vendu pour ${topBid.finalAmount}\u20AC. Paiement en attente.`,
-                link: `/dashboard`,
-                userId: auction.beat.producerId,
-              },
-            })
+              // Notifier le producteur
+              await tx.notification.create({
+                data: {
+                  type: 'AUCTION_ENDED',
+                  title: 'Enchere terminee !',
+                  message: `Votre beat "${auction.beat.title}" a ete vendu pour ${topBid.finalAmount}\u20AC. Paiement en attente.`,
+                  link: `/dashboard`,
+                  userId: auction.beat.producerId,
+                },
+              })
 
-            results.withWinner++
+              results.withWinner++
+            } else {
+              // Reserve non atteinte
+              await tx.auction.update({
+                where: { id: auction.id },
+                data: { status: 'ENDED' },
+              })
+
+              // Notifier le producteur
+              await tx.notification.create({
+                data: {
+                  type: 'AUCTION_ENDED',
+                  title: 'Enchere terminee sans vente',
+                  message: `Le prix de reserve n'a pas ete atteint pour "${auction.beat.title}". Enchere max: ${topBid.finalAmount}\u20AC.`,
+                  link: `/dashboard`,
+                  userId: auction.beat.producerId,
+                },
+              })
+
+              results.noWinner++
+            }
           } else {
-            // Reserve non atteinte
-            await prisma.auction.update({
+            // Aucune enchere
+            await tx.auction.update({
               where: { id: auction.id },
               data: { status: 'ENDED' },
             })
 
-            // Notifier le producteur
-            await prisma.notification.create({
+            await tx.notification.create({
               data: {
                 type: 'AUCTION_ENDED',
-                title: 'Enchere terminee sans vente',
-                message: `Le prix de reserve n'a pas ete atteint pour "${auction.beat.title}". Enchere max: ${topBid.finalAmount}\u20AC.`,
+                title: 'Enchere terminee sans enchere',
+                message: `Aucune enchere placee sur "${auction.beat.title}".`,
                 link: `/dashboard`,
                 userId: auction.beat.producerId,
               },
@@ -119,25 +139,7 @@ async function handleFinalize(req: NextRequest) {
 
             results.noWinner++
           }
-        } else {
-          // Aucune enchere
-          await prisma.auction.update({
-            where: { id: auction.id },
-            data: { status: 'ENDED' },
-          })
-
-          await prisma.notification.create({
-            data: {
-              type: 'AUCTION_ENDED',
-              title: 'Enchere terminee sans enchere',
-              message: `Aucune enchere placee sur "${auction.beat.title}".`,
-              link: `/dashboard`,
-              userId: auction.beat.producerId,
-            },
-          })
-
-          results.noWinner++
-        }
+        })
 
         results.processed++
       } catch (err) {
