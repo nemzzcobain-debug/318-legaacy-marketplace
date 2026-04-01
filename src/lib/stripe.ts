@@ -1,12 +1,25 @@
 import Stripe from 'stripe'
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY manquant dans .env')
+// Initialisation lazy pour éviter le crash au build si STRIPE_SECRET_KEY est absent
+let _stripe: Stripe | null = null
+
+export function getStripe(): Stripe {
+  if (_stripe) return _stripe
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY manquant dans .env')
+  }
+  _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2024-04-10',
+    typescript: true,
+  })
+  return _stripe
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-04-10',
-  typescript: true,
+// Compat : export `stripe` comme getter lazy
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop) {
+    return (getStripe() as any)[prop]
+  },
 })
 
 // Commission de la plateforme

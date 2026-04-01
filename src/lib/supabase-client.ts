@@ -28,4 +28,5 @@ export function getSupabaseClient(): SupabaseClient {
   return _client
 }
 
-export default getSupabaseClient()
+// Export lazy — ne pas appeler getSupabaseClient() au top level pour éviter crash au build
+export default { getSupabaseClient }
