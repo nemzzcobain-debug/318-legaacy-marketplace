@@ -30,25 +30,20 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event
 
   try {
-    // Construire l'événement Stripe
-    // Si STRIPE_WEBHOOK_SECRET n'est pas défini, créer un événement pour les tests
+    // SÉCURITÉ: Toujours vérifier la signature Stripe
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      console.warn('[WEBHOOK] STRIPE_WEBHOOK_SECRET non configuré - mode test/développement')
-      try {
-        event = JSON.parse(body)
-      } catch {
-        return NextResponse.json(
-          { error: 'Corps de requête invalide' },
-          { status: 400 }
-        )
-      }
-    } else {
-      event = stripe.webhooks.constructEvent(
-        body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
+      console.error('[WEBHOOK] STRIPE_WEBHOOK_SECRET non configuré - webhook rejeté')
+      return NextResponse.json(
+        { error: 'Webhook non configuré' },
+        { status: 500 }
       )
     }
+
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    )
   } catch (err: any) {
     console.error('[WEBHOOK] Erreur de vérification:', err.message)
     return NextResponse.json(

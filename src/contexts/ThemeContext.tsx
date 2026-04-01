@@ -30,7 +30,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       // Check system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const defaultTheme = prefersDark ? 'dark' : 'dark' // Default to dark for music marketplace
+      const defaultTheme = prefersDark ? 'dark' : 'light' // Respecte la préférence système
       setThemeState(defaultTheme)
       document.documentElement.setAttribute('data-theme', defaultTheme)
     }

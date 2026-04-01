@@ -73,7 +73,7 @@ export async function GET(
     })
   } catch (error: any) {
     console.error('Erreur messages:', error)
-    return NextResponse.json({ error: error.message || 'Erreur' }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
 
@@ -162,6 +162,6 @@ export async function POST(
     return NextResponse.json({ message })
   } catch (error: any) {
     console.error('Erreur envoi message:', error)
-    return NextResponse.json({ error: error.message || 'Erreur' }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

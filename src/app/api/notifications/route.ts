@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url)
-    const limit = Number(searchParams.get('limit') || 20)
+    const limit = Math.min(Math.max(Number(searchParams.get('limit') || 20), 1), 100)
     const unreadOnly = searchParams.get('unread') === 'true'
     const cursor = searchParams.get('cursor')
 
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error('Erreur notifications:', error)
     return NextResponse.json(
-      { error: error.message || 'Erreur' },
+      { error: 'Erreur serveur' },
       { status: 500 }
     )
   }
@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest) {
   } catch (error: any) {
     console.error('Erreur mise a jour notifications:', error)
     return NextResponse.json(
-      { error: error.message || 'Erreur' },
+      { error: 'Erreur serveur' },
       { status: 500 }
     )
   }
@@ -119,7 +119,7 @@ export async function DELETE(req: NextRequest) {
   } catch (error: any) {
     console.error('Erreur suppression notifications:', error)
     return NextResponse.json(
-      { error: error.message || 'Erreur' },
+      { error: 'Erreur serveur' },
       { status: 500 }
     )
   }
