@@ -1,8 +1,10 @@
 import { Resend } from 'resend'
 
-// Initialize Resend client
+// Initialize Resend client (conditionnel — ne crashe pas si la clé est absente)
 // Set RESEND_API_KEY in your .env
-const resend = new Resend(process.env.RESEND_API_KEY || '')
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@318legaacy.com'
 const PLATFORM_NAME = '318 LEGAACY Marketplace'
@@ -267,8 +269,8 @@ export async function sendWelcomeEmail(params: {
 
 // ─── Core Send Function ───
 async function sendEmail(to: string, subject: string, html: string) {
-  // Skip if no API key configured
-  if (!process.env.RESEND_API_KEY) {
+  // Skip if no API key configured or Resend not initialized
+  if (!resend || !process.env.RESEND_API_KEY) {
     console.log(`[Email] Skipped (no API key): "${subject}" to ${to}`)
     return { success: false, reason: 'no_api_key' }
   }
