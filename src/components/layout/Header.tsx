@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle, Search, ShoppingBag, Eye } from 'lucide-react'
+import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle, Search, ShoppingBag, Eye, User } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
 
 export default function Header() {
@@ -98,9 +98,9 @@ export default function Header() {
 
               {/* User avatar + logout */}
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-xs font-bold text-white">
+                <Link href="/profile/edit" className="w-8 h-8 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-red-500 transition-all" title="Mon Profil">
                   {user?.name?.[0] || 'U'}
-                </div>
+                </Link>
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className="p-2 hover:bg-white/5 rounded-lg transition-colors"
@@ -155,6 +155,19 @@ export default function Header() {
               <Icon size={16} /> {label}
             </Link>
           ))}
+          {session && (
+            <Link
+              href="/profile/edit"
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                pathname === '/profile/edit'
+                  ? 'text-red-500 bg-red-500/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <User size={16} /> Mon Profil
+            </Link>
+          )}
           {session && isProducer && (
             <Link
               href="/producers/upload"

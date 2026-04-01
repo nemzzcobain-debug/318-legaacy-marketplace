@@ -27,6 +27,19 @@ model User {
   bio            String?
   role           String    @default("ARTIST")
 
+  // Social links
+  website        String?
+  instagram      String?
+  twitter        String?
+  youtube        String?
+  soundcloud     String?
+  spotify        String?
+
+  // Preferences
+  notifEmail     Boolean   @default(true)
+  notifBid       Boolean   @default(true)
+  notifMessage   Boolean   @default(true)
+
   // Producer specific
   producerStatus String?
   producerBio    String?
