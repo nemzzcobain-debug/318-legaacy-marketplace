@@ -641,6 +641,7 @@ export default function Home() {
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Aide</h4>
                 <Link href="/faq" className="block text-gray-400 hover:text-white transition-colors">Comment ca marche</Link>
                 <Link href="/faq" className="block text-gray-400 hover:text-white transition-colors">FAQ</Link>
+                <Link href="/stats" className="block text-gray-400 hover:text-white transition-colors">Statistiques</Link>
               </div>
             </div>
           </div>
