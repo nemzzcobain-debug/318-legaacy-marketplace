@@ -375,3 +375,37 @@ model Watchlist {
 
   @@unique([userId, auctionId])
 }
+
+// ─── CODES PROMO ───
+// type: PERCENTAGE | FIXED
+// status: ACTIVE | EXPIRED | DISABLED
+
+model PromoCode {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  type           String   @default("PERCENTAGE") // PERCENTAGE ou FIXED
+  value          Float    // ex: 15 pour 15% ou 10 pour 10 EUR
+  minPrice       Float?   // prix minimum pour appliquer
+  maxUses        Int?     // nombre max d'utilisations (null = illimite)
+  currentUses    Int      @default(0)
+  expiresAt      DateTime?
+  status         String   @default("ACTIVE")
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Utilisations
+  usages         PromoUsage[]
+}
+
+model PromoUsage {
+  id          String   @id @default(cuid())
+  promoCodeId String
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  userId      String
+  auctionId   String
+  discount    Float    // montant de la reduction appliquee
+  createdAt   DateTime @default(now())
+
+  @@unique([promoCodeId, userId, auctionId])
+}

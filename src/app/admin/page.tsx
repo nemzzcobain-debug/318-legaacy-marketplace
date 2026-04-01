@@ -100,6 +100,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [reportsPagination, setReportsPagination] = useState({ page: 1, total: 0, totalPages: 0 });
+  const [promos, setPromos] = useState<any[]>([]);
+  const [newPromo, setNewPromo] = useState({ code: '', type: 'PERCENTAGE', value: '', minPrice: '', maxUses: '', expiresAt: '' });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -153,6 +155,13 @@ export default function AdminPage() {
     } catch (e) { console.error(e); }
   }, [filterStatus]);
 
+  const fetchPromos = useCallback(async () => {
+    try {
+      const res = await fetch('/api/promo');
+      if (res.ok) setPromos(await res.json());
+    } catch (e) { console.error(e); }
+  }, []);
+
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
     if (status === 'authenticated') {
@@ -170,8 +179,9 @@ export default function AdminPage() {
       if (activeTab === 'auctions') fetchAuctions();
       if (activeTab === 'users') fetchUsers();
       if (activeTab === 'reports') fetchReports();
+      if (activeTab === 'promos') fetchPromos();
     }
-  }, [activeTab, loading, fetchProducers, fetchAuctions, fetchUsers, fetchReports]);
+  }, [activeTab, loading, fetchProducers, fetchAuctions, fetchUsers, fetchReports, fetchPromos]);
 
   const updateProducerStatus = async (producerId: string, newStatus: string) => {
     try {
@@ -206,6 +216,32 @@ export default function AdminPage() {
     } catch (e) { console.error(e); }
   };
 
+  const createPromo = async () => {
+    if (!newPromo.code || !newPromo.value) return;
+    try {
+      const res = await fetch('/api/promo', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPromo)
+      });
+      if (res.ok) {
+        fetchPromos();
+        setNewPromo({ code: '', type: 'PERCENTAGE', value: '', minPrice: '', maxUses: '', expiresAt: '' });
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const updatePromoStatus = async (promoId: string, newStatus: string) => {
+    try {
+      const res = await fetch('/api/promo', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ promoId, status: newStatus })
+      });
+      if (res.ok) fetchPromos();
+    } catch (e) { console.error(e); }
+  };
+
   if (loading || status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -219,7 +255,8 @@ export default function AdminPage() {
     { id: 'producers', label: 'Producteurs' },
     { id: 'auctions', label: 'Encheres' },
     { id: 'users', label: 'Utilisateurs' },
-    { id: 'reports', label: 'Signalements' }
+    { id: 'reports', label: 'Signalements' },
+    { id: 'promos', label: 'Codes Promo' }
   ];
 
   const statusColors: Record<string, string> = {
@@ -590,6 +627,112 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* PROMOS TAB */}
+        {activeTab === 'promos' && (
+          <div>
+            {/* Créer un code promo */}
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-bold text-white mb-4">Creer un code promo</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                <input
+                  type="text"
+                  placeholder="Code (ex: LEGAACY20)"
+                  value={newPromo.code}
+                  onChange={e => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none uppercase"
+                />
+                <select
+                  value={newPromo.type}
+                  onChange={e => setNewPromo({ ...newPromo, type: e.target.value })}
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-orange-500 focus:outline-none"
+                >
+                  <option value="PERCENTAGE">Pourcentage (%)</option>
+                  <option value="FIXED">Montant fixe (EUR)</option>
+                </select>
+                <input
+                  type="number"
+                  placeholder={newPromo.type === 'PERCENTAGE' ? 'Valeur (ex: 15)' : 'Montant (ex: 10)'}
+                  value={newPromo.value}
+                  onChange={e => setNewPromo({ ...newPromo, value: e.target.value })}
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+                />
+                <input
+                  type="number"
+                  placeholder="Prix min (optionnel)"
+                  value={newPromo.minPrice}
+                  onChange={e => setNewPromo({ ...newPromo, minPrice: e.target.value })}
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+                />
+                <input
+                  type="number"
+                  placeholder="Max utilisations (optionnel)"
+                  value={newPromo.maxUses}
+                  onChange={e => setNewPromo({ ...newPromo, maxUses: e.target.value })}
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+                />
+                <input
+                  type="date"
+                  placeholder="Expiration"
+                  value={newPromo.expiresAt}
+                  onChange={e => setNewPromo({ ...newPromo, expiresAt: e.target.value })}
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+                />
+              </div>
+              <button
+                onClick={createPromo}
+                disabled={!newPromo.code || !newPromo.value}
+                className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-lg transition disabled:opacity-40"
+              >
+                Creer le code
+              </button>
+            </div>
+
+            {/* Liste des codes */}
+            <div className="space-y-3">
+              {promos.map((p: any) => (
+                <div key={p.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg font-black text-white tracking-wider">{p.code}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        p.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
+                        p.status === 'EXPIRED' ? 'bg-gray-500/20 text-gray-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {p.status}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-xs text-gray-400">
+                      <span>{p.type === 'PERCENTAGE' ? `${p.value}%` : `${p.value} EUR`}</span>
+                      {p.minPrice && <span>Min: {p.minPrice} EUR</span>}
+                      <span>{p.currentUses}/{p.maxUses || '∞'} utilisations</span>
+                      {p.expiresAt && <span>Expire: {new Date(p.expiresAt).toLocaleDateString('fr-FR')}</span>}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {p.status === 'ACTIVE' ? (
+                      <button
+                        onClick={() => updatePromoStatus(p.id, 'DISABLED')}
+                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition"
+                      >
+                        Desactiver
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => updatePromoStatus(p.id, 'ACTIVE')}
+                        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition"
+                      >
+                        Activer
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {promos.length === 0 && <p className="text-gray-500 text-center py-8">Aucun code promo</p>}
+            </div>
           </div>
         )}
       </div>

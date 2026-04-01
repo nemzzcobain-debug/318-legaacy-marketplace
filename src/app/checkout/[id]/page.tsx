@@ -10,6 +10,7 @@ import {
   CreditCard, Shield, Lock, Check, AlertCircle, Loader2,
   Music, Award, ArrowRight, ChevronDown, ChevronUp
 } from 'lucide-react'
+import PromoCodeInput from '@/components/ui/PromoCodeInput'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -104,6 +105,8 @@ export default function CheckoutPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [promoDiscount, setPromoDiscount] = useState(0)
+  const [promoCode, setPromoCode] = useState<string | null>(null)
 
   // Charger l'enchere
   useEffect(() => {
@@ -230,7 +233,8 @@ export default function CheckoutPage() {
 
   if (!auction) return null
 
-  const amount = auction.finalPrice || auction.currentBid
+  const baseAmount = auction.finalPrice || auction.currentBid
+  const amount = Math.round((baseAmount - promoDiscount) * 100) / 100
   const commission = Math.round(amount * 0.15 * 100) / 100
   const producerPayout = Math.round((amount - commission) * 100) / 100
 
@@ -311,9 +315,38 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
+                {/* Code promo */}
+                <div className="mb-3">
+                  <PromoCodeInput
+                    auctionId={auctionId}
+                    price={baseAmount}
+                    onPromoApplied={(result) => {
+                      if (result) {
+                        setPromoDiscount(result.discount)
+                        setPromoCode(result.code)
+                      } else {
+                        setPromoDiscount(0)
+                        setPromoCode(null)
+                      }
+                    }}
+                  />
+                </div>
+
+                {promoDiscount > 0 && (
+                  <div className="flex justify-between text-xs mb-2">
+                    <span className="text-green-400">Reduction ({promoCode})</span>
+                    <span className="text-green-400 font-bold">-{promoDiscount.toFixed(2)}&euro;</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-300 font-semibold">Total</span>
-                  <span className="text-2xl font-black text-white">{amount}&euro;</span>
+                  <div className="text-right">
+                    {promoDiscount > 0 && (
+                      <span className="text-sm text-gray-500 line-through mr-2">{baseAmount}&euro;</span>
+                    )}
+                    <span className="text-2xl font-black text-white">{amount}&euro;</span>
+                  </div>
                 </div>
               </div>
             </div>
