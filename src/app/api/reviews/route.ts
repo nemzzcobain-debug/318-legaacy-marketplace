@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       data: {
         type: 'SYSTEM',
         title: 'Nouvel avis reçu',
-        message: `${session.user.name || 'Un acheteur'} t'a donné ${rating}/5 étoiles pour "${auction.beat.title}"`,
+        message: `${session.user.name || 'Utilisateur'} t'a donné ${rating}/5 étoiles pour "${auction.beat.title}"`,
         link: `/producer/${producerId}`,
         userId: producerId,
       },

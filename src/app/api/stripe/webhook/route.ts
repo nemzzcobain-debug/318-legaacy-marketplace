@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('[WEBHOOK] Erreur de vérification:', err.message)
     return NextResponse.json(
-      { error: `Erreur webhook: ${err.message}` },
+      { error: 'Erreur serveur' },
       { status: 400 }
     )
   }

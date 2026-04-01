@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user?.email || '' }
+      where: session.user?.id ? { id: session.user.id } : { email: session.user?.email || '' }
     });
 
     if (!user || (user.role !== 'PRODUCER' && user.role !== 'ADMIN')) {
@@ -107,8 +107,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erreur inconnue';
-    console.error('Erreur signed URL:', message);
+    console.error('Erreur signed URL:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

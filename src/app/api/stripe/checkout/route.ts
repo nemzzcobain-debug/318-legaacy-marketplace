@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Erreur checkout:', error)
     return NextResponse.json(
-      { error: error.message || 'Erreur lors de la creation du paiement' },
+      { error: 'Erreur serveur' },
       { status: 500 }
     )
   }

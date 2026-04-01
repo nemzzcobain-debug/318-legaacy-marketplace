@@ -111,10 +111,9 @@ export async function POST(req: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erreur inconnue';
-    console.error('Erreur lors de l\'upload:', message);
+    console.error('Erreur lors de l\'upload:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de l\'upload: ' + message },
+      { error: 'Erreur serveur' },
       { status: 500 }
     );
   }

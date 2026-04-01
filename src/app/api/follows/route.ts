@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           data: {
             type: 'NEW_FOLLOWER',
             title: 'Nouveau follower',
-            message: `${session.user.name || 'Un utilisateur'} vous suit maintenant !`,
+            message: `${session.user.name || 'Utilisateur'} vous suit maintenant !`,
             link: `/producer/${session.user.id}`,
             userId: producerId
           }

@@ -71,6 +71,11 @@ export async function GET(req: NextRequest) {
     if (beatIds) {
       const ids = beatIds.split(',').filter(Boolean)
 
+      // Limit batch size to prevent abuse
+      if (ids.length > 100) {
+        return NextResponse.json({ error: 'Trop de beats demandés (max 100)' }, { status: 400 })
+      }
+
       // Get counts for all beats
       const counts = await prisma.like.groupBy({
         by: ['beatId'],

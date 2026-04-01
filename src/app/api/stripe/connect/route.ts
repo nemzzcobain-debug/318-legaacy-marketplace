@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Erreur Stripe Connect:', error)
     return NextResponse.json(
-      { error: error.message || 'Erreur lors de la creation du compte Stripe' },
+      { error: 'Erreur serveur' },
       { status: 500 }
     )
   }
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error('Erreur verification Stripe:', error)
     return NextResponse.json(
-      { error: error.message || 'Erreur lors de la verification' },
+      { error: 'Erreur serveur' },
       { status: 500 }
     )
   }

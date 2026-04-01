@@ -128,7 +128,7 @@ export async function GET(
   } catch (error: any) {
     console.error('Erreur profil producteur:', error)
     return NextResponse.json(
-      { error: error.message || 'Erreur' },
+      { error: 'Erreur serveur' },
       { status: 500 }
     )
   }

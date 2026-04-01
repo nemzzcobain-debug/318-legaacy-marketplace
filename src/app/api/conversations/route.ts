@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ conversations: withUnread, totalUnread })
   } catch (error: any) {
     console.error('Erreur liste conversations:', error)
-    return NextResponse.json({ error: error.message || 'Erreur' }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
 
@@ -127,6 +127,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ conversationId: conversation.id, otherUser: recipient })
   } catch (error: any) {
     console.error('Erreur creation conversation:', error)
-    return NextResponse.json({ error: error.message || 'Erreur' }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

@@ -156,7 +156,7 @@ async function handleFinalize(req: NextRequest) {
   } catch (error: any) {
     console.error('Erreur finalisation:', error)
     return NextResponse.json(
-      { error: error.message || 'Erreur lors de la finalisation' },
+      { error: 'Erreur serveur' },
       { status: 500 }
     )
   }

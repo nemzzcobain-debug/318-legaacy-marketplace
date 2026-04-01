@@ -11,8 +11,8 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || 'ACTIVE'
     const genre = searchParams.get('genre')
     const sort = searchParams.get('sort') || 'ending_soon'
-    const page = Number(searchParams.get('page') || 1)
-    const limit = Number(searchParams.get('limit') || 20)
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
 
     const where: any = {}
 

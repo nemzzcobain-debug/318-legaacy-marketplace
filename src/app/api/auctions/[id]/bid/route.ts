@@ -152,7 +152,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Bid error:', error);
+    console.error('Bid error on auction [id]:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
