@@ -16,6 +16,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/stats`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.5 },
     { url: `${siteUrl}/login`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.3 },
     { url: `${siteUrl}/register`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.4 },
+    { url: `${siteUrl}/faq`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.4 },
+    { url: `${siteUrl}/mentions-legales`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.2 },
+    { url: `${siteUrl}/cgv`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.2 },
+    { url: `${siteUrl}/confidentialite`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.2 },
   ]
 
   // Active auctions

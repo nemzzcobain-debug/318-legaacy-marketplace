@@ -650,11 +650,20 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="pt-6 border-t border-[#1a1a1a] flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-gray-700">&copy; 2026 318 LEGAACY Studio — Tous droits reserves</p>
-            <p className="text-xs text-gray-700 flex items-center gap-1">
-              <Globe size={10} /> Premiere plateforme d&apos;encheres de beats en France
-            </p>
+          <div className="pt-6 border-t border-[#1a1a1a]">
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-4 text-xs">
+              <Link href="/mentions-legales" className="text-gray-600 hover:text-gray-400 transition-colors">Mentions legales</Link>
+              <span className="text-gray-800">|</span>
+              <Link href="/cgv" className="text-gray-600 hover:text-gray-400 transition-colors">CGV</Link>
+              <span className="text-gray-800">|</span>
+              <Link href="/confidentialite" className="text-gray-600 hover:text-gray-400 transition-colors">Confidentialite</Link>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-gray-700">&copy; 2026 318 LEGAACY Studio — Tous droits reserves</p>
+              <p className="text-xs text-gray-700 flex items-center gap-1">
+                <Globe size={10} /> Premiere plateforme d&apos;encheres de beats en France
+              </p>
+            </div>
           </div>
         </div>
       </footer>
