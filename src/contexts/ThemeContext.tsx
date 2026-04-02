@@ -28,9 +28,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setThemeState(stored)
       document.documentElement.setAttribute('data-theme', stored)
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const defaultTheme = prefersDark ? 'dark' : 'light' // Respecte la préférence système
+      // Default to dark theme (la marketplace est conçue en dark mode)
+      const defaultTheme: Theme = 'dark'
       setThemeState(defaultTheme)
       document.documentElement.setAttribute('data-theme', defaultTheme)
     }
