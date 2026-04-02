@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { Send, ArrowLeft, Loader2, Music, User as UserIcon } from 'lucide-react'
+import { Send, ArrowLeft, Loader2, Music } from 'lucide-react'
 import Link from 'next/link'
+import { useRealtimeChat } from '@/hooks/useRealtimeChat'
 
 interface MessageItem {
   id: string
@@ -31,6 +32,7 @@ interface Props {
   conversationId: string
   otherUser: OtherUser
   onBack: () => void
+  isOtherOnline?: boolean
 }
 
 function formatTime(dateStr: string): string {
@@ -48,7 +50,7 @@ function formatDateSeparator(dateStr: string): string {
   return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-export default function ChatWindow({ conversationId, otherUser, onBack }: Props) {
+export default function ChatWindow({ conversationId, otherUser, onBack, isOtherOnline }: Props) {
   const { data: session } = useSession()
   const [messages, setMessages] = useState<MessageItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,8 +59,9 @@ export default function ChatWindow({ conversationId, otherUser, onBack }: Props)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const typingDebounceRef = useRef<NodeJS.Timeout | null>(null)
 
-  const userId = session?.user?.id
+  const userId = session?.user?.id || ''
   const otherName = otherUser.displayName || otherUser.name
   const isProducer = otherUser.role === 'PRODUCER' || otherUser.role === 'ADMIN'
 
@@ -66,6 +69,32 @@ export default function ChatWindow({ conversationId, otherUser, onBack }: Props)
     messagesEndRef.current?.scrollIntoView({ behavior })
   }
 
+  // Callback pour les nouveaux messages reçus en temps réel
+  const handleNewRealtimeMessage = useCallback(
+    (message: MessageItem) => {
+      setMessages((prev) => {
+        // Éviter les doublons
+        if (prev.some((m) => m.id === message.id)) return prev
+        return [...prev, message]
+      })
+      scrollToBottom()
+
+      // Marquer comme lu via l'API (silencieux)
+      fetch(`/api/conversations/${conversationId}/messages?markRead=true`, {
+        method: 'GET',
+      }).catch(() => {})
+    },
+    [conversationId]
+  )
+
+  // Hook Realtime — messages instantanés + typing
+  const { isOtherTyping, sendTyping, sendRead } = useRealtimeChat({
+    conversationId,
+    userId,
+    onNewMessage: handleNewRealtimeMessage,
+  })
+
+  // Charger les messages initiaux
   const fetchMessages = useCallback(async () => {
     if (!conversationId) return
     try {
@@ -73,11 +102,12 @@ export default function ChatWindow({ conversationId, otherUser, onBack }: Props)
       const data = await res.json()
       if (res.ok) {
         setMessages(data.messages || [])
+        sendRead()
       }
     } catch {} finally {
       setLoading(false)
     }
-  }, [conversationId])
+  }, [conversationId, sendRead])
 
   // Initial load
   useEffect(() => {
@@ -93,9 +123,9 @@ export default function ChatWindow({ conversationId, otherUser, onBack }: Props)
     }
   }, [messages])
 
-  // Poll for new messages
+  // Fallback polling (30s au lieu de 3s) — juste au cas où le Realtime rate un message
   useEffect(() => {
-    const interval = setInterval(fetchMessages, 3000)
+    const interval = setInterval(fetchMessages, 30000)
     return () => clearInterval(interval)
   }, [fetchMessages])
 
@@ -104,22 +134,35 @@ export default function ChatWindow({ conversationId, otherUser, onBack }: Props)
     inputRef.current?.focus()
   }, [conversationId])
 
+  // Gérer le typing indicator — envoyer quand l'utilisateur tape
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewMessage(e.target.value)
+
+    // Envoyer le signal "typing" (debounced)
+    sendTyping(true)
+    if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current)
+    typingDebounceRef.current = setTimeout(() => {
+      sendTyping(false)
+    }, 2000)
+  }
+
   const handleSend = async () => {
     if (!newMessage.trim() || sending) return
 
     const content = newMessage.trim()
     setNewMessage('')
     setSending(true)
+    sendTyping(false)
 
     // Optimistic update
     const tempMessage: MessageItem = {
       id: `temp-${Date.now()}`,
       content,
       read: false,
-      senderId: userId || '',
+      senderId: userId,
       createdAt: new Date().toISOString(),
       sender: {
-        id: userId || '',
+        id: userId,
         name: session?.user?.name || '',
         displayName: null,
         avatar: null,
@@ -188,8 +231,14 @@ export default function ChatWindow({ conversationId, otherUser, onBack }: Props)
           href={isProducer ? `/producer/${otherUser.id}` : '#'}
           className="flex items-center gap-3 flex-1 min-w-0"
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-            {otherName[0]?.toUpperCase() || 'U'}
+          {/* Avatar avec indicateur en ligne */}
+          <div className="relative flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-sm font-bold text-white">
+              {otherName[0]?.toUpperCase() || 'U'}
+            </div>
+            {isOtherOnline && (
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#111111] rounded-full" />
+            )}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -201,7 +250,15 @@ export default function ChatWindow({ conversationId, otherUser, onBack }: Props)
               )}
             </div>
             <span className="text-[11px] text-gray-500">
-              {isProducer ? 'Producteur verifie' : 'Artiste'}
+              {isOtherTyping ? (
+                <span className="text-red-400 animate-pulse">ecrit...</span>
+              ) : isOtherOnline ? (
+                <span className="text-green-400">En ligne</span>
+              ) : isProducer ? (
+                'Producteur verifie'
+              ) : (
+                'Artiste'
+              )}
             </span>
           </div>
         </Link>
@@ -295,6 +352,25 @@ export default function ChatWindow({ conversationId, otherUser, onBack }: Props)
             </div>
           ))
         )}
+
+        {/* Typing indicator */}
+        {isOtherTyping && (
+          <div className="flex gap-2 mb-1.5 justify-start">
+            <div className="w-7 flex-shrink-0">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-[10px] font-bold text-white">
+                {otherName[0]?.toUpperCase()}
+              </div>
+            </div>
+            <div className="bg-[#1a1a2e] rounded-2xl rounded-bl-md px-4 py-3">
+              <div className="flex gap-1">
+                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -304,7 +380,7 @@ export default function ChatWindow({ conversationId, otherUser, onBack }: Props)
           <textarea
             ref={inputRef}
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={`Message a ${otherName}...`}
             rows={1}

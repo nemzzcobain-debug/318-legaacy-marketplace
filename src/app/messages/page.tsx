@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import ConversationList from '@/components/chat/ConversationList'
 import ChatWindow from '@/components/chat/ChatWindow'
-import { MessageCircle, Loader2 } from 'lucide-react'
+import { MessageCircle, Loader2, Wifi } from 'lucide-react'
+import { usePresence } from '@/hooks/usePresence'
 
 interface ConversationItem {
   id: string
@@ -40,6 +41,11 @@ function MessagesPageContent() {
   const searchParams = useSearchParams()
   const [activeConversation, setActiveConversation] = useState<ConversationItem | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const userId = session?.user?.id || ''
+
+  // Présence en ligne — track qui est connecté
+  const { isOnline } = usePresence(userId)
 
   // Handle ?conv= query param (deep link from notification or producer profile)
   useEffect(() => {
@@ -109,15 +115,22 @@ function MessagesPageContent() {
         >
           {/* Header */}
           <div className="px-4 py-3 border-b border-[#1e1e2e]">
-            <h1 className="text-lg font-black text-white flex items-center gap-2">
-              <MessageCircle size={20} className="text-red-500" />
-              Messages
-            </h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg font-black text-white flex items-center gap-2">
+                <MessageCircle size={20} className="text-red-500" />
+                Messages
+              </h1>
+              <div className="flex items-center gap-1.5 text-[10px] text-green-400">
+                <Wifi size={12} />
+                <span>Live</span>
+              </div>
+            </div>
           </div>
 
           <ConversationList
             activeConversationId={activeConversation?.id || null}
             onSelectConversation={(conv) => setActiveConversation(conv)}
+            isOnline={isOnline}
           />
         </div>
 
@@ -132,6 +145,7 @@ function MessagesPageContent() {
               conversationId={activeConversation.id}
               otherUser={activeConversation.otherUser}
               onBack={() => setActiveConversation(null)}
+              isOtherOnline={isOnline(activeConversation.otherUser.id)}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-4">

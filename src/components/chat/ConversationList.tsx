@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { Search, MessageCircle, Loader2 } from 'lucide-react'
+import { useRealtimeConversations } from '@/hooks/useRealtimeConversations'
 
 interface ConversationItem {
   id: string
@@ -27,6 +28,7 @@ interface ConversationItem {
 interface Props {
   activeConversationId: string | null
   onSelectConversation: (conv: ConversationItem) => void
+  isOnline?: (userId: string) => boolean
 }
 
 function timeAgo(dateStr: string): string {
@@ -41,11 +43,13 @@ function timeAgo(dateStr: string): string {
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }
 
-export default function ConversationList({ activeConversationId, onSelectConversation }: Props) {
+export default function ConversationList({ activeConversationId, onSelectConversation, isOnline }: Props) {
   const { data: session } = useSession()
   const [conversations, setConversations] = useState<ConversationItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+
+  const userId = session?.user?.id || ''
 
   const fetchConversations = useCallback(async () => {
     if (!session?.user) return
@@ -60,9 +64,20 @@ export default function ConversationList({ activeConversationId, onSelectConvers
     }
   }, [session])
 
+  // Realtime — re-fetch quand une conversation est mise à jour
+  useRealtimeConversations({
+    userId,
+    onConversationUpdate: fetchConversations,
+  })
+
+  // Initial load
   useEffect(() => {
     fetchConversations()
-    const interval = setInterval(fetchConversations, 5000)
+  }, [fetchConversations])
+
+  // Fallback polling (60s au lieu de 5s) — sécurité si le Realtime est hors ligne
+  useEffect(() => {
+    const interval = setInterval(fetchConversations, 60000)
     return () => clearInterval(interval)
   }, [fetchConversations])
 
@@ -103,6 +118,7 @@ export default function ConversationList({ activeConversationId, onSelectConvers
             const isActive = activeConversationId === conv.id
             const userName = conv.otherUser.displayName || conv.otherUser.name
             const isProducer = conv.otherUser.role === 'PRODUCER' || conv.otherUser.role === 'ADMIN'
+            const online = isOnline?.(conv.otherUser.id) ?? false
 
             return (
               <button
@@ -114,11 +130,14 @@ export default function ConversationList({ activeConversationId, onSelectConvers
                     : 'hover:bg-white/[0.03]'
                 }`}
               >
-                {/* Avatar */}
+                {/* Avatar avec indicateur en ligne */}
                 <div className="relative flex-shrink-0">
                   <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-sm font-bold text-white">
                     {userName[0]?.toUpperCase() || 'U'}
                   </div>
+                  {online && (
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#111111] rounded-full" />
+                  )}
                   {conv.unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1">
                       {conv.unreadCount}
