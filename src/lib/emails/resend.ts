@@ -8,7 +8,7 @@ const resend = process.env.RESEND_API_KEY
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@318legaacy.com'
 const PLATFORM_NAME = '318 LEGAACY Marketplace'
-const PLATFORM_URL = process.env.NEXTAUTH_URL || 'https://318-legaacy-marketplace.vercel.app'
+const PLATFORM_URL = process.env.NEXTAUTH_URL || 'https://www.318marketplace.com'
 
 // ─── Email Wrapper ───
 function emailLayout(content: string): string {

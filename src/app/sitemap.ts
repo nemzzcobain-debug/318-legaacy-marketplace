@@ -4,7 +4,7 @@ import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://318-legaacy-marketplace.vercel.app'
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.318marketplace.com'
 
   // Static pages
   const staticPages = [

@@ -4,7 +4,7 @@ interface WebsiteJsonLdProps {
   siteUrl?: string
 }
 
-export function WebsiteJsonLd({ siteUrl = 'https://318-legaacy-marketplace.vercel.app' }: WebsiteJsonLdProps) {
+export function WebsiteJsonLd({ siteUrl = 'https://www.318marketplace.com' }: WebsiteJsonLdProps) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -42,7 +42,7 @@ interface OrganizationJsonLdProps {
   siteUrl?: string
 }
 
-export function OrganizationJsonLd({ siteUrl = 'https://318-legaacy-marketplace.vercel.app' }: OrganizationJsonLdProps) {
+export function OrganizationJsonLd({ siteUrl = 'https://www.318marketplace.com' }: OrganizationJsonLdProps) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -90,7 +90,7 @@ interface AuctionJsonLdProps {
   siteUrl?: string
 }
 
-export function AuctionJsonLd({ auction, beat, producer, siteUrl = 'https://318-legaacy-marketplace.vercel.app' }: AuctionJsonLdProps) {
+export function AuctionJsonLd({ auction, beat, producer, siteUrl = 'https://www.318marketplace.com' }: AuctionJsonLdProps) {
   const producerName = producer.displayName || producer.name
 
   const jsonLd = {
@@ -151,7 +151,7 @@ interface ProducerJsonLdProps {
   siteUrl?: string
 }
 
-export function ProducerJsonLd({ producer, totalBeats, totalFollowers, siteUrl = 'https://318-legaacy-marketplace.vercel.app' }: ProducerJsonLdProps) {
+export function ProducerJsonLd({ producer, totalBeats, totalFollowers, siteUrl = 'https://www.318marketplace.com' }: ProducerJsonLdProps) {
   const name = producer.displayName || producer.name
 
   const jsonLd = {

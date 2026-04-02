@@ -37,7 +37,7 @@ function WhatsAppIcon({ size = 14 }: { size?: number }) {
   )
 }
 
-const BASE_URL = 'https://318-legaacy-marketplace.vercel.app'
+const BASE_URL = 'https://www.318marketplace.com'
 
 export default function ShareButton({ url, title, description, size = 'md' }: ShareButtonProps) {
   const [open, setOpen] = useState(false)

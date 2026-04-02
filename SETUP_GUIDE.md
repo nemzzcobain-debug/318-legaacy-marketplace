@@ -40,7 +40,7 @@ Suis ces 3 étapes pour activer le webhook Stripe, le stockage Supabase et le te
    - `charge.refunded`
    - `account.updated`
 5. Clique Continue → **Webhook endpoint**
-6. URL de l'endpoint: `https://318-legaacy-marketplace.vercel.app/api/stripe/webhook`
+6. URL de l'endpoint: `https://www.318marketplace.com/api/stripe/webhook`
 7. Valide et copie le **Signing secret** (`whsec_...`)
 
 | Variable | Valeur |

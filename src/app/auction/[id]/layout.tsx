@@ -7,7 +7,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://318-legaacy-marketplace.vercel.app'
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.318marketplace.com'
 
   try {
     const auction = await prisma.auction.findUnique({

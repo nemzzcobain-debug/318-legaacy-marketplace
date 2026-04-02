@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://318-legaacy-marketplace.vercel.app'
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.318marketplace.com'
 
 export const metadata: Metadata = {
   title: 'Statistiques — 318 LEGAACY en Chiffres',

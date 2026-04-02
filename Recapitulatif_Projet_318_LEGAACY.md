@@ -188,7 +188,7 @@ Les champs `stripePaymentId` et `paidAt` sont encore à NULL car le webhook Stri
 
 ### Priorité haute
 
-1. **Configurer le webhook Stripe** — Créer un endpoint dans le dashboard Stripe test pointant vers `https://318-legaacy-marketplace.vercel.app/api/stripe/webhook`, ajouter le `STRIPE_WEBHOOK_SECRET` dans Vercel
+1. **Configurer le webhook Stripe** — Créer un endpoint dans le dashboard Stripe test pointant vers `https://www.318marketplace.com/api/stripe/webhook`, ajouter le `STRIPE_WEBHOOK_SECRET` dans Vercel
 2. **Activer Stripe Connect sur le bon compte** (acct_1S5qJJFClN0lfWEQ) pour le split de paiement en production
 3. **Configurer PayPal** comme moyen de paiement alternatif
 
@@ -211,7 +211,7 @@ Les champs `stripePaymentId` et `paidAt` sont encore à NULL car le webhook Stri
 
 | Élément | Valeur |
 |---------|--------|
-| URL production | https://318-legaacy-marketplace.vercel.app |
+| URL production | https://www.318marketplace.com |
 | GitHub repo | nemzzcobain-debug/318-legaacy-marketplace |
 | Vercel project | legaacy-projects-projects/318-legaacy-marketplace |
 | Supabase project | onfwowxfflnijuvpspkq |
