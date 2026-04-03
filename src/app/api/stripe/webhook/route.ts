@@ -19,26 +19,22 @@ import { sendAuctionWonEmail, sendPaymentReceivedEmail } from '@/lib/emails/rese
 // Désactiver le body parsing automatique de Next.js pour les webhooks
 export const runtime = 'nodejs'
 
+const isDev = process.env.NODE_ENV === 'development'
+
 export async function POST(req: NextRequest) {
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
 
-  // Vérifier la présence de la signature
   if (!sig) {
-    console.error('[WEBHOOK] Signature manquante')
     return NextResponse.json({ error: 'Signature manquante' }, { status: 400 })
   }
 
   let event: Stripe.Event
 
   try {
-    // SÉCURITÉ: Toujours vérifier la signature Stripe
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      console.error('[WEBHOOK] STRIPE_WEBHOOK_SECRET non configuré - webhook rejeté')
-      return NextResponse.json(
-        { error: 'Webhook non configuré' },
-        { status: 500 }
-      )
+      console.error('[WEBHOOK] STRIPE_WEBHOOK_SECRET non configuré')
+      return NextResponse.json({ error: 'Webhook non configuré' }, { status: 500 })
     }
 
     event = stripe.webhooks.constructEvent(
@@ -48,16 +44,12 @@ export async function POST(req: NextRequest) {
     )
   } catch (err: any) {
     console.error('[WEBHOOK] Erreur de vérification:', err.message)
-    return NextResponse.json(
-      { error: 'Erreur serveur' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 400 })
   }
 
-  console.log(`[WEBHOOK] Événement reçu: ${event.type}`)
+  if (isDev) console.log(`[WEBHOOK] ${event.type}`)
 
   try {
-    // Traiter les différents types d'événements Stripe
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
@@ -90,65 +82,38 @@ export async function POST(req: NextRequest) {
       }
 
       default:
-        console.log(`[WEBHOOK] Événement non géré: ${event.type}`)
+        if (isDev) console.log(`[WEBHOOK] Événement non géré: ${event.type}`)
     }
 
     return NextResponse.json({ received: true })
   } catch (err: any) {
-    console.error('[WEBHOOK] Erreur lors du traitement:', err.message, err.stack)
-    // Retourner 200 pour empêcher Stripe de renvoyer l'événement
+    console.error('[WEBHOOK] Erreur traitement:', err.message)
     return NextResponse.json({ received: true }, { status: 200 })
   }
 }
 
-/**
- * Checkout Session complétée (paiement Stripe Checkout)
- * Finalise l'enchère, met à jour les statistiques et envoie les notifications
- */
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-  const { auctionId, userId, beatId, producerId, commission, producerPayout } =
+  const { auctionId, userId, producerId, commission, producerPayout } =
     session.metadata || {}
 
-  if (!auctionId) {
-    console.warn('[WEBHOOK] checkout.session.completed - auctionId manquant dans les metadata')
-    return
-  }
+  if (!auctionId) return
 
   try {
-    // Vérifier l'idempotence: si l'enchère est déjà COMPLETED, ne rien faire
     const existingAuction = await prisma.auction.findUnique({
       where: { id: auctionId },
     })
 
-    if (!existingAuction) {
-      console.warn(
-        `[WEBHOOK] Enchère ${auctionId} non trouvée lors de checkout.session.completed`
-      )
-      return
-    }
+    if (!existingAuction || existingAuction.status === 'COMPLETED') return
 
-    if (existingAuction.status === 'COMPLETED') {
-      console.log(`[WEBHOOK] Enchère ${auctionId} déjà COMPLETED - éviter la duplication`)
-      return
-    }
-
-    console.log(`[WEBHOOK] Paiement session complété pour enchère ${auctionId} - montant: ${session.amount_total}`)
-
-    // Récupérer les détails complets de l'enchère
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
       include: {
-        beat: {
-          include: { producer: true },
-        },
+        beat: { include: { producer: true } },
         winner: true,
       },
     })
 
-    if (!auction) {
-      console.warn(`[WEBHOOK] Enchère ${auctionId} non trouvée avec détails complets`)
-      return
-    }
+    if (!auction) return
 
     // Mettre à jour l'enchère comme payée
     await prisma.auction.update({
@@ -208,12 +173,11 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       })
     }
 
-    // Envoyer les emails transactionnels (non-bloquant)
+    // Envoyer les emails (non-bloquant)
     const payoutAmount = producerPayout ? parseFloat(producerPayout) : (auction.producerPayout || 0)
     const commissionAmount = commission ? parseFloat(commission) : (auction.commissionAmount || 0)
     const finalPrice = auction.finalPrice || auction.currentBid
 
-    // Email au producteur: vente réalisée
     if (auction.beat.producer?.email) {
       sendPaymentReceivedEmail({
         to: auction.beat.producer.email,
@@ -227,7 +191,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       }).catch(() => {})
     }
 
-    // Email à l'acheteur: achat confirmé
     if (auction.winner?.email) {
       sendAuctionWonEmail({
         to: auction.winner.email,
@@ -240,64 +203,34 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       }).catch(() => {})
     }
 
-    console.log(`[WEBHOOK] ✓ Enchère ${auctionId} complétée avec succès`)
+    if (isDev) console.log(`[WEBHOOK] ✓ Enchère ${auctionId} complétée`)
   } catch (err: any) {
-    console.error(`[WEBHOOK] Erreur handleCheckoutSessionCompleted (${auctionId}):`, err.message)
+    console.error(`[WEBHOOK] Erreur checkout (${auctionId}):`, err.message)
     throw err
   }
 }
 
-/**
- * PaymentIntent réussi (paiement direct via PaymentIntent)
- * Alternative à Checkout Session pour les paiements directs
- */
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   const auctionId = paymentIntent.metadata?.auctionId
-
-  if (!auctionId) {
-    console.warn('[WEBHOOK] payment_intent.succeeded - auctionId manquant')
-    return
-  }
+  if (!auctionId) return
 
   try {
-    // Vérifier l'idempotence
     const existingAuction = await prisma.auction.findUnique({
       where: { id: auctionId },
     })
 
-    if (!existingAuction) {
-      console.warn(
-        `[WEBHOOK] Enchère ${auctionId} non trouvée lors de payment_intent.succeeded`
-      )
-      return
-    }
+    if (!existingAuction || existingAuction.status === 'COMPLETED') return
 
-    if (existingAuction.status === 'COMPLETED') {
-      console.log(`[WEBHOOK] Enchère ${auctionId} déjà COMPLETED - éviter la duplication`)
-      return
-    }
-
-    console.log(
-      `[WEBHOOK] Paiement PaymentIntent réussi pour enchère ${auctionId} - montant: ${paymentIntent.amount}`
-    )
-
-    // Récupérer les détails complets de l'enchère
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
       include: {
-        beat: {
-          include: { producer: true },
-        },
+        beat: { include: { producer: true } },
         winner: true,
       },
     })
 
-    if (!auction) {
-      console.warn(`[WEBHOOK] Enchère ${auctionId} non trouvée avec détails complets`)
-      return
-    }
+    if (!auction) return
 
-    // Mettre à jour l'enchère comme payée
     await prisma.auction.update({
       where: { id: auctionId },
       data: {
@@ -307,19 +240,16 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       },
     })
 
-    // Mettre à jour le beat comme vendu
     await prisma.beat.update({
       where: { id: auction.beatId },
       data: { status: 'SOLD' },
     })
 
-    // Incrémenter les ventes du producteur
     await prisma.user.update({
       where: { id: auction.beat.producerId },
       data: { totalSales: { increment: 1 } },
     })
 
-    // Incrémenter les achats de l'acheteur
     if (auction.winnerId) {
       await prisma.user.update({
         where: { id: auction.winnerId },
@@ -327,7 +257,6 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       })
     }
 
-    // Notifier le producteur
     await prisma.notification.create({
       data: {
         type: 'PAYMENT_RECEIVED',
@@ -338,7 +267,6 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       },
     })
 
-    // Notifier l'acheteur
     if (auction.winnerId) {
       await prisma.notification.create({
         data: {
@@ -351,38 +279,24 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       })
     }
 
-    console.log(`[WEBHOOK] ✓ Enchère ${auctionId} complétée avec succès`)
+    if (isDev) console.log(`[WEBHOOK] ✓ PaymentIntent ${auctionId} complété`)
   } catch (err: any) {
-    console.error(`[WEBHOOK] Erreur handlePaymentIntentSucceeded (${auctionId}):`, err.message)
+    console.error(`[WEBHOOK] Erreur PaymentIntent (${auctionId}):`, err.message)
     throw err
   }
 }
 
-/**
- * Paiement échoué
- * Notifier l'acheteur pour qu'il réessaie
- */
 async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   const auctionId = paymentIntent.metadata?.auctionId
-
-  if (!auctionId) {
-    console.warn('[WEBHOOK] payment_intent.payment_failed - auctionId manquant')
-    return
-  }
+  if (!auctionId) return
 
   try {
-    console.log(`[WEBHOOK] Paiement échoué pour enchère ${auctionId}`)
-
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
     })
 
-    if (!auction || !auction.winnerId) {
-      console.warn(`[WEBHOOK] Enchère ${auctionId} non trouvée ou pas d'acheteur`)
-      return
-    }
+    if (!auction || !auction.winnerId) return
 
-    // Notifier l'acheteur de l'échec
     await prisma.notification.create({
       data: {
         type: 'SYSTEM',
@@ -392,30 +306,17 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
         userId: auction.winnerId,
       },
     })
-
-    console.log(`[WEBHOOK] ✓ Notification d'échec envoyée pour enchère ${auctionId}`)
   } catch (err: any) {
-    console.error(`[WEBHOOK] Erreur handlePaymentIntentFailed (${auctionId}):`, err.message)
+    console.error(`[WEBHOOK] Erreur PaymentFailed (${auctionId}):`, err.message)
     throw err
   }
 }
 
-/**
- * Remboursement de charge
- * Gérer les remboursements et mettre à jour le statut de l'enchère
- */
 async function handleChargeRefunded(charge: Stripe.Charge) {
-  // Extraire l'auctionId du metadata de la charge si disponible
   const auctionId = charge.metadata?.auctionId
-
-  if (!auctionId) {
-    console.warn('[WEBHOOK] charge.refunded - auctionId manquant dans metadata')
-    return
-  }
+  if (!auctionId) return
 
   try {
-    console.log(`[WEBHOOK] Remboursement reçu pour enchère ${auctionId} - montant: ${charge.amount_refunded}`)
-
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
       include: {
@@ -423,26 +324,18 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
       },
     })
 
-    if (!auction) {
-      console.warn(`[WEBHOOK] Enchère ${auctionId} non trouvée lors du remboursement`)
-      return
-    }
+    if (!auction) return
 
-    // Mettre à jour le statut de l'enchère (retour à CANCELLED car REFUNDED n'existe pas dans le schéma)
     await prisma.auction.update({
       where: { id: auctionId },
-      data: {
-        status: 'CANCELLED',
-      },
+      data: { status: 'CANCELLED' },
     })
 
-    // Remettre le beat en état ACTIVE pour qu'il puisse être remis en vente
     await prisma.beat.update({
       where: { id: auction.beatId },
       data: { status: 'ACTIVE' },
     })
 
-    // Décrémenter les statistiques de ventes/achats
     await prisma.user.update({
       where: { id: auction.beat.producerId },
       data: { totalSales: { decrement: 1 } },
@@ -454,7 +347,6 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
         data: { totalPurchases: { decrement: 1 } },
       })
 
-      // Notifier l'acheteur du remboursement
       await prisma.notification.create({
         data: {
           type: 'SYSTEM',
@@ -465,44 +357,28 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
         },
       })
     }
-
-    console.log(`[WEBHOOK] ✓ Remboursement traité pour enchère ${auctionId}`)
   } catch (err: any) {
-    console.error(`[WEBHOOK] Erreur handleChargeRefunded (${auctionId}):`, err.message)
+    console.error(`[WEBHOOK] Erreur Refund (${auctionId}):`, err.message)
     throw err
   }
 }
 
-/**
- * Compte Stripe Connect mis à jour
- * Mettre à jour le statut du producteur en fonction de l'état du compte
- */
 async function handleAccountUpdated(account: Stripe.Account) {
   try {
-    console.log(`[WEBHOOK] Compte Stripe ${account.id} mis à jour`)
-
     const user = await prisma.user.findFirst({
       where: { stripeAccountId: account.id },
     })
 
-    if (!user) {
-      console.warn(`[WEBHOOK] Utilisateur non trouvé pour compte Stripe ${account.id}`)
-      return
-    }
+    if (!user) return
 
-    // Vérifier si le compte est prêt pour les paiements
     const isReady = account.charges_enabled && account.payouts_enabled
 
     if (isReady && user.producerStatus === 'PENDING') {
-      console.log(`[WEBHOOK] Compte Stripe prêt pour ${user.id}, mise à jour du statut`)
-
-      // Auto-approuver le producteur quand son compte Stripe est prêt
       await prisma.user.update({
         where: { id: user.id },
         data: { producerStatus: 'APPROVED' },
       })
 
-      // Notifier le producteur
       await prisma.notification.create({
         data: {
           type: 'SYSTEM',
@@ -513,14 +389,10 @@ async function handleAccountUpdated(account: Stripe.Account) {
         },
       })
 
-      console.log(`[WEBHOOK] ✓ Statut du producteur mis à jour pour ${user.id}`)
-    } else if (!isReady && user.producerStatus !== 'PENDING') {
-      console.warn(
-        `[WEBHOOK] Compte Stripe ${account.id} n'est pas prêt - charges_enabled: ${account.charges_enabled}, payouts_enabled: ${account.payouts_enabled}`
-      )
+      if (isDev) console.log(`[WEBHOOK] ✓ Producteur ${user.id} approuvé`)
     }
   } catch (err: any) {
-    console.error(`[WEBHOOK] Erreur handleAccountUpdated:`, err.message)
+    console.error('[WEBHOOK] Erreur AccountUpdated:', err.message)
     throw err
   }
 }

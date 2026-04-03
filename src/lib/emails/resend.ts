@@ -6,7 +6,7 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null
 
-const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@318legaacy.com'
+const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@send.318marketplace.com'
 const PLATFORM_NAME = '318 LEGAACY Marketplace'
 const PLATFORM_URL = process.env.NEXTAUTH_URL || 'https://www.318marketplace.com'
 
@@ -271,7 +271,9 @@ export async function sendWelcomeEmail(params: {
 async function sendEmail(to: string, subject: string, html: string) {
   // Skip if no API key configured or Resend not initialized
   if (!resend || !process.env.RESEND_API_KEY) {
-    console.log(`[Email] Skipped (no API key): "${subject}" to ${to}`)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Email] Skipped (no API key): "${subject}"`)
+    }
     return { success: false, reason: 'no_api_key' }
   }
 
@@ -284,14 +286,16 @@ async function sendEmail(to: string, subject: string, html: string) {
     })
 
     if (error) {
-      console.error(`[Email] Error sending "${subject}" to ${to}:`, error)
+      console.error(`[Email] Error sending "${subject}":`, error)
       return { success: false, error }
     }
 
-    console.log(`[Email] Sent "${subject}" to ${to} (id: ${data?.id})`)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Email] Sent "${subject}" (id: ${data?.id})`)
+    }
     return { success: true, id: data?.id }
   } catch (error) {
-    console.error(`[Email] Exception sending "${subject}" to ${to}:`, error)
+    console.error(`[Email] Exception sending "${subject}":`, error)
     return { success: false, error }
   }
 }
