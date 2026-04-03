@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle, Search, ShoppingBag, Eye, User, ListMusic } from 'lucide-react'
@@ -26,12 +27,14 @@ export default function Header() {
     <header className="sticky top-0 z-50 glass">
       <div className="max-w-7xl mx-auto h-16 flex items-center justify-between px-4 md:px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-lg text-white bg-gradient-to-br from-red-600 to-red-800"
-          >
-            3
-          </div>
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/logo-318-marketplace.png"
+            alt="318 LEGAACY Marketplace"
+            width={36}
+            height={36}
+            className="rounded-lg"
+          />
           <div className="hidden sm:block">
             <span className="font-extrabold text-sm tracking-tight">318 LEGAACY</span>
             <span className="block text-[10px] text-red-500 -mt-0.5 tracking-[3px] font-semibold">

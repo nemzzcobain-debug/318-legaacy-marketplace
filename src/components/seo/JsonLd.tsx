@@ -25,7 +25,7 @@ export function WebsiteJsonLd({ siteUrl = 'https://www.318marketplace.com' }: We
       url: siteUrl,
       logo: {
         '@type': 'ImageObject',
-        url: `${siteUrl}/icons/icon-512x512.png`,
+        url: `${siteUrl}/logo-318-marketplace.png`,
       },
     },
   }
@@ -48,7 +48,7 @@ export function OrganizationJsonLd({ siteUrl = 'https://www.318marketplace.com' 
     '@type': 'Organization',
     name: '318 LEGAACY Studio',
     url: siteUrl,
-    logo: `${siteUrl}/icons/icon-512x512.png`,
+    logo: `${siteUrl}/logo-318-marketplace.png`,
     description: 'Studio d\'enregistrement et marketplace de beats en France',
     foundingDate: '2025',
     address: {
@@ -99,7 +99,7 @@ export function AuctionJsonLd({ auction, beat, producer, siteUrl = 'https://www.
     name: beat.title,
     description: `Beat "${beat.title}" par ${producerName}. Genre: ${beat.genre}, ${beat.bpm} BPM. Licence ${auction.licenseType}.`,
     url: `${siteUrl}/auction/${auction.id}`,
-    image: beat.coverImage || `${siteUrl}/icons/icon-512x512.png`,
+    image: beat.coverImage || `${siteUrl}/logo-318-marketplace.png`,
     category: `Musique > Instrumentales > ${beat.genre}`,
     brand: {
       '@type': 'Brand',
@@ -159,7 +159,7 @@ export function ProducerJsonLd({ producer, totalBeats, totalFollowers, siteUrl =
     '@type': 'Person',
     name,
     url: `${siteUrl}/producer/${producer.id}`,
-    image: producer.avatar || `${siteUrl}/icons/icon-512x512.png`,
+    image: producer.avatar || `${siteUrl}/logo-318-marketplace.png`,
     description: producer.bio || `Producteur verifie sur 318 LEGAACY Marketplace`,
     jobTitle: 'Beatmaker / Producteur musical',
     worksFor: {

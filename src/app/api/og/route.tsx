@@ -5,6 +5,7 @@ export const runtime = 'edge'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://www.318marketplace.com'
 
   const title = searchParams.get('title') || '318 LEGAACY Marketplace'
   const producer = searchParams.get('producer') || ''
@@ -12,6 +13,11 @@ export async function GET(req: NextRequest) {
   const genre = searchParams.get('genre') || ''
   const bpm = searchParams.get('bpm') || ''
   const isAuction = !!searchParams.get('auction')
+
+  // Fetch logo image
+  const logoData = await fetch(new URL('/logo-318-marketplace.png', baseUrl)).then(
+    (res) => res.arrayBuffer()
+  ).catch(() => null)
 
   return new ImageResponse(
     (
@@ -60,26 +66,35 @@ export async function GET(req: NextRequest) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: '14px',
             marginBottom: isAuction ? '30px' : '20px',
           }}
         >
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #dc2626, #e11d48)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '24px',
-              fontWeight: 900,
-            }}
-          >
-            3
-          </div>
+          {logoData ? (
+            <img
+              src={`data:image/png;base64,${Buffer.from(logoData).toString('base64')}`}
+              width={56}
+              height={56}
+              style={{ borderRadius: '12px' }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #dc2626, #e11d48)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '24px',
+                fontWeight: 900,
+              }}
+            >
+              3
+            </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ color: 'white', fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px' }}>
               318 LEGAACY

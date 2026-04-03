@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
+import Image from 'next/image'
 import { UserPlus, Eye, EyeOff, AlertCircle, Music, Mic2 } from 'lucide-react'
 
 export default function RegisterPage() {
@@ -73,14 +74,15 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-2.5 mb-10">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl text-black"
-            style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
-          >
-            3
-          </div>
-          <div>
+        <Link href="/" className="flex flex-col items-center gap-3 mb-10">
+          <Image
+            src="/logo-318-marketplace.png"
+            alt="318 LEGAACY Marketplace"
+            width={64}
+            height={64}
+            className="drop-shadow-[0_0_20px_rgba(225,29,72,0.3)]"
+          />
+          <div className="text-center">
             <span className="font-extrabold text-lg">318 LEGAACY</span>
             <span className="block text-[10px] text-[#e11d48] -mt-0.5 tracking-[3px] font-semibold">
               MARKETPLACE

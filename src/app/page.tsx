@@ -8,6 +8,7 @@ import {
   UserPlus, Sparkles, Volume2, Timer, BadgeCheck, CircleDollarSign,
   Smartphone, ListMusic, Globe
 } from 'lucide-react'
+import Image from 'next/image'
 import Header from '@/components/layout/Header'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 
@@ -207,6 +208,17 @@ export default function Home() {
         </div>
 
         <div className={`max-w-5xl mx-auto text-center relative z-10 transition-all duration-1000 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          {/* Logo */}
+          <div className="mb-6">
+            <Image
+              src="/logo-318-marketplace.png"
+              alt="318 LEGAACY Marketplace"
+              width={80}
+              height={80}
+              className="mx-auto drop-shadow-[0_0_30px_rgba(225,29,72,0.3)]"
+            />
+          </div>
+
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-5 py-2.5 text-sm font-bold text-red-400 mb-8 backdrop-blur-sm">
             <span className="relative flex h-2 w-2">
@@ -620,9 +632,13 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-10">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center font-black text-base text-white" style={{ background: 'linear-gradient(135deg, #e11d48 0%, #9f1239 100%)' }}>
-                3
-              </div>
+              <Image
+                src="/logo-318-marketplace.png"
+                alt="318 LEGAACY Marketplace"
+                width={44}
+                height={44}
+                className="rounded-lg"
+              />
               <div>
                 <span className="font-extrabold text-base text-white">318 LEGAACY</span>
                 <span className="block text-[9px] text-red-500 -mt-0.5 tracking-[3px] font-semibold">MARKETPLACE</span>
