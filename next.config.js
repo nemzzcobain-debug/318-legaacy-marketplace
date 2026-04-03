@@ -4,9 +4,17 @@ const nextConfig = {
           remotePatterns: [
             {
                       protocol: 'https',
-                      hostname: '**',
+                      hostname: 'onfwowxfflnijuvpspkq.supabase.co',
             },
-                ],
+            {
+                      protocol: 'https',
+                      hostname: 'lh3.googleusercontent.com',
+            },
+            {
+                      protocol: 'https',
+                      hostname: 'avatars.githubusercontent.com',
+            },
+          ],
     },
     // Prisma: necessaire pour Vercel
     output: 'standalone',

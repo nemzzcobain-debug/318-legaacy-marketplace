@@ -40,7 +40,7 @@ function emailLayout(content: string): string {
         ${PLATFORM_NAME} — Premiere plateforme d'encheres de beats en France
       </p>
       <p style="color:#444;font-size:10px;margin:8px 0 0;">
-        <a href="${PLATFORM_URL}" style="color:#e11d48;text-decoration:none;">318legaacy.com</a>
+        <a href="${PLATFORM_URL}" style="color:#e11d48;text-decoration:none;">318marketplace.com</a>
       </p>
     </div>
   </div>

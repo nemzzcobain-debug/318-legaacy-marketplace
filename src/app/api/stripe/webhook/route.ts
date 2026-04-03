@@ -496,11 +496,11 @@ async function handleAccountUpdated(account: Stripe.Account) {
     if (isReady && user.producerStatus === 'PENDING') {
       console.log(`[WEBHOOK] Compte Stripe prêt pour ${user.id}, mise à jour du statut`)
 
-      // Mettre à jour le statut du producteur (à adapter selon votre schéma)
-      // await prisma.user.update({
-      //   where: { id: user.id },
-      //   data: { producerStatus: 'APPROVED' },
-      // })
+      // Auto-approuver le producteur quand son compte Stripe est prêt
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { producerStatus: 'APPROVED' },
+      })
 
       // Notifier le producteur
       await prisma.notification.create({
