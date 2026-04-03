@@ -213,9 +213,9 @@ export default function Home() {
             <Image
               src="/logo-318-marketplace.png"
               alt="318 LEGAACY Marketplace"
-              width={120}
-              height={120}
-              className="mx-auto drop-shadow-[0_0_40px_rgba(225,29,72,0.4)]"
+              width={180}
+              height={180}
+              className="mx-auto drop-shadow-[0_0_50px_rgba(225,29,72,0.5)]"
             />
           </div>
 
@@ -635,8 +635,8 @@ export default function Home() {
               <Image
                 src="/logo-318-marketplace.png"
                 alt="318 LEGAACY Marketplace"
-                width={56}
-                height={56}
+                width={72}
+                height={72}
                 className="rounded-lg"
               />
               <div>

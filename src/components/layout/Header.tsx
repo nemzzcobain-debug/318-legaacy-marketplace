@@ -31,8 +31,8 @@ export default function Header() {
           <Image
             src="/logo-318-marketplace.png"
             alt="318 LEGAACY Marketplace"
-            width={46}
-            height={46}
+            width={56}
+            height={56}
             className="rounded-lg"
           />
           <div className="hidden sm:block">

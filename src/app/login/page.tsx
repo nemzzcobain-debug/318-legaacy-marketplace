@@ -48,8 +48,8 @@ export default function LoginPage() {
           <Image
             src="/logo-318-marketplace.png"
             alt="318 LEGAACY Marketplace"
-            width={90}
-            height={90}
+            width={120}
+            height={120}
             className="drop-shadow-[0_0_20px_rgba(225,29,72,0.3)]"
           />
           <div className="text-center">
