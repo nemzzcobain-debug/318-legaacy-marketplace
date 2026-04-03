@@ -209,13 +209,13 @@ export default function Home() {
 
         <div className={`max-w-5xl mx-auto text-center relative z-10 transition-all duration-1000 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           {/* Logo */}
-          <div className="mb-6">
+          <div className="mb-8">
             <Image
               src="/logo-318-marketplace.png"
               alt="318 LEGAACY Marketplace"
-              width={80}
-              height={80}
-              className="mx-auto drop-shadow-[0_0_30px_rgba(225,29,72,0.3)]"
+              width={120}
+              height={120}
+              className="mx-auto drop-shadow-[0_0_40px_rgba(225,29,72,0.4)]"
             />
           </div>
 
@@ -635,8 +635,8 @@ export default function Home() {
               <Image
                 src="/logo-318-marketplace.png"
                 alt="318 LEGAACY Marketplace"
-                width={44}
-                height={44}
+                width={56}
+                height={56}
                 className="rounded-lg"
               />
               <div>

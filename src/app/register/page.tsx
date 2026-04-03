@@ -78,8 +78,8 @@ export default function RegisterPage() {
           <Image
             src="/logo-318-marketplace.png"
             alt="318 LEGAACY Marketplace"
-            width={64}
-            height={64}
+            width={90}
+            height={90}
             className="drop-shadow-[0_0_20px_rgba(225,29,72,0.3)]"
           />
           <div className="text-center">
