@@ -44,16 +44,21 @@ export async function GET(req: NextRequest) {
       orderBy: { lastMessageAt: 'desc' },
     })
 
-    // Compter les messages non lus par conversation
+    // Compter les messages non lus par conversation (avec gestion d'erreur individuelle)
     const withUnread = await Promise.all(
       conversations.map(async (conv) => {
-        const unreadCount = await prisma.message.count({
-          where: {
-            conversationId: conv.id,
-            senderId: { not: userId },
-            read: false,
-          },
-        })
+        let unreadCount = 0
+        try {
+          unreadCount = await prisma.message.count({
+            where: {
+              conversationId: conv.id,
+              senderId: { not: userId },
+              read: false,
+            },
+          })
+        } catch (err) {
+          console.error(`Erreur comptage non-lus conversation ${conv.id}:`, err)
+        }
 
         // Determiner l'autre participant
         const otherUser = conv.user1Id === userId ? conv.user2 : conv.user1

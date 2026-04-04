@@ -88,15 +88,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   } catch (err: any) {
     console.error('[WEBHOOK] Erreur traitement:', err.message)
-    return NextResponse.json({ received: true }, { status: 200 })
+    // Retourner 500 pour que Stripe réessaye l'événement
+    return NextResponse.json({ error: 'Erreur de traitement' }, { status: 500 })
   }
 }
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-  const { auctionId, userId, producerId, commission, producerPayout } =
-    session.metadata || {}
+  const metadata = session.metadata || {}
+  const { auctionId, userId, producerId, commission, producerPayout } = metadata
 
-  if (!auctionId) return
+  if (!auctionId) {
+    console.error('[WEBHOOK] checkout.session.completed sans auctionId dans metadata')
+    return
+  }
 
   try {
     const existingAuction = await prisma.auction.findUnique({
@@ -188,7 +192,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         commission: commissionAmount,
         payout: payoutAmount,
         license: auction.winningLicense || auction.licenseType,
-      }).catch(() => {})
+      }).catch((e) => console.error('[WEBHOOK] Erreur envoi email:', e?.message))
     }
 
     if (auction.winner?.email) {
@@ -200,7 +204,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         finalPrice,
         license: auction.winningLicense || auction.licenseType,
         auctionId,
-      }).catch(() => {})
+      }).catch((e) => console.error('[WEBHOOK] Erreur envoi email:', e?.message))
     }
 
     if (isDev) console.log(`[WEBHOOK] ✓ Enchère ${auctionId} complétée`)

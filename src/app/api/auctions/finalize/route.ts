@@ -17,7 +17,12 @@ async function handleFinalize(req: NextRequest) {
   try {
     // SÉCURITÉ: Vérification auth pour GET et POST
     const authHeader = req.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET || process.env.NEXTAUTH_SECRET
+    const cronSecret = process.env.CRON_SECRET
+
+    if (!cronSecret) {
+      console.error('[CRON] CRON_SECRET non configuré')
+      return NextResponse.json({ error: 'Configuration manquante' }, { status: 500 })
+    }
 
     // Vérifier d'abord le cron secret (pour Vercel Cron ou appels serveur)
     if (authHeader !== `Bearer ${cronSecret}`) {
