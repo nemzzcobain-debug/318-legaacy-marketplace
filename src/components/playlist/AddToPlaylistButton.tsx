@@ -26,11 +26,9 @@ export default function AddToPlaylistButton({ beatId, size = 'sm' }: Props) {
   const [creating, setCreating] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  if (!session) return null
-
   useEffect(() => {
-    if (open) fetchPlaylists()
-  }, [open])
+    if (open && session) fetchPlaylists()
+  }, [open, session])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -39,6 +37,8 @@ export default function AddToPlaylistButton({ beatId, size = 'sm' }: Props) {
     if (open) document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [open])
+
+  if (!session) return null
 
   async function fetchPlaylists() {
     setLoading(true)
