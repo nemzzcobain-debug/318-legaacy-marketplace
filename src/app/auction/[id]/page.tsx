@@ -107,21 +107,7 @@ export default function AuctionDetailPage() {
     }
   }, [realtimeState.currentBid, realtimeState.bidCount, realtimeState.status]);
 
-  // Auto-finalize when timer reaches 0 (client-side trigger since Hobby cron is daily)
-  const [finalizeCalled, setFinalizeCalled] = useState(false);
-  useEffect(() => {
-    if (
-      realtimeState.timeLeft <= 0 &&
-      auction?.status === 'ACTIVE' &&
-      !finalizeCalled
-    ) {
-      setFinalizeCalled(true);
-      fetch('/api/auctions/finalize', { method: 'POST' })
-        .then(() => fetchAuction())
-        .catch(console.error);
-    }
-  }, [realtimeState.timeLeft, auction?.status, finalizeCalled, fetchAuction]);
-
+  // Fetch auction data
   const fetchAuction = useCallback(async () => {
     try {
       const res = await fetch(`/api/auctions/${id}`);
@@ -138,6 +124,21 @@ export default function AuctionDetailPage() {
       setLoading(false);
     }
   }, [id, bidAmount]);
+
+  // Auto-finalize when timer reaches 0 (client-side trigger since Hobby cron is daily)
+  const [finalizeCalled, setFinalizeCalled] = useState(false);
+  useEffect(() => {
+    if (
+      realtimeState.timeLeft <= 0 &&
+      auction?.status === 'ACTIVE' &&
+      !finalizeCalled
+    ) {
+      setFinalizeCalled(true);
+      fetch('/api/auctions/finalize', { method: 'POST' })
+        .then(() => fetchAuction())
+        .catch(console.error);
+    }
+  }, [realtimeState.timeLeft, auction?.status, finalizeCalled, fetchAuction]);
 
   // Initial load only - realtime handles updates
   useEffect(() => {

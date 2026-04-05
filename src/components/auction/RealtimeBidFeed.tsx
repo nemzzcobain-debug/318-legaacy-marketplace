@@ -13,8 +13,8 @@ interface BidFeedProps {
   soundUrl?: string;
 }
 
-interface BidItem {
-  id: string;
+interface BidData {
+  id?: string;
   amount: number;
   licenseType: string;
   finalAmount: number;
@@ -36,7 +36,7 @@ export default function RealtimeBidFeed({
   soundUrl = '/sounds/bid-notification.mp3',
 }: BidFeedProps) {
   const audio = useAudio();
-  const [displayedBids, setDisplayedBids] = useState<(BidItem & { key: string })[]>([]);
+  const [displayedBids, setDisplayedBids] = useState<(BidData & { key: string })[]>([]);
   const bids = useRealtimeBids(auctionId, (newBid) => {
     // Jouer un son quand une nouvelle enchère arrive
     if (showSound) {
@@ -114,7 +114,7 @@ export default function RealtimeBidFeed({
         ) : (
           <div className="divide-y divide-zinc-800">
             {displayedBids.map((bid, index) => (
-              <BidItem
+              <BidEntry
                 key={bid.key}
                 bid={bid}
                 index={index}
@@ -142,13 +142,13 @@ export default function RealtimeBidFeed({
 /**
  * Composant pour afficher une enchère individuelle avec animation
  */
-function BidItem({
+function BidEntry({
   bid,
   index,
   formatPrice,
   getLicenseColor,
 }: {
-  bid: BidItem & { key: string };
+  bid: BidData & { key: string };
   index: number;
   formatPrice: (price: number) => string;
   getLicenseColor: (licenseType: string) => string;

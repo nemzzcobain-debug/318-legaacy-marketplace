@@ -20,6 +20,7 @@ interface AuctionData {
 }
 
 interface BidData {
+  id?: string;
   amount: number;
   licenseType: string;
   finalAmount: number;

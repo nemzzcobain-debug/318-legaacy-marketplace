@@ -18,13 +18,8 @@ const nextConfig = {
     },
     // Prisma: necessaire pour Vercel
     output: 'standalone',
-    // Ignorer les erreurs TS au build (fix types progressivement)
-    typescript: {
-          ignoreBuildErrors: true,
-    },
-    eslint: {
-          ignoreDuringBuilds: true,
-    },
+    // TypeScript et ESLint vérifiés au build
+    // Les erreurs TS/ESLint bloqueront le déploiement
 }
 
 module.exports = nextConfig

@@ -14,7 +14,7 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 // Nettoyage périodique pour éviter les fuites mémoire en Edge
 function cleanupRateLimits() {
   const now = Date.now()
-  for (const [key, entry] of rateLimitMap.entries()) {
+  for (const [key, entry] of Array.from(rateLimitMap.entries())) {
     if (now > entry.resetTime) {
       rateLimitMap.delete(key)
     }
