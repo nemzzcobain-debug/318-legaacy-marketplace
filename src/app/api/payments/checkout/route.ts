@@ -53,7 +53,6 @@ export async function POST(request: Request) {
     const producerStripeAccount = auction.beat.producer.stripeAccountId
 
     // Configuration de base du checkout
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const checkoutConfig: any = {
       mode: 'payment',
       payment_method_types: ['card'],

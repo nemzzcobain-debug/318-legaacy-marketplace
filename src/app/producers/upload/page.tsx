@@ -35,6 +35,7 @@ export default function UploadBeatPage() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const [dragOver, setDragOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
   const audioInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,8 +74,6 @@ export default function UploadBeatPage() {
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
   };
-
-  const [uploadProgress, setUploadProgress] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
