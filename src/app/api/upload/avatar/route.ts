@@ -9,9 +9,9 @@ import { createClient } from '@supabase/supabase-js'
 // Initialisation lazy pour éviter le crash au build si les env vars sont absentes
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_KEY
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) {
-    throw new Error('SUPABASE_URL ou SUPABASE_SERVICE_KEY manquant')
+    throw new Error('SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant')
   }
   return createClient(url, key)
 }
