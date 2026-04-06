@@ -28,8 +28,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const displayName = producer.displayName || producer.name
     const title = `${displayName} - Producteur | 318 LEGAACY`
-    const description = producer.producerBio || producer.bio
-      ? (producer.producerBio || producer.bio).substring(0, 160)
+    const bio = producer.producerBio || producer.bio
+    const description = bio
+      ? bio.substring(0, 160)
       : `Découvrez les beats de ${displayName} sur 318 LEGAACY Marketplace. Un producteur de beats professionnel.`
 
     return {
