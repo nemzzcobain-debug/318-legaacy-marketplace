@@ -35,3 +35,6 @@ public/uploads/*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scripts temporaires
+*.command
