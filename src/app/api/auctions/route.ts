@@ -13,8 +13,13 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || 'ACTIVE'
     const genre = searchParams.get('genre')
     const sort = searchParams.get('sort') || 'ending_soon'
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
+
+    // Parse pagination with NaN validation
+    const pageStr = parseInt(searchParams.get('page') || '1')
+    const page = Math.max(1, !isNaN(pageStr) ? pageStr : 1)
+
+    const limitStr = parseInt(searchParams.get('limit') || '20')
+    const limit = Math.min(100, Math.max(1, !isNaN(limitStr) ? limitStr : 20))
 
     const where: any = {}
 
@@ -104,7 +109,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
     }
 
-    const userId = (session.user as any).id
+    const userId = session.user.id
     const user = await prisma.user.findUnique({ where: { id: userId } })
 
     if (!user || user.role !== 'PRODUCER' || user.producerStatus !== 'APPROVED') {

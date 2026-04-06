@@ -13,18 +13,51 @@ export async function GET(req: NextRequest) {
 
     const query = searchParams.get('q')?.trim()
     const genre = searchParams.get('genre')
-    const bpmMin = searchParams.get('bpmMin') ? parseInt(searchParams.get('bpmMin')!) : null
-    const bpmMax = searchParams.get('bpmMax') ? parseInt(searchParams.get('bpmMax')!) : null
+
+    // Parse BPM with NaN validation
+    let bpmMin: number | null = null
+    const bpmMinStr = searchParams.get('bpmMin')
+    if (bpmMinStr) {
+      const parsed = parseInt(bpmMinStr)
+      bpmMin = !isNaN(parsed) ? parsed : null
+    }
+
+    let bpmMax: number | null = null
+    const bpmMaxStr = searchParams.get('bpmMax')
+    if (bpmMaxStr) {
+      const parsed = parseInt(bpmMaxStr)
+      bpmMax = !isNaN(parsed) ? parsed : null
+    }
+
     const key = searchParams.get('key')
     const mood = searchParams.get('mood')
-    const priceMin = searchParams.get('priceMin') ? parseFloat(searchParams.get('priceMin')!) : null
-    const priceMax = searchParams.get('priceMax') ? parseFloat(searchParams.get('priceMax')!) : null
+
+    // Parse price with NaN validation
+    let priceMin: number | null = null
+    const priceMinStr = searchParams.get('priceMin')
+    if (priceMinStr) {
+      const parsed = parseFloat(priceMinStr)
+      priceMin = !isNaN(parsed) ? parsed : null
+    }
+
+    let priceMax: number | null = null
+    const priceMaxStr = searchParams.get('priceMax')
+    if (priceMaxStr) {
+      const parsed = parseFloat(priceMaxStr)
+      priceMax = !isNaN(parsed) ? parsed : null
+    }
+
     const producerId = searchParams.get('producerId')
     const licenseType = searchParams.get('licenseType')
     const status = searchParams.get('status') || 'active'
     const sort = searchParams.get('sort') || 'ending_soon'
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20')))
+
+    // Parse pagination with NaN validation
+    const pageStr = parseInt(searchParams.get('page') || '1')
+    const page = Math.max(1, !isNaN(pageStr) ? pageStr : 1)
+
+    const limitStr = parseInt(searchParams.get('limit') || '20')
+    const limit = Math.min(50, Math.max(1, !isNaN(limitStr) ? limitStr : 20))
 
     // Build beat filter
     const beatWhere: any = {}

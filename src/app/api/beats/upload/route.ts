@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate BPM range (40-300)
-    const bpmNum = typeof bpm === 'number' ? bpm : parseInt(bpm);
+    const bpmNum = typeof bpm === 'number' ? bpm : parseInt(String(bpm));
     if (isNaN(bpmNum) || bpmNum < 40 || bpmNum > 300) {
       return NextResponse.json(
         { error: 'Le BPM doit etre entre 40 et 300' },

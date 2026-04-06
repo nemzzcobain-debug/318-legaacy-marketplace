@@ -4,7 +4,10 @@ import { z } from 'zod'
 export const registerSchema = z.object({
   name: z.string().min(2, 'Nom trop court').max(50, 'Nom trop long'),
   email: z.string().email('Email invalide'),
-  password: z.string().min(8, 'Minimum 8 caracteres'),
+  password: z.string().min(8, 'Minimum 8 caracteres').regex(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+    'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre'
+  ),
   role: z.enum(['ARTIST', 'PRODUCER']),
 })
 

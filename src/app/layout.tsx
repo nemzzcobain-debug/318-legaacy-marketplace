@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ['latin'] })
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.318marketplace.com'
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL('https://www.318marketplace.com'),
   title: {
     default: '318 LEGAACY Marketplace — Encheres de Beats en France',
     template: '%s | 318 LEGAACY',
@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   creator: '318 LEGAACY Studio',
   manifest: '/manifest.json',
   themeColor: '#e11d48',
+  alternates: {
+    canonical: '/',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
