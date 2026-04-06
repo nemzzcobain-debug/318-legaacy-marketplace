@@ -39,10 +39,14 @@ function checkLimit(ip: string, maxRequests: number, windowMs: number): { allowe
   return { allowed: false, remaining: 0 }
 }
 
-// ─── Route classification ───
-function getRouteType(pathname: string): 'auth' | 'upload' | 'webhook' | 'admin' | 'api' | 'public' | 'skip' {
-  if (pathname.startsWith('/api/stripe/webhook')) return 'webhook'
-  if (pathname.startsWith('/api/auth/register') || pathname === '/api/auth/callback/credentials') return 'auth'
+// ─── Route classification (plus granulaire) ───
+type RouteType = 'login' | 'register' | 'bid' | 'upload' | 'webhook' | 'admin' | 'api' | 'public' | 'skip'
+
+function getRouteType(pathname: string, method: string): RouteType {
+  if (pathname.startsWith('/api/stripe/webhook') || pathname.startsWith('/api/payments/webhook')) return 'webhook'
+  if (pathname === '/api/auth/callback/credentials' && method === 'POST') return 'login'
+  if (pathname.startsWith('/api/auth/register') && method === 'POST') return 'register'
+  if (pathname.includes('/bid') && method === 'POST') return 'bid'
   if (pathname.includes('/upload') || pathname.includes('/beats/upload')) return 'upload'
   if (pathname.startsWith('/api/admin')) return 'admin'
   if (pathname.startsWith('/api/')) return 'api'
@@ -53,12 +57,14 @@ function getRouteType(pathname: string): 'auth' | 'upload' | 'webhook' | 'admin'
 
 // Rate limit configs: { maxRequests, windowMs }
 const LIMITS: Record<string, { max: number; window: number }> = {
-  auth:    { max: 10,  window: 15 * 60 * 1000 },  // 10 req / 15 min
-  upload:  { max: 10,  window: 5 * 60 * 1000 },   // 10 req / 5 min
-  webhook: { max: 200, window: 60 * 1000 },        // 200 / min (Stripe)
-  admin:   { max: 100, window: 60 * 1000 },        // 100 / min
-  api:     { max: 60,  window: 60 * 1000 },        // 60 / min
-  public:  { max: 120, window: 60 * 1000 },        // 120 / min
+  login:    { max: 5,   window: 15 * 60 * 1000 },  // 5 tentatives / 15 min (anti brute-force)
+  register: { max: 3,   window: 60 * 60 * 1000 },  // 3 inscriptions / heure (anti spam)
+  bid:      { max: 20,  window: 60 * 1000 },        // 20 enchères / min (anti bot)
+  upload:   { max: 10,  window: 5 * 60 * 1000 },    // 10 uploads / 5 min
+  webhook:  { max: 200, window: 60 * 1000 },         // 200 / min (Stripe)
+  admin:    { max: 100, window: 60 * 1000 },         // 100 / min
+  api:      { max: 60,  window: 60 * 1000 },         // 60 / min
+  public:   { max: 120, window: 60 * 1000 },         // 120 / min
 }
 
 export function middleware(request: NextRequest) {
@@ -67,7 +73,8 @@ export function middleware(request: NextRequest) {
   // Nettoyage périodique (1 chance sur 100 pour ne pas bloquer)
   if (Math.random() < 0.01) cleanupRateLimits()
 
-  const routeType = getRouteType(pathname)
+  const method = request.method
+  const routeType = getRouteType(pathname, method)
 
   // Skip static assets
   if (routeType === 'skip') {
@@ -75,7 +82,6 @@ export function middleware(request: NextRequest) {
   }
 
   // ─── CSRF Origin Validation (for state-changing requests) ───
-  const method = request.method
   const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
 
   if (isStateChanging) {
@@ -110,7 +116,10 @@ export function middleware(request: NextRequest) {
 
   const limitConfig = LIMITS[routeType]
   if (limitConfig) {
-    const limitKey = `${ip}:${routeType}`
+    // Clé granulaire: les routes sensibles (login, register, bid) ont leur propre compteur
+    // Les routes API génériques partagent un compteur par type
+    const isSensitive = ['login', 'register', 'bid', 'upload'].includes(routeType)
+    const limitKey = isSensitive ? `${ip}:${routeType}` : `${ip}:${routeType}`
     const { allowed, remaining } = checkLimit(limitKey, limitConfig.max, limitConfig.window)
 
     if (!allowed) {

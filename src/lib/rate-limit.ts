@@ -81,16 +81,22 @@ export function checkRateLimit(
 // ─── Configurations prédéfinies par type de route ───
 
 export const RATE_LIMITS = {
-  /** Auth: login/register — 10 requêtes / 15 min */
-  auth: { maxRequests: 10, windowSeconds: 900 },
+  /** Login — 5 tentatives / 15 min (anti brute-force) */
+  login: { maxRequests: 5, windowSeconds: 900 },
 
-  /** API standard (bids, messages, follows) — 60 requêtes / min */
+  /** Register — 3 inscriptions / heure (anti spam) */
+  register: { maxRequests: 3, windowSeconds: 3600 },
+
+  /** Enchères — 20 bids / min (anti bot) */
+  bid: { maxRequests: 20, windowSeconds: 60 },
+
+  /** API standard (messages, follows, search) — 60 requêtes / min */
   api: { maxRequests: 60, windowSeconds: 60 },
 
   /** Upload de fichiers — 10 / 5 min */
   upload: { maxRequests: 10, windowSeconds: 300 },
 
-  /** Routes publiques (search, listings) — 120 / min */
+  /** Routes publiques (pages, listings) — 120 / min */
   public: { maxRequests: 120, windowSeconds: 60 },
 
   /** Admin — 100 / min */
