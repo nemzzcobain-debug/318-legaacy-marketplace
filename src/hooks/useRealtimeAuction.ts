@@ -216,8 +216,10 @@ async function loadBidWithUser(bidData: unknown): Promise<BidData | null> {
     }
 
     const supabase = getSupabaseClient();
+    // Utiliser la vue sécurisée PublicUser au lieu de la table User
+    // pour ne jamais exposer les champs sensibles (passwordHash, email, etc.)
     const { data: userData } = await supabase
-      .from('User')
+      .from('PublicUser')
       .select('displayName, avatar')
       .eq('id', bid.userId)
       .single();
