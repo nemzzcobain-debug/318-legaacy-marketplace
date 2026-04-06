@@ -84,6 +84,9 @@ model User {
 
   // Playlists
   playlists             Playlist[]
+
+  @@index([role])
+  @@index([producerStatus])
 }
 
 model Account {
@@ -102,6 +105,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -110,6 +114,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -160,6 +166,10 @@ model Beat {
   auctions    Auction[]
   likes       Like[]
   playlists   PlaylistBeat[]
+
+  @@index([producerId])
+  @@index([status])
+  @@index([genre])
 }
 
 // ─── AUCTIONS (ENCHERES) ───
@@ -221,6 +231,11 @@ model Auction {
   bids           Bid[]
   review         Review?
   watchlist      Watchlist[]
+
+  @@index([beatId])
+  @@index([status, endTime])
+  @@index([winnerId])
+  @@index([status])
 }
 
 // ─── BIDS ───
@@ -241,6 +256,10 @@ model Bid {
   user        User     @relation(fields: [userId], references: [id])
 
   createdAt   DateTime @default(now())
+
+  @@index([auctionId])
+  @@index([userId])
+  @@index([auctionId, createdAt])
 }
 
 // ─── LIKES ───
@@ -279,6 +298,8 @@ model Review {
   updatedAt   DateTime @updatedAt
 
   @@unique([authorId, auctionId])
+  @@index([producerId])
+  @@index([authorId])
 }
 
 // ─── FOLLOWS ───
@@ -309,6 +330,9 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, read])
 }
 
 // ─── CONVERSATIONS ───
@@ -330,6 +354,9 @@ model Conversation {
   messages      Message[]
 
   @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@index([lastMessageAt])
 }
 
 // ─── MESSAGES ───
@@ -347,6 +374,9 @@ model Message {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
 }
 
 // ─── REPORTS (SIGNALEMENTS) ───
@@ -375,6 +405,9 @@ model Report {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([reporterId])
+  @@index([status])
 }
 
 // ─── WATCHLIST (FAVORIS ENCHERES) ───
@@ -444,6 +477,9 @@ model Playlist {
   updatedAt   DateTime @updatedAt
 
   beats       PlaylistBeat[]
+
+  @@index([userId])
+  @@index([visibility])
 }
 
 model PlaylistBeat {
