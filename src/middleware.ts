@@ -3,10 +3,33 @@ import type { NextRequest } from 'next/server'
 
 /**
  * Middleware centralisé 318 LEGAACY Marketplace
+ * - CORS explicite (bloque les origines non autorisées)
  * - Rate limiting par IP
- * - Protection des routes admin
+ * - Protection CSRF
  * - Headers de sécurité
  */
+
+// ─── CORS — Origines autorisées ───
+const ALLOWED_ORIGINS = [
+  'https://www.318marketplace.com',
+  'https://318marketplace.com',
+  'https://318-legaacy-marketplace.vercel.app',
+]
+// En dev, autoriser localhost
+if (process.env.NODE_ENV === 'development') {
+  ALLOWED_ORIGINS.push('http://localhost:3000', 'http://127.0.0.1:3000')
+}
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin)
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400', // 24h cache preflight
+  }
+}
 
 // ─── Rate Limiting In-Memory (Edge Runtime compatible) ───
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
@@ -81,6 +104,27 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  const origin = request.headers.get('origin')
+
+  // ─── CORS Preflight (OPTIONS) ───
+  if (method === 'OPTIONS' && pathname.startsWith('/api/')) {
+    return new NextResponse(null, {
+      status: 204,
+      headers: getCorsHeaders(origin),
+    })
+  }
+
+  // ─── CORS — Bloquer les origines non autorisées sur les API ───
+  if (pathname.startsWith('/api/') && origin) {
+    const isWebhook = pathname.startsWith('/api/stripe/webhook') || pathname.startsWith('/api/payments/webhook')
+    if (!isWebhook && !ALLOWED_ORIGINS.includes(origin)) {
+      return NextResponse.json(
+        { error: 'Origin not allowed' },
+        { status: 403, headers: { 'Access-Control-Allow-Origin': ALLOWED_ORIGINS[0] } }
+      )
+    }
+  }
+
   // ─── CSRF Origin Validation (for state-changing requests) ───
   const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
 
@@ -90,7 +134,6 @@ export function middleware(request: NextRequest) {
     const isCronJob = pathname.startsWith('/api/auctions/finalize')
 
     if (!isWebhook && !isCronJob) {
-      const origin = request.headers.get('origin')
       const referer = request.headers.get('referer')
       const host = request.headers.get('host')
 
@@ -140,6 +183,14 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.next()
     response.headers.set('X-RateLimit-Limit', String(limitConfig.max))
     response.headers.set('X-RateLimit-Remaining', String(remaining))
+
+    // ─── CORS Headers (sur toutes les réponses API) ───
+    if (pathname.startsWith('/api/')) {
+      const corsHeaders = getCorsHeaders(origin)
+      for (const [key, value] of Object.entries(corsHeaders)) {
+        response.headers.set(key, value)
+      }
+    }
 
     // ─── Security Headers ───
     response.headers.set('X-Content-Type-Options', 'nosniff')
