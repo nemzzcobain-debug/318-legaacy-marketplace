@@ -20,9 +20,28 @@ function shouldLog(level: LogLevel): boolean {
   return LOG_LEVELS[level] >= LOG_LEVELS[currentLevel]
 }
 
+// F3 FIX: Filtrer les données sensibles avant de les logger
+const SENSITIVE_KEYS = ['password', 'passwd', 'secret', 'token', 'authorization', 'cookie', 'creditcard', 'cardnumber', 'cvv', 'ssn', 'apikey', 'api_key', 'access_token', 'refresh_token']
+
+function sanitizeContext(obj: LogContext): LogContext {
+  const sanitized: LogContext = {}
+  for (const [key, value] of Object.entries(obj)) {
+    const lowerKey = key.toLowerCase()
+    if (SENSITIVE_KEYS.some(sk => lowerKey.includes(sk))) {
+      sanitized[key] = '[REDACTED]'
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      sanitized[key] = sanitizeContext(value as LogContext)
+    } else {
+      sanitized[key] = value
+    }
+  }
+  return sanitized
+}
+
 function formatMessage(level: LogLevel, message: string, context?: LogContext) {
   const timestamp = new Date().toISOString()
-  const requestId = context?.requestId || crypto.randomUUID().slice(0, 8)
+  const safeContext = context ? sanitizeContext(context) : undefined
+  const requestId = safeContext?.requestId || crypto.randomUUID().slice(0, 8)
 
   if (process.env.NODE_ENV === 'production') {
     // JSON format for production (structured logging)
@@ -31,7 +50,7 @@ function formatMessage(level: LogLevel, message: string, context?: LogContext) {
       level,
       message,
       requestId,
-      ...context,
+      ...safeContext,
     })
   }
 
@@ -43,7 +62,7 @@ function formatMessage(level: LogLevel, message: string, context?: LogContext) {
     error: '\x1b[31m', // red
   }
   const reset = '\x1b[0m'
-  return `${levelColors[level]}[${level.toUpperCase()}]${reset} ${timestamp} [${requestId}] ${message}${context ? ' ' + JSON.stringify(context) : ''}`
+  return `${levelColors[level]}[${level.toUpperCase()}]${reset} ${timestamp} [${requestId}] ${message}${safeContext ? ' ' + JSON.stringify(safeContext) : ''}`
 }
 
 export const logger = {

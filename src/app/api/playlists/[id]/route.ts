@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { updatePlaylistSchema } from '@/lib/validations'
 
 // GET /api/playlists/[id] - Get playlist detail
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -65,15 +66,18 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     if (playlist.userId !== userId) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
 
     const body = await request.json()
-    const { name, description, visibility, coverImage } = body
 
-    const updateData: any = {}
-    if (name !== undefined) {
-      if (name.trim().length < 1) return NextResponse.json({ error: 'Le nom est requis' }, { status: 400 })
-      updateData.name = name.trim()
+    // F6 FIX: Validation Zod stricte
+    const parsed = updatePlaylistSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Données invalides' }, { status: 400 })
     }
+
+    const { name, description, visibility, coverImage } = parsed.data
+    const updateData: Record<string, unknown> = {}
+    if (name !== undefined) updateData.name = name.trim()
     if (description !== undefined) updateData.description = description?.trim() || null
-    if (visibility !== undefined) updateData.visibility = visibility === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC'
+    if (visibility !== undefined) updateData.visibility = visibility
     if (coverImage !== undefined) updateData.coverImage = coverImage || null
 
     const updated = await prisma.playlist.update({

@@ -24,8 +24,23 @@ async function handleFinalize(req: NextRequest) {
       return NextResponse.json({ error: 'Configuration manquante' }, { status: 500 })
     }
 
-    // Vérifier d'abord le cron secret (pour Vercel Cron ou appels serveur)
-    if (authHeader !== `Bearer ${cronSecret}`) {
+    // F11 FIX: Comparaison timing-safe pour éviter les attaques par timing
+    const encoder = new TextEncoder()
+    const expected = encoder.encode(`Bearer ${cronSecret}`)
+    const received = encoder.encode(authHeader || '')
+
+    // Padding pour que les deux buffers aient la même taille (requis par timingSafeEqual)
+    const maxLen = Math.max(expected.length, received.length)
+    const paddedExpected = new Uint8Array(maxLen)
+    const paddedReceived = new Uint8Array(maxLen)
+    paddedExpected.set(expected)
+    paddedReceived.set(received)
+
+    const { timingSafeEqual } = await import('crypto')
+    const isValidCron = expected.length === received.length &&
+      timingSafeEqual(Buffer.from(paddedExpected), Buffer.from(paddedReceived))
+
+    if (!isValidCron) {
       // Sinon vérifier la session admin
       const { getServerSession } = await import('next-auth')
       const { authOptions } = await import('@/lib/auth')

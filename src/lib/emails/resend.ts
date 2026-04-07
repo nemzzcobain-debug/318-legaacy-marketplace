@@ -7,9 +7,17 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null
 
-const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@send.318marketplace.com'
+// F19 FIX: Supprimer les fallbacks hardcodés — les variables d'env DOIVENT être définies
+const FROM_EMAIL = process.env.EMAIL_FROM
 const PLATFORM_NAME = '318 LEGAACY Marketplace'
-const PLATFORM_URL = process.env.NEXTAUTH_URL || 'https://www.318marketplace.com'
+const PLATFORM_URL = process.env.NEXTAUTH_URL
+
+if (!FROM_EMAIL && process.env.NODE_ENV === 'production') {
+  console.error('[Email] CRITICAL: EMAIL_FROM non défini en production')
+}
+if (!PLATFORM_URL && process.env.NODE_ENV === 'production') {
+  console.error('[Email] CRITICAL: NEXTAUTH_URL non défini en production')
+}
 
 // ─── Email Wrapper ───
 function emailLayout(content: string): string {
@@ -324,6 +332,12 @@ export async function sendPasswordResetEmail(params: {
 
 // ─── Core Send Function ───
 async function sendEmail(to: string, subject: string, html: string) {
+  // F19 FIX: Vérifier que toutes les config sont présentes
+  if (!FROM_EMAIL || !PLATFORM_URL) {
+    console.error('[Email] Missing EMAIL_FROM or NEXTAUTH_URL env var')
+    return { success: false, reason: 'missing_config' }
+  }
+
   // Skip if no API key configured or Resend not initialized
   if (!resend || !process.env.RESEND_API_KEY) {
     if (process.env.NODE_ENV === 'development') {

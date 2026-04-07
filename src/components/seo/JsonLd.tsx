@@ -1,5 +1,15 @@
 // JSON-LD Structured Data Components for SEO
 
+// F5 FIX: Échapper les caractères dangereux dans le JSON-LD pour prévenir les injections XSS
+// JSON.stringify n'échappe PAS </script> ce qui permet de sortir du bloc script
+function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/'/g, '\\u0027')
+}
+
 interface WebsiteJsonLdProps {
   siteUrl?: string
 }
@@ -33,7 +43,7 @@ export function WebsiteJsonLd({ siteUrl = 'https://www.318marketplace.com' }: We
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
     />
   )
 }
@@ -61,7 +71,7 @@ export function OrganizationJsonLd({ siteUrl = 'https://www.318marketplace.com' 
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
     />
   )
 }
@@ -131,7 +141,7 @@ export function AuctionJsonLd({ auction, beat, producer, siteUrl = 'https://www.
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
     />
   )
 }
@@ -186,7 +196,7 @@ export function ProducerJsonLd({ producer, totalBeats, totalFollowers, siteUrl =
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
     />
   )
 }
@@ -210,7 +220,7 @@ export function BreadcrumbJsonLd({ items }: BreadcrumbJsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
     />
   )
 }

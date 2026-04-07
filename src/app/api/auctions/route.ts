@@ -98,6 +98,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
     }
 
+    // F18 FIX: Limiter la taille du payload
+    const contentLength = parseInt(request.headers.get('content-length') || '0')
+    if (contentLength > 10_000) {
+      return NextResponse.json({ error: 'Payload trop volumineux' }, { status: 413 })
+    }
+
     const body = await request.json()
     const validated = createAuctionSchema.safeParse(body)
     if (!validated.success) {

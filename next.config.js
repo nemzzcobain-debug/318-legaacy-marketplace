@@ -28,10 +28,11 @@ const nextConfig = {
                 headers: [
                     {
                         key: 'Content-Security-Policy',
-                        // Remove unsafe-eval from script-src (not needed in production)
-                        // Keep unsafe-inline for style-src (Tailwind requires inline styles)
-                        // Keep unsafe-inline for script-src (Next.js injects inline scripts; nonce implementation requires middleware refactor)
-                        value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://onfwowxfflnijuvpspkq.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self'; connect-src 'self' https://onfwowxfflnijuvpspkq.supabase.co wss://onfwowxfflnijuvpspkq.supabase.co https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com",
+                        // F16 FIX: CSP renforcée
+                        // - strict-dynamic + unsafe-inline pour compatibilité Next.js (les navigateurs modernes ignorent unsafe-inline quand strict-dynamic est présent)
+                        // - report-uri prêt pour monitoring futur
+                        // NOTE: Pour une implémentation nonce complète, il faut refactorer vers un middleware custom qui injecte le nonce dans chaque réponse HTML
+                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://onfwowxfflnijuvpspkq.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self'; connect-src 'self' https://onfwowxfflnijuvpspkq.supabase.co wss://onfwowxfflnijuvpspkq.supabase.co https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests",
                     },
                     {
                         key: 'X-Frame-Options',

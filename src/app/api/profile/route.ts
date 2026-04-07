@@ -1,19 +1,19 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getAuthenticatedUser } from '@/lib/auth-helpers'
+import { updateProfileSchema } from '@/lib/validations'
 
 // GET /api/profile - Get current user profile
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    // F9 FIX: Utiliser le helper centralisé
+    const authUser = await getAuthenticatedUser()
+    if (!authUser) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
-
-    const userId = (session.user as any).id
+    const userId = authUser.id
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -77,75 +77,60 @@ export async function GET() {
 // PUT /api/profile - Update current user profile
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    // F9 FIX: Utiliser le helper centralisé
+    const authUser = await getAuthenticatedUser()
+    if (!authUser) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
+    const userId = authUser.id
 
-    const userId = (session.user as any).id
+    // F18 FIX: Limiter la taille du body
+    const contentLength = parseInt(request.headers.get('content-length') || '0')
+    if (contentLength > 50_000) {
+      return NextResponse.json({ error: 'Payload trop volumineux' }, { status: 413 })
+    }
+
     const body = await request.json()
 
-    // Allowed fields to update
-    const allowedFields = [
-      'name', 'displayName', 'bio', 'avatar',
-      'website', 'instagram', 'twitter', 'youtube', 'soundcloud', 'spotify',
-      'notifEmail', 'notifBid', 'notifMessage',
-      'producerBio', 'portfolio'
-    ]
+    // F6 FIX: Validation Zod stricte du profil
+    const parsed = updateProfileSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Données invalides' }, { status: 400 })
+    }
 
-    const updateData: Record<string, any> = {}
-
-    for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field]
+    const updateData: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(parsed.data)) {
+      if (value !== undefined) {
+        updateData[key] = value
       }
     }
 
-    // Validate name (required, min 2 chars)
-    if (updateData.name !== undefined && updateData.name.trim().length < 2) {
-      return NextResponse.json({ error: 'Le nom doit contenir au moins 2 caractères' }, { status: 400 })
-    }
-
-    // Validate URLs
+    // Validate URLs — auto-add https:// if missing
     const urlFields = ['website', 'instagram', 'twitter', 'youtube', 'soundcloud', 'spotify', 'portfolio']
     for (const field of urlFields) {
-      if (updateData[field] && updateData[field].trim() !== '') {
-        // Auto-add https:// if missing
-        let url = updateData[field].trim()
-        if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+      if (updateData[field] && typeof updateData[field] === 'string' && (updateData[field] as string).trim() !== '') {
+        let url = (updateData[field] as string).trim()
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
           url = 'https://' + url
         }
-
-        // Validate URL using URL constructor
         try {
           const parsedUrl = new URL(url)
-          // Only allow http:// and https:// protocols
           if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
             return NextResponse.json(
-              { error: `Protocole invalide pour le champ ${field}. Seuls http:// et https:// sont autorisés.` },
+              { error: `Protocole invalide pour ${field}` },
               { status: 400 }
             )
           }
           updateData[field] = url
         } catch {
-          // Invalid URL
           return NextResponse.json(
-            { error: `URL invalide pour le champ ${field}` },
+            { error: `URL invalide pour ${field}` },
             { status: 400 }
           )
         }
       } else if (updateData[field] === '') {
         updateData[field] = null
       }
-    }
-
-    // Validate bio length
-    if (updateData.bio && updateData.bio.length > 500) {
-      return NextResponse.json({ error: 'La bio ne peut pas dépasser 500 caractères' }, { status: 400 })
-    }
-
-    if (updateData.producerBio && updateData.producerBio.length > 1000) {
-      return NextResponse.json({ error: 'La bio producteur ne peut pas dépasser 1000 caractères' }, { status: 400 })
     }
 
     const updatedUser = await prisma.user.update({
