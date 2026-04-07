@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import AudioPlayer from '@/components/audio/AudioPlayer';
-import { Upload, Music, Image, X, Check, Loader2 } from 'lucide-react';
+import { Upload, Music, Image as ImageIcon, X, Check, Loader2 } from 'lucide-react';
 import { GENRES, MOODS } from '@/types';
 // Upload utilise des signed URLs generees par l'API (contourne RLS + limite 4.5MB Vercel)
 
@@ -305,7 +305,7 @@ export default function UploadBeatPage() {
                 className="border-2 border-dashed border-[#1e1e2e] rounded-2xl p-6 text-center cursor-pointer hover:border-[#e11d4840] transition group inline-flex items-center gap-3"
               >
                 <div className="w-12 h-12 rounded-lg bg-[#e11d4810] flex items-center justify-center group-hover:scale-110 transition">
-                  <Image size={20} className="text-[#e11d48]" />
+                  <ImageIcon size={20} className="text-[#e11d48]" />
                 </div>
                 <div className="text-left">
                   <p className="text-white text-sm font-semibold">Ajouter une cover</p>
