@@ -77,6 +77,8 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
               shadow-[0_4px_20px_rgba(225,29,72,0.4)] transition-transform
               ${hovering ? 'scale-110' : 'scale-100'}
             `}
+            aria-label={isPlaying ? 'Arrêter la lecture' : 'Lire le beat'}
+            aria-pressed={isPlaying}
           >
             {isPlaying ? (
               <Pause size={24} className="text-black" />
@@ -138,7 +140,7 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
 
           {/* Countdown */}
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] text-gray-500 flex items-center gap-1">
+            <span className="text-[11px] text-gray-400 flex items-center gap-1">
               <Clock size={11} /> Fin dans
             </span>
             <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
@@ -147,11 +149,11 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
           {/* Bid Info */}
           <div className="bg-[#e11d4808] border border-[#e11d4820] rounded-xl p-2.5 flex items-center justify-between">
             <div>
-              <div className="text-[10px] text-gray-500 mb-0.5">Enchere actuelle</div>
+              <div className="text-[10px] text-gray-400 mb-0.5">Enchere actuelle</div>
               <div className="text-lg font-extrabold text-[#e11d48]">{auction.currentBid}&euro;</div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] text-gray-500 mb-1">{auction.totalBids} encheres</div>
+              <div className="text-[10px] text-gray-400 mb-1">{auction.totalBids} encheres</div>
               <span
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-black"
                 style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
@@ -162,7 +164,7 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
           </div>
 
           {/* Stats */}
-          <div className="flex justify-between mt-2.5 text-[10px] text-gray-600">
+          <div className="flex justify-between mt-2.5 text-[10px] text-gray-400">
             <span className="flex items-center gap-1">
               <Play size={10} /> {beat.plays}
             </span>

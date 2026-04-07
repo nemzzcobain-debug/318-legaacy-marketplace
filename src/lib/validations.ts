@@ -16,6 +16,22 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Mot de passe requis'),
 })
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Email invalide'),
+})
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token invalide'),
+  password: z.string().min(8, 'Minimum 8 caracteres').regex(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+    'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre'
+  ),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Les mots de passe ne correspondent pas",
+  path: ["confirmPassword"],
+})
+
 // ─── Beat ───
 export const createBeatSchema = z.object({
   title: z.string().min(1, 'Titre requis').max(100),

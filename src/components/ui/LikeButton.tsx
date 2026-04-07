@@ -88,14 +88,15 @@ export default function LikeButton({
         flex items-center gap-1.5 transition-all
         ${showCount ? 'pr-2' : ''}
       `}
-      title={liked ? 'Retirer le like' : 'Liker ce beat'}
+      aria-label={liked ? 'Retirer le like' : 'Ajouter aux favoris'}
+      aria-pressed={liked}
     >
       <div
         className={`
           ${sizeClasses} rounded-lg flex items-center justify-center transition-all
           ${liked
             ? 'bg-pink-500/20 text-pink-500'
-            : 'bg-white/5 text-gray-500 hover:text-pink-400 hover:bg-pink-500/10'
+            : 'bg-white/5 text-gray-400 hover:text-pink-400 hover:bg-pink-500/10'
           }
           ${animating ? 'scale-125' : 'scale-100'}
         `}
@@ -107,7 +108,7 @@ export default function LikeButton({
         />
       </div>
       {showCount && (
-        <span className={`font-semibold ${liked ? 'text-pink-400' : 'text-gray-500'} ${size === 'sm' ? 'text-[11px]' : 'text-xs'}`}>
+        <span className={`font-semibold ${liked ? 'text-pink-400' : 'text-gray-400'} ${size === 'sm' ? 'text-[11px]' : 'text-xs'}`}>
           {count}
         </span>
       )}

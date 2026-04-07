@@ -122,15 +122,17 @@ export default function ShareButton({ url, title, description, size = 'md' }: Sh
       <button
         onClick={() => setOpen(!open)}
         className={`${btnSize} rounded-lg bg-white/5 border border-[#222222] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all`}
-        title="Partager"
+        aria-label="Partager"
+        aria-expanded={open}
+        aria-controls="share-menu"
       >
         <Share2 size={size === 'sm' ? 14 : 16} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-52 rounded-xl bg-[#1a1a2e] border border-[#2a2a3e] shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="absolute right-0 top-full mt-2 w-52 rounded-xl bg-[#1a1a2e] border border-[#2a2a3e] shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200" id="share-menu" role="dialog" aria-modal="true" aria-label="Menu de partage">
           <div className="p-2">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider px-2 py-1 mb-1">
+            <div className="text-[10px] text-gray-400 uppercase tracking-wider px-2 py-1 mb-1">
               Partager
             </div>
             {shareLinks.map((link, i) => (

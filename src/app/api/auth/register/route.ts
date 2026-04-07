@@ -2,9 +2,10 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { randomUUID, createHash } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { registerSchema } from '@/lib/validations'
-import { sendWelcomeEmail } from '@/lib/emails/resend'
+import { sendVerificationEmail } from '@/lib/emails/resend'
 
 export async function POST(request: Request) {
   try {
@@ -53,8 +54,22 @@ export async function POST(request: Request) {
       },
     })
 
-    // Envoyer l'email de bienvenue (non-bloquant)
-    sendWelcomeEmail({ to: email, name }).catch(() => {})
+    // Generer le token de verification
+    const verificationToken = randomUUID()
+    const hashedToken = createHash('sha256').update(verificationToken).digest('hex')
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h from now
+
+    // Sauvegarder le token
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token: hashedToken,
+        expires: expiresAt,
+      },
+    })
+
+    // Envoyer l'email de verification (non-bloquant)
+    sendVerificationEmail({ to: email, name, token: verificationToken }).catch(() => {})
 
     // Si producteur, creer une notification pour les admins
     if (role === 'PRODUCER') {

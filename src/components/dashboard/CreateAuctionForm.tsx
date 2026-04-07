@@ -187,11 +187,12 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
         {/* Price row */}
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="text-sm font-semibold text-white mb-2 block">
+            <label htmlFor="startPrice" className="text-sm font-semibold text-white mb-2 block">
               Prix de depart <span className="text-red-400">*</span>
             </label>
             <div className="relative">
               <input
+                id="startPrice"
                 type="number"
                 value={startPrice}
                 onChange={(e) => setStartPrice(e.target.value)}
@@ -199,13 +200,14 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
                 step="0.01"
                 className="w-full bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] pr-8"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">&euro;</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&euro;</span>
             </div>
           </div>
           <div>
-            <label className="text-sm font-semibold text-white mb-2 block">Prix reserve</label>
+            <label htmlFor="reservePrice" className="text-sm font-semibold text-white mb-2 block">Prix reserve</label>
             <div className="relative">
               <input
+                id="reservePrice"
                 type="number"
                 value={reservePrice}
                 onChange={(e) => setReservePrice(e.target.value)}
@@ -214,13 +216,14 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
                 placeholder="Optionnel"
                 className="w-full bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] pr-8"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">&euro;</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&euro;</span>
             </div>
           </div>
           <div>
-            <label className="text-sm font-semibold text-white mb-2 block">Achat immediat</label>
+            <label htmlFor="buyNowPrice" className="text-sm font-semibold text-white mb-2 block">Achat immediat</label>
             <div className="relative">
               <input
+                id="buyNowPrice"
                 type="number"
                 value={buyNowPrice}
                 onChange={(e) => setBuyNowPrice(e.target.value)}
@@ -229,7 +232,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
                 placeholder="Optionnel"
                 className="w-full bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] pr-8"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">&euro;</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&euro;</span>
             </div>
           </div>
         </div>

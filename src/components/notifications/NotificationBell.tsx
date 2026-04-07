@@ -173,6 +173,9 @@ export default function NotificationBell() {
       <button
         onClick={() => setOpen(!open)}
         className="relative w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+        aria-label="Notifications"
+        aria-expanded={open}
+        aria-controls="notifications-dropdown"
       >
         <Bell size={18} className={unreadCount > 0 ? 'text-white' : 'text-gray-400'} />
 
@@ -186,7 +189,7 @@ export default function NotificationBell() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-12 w-[380px] max-h-[520px] bg-[#111111] border border-[#222222] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden z-50">
+        <div className="absolute right-0 top-12 w-[380px] max-h-[520px] bg-[#111111] border border-[#222222] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden z-50" id="notifications-dropdown" role="dialog" aria-label="Notifications" aria-modal="true">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#222222]">
             <div className="flex items-center gap-2">
@@ -210,7 +213,7 @@ export default function NotificationBell() {
           </div>
 
           {/* List */}
-          <div className="overflow-y-auto max-h-[400px]">
+          <div className="overflow-y-auto max-h-[400px]" role="log" aria-live="polite" aria-label="Liste des notifications">
             {notifications.length > 0 ? (
               notifications.map((notif) => {
                 const Icon = NOTIFICATION_ICONS[notif.type] || Bell

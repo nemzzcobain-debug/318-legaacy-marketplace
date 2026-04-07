@@ -44,7 +44,7 @@ export default function Header() {
         </Link>
 
         {/* Nav Desktop */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-6" role="navigation" aria-label="Navigation principale">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
@@ -54,6 +54,7 @@ export default function Header() {
                   ? 'text-red-500 border-red-500'
                   : 'text-gray-400 border-transparent hover:text-white'
               }`}
+              aria-current={pathname === href ? 'page' : undefined}
             >
               <Icon size={16} />
               {label}
@@ -78,27 +79,27 @@ export default function Header() {
 
               {/* Admin link */}
               {user?.role === 'ADMIN' && (
-                <Link href="/admin" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Admin">
+                <Link href="/admin" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Panneau administrateur">
                   <Shield size={20} className="text-orange-400" />
                 </Link>
               )}
 
-              <Link href="/playlists" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Mes Playlists">
+              <Link href="/playlists" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Mes Playlists">
                 <ListMusic size={20} className="text-gray-400" />
               </Link>
-              <Link href="/watchlist" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Ma Watchlist">
+              <Link href="/watchlist" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Ma Watchlist">
                 <Eye size={20} className="text-gray-400" />
               </Link>
-              <Link href="/purchases" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Mes Achats">
+              <Link href="/purchases" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Mes Achats">
                 <ShoppingBag size={20} className="text-gray-400" />
               </Link>
-              <Link href="/my-auctions" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Mes Enchères">
+              <Link href="/my-auctions" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Mes Enchères">
                 <Gavel size={20} className="text-gray-400" />
               </Link>
-              <Link href="/messages" className="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Messages">
+              <Link href="/messages" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Messages">
                 <MessageCircle size={20} className="text-gray-400" />
               </Link>
-              <Link href="/dashboard" className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+              <Link href="/dashboard" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Tableau de bord">
                 <LayoutDashboard size={20} className="text-gray-400" />
               </Link>
               <NotificationBell />
@@ -106,15 +107,15 @@ export default function Header() {
 
               {/* User avatar + logout */}
               <div className="flex items-center gap-2">
-                <Link href="/profile/edit" className="w-8 h-8 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-red-500 transition-all" title="Mon Profil">
+                <Link href="/profile/edit" className="w-8 h-8 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-red-500 transition-all" aria-label="Mon Profil">
                   {user?.name?.[0] || 'U'}
                 </Link>
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-                  title="Deconnexion"
+                  aria-label="Se déconnecter"
                 >
-                  <LogOut size={18} className="text-gray-500" />
+                  <LogOut size={18} className="text-gray-400" />
                 </button>
               </div>
             </>
@@ -141,6 +142,9 @@ export default function Header() {
           <button
             className="md:hidden p-2 ml-1"
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
           >
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -149,7 +153,7 @@ export default function Header() {
 
       {/* Mobile Nav */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-[#1e1e2e] px-4 py-3 flex flex-col gap-2">
+        <div className="md:hidden border-t border-[#1e1e2e] px-4 py-3 flex flex-col gap-2" id="mobile-nav">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}

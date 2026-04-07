@@ -13,7 +13,7 @@ export default function CountdownTimer({ endTime, size = 'md', showIcon = true }
   const { formatted, urgent, ended } = useCountdown(endTime)
 
   if (ended) {
-    return <span className="text-gray-500 font-semibold text-sm">TERMINE</span>
+    return <span className="text-gray-400 font-semibold text-sm">TERMINE</span>
   }
 
   const sizeClasses = {
@@ -25,7 +25,7 @@ export default function CountdownTimer({ endTime, size = 'md', showIcon = true }
   return (
     <div className="flex items-center gap-1.5">
       {showIcon && urgent && <Flame size={size === 'lg' ? 20 : 14} className="text-[#ff4757]" />}
-      {showIcon && !urgent && <Clock size={size === 'lg' ? 18 : 12} className="text-gray-500" />}
+      {showIcon && !urgent && <Clock size={size === 'lg' ? 18 : 12} className="text-gray-400" />}
       <span
         className={`
           font-mono font-bold rounded-md inline-flex items-center

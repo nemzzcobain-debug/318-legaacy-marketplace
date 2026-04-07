@@ -267,6 +267,60 @@ export async function sendWelcomeEmail(params: {
   return sendEmail(to, `🎵 Bienvenue sur 318 LEGAACY Marketplace !`, html)
 }
 
+export async function sendVerificationEmail(params: {
+  to: string
+  name: string
+  token: string
+}) {
+  const { to, name, token } = params
+
+  const verificationUrl = `${PLATFORM_URL}/verify-email?token=${token}`
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Bienvenue sur 318 LEGAACY ! 🎵</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      Clique sur le bouton ci-dessous pour confirmer ton adresse email et activer ton compte.
+    </p>
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="color:#999;font-size:13px;margin:0;">
+        Si tu n'as pas cree ce compte, ignores cet email.
+      </p>
+    </div>
+
+    ${button('Confirmer mon email', verificationUrl)}
+    <p style="color:#555;font-size:11px;text-align:center;margin:0;">Ce lien expire dans 24 heures</p>
+  `)
+
+  return sendEmail(to, `Confirme ton email — 318 LEGAACY Marketplace`, html)
+}
+
+export async function sendPasswordResetEmail(params: {
+  to: string
+  name: string
+  token: string
+}) {
+  const { to, name, token } = params
+
+  const resetUrl = `${PLATFORM_URL}/reset-password?token=${token}`
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Reinitialise ton mot de passe 🔐</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      Tu as demande a reinitialiser ton mot de passe. Clique sur le bouton ci-dessous pour continuer.
+    </p>
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="color:#999;font-size:12px;margin:0 0 12px;">Ce lien expire dans <strong style="color:#e11d48;">1 heure</strong>.</p>
+      <p style="color:#666;font-size:11px;margin:0;">Si tu n'as pas demande une reinitialisation, ignore ce message.</p>
+    </div>
+
+    ${button('Reinitialiser mon mot de passe', resetUrl)}
+  `)
+
+  return sendEmail(to, `🔐 Reinitialise ton mot de passe — 318 LEGAACY`, html)
+}
+
 // ─── Core Send Function ───
 async function sendEmail(to: string, subject: string, html: string) {
   // Skip if no API key configured or Resend not initialized

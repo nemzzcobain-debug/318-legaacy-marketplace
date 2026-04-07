@@ -104,7 +104,7 @@ export default function ReportButton({
       <button
         onClick={() => setIsOpen(true)}
         className={`${btnSize} text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all`}
-        title="Signaler"
+        aria-label="Signaler ce contenu"
       >
         <Flag size={iconSize} />
       </button>
@@ -115,18 +115,22 @@ export default function ReportButton({
           <div
             ref={modalRef}
             className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="report-modal-title"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-zinc-700">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="text-orange-500" size={20} />
-                <h3 className="font-semibold text-white">
+                <h3 className="font-semibold text-white" id="report-modal-title">
                   {step === 'done' ? 'Merci !' : 'Signaler'}
                 </h3>
               </div>
               <button
                 onClick={handleClose}
                 className="p-1 hover:bg-zinc-700 rounded-lg transition"
+                aria-label="Fermer"
               >
                 <X size={18} className="text-zinc-400" />
               </button>

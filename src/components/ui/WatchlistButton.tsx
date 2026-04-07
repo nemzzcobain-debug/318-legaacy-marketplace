@@ -74,6 +74,8 @@ export default function WatchlistButton({ auctionId, size = 'sm', showLabel = fa
             ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20'
             : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-600'
         } disabled:opacity-50`}
+        aria-label={isWatching ? 'Retirer de la watchlist' : 'Ajouter à la watchlist'}
+        aria-pressed={isWatching}
       >
         {loading ? (
           <Loader2 size={iconSize} className="animate-spin" />
@@ -91,7 +93,8 @@ export default function WatchlistButton({ auctionId, size = 'sm', showLabel = fa
     <button
       onClick={toggle}
       disabled={loading}
-      title={isWatching ? 'Ne plus suivre' : 'Suivre cette enchère'}
+      aria-label={isWatching ? 'Retirer de la watchlist' : 'Ajouter à la watchlist'}
+      aria-pressed={isWatching}
       className={`p-2 rounded-lg transition ${
         isWatching
           ? 'text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20'

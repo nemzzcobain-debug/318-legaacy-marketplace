@@ -200,6 +200,8 @@ export default function AudioPlayer({
             onClick={togglePlay}
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform hover:scale-110"
             style={{ backgroundColor: accentColor }}
+            aria-label={isPlaying ? 'Arrêter la lecture' : 'Lire le beat'}
+            aria-pressed={isPlaying}
           >
             {isPlaying ? (
               <Pause size={14} className="text-black" />
@@ -212,8 +214,13 @@ export default function AudioPlayer({
             className="flex-1 h-8 cursor-pointer"
             onClick={handleWaveformClick}
             style={{ width: '100%' }}
+            role="slider"
+            aria-label="Barre de progression audio"
+            aria-valuemin={0}
+            aria-valuemax={duration}
+            aria-valuenow={currentTime}
           />
-          <span className="text-[10px] text-gray-500 flex-shrink-0 w-8 text-right">
+          <span className="text-[10px] text-gray-400 flex-shrink-0 w-8 text-right">
             {formatTime(duration - currentTime)}
           </span>
         </div>
@@ -253,13 +260,15 @@ export default function AudioPlayer({
       {/* Controls */}
       <div className="flex items-center justify-between px-4 pb-4">
         <div className="flex items-center gap-2">
-          <button onClick={restart} className="text-gray-500 hover:text-white transition p-1">
+          <button onClick={restart} className="text-gray-400 hover:text-white transition p-1" aria-label="Recommencer la lecture">
             <SkipBack size={16} />
           </button>
           <button
             onClick={togglePlay}
             className="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-105"
             style={{ backgroundColor: accentColor }}
+            aria-label={isPlaying ? 'Arrêter la lecture' : 'Lire le beat'}
+            aria-pressed={isPlaying}
           >
             {isPlaying ? (
               <Pause size={18} className="text-black" />
@@ -270,13 +279,13 @@ export default function AudioPlayer({
         </div>
 
         {/* Time */}
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-400">
           {formatTime(currentTime)} / {formatTime(duration)}
         </div>
 
         {/* Volume */}
         <div className="flex items-center gap-2">
-          <button onClick={() => setMuted(!muted)} className="text-gray-500 hover:text-white transition">
+          <button onClick={() => setMuted(!muted)} className="text-gray-400 hover:text-white transition" aria-label={muted ? 'Activer le son' : 'Mute'}>
             {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
           <input
@@ -287,6 +296,7 @@ export default function AudioPlayer({
             value={muted ? 0 : volume}
             onChange={(e) => { setVolume(parseFloat(e.target.value)); setMuted(false); }}
             className="w-16 h-1 accent-[#e11d48] cursor-pointer"
+            aria-label="Volume"
           />
         </div>
       </div>

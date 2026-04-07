@@ -1,23 +1,44 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import Image from 'next/image'
-import { LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { LogIn, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const verified = searchParams.get('verified')
+    const resetSuccess = searchParams.get('reset')
+    const errorParam = searchParams.get('error')
+
+    if (verified === 'true') {
+      setSuccess('Email confirmé ! Tu peux te connecter.')
+    } else if (resetSuccess === 'true') {
+      setSuccess('Mot de passe reinitialise ! Tu peux te connecter.')
+    } else if (errorParam === 'invalid-token') {
+      setError('Le lien de confirmation est invalide ou a expire.')
+    } else if (errorParam === 'token-expired') {
+      setError('Le lien de confirmation a expire. Tu peux demander un nouveau lien.')
+    } else if (errorParam === 'server-error') {
+      setError('Une erreur est survenue. Veuillez reessayer plus tard.')
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSuccess('')
     setLoading(true)
 
     try {
@@ -28,7 +49,12 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setError(result.error)
+        // Message d'erreur personnalise pour email non verifie
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
+          setError('Verifie ton email avant de te connecter. Un lien de confirmation t\'a ete envoye.')
+        } else {
+          setError(result.error)
+        }
       } else {
         router.push('/marketplace')
         router.refresh()
@@ -65,6 +91,13 @@ export default function LoginPage() {
           <h1 className="text-2xl font-extrabold text-white mb-1">Connexion</h1>
           <p className="text-sm text-gray-400 mb-6">Accede a tes encheres</p>
 
+          {success && (
+            <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-[#2ed57315] border border-[#2ed57330] text-[#2ed573] text-sm">
+              <CheckCircle size={16} />
+              {success}
+            </div>
+          )}
+
           {error && (
             <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-[#ff475715] border border-[#ff475730] text-[#ff4757] text-sm">
               <AlertCircle size={16} />
@@ -86,7 +119,12 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Mot de passe</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-gray-400">Mot de passe</label>
+                <Link href="/forgot-password" className="text-xs text-[#e11d48] hover:underline font-medium">
+                  Oublie ?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}

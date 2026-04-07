@@ -91,7 +91,7 @@ export default function AddToPlaylistButton({ beatId, size = 'sm' }: Props) {
             ? 'p-1.5 hover:bg-white/10'
             : 'px-3 py-1.5 hover:bg-white/10 text-xs font-semibold text-gray-400'
         }`}
-        title="Ajouter à une playlist"
+        aria-label="Ajouter à une playlist"
       >
         <ListMusic size={iconSize} className="text-gray-400" />
         {size === 'md' && 'Playlist'}
@@ -101,8 +101,8 @@ export default function AddToPlaylistButton({ beatId, size = 'sm' }: Props) {
         <div className="absolute right-0 top-full mt-2 w-64 glass rounded-xl border border-[#1e1e2e] shadow-xl z-50 overflow-hidden">
           <div className="p-3 border-b border-[#1e1e2e] flex items-center justify-between">
             <span className="text-sm font-bold text-white">Ajouter à une playlist</span>
-            <button onClick={() => setOpen(false)} className="p-0.5 hover:bg-white/5 rounded">
-              <X size={14} className="text-gray-500" />
+            <button onClick={() => setOpen(false)} className="p-0.5 hover:bg-white/5 rounded" aria-label="Fermer">
+              <X size={14} className="text-gray-400" />
             </button>
           </div>
 
@@ -130,9 +130,9 @@ export default function AddToPlaylistButton({ beatId, size = 'sm' }: Props) {
           {/* Playlist list */}
           <div className="max-h-48 overflow-y-auto">
             {loading ? (
-              <div className="py-6 flex justify-center"><Loader2 size={20} className="animate-spin text-gray-500" /></div>
+              <div className="py-6 flex justify-center"><Loader2 size={20} className="animate-spin text-gray-400" /></div>
             ) : playlists.length === 0 ? (
-              <p className="py-4 text-center text-xs text-gray-600">Aucune playlist</p>
+              <p className="py-4 text-center text-xs text-gray-400">Aucune playlist</p>
             ) : (
               playlists.map(p => (
                 <button
@@ -143,14 +143,14 @@ export default function AddToPlaylistButton({ beatId, size = 'sm' }: Props) {
                 >
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-white truncate">{p.name}</p>
-                    <p className="text-[10px] text-gray-600">{p._count.beats} beats</p>
+                    <p className="text-[10px] text-gray-400">{p._count.beats} beats</p>
                   </div>
                   {adding === p.id ? (
-                    <Loader2 size={14} className="animate-spin text-gray-500" />
+                    <Loader2 size={14} className="animate-spin text-gray-400" />
                   ) : added.has(p.id) ? (
                     <Check size={14} className="text-green-400" />
                   ) : (
-                    <Plus size={14} className="text-gray-500" />
+                    <Plus size={14} className="text-gray-400" />
                   )}
                 </button>
               ))

@@ -95,7 +95,7 @@ export default function PromoCodeInput({ auctionId, price, onPromoApplied }: Pro
     <div>
       <div className="flex gap-2">
         <div className="flex-1 relative">
-          <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={code}

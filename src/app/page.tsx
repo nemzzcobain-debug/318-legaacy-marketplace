@@ -194,6 +194,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
 
+      <main id="main-content">
       {/* ═══════════ HERO ═══════════ */}
       <section className="relative overflow-hidden pt-24 pb-32 px-4">
         <FloatingParticles />
@@ -647,19 +648,19 @@ export default function Home() {
 
             <div className="flex gap-8 text-sm">
               <div className="space-y-2.5">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Plateforme</h4>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Plateforme</h4>
                 <Link href="/marketplace" className="block text-gray-400 hover:text-white transition-colors">Marketplace</Link>
                 <Link href="/producers" className="block text-gray-400 hover:text-white transition-colors">Producteurs</Link>
                 <Link href="/playlists" className="block text-gray-400 hover:text-white transition-colors">Playlists</Link>
               </div>
               <div className="space-y-2.5">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Compte</h4>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Compte</h4>
                 <Link href="/register" className="block text-gray-400 hover:text-white transition-colors">S&apos;inscrire</Link>
                 <Link href="/login" className="block text-gray-400 hover:text-white transition-colors">Connexion</Link>
                 <Link href="/profile/edit" className="block text-gray-400 hover:text-white transition-colors">Mon Profil</Link>
               </div>
               <div className="space-y-2.5">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Aide</h4>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Aide</h4>
                 <Link href="/faq" className="block text-gray-400 hover:text-white transition-colors">Comment ca marche</Link>
                 <Link href="/stats" className="block text-gray-400 hover:text-white transition-colors">Statistiques</Link>
               </div>
@@ -668,21 +669,22 @@ export default function Home() {
 
           <div className="pt-6 border-t border-[#1a1a1a]">
             <div className="flex flex-wrap items-center justify-center gap-4 mb-4 text-xs">
-              <Link href="/mentions-legales" className="text-gray-600 hover:text-gray-400 transition-colors">Mentions legales</Link>
-              <span className="text-gray-800">|</span>
-              <Link href="/cgv" className="text-gray-600 hover:text-gray-400 transition-colors">CGV</Link>
-              <span className="text-gray-800">|</span>
-              <Link href="/confidentialite" className="text-gray-600 hover:text-gray-400 transition-colors">Confidentialite</Link>
+              <Link href="/mentions-legales" className="text-gray-500 hover:text-gray-300 transition-colors">Mentions legales</Link>
+              <span className="text-gray-700">|</span>
+              <Link href="/cgv" className="text-gray-500 hover:text-gray-300 transition-colors">CGV</Link>
+              <span className="text-gray-700">|</span>
+              <Link href="/confidentialite" className="text-gray-500 hover:text-gray-300 transition-colors">Confidentialite</Link>
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-xs text-gray-700">&copy; 2026 318 LEGAACY Studio — Tous droits reserves</p>
-              <p className="text-xs text-gray-700 flex items-center gap-1">
+              <p className="text-xs text-gray-600">&copy; 2026 318 LEGAACY Studio — Tous droits reserves</p>
+              <p className="text-xs text-gray-600 flex items-center gap-1">
                 <Globe size={10} /> Premiere plateforme d&apos;encheres de beats en France
               </p>
             </div>
           </div>
         </div>
       </footer>
+      </main>
 
       {/* ═══════════ CSS ANIMATIONS ═══════════ */}
       <style jsx global>{`

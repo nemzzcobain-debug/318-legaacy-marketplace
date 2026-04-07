@@ -119,6 +119,8 @@ export default function FollowButton({
           hover:bg-red-500/5 hover:border-red-500/20
           group
         `}
+        aria-label={`Ne plus suivre ${producerId}`}
+        aria-pressed={true}
       >
         {loading ? (
           <Loader2 size={iconSizes[size]} className="animate-spin" />
@@ -149,6 +151,8 @@ export default function FollowButton({
           : 'text-white border border-[#333333] hover:border-red-500/30 hover:bg-red-500/5'
         }
       `}
+      aria-label={`Suivre ${producerId}`}
+      aria-pressed={false}
     >
       {loading ? (
         <Loader2 size={iconSizes[size]} className="animate-spin" />
@@ -157,7 +161,7 @@ export default function FollowButton({
       )}
       Suivre
       {showCount && count > 0 && (
-        <span className="text-gray-500 ml-1">{count}</span>
+        <span className="text-gray-400 ml-1">{count}</span>
       )}
     </button>
   )

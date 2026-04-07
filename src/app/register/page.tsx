@@ -49,20 +49,8 @@ export default function RegisterPage() {
         return
       }
 
-      // Auto-login after registration
-      const loginResult = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
-
-      if (loginResult?.error) {
-        // Account created but login failed — redirect to login
-        router.push('/login')
-      } else {
-        router.push('/marketplace')
-        router.refresh()
-      }
+      // Rediriger vers la page de verification d'email
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`)
     } catch {
       setError('Erreur de connexion au serveur')
     } finally {
