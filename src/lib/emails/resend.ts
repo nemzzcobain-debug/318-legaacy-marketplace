@@ -1,3 +1,4 @@
+// @ts-ignore - resend is optional
 import { Resend } from 'resend'
 
 // Initialize Resend client (conditionnel — ne crashe pas si la clé est absente)

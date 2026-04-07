@@ -128,7 +128,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
           id: auction.id,
           currentBid: auction.currentBid,
           startPrice: auction.startPrice,
-          endTime: auction.endTime,
+          endTime: auction.endTime.toISOString(),
           status: auction.status,
           licenseType: auction.licenseType,
         },

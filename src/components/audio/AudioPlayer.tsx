@@ -239,7 +239,7 @@ export default function AudioPlayer({
         <div className="flex items-center gap-3 p-4 pb-2">
           {coverImage && (
             <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0 relative">
-              <Image src={coverImage} alt={title} width={48} height={48} className="w-full h-full object-cover" />
+              <Image src={coverImage} alt={title || 'Beat cover'} width={48} height={48} className="w-full h-full object-cover" />
             </div>
           )}
           <div className="flex-1 min-w-0">

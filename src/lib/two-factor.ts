@@ -59,8 +59,8 @@ export function generateBackupCodes(): string[] {
 function base32Encode(buffer: Buffer): string {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
   let bits = ''
-  for (const byte of buffer) {
-    bits += byte.toString(2).padStart(8, '0')
+  for (let i = 0; i < buffer.length; i++) {
+    bits += buffer[i].toString(2).padStart(8, '0')
   }
   let result = ''
   for (let i = 0; i < bits.length; i += 5) {

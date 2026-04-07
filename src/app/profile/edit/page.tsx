@@ -397,7 +397,7 @@ export default function ProfileEditPage() {
                   </label>
                   <input
                     type="url"
-                    value={form[key as keyof ProfileFormData]}
+                    value={(form[key as keyof ProfileFormData] as string) || ''}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors"
                     placeholder={placeholder}
