@@ -239,7 +239,7 @@ export default function Home() {
             </span>
             <br />
             <span className={`inline-block text-white transition-all duration-700 delay-500 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-              Cree ton{' '}
+              Crée ton{' '}
             </span>
             <span className={`inline-block relative transition-all duration-700 delay-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <span className="bg-gradient-to-r from-red-500 via-purple-500 to-red-500 bg-clip-text text-transparent bg-[length:200%] animate-gradient-x">
@@ -271,7 +271,7 @@ export default function Home() {
               href="/register"
               className="px-8 py-4 rounded-2xl font-extrabold text-white text-lg border-2 border-[#2a2a2a] hover:border-red-500/40 transition-all hover:bg-white/[0.02] backdrop-blur-sm"
             >
-              Creer un compte
+              Créer un compte
             </Link>
           </div>
 
@@ -534,7 +534,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { step: '01', icon: <UserPlus size={24} />, title: 'Cree ton compte', desc: 'Inscris-toi gratuitement en 30 secondes et accede a toutes les encheres de la plateforme.' },
+              { step: '01', icon: <UserPlus size={24} />, title: 'Crée ton compte', desc: 'Inscris-toi gratuitement en 30 secondes et accede a toutes les encheres de la plateforme.' },
               { step: '02', icon: <Gavel size={24} />, title: 'Place ton enchere', desc: 'Ecoute les beats, choisis ta licence (Basic, Premium, Exclusive) et encheris en temps reel.' },
               { step: '03', icon: <Music size={24} />, title: 'Telecharge ton beat', desc: 'Tu as gagne ? Paye en ligne et recois tes fichiers audio instantanement.' },
             ].map((item) => (
@@ -616,7 +616,7 @@ export default function Home() {
             >
               <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-700 rounded-2xl" />
               <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="relative z-10">Creer mon compte gratuit</span>
+              <span className="relative z-10">Créer mon compte gratuit</span>
             </Link>
             <Link
               href="/marketplace"
