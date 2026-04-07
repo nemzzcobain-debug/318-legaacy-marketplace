@@ -1,3 +1,7 @@
+// In-memory rate limiter (single-instance fallback)
+// For distributed rate limiting across Vercel instances, use rate-limit-redis.ts
+// Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in .env
+
 /**
  * Rate Limiter in-memory pour 318 LEGAACY Marketplace
  * Compatible serverless (Vercel) — basé sur un Map en mémoire

@@ -6,6 +6,7 @@ import { randomUUID, createHash } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { registerSchema } from '@/lib/validations'
 import { sendVerificationEmail } from '@/lib/emails/resend'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Erreur inscription:', error)
+    logger.error('Erreur inscription:', { error: String(error) })
     return NextResponse.json(
       { error: 'Erreur serveur' },
       { status: 500 }

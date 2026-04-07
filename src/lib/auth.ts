@@ -1,8 +1,26 @@
 import { NextAuthOptions } from 'next-auth'
+import { DefaultSession } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
+
+/**
+ * Extended User type for NextAuth session
+ * Adds role and id fields to base NextAuth User
+ */
+declare module 'next-auth' {
+  interface User {
+    id: string
+    role: string
+  }
+  interface Session {
+    user: DefaultSession['user'] & {
+      id: string
+      role: string
+    }
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -59,14 +77,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.role = (user as any).role
+        token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id
-        ;(session.user as any).role = token.role
+        session.user.id = token.id as string | undefined ?? ''
+        session.user.role = token.role as string | undefined ?? ''
       }
       return session
     },

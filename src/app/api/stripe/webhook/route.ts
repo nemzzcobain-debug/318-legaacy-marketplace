@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import Stripe from 'stripe'
 import { sendAuctionWonEmail, sendPaymentReceivedEmail } from '@/lib/emails/resend'
 
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   try {
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      console.error('[WEBHOOK] STRIPE_WEBHOOK_SECRET non configuré')
+      logger.error('[WEBHOOK] STRIPE_WEBHOOK_SECRET non configuré')
       return NextResponse.json({ error: 'Webhook non configuré' }, { status: 500 })
     }
 
@@ -43,11 +44,11 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET
     )
   } catch (err: any) {
-    console.error('[WEBHOOK] Erreur de vérification:', err.message)
+    logger.error('[WEBHOOK] Erreur de vérification:', { error: err.message })
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 400 })
   }
 
-  if (isDev) console.log(`[WEBHOOK] ${event.type}`)
+  if (isDev) logger.debug(`[WEBHOOK] ${event.type}`)
 
   try {
     switch (event.type) {
@@ -82,12 +83,12 @@ export async function POST(req: NextRequest) {
       }
 
       default:
-        if (isDev) console.log(`[WEBHOOK] Événement non géré: ${event.type}`)
+        if (isDev) logger.debug(`[WEBHOOK] Événement non géré: ${event.type}`)
     }
 
     return NextResponse.json({ received: true })
   } catch (err: any) {
-    console.error('[WEBHOOK] Erreur traitement:', err.message)
+    logger.error('[WEBHOOK] Erreur traitement:', { error: err.message })
     // Retourner 500 pour que Stripe réessaye l'événement
     return NextResponse.json({ error: 'Erreur de traitement' }, { status: 500 })
   }
@@ -98,7 +99,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const { auctionId, userId, producerId, commission, producerPayout } = metadata
 
   if (!auctionId) {
-    console.error('[WEBHOOK] checkout.session.completed sans auctionId dans metadata')
+    logger.error('[WEBHOOK] checkout.session.completed sans auctionId dans metadata')
     return
   }
 
@@ -192,7 +193,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         commission: commissionAmount,
         payout: payoutAmount,
         license: auction.winningLicense || auction.licenseType,
-      }).catch((e) => console.error('[WEBHOOK] Erreur envoi email:', e?.message))
+      }).catch((e) => logger.error('[WEBHOOK] Erreur envoi email:', { error: e?.message }))
     }
 
     if (auction.winner?.email) {
@@ -204,12 +205,12 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         finalPrice,
         license: auction.winningLicense || auction.licenseType,
         auctionId,
-      }).catch((e) => console.error('[WEBHOOK] Erreur envoi email:', e?.message))
+      }).catch((e) => logger.error('[WEBHOOK] Erreur envoi email:', { error: e?.message }))
     }
 
-    if (isDev) console.log(`[WEBHOOK] ✓ Enchère ${auctionId} complétée`)
+    if (isDev) logger.debug(`[WEBHOOK] ✓ Enchère ${auctionId} complétée`)
   } catch (err: any) {
-    console.error(`[WEBHOOK] Erreur checkout (${auctionId}):`, err.message)
+    logger.error(`[WEBHOOK] Erreur checkout (${auctionId}):`, { error: err.message })
     throw err
   }
 }
@@ -283,9 +284,9 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       })
     }
 
-    if (isDev) console.log(`[WEBHOOK] ✓ PaymentIntent ${auctionId} complété`)
+    if (isDev) logger.debug(`[WEBHOOK] ✓ PaymentIntent ${auctionId} complété`)
   } catch (err: any) {
-    console.error(`[WEBHOOK] Erreur PaymentIntent (${auctionId}):`, err.message)
+    logger.error(`[WEBHOOK] Erreur PaymentIntent (${auctionId}):`, { error: err.message })
     throw err
   }
 }
@@ -311,7 +312,7 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
       },
     })
   } catch (err: any) {
-    console.error(`[WEBHOOK] Erreur PaymentFailed (${auctionId}):`, err.message)
+    logger.error(`[WEBHOOK] Erreur PaymentFailed (${auctionId}):`, { error: err.message })
     throw err
   }
 }
@@ -362,7 +363,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
       })
     }
   } catch (err: any) {
-    console.error(`[WEBHOOK] Erreur Refund (${auctionId}):`, err.message)
+    logger.error(`[WEBHOOK] Erreur Refund (${auctionId}):`, { error: err.message })
     throw err
   }
 }
@@ -393,10 +394,10 @@ async function handleAccountUpdated(account: Stripe.Account) {
         },
       })
 
-      if (isDev) console.log(`[WEBHOOK] ✓ Producteur ${user.id} approuvé`)
+      if (isDev) logger.debug(`[WEBHOOK] ✓ Producteur ${user.id} approuvé`)
     }
   } catch (err: any) {
-    console.error('[WEBHOOK] Erreur AccountUpdated:', err.message)
+    logger.error('[WEBHOOK] Erreur AccountUpdated:', { error: err.message })
     throw err
   }
 }

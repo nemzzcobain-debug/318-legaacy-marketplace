@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import Image from 'next/image'
 import Header from '@/components/layout/Header'
 import AudioPlayer from '@/components/audio/AudioPlayer'
 import CountdownTimer from '@/components/ui/CountdownTimer'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import Link from 'next/link'
 import {
   Shield, Star, Play, Heart, Music, Gavel, TrendingUp,
@@ -146,6 +148,11 @@ export default function ProducerClient() {
       <Header />
 
       <main className="max-w-5xl mx-auto px-4 py-8">
+        <Breadcrumbs items={[
+          { label: 'Producteurs', href: '/producers' },
+          { label: producer.displayName || producer.name }
+        ]} />
+
         {/* Profile Header */}
         <div className="bg-[#111111] border border-[#222222] rounded-2xl overflow-hidden mb-6">
           {/* Banner */}
@@ -154,9 +161,9 @@ export default function ProducerClient() {
           <div className="px-6 pb-6 -mt-12">
             <div className="flex flex-col md:flex-row md:items-end gap-4">
               {/* Avatar */}
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-3xl font-black text-white border-4 border-[#111111] shadow-xl">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-3xl font-black text-white border-4 border-[#111111] shadow-xl overflow-hidden">
                 {producer.avatar ? (
-                  <img src={producer.avatar} alt={displayName} className="w-full h-full rounded-2xl object-cover" />
+                  <Image src={producer.avatar} alt={displayName} width={96} height={96} className="w-full h-full rounded-2xl object-cover" />
                 ) : (
                   displayName[0].toUpperCase()
                 )}

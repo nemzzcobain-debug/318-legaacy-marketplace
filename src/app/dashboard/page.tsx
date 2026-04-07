@@ -93,7 +93,7 @@ export default function DashboardPage() {
     { id: 'settings', label: 'Parametres', icon: Settings },
   ]
 
-  const userName = (session?.user as any)?.name || 'Producteur'
+  const userName = session?.user?.name || 'Producteur'
 
   if (status === 'loading' || loading) {
     return (
@@ -542,8 +542,8 @@ export default function DashboardPage() {
         {activeTab === 'analytics' && <AnalyticsTab />}
 
         {/* ═══ BADGES TAB ═══ */}
-        {activeTab === 'badges' && session?.user && (
-          <BadgesFullView userId={(session.user as any).id} />
+        {activeTab === 'badges' && session?.user?.id && (
+          <BadgesFullView userId={session.user.id} />
         )}
 
         {/* ═══ SETTINGS TAB ═══ */}

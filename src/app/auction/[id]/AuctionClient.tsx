@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import AudioPlayer from '@/components/audio/AudioPlayer';
 import CountdownTimer from '@/components/ui/CountdownTimer';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { useRealtimeAuction, useRealtimeBids } from '@/hooks/useRealtimeAuction';
 import { formatTimeLeft, isEndingCritical } from '@/lib/realtime-utils';
 import { Gavel, Shield, TrendingUp, Clock, AlertTriangle, Zap, Music, ArrowLeft, Wifi, CreditCard, Trophy, CheckCircle, XCircle, Download, FileText } from 'lucide-react';
@@ -14,6 +15,7 @@ import ShareButton from '@/components/ui/ShareButton';
 import ReportButton from '@/components/ui/ReportButton';
 import WatchlistButton from '@/components/ui/WatchlistButton';
 import AddToPlaylistButton from '@/components/playlist/AddToPlaylistButton';
+import SimilarBeats from '@/components/auction/SimilarBeats';
 
 interface BidItem {
   id: string;
@@ -225,6 +227,11 @@ export default function AuctionClient() {
       <Header />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
+        <Breadcrumbs items={[
+          { label: 'Enchères', href: '/marketplace' },
+          { label: beat.title }
+        ]} />
+
         {/* Back link */}
         <Link href="/marketplace" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-white mb-6 transition">
           <ArrowLeft size={14} /> Retour aux encheres
@@ -442,7 +449,7 @@ export default function AuctionClient() {
               )}
 
               {!isActive && (() => {
-                const userId = session?.user ? (session.user as any).id : null;
+                const userId = session?.user?.id ?? null;
                 const isWinner = userId && auction.winnerId === userId;
                 const isParticipant = userId && auction.bids.some(b => b.user.id === userId);
                 const isPaid = !!auction.paidAt;
@@ -573,6 +580,8 @@ export default function AuctionClient() {
             </div>
           </div>
         </div>
+
+        <SimilarBeats auctionId={auction.id} />
       </main>
     </div>
   );

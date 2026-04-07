@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import PlaylistClient from './PlaylistClient'
+import { BreadcrumbJsonLd } from '@/components/seo/JsonLd'
 
 interface Props {
   params: { id: string }
@@ -86,6 +87,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function PlaylistPage() {
-  return <PlaylistClient />
+interface PlaylistPageProps {
+  params: { id: string }
+}
+
+export default async function PlaylistPage({ params }: PlaylistPageProps) {
+  let playlistName = ''
+
+  try {
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: params.id },
+      select: { name: true, visibility: true },
+    })
+    if (playlist && playlist.visibility === 'PUBLIC') {
+      playlistName = playlist.name
+    }
+  } catch {}
+
+  const breadcrumbItems = [
+    { name: 'Accueil', url: 'https://www.318marketplace.com' },
+    { name: 'Playlists', url: 'https://www.318marketplace.com/playlists' },
+    ...(playlistName ? [{ name: playlistName, url: `https://www.318marketplace.com/playlists/${params.id}` }] : []),
+  ]
+
+  return (
+    <>
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+      <PlaylistClient />
+    </>
+  )
 }

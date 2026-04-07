@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import {
   ArrowLeft, Play, Pause, SkipForward, SkipBack, Music, Globe, Lock,
   Trash2, Share2, Loader2, Gavel, Clock, ListMusic, Volume2
@@ -32,7 +34,7 @@ export default function PlaylistClient() {
   const params = useParams()
   const router = useRouter()
   const { data: session } = useSession()
-  const userId = (session?.user as any)?.id
+  const userId = session?.user?.id
   const audioRef = useRef<HTMLAudioElement>(null)
 
   const [playlist, setPlaylist] = useState<PlaylistDetail | null>(null)
@@ -150,6 +152,11 @@ export default function PlaylistClient() {
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-red-900/20 to-[#0a0a0f]" />
         <div className="relative max-w-5xl mx-auto px-4 pt-8 pb-6">
+          <Breadcrumbs items={[
+            { label: 'Playlists', href: '/playlists' },
+            { label: playlist.name }
+          ]} />
+
           <Link href="/playlists" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors">
             <ArrowLeft size={16} /> Retour aux playlists
           </Link>
@@ -162,7 +169,7 @@ export default function PlaylistClient() {
                   {[0, 1, 2, 3].map(i => (
                     <div key={i} className="relative overflow-hidden">
                       {playlist.beats[i]?.beat.coverImage ? (
-                        <img src={playlist.beats[i].beat.coverImage!} alt="" className="w-full h-full object-cover" />
+                        <Image src={playlist.beats[i].beat.coverImage!} alt="" fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full bg-[#1a1a2e] flex items-center justify-center"><Music size={16} className="text-gray-700" /></div>
                       )}
@@ -257,9 +264,9 @@ export default function PlaylistClient() {
 
                   {/* Title + Producer */}
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#1a1a2e] shrink-0">
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#1a1a2e] shrink-0 relative">
                       {beat.coverImage ? (
-                        <img src={beat.coverImage} alt="" className="w-full h-full object-cover" />
+                        <Image src={beat.coverImage} alt="" fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center"><Music size={16} className="text-gray-700" /></div>
                       )}
@@ -311,9 +318,9 @@ export default function PlaylistClient() {
           <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
             {/* Track info */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 relative">
                 {currentBeat.coverImage ? (
-                  <img src={currentBeat.coverImage} alt="" className="w-full h-full object-cover" />
+                  <Image src={currentBeat.coverImage} alt="" fill className="object-cover" />
                 ) : (
                   <div className="w-full h-full bg-[#1a1a2e] flex items-center justify-center"><Music size={16} className="text-gray-700" /></div>
                 )}

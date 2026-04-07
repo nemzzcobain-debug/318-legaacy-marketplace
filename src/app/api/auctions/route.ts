@@ -2,9 +2,17 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { createAuctionSchema } from '@/lib/validations'
+import { logger } from '@/lib/logger'
+import {
+  parsePagination,
+  parseAuctionSort,
+  buildStatusFilter,
+  buildGenreFilter,
+} from '@/lib/auction-helpers'
 
 // GET /api/auctions - Liste des encheres actives
 export async function GET(request: Request) {
@@ -14,43 +22,17 @@ export async function GET(request: Request) {
     const genre = searchParams.get('genre')
     const sort = searchParams.get('sort') || 'ending_soon'
 
-    // Parse pagination with NaN validation
-    const pageStr = parseInt(searchParams.get('page') || '1')
-    const page = Math.max(1, !isNaN(pageStr) ? pageStr : 1)
+    // Parse pagination
+    const { page, limit, skip } = parsePagination(searchParams)
 
-    const limitStr = parseInt(searchParams.get('limit') || '20')
-    const limit = Math.min(100, Math.max(1, !isNaN(limitStr) ? limitStr : 20))
-
-    const where: any = {}
-
-    // Filtrer par status
-    if (status === 'active') {
-      where.status = { in: ['ACTIVE', 'ENDING_SOON'] }
-      where.endTime = { gt: new Date() }
-    } else if (status === 'ending_soon') {
-      where.status = { in: ['ACTIVE', 'ENDING_SOON'] }
-      where.endTime = {
-        gt: new Date(),
-        lt: new Date(Date.now() + 3600000), // Moins d'1h
-      }
-    } else if (status === 'ended') {
-      where.status = 'ENDED'
+    // Build where clause with proper typing
+    const where: Prisma.AuctionWhereInput = {
+      ...buildStatusFilter(status),
+      ...buildGenreFilter(genre),
     }
 
-    // Filtrer par genre du beat
-    if (genre) {
-      where.beat = { genre }
-    }
-
-    // Tri
-    let orderBy: any = {}
-    switch (sort) {
-      case 'ending_soon': orderBy = { endTime: 'asc' }; break
-      case 'most_bids': orderBy = { totalBids: 'desc' }; break
-      case 'highest_bid': orderBy = { currentBid: 'desc' }; break
-      case 'newest': orderBy = { createdAt: 'desc' }; break
-      default: orderBy = { endTime: 'asc' }
-    }
+    // Parse sort
+    const orderBy = parseAuctionSort(sort)
 
     const [auctions, total] = await Promise.all([
       prisma.auction.findMany({
@@ -85,7 +67,7 @@ export async function GET(request: Request) {
           },
         },
         orderBy,
-        skip: (page - 1) * limit,
+        skip,
         take: limit,
       }),
       prisma.auction.count({ where }),
@@ -96,7 +78,7 @@ export async function GET(request: Request) {
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
   } catch (error) {
-    console.error('Erreur listing encheres:', error)
+    logger.error('Erreur listing encheres:', { error: String(error) })
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
@@ -205,7 +187,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ auction }, { status: 201 })
   } catch (error) {
-    console.error('Erreur creation enchere:', error)
+    logger.error('Erreur creation enchere:', { error: String(error) })
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

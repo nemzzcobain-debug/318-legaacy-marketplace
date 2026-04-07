@@ -22,7 +22,7 @@ interface PlaylistItem {
 
 export default function PlaylistsPage() {
   const { data: session } = useSession()
-  const user = session?.user as any
+  const user = session?.user
 
   const [playlists, setPlaylists] = useState<PlaylistItem[]>([])
   const [loading, setLoading] = useState(true)

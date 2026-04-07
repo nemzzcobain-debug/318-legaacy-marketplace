@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import CountdownTimer from '@/components/ui/CountdownTimer'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import LikeButton from '@/components/ui/LikeButton'
 import {
   Search, Filter, X, Music, Gavel, Clock, Play, Pause,
@@ -184,6 +186,10 @@ function SearchPageContent() {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-6">
+        <Breadcrumbs items={[
+          { label: 'Recherche' }
+        ]} />
+
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="mb-6">
           <div className="flex gap-3">
@@ -485,7 +491,7 @@ function SearchPageContent() {
                       {/* Cover */}
                       <div className="relative h-28 bg-gradient-to-br from-[#1a0a2e] via-[#111111] to-[#0a0a1a]">
                         {beat.coverImage && (
-                          <img src={beat.coverImage} alt={beat.title} className="absolute inset-0 w-full h-full object-cover opacity-25" />
+                          <Image src={beat.coverImage} alt={beat.title} fill className="absolute inset-0 object-cover opacity-25" />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-[#111111] to-transparent" />
 

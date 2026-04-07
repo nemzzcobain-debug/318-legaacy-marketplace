@@ -46,6 +46,10 @@ model User {
   portfolio      String?
   stripeAccountId String?
 
+  // Two-Factor Authentication
+  twoFactorEnabled  Boolean  @default(false)
+  twoFactorSecret   String?
+
   // Stats
   totalSales     Int       @default(0)
   totalPurchases Int       @default(0)

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Play, Pause, Volume2, VolumeX, SkipBack } from 'lucide-react';
 
 interface AudioPlayerProps {
@@ -237,8 +238,8 @@ export default function AudioPlayer({
       {(title || coverImage) && (
         <div className="flex items-center gap-3 p-4 pb-2">
           {coverImage && (
-            <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
-              <img src={coverImage} alt={title} className="w-full h-full object-cover" />
+            <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0 relative">
+              <Image src={coverImage} alt={title} width={48} height={48} className="w-full h-full object-cover" />
             </div>
           )}
           <div className="flex-1 min-w-0">

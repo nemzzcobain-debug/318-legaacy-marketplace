@@ -362,7 +362,7 @@ export default function Home() {
                   {/* Cover */}
                   <div className="relative h-28 bg-gradient-to-br from-[#1a0a2e] via-[#111] to-[#0a0a1a] overflow-hidden">
                     {auction.beat.coverImage && (
-                      <img src={auction.beat.coverImage} alt={auction.beat.title} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-500" />
+                      <Image src={auction.beat.coverImage} alt={auction.beat.title} fill className="absolute inset-0 object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-500" />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/50 to-transparent" />
 
@@ -461,7 +461,7 @@ export default function Home() {
                   <div className="relative w-16 h-16 mx-auto mb-3">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-2xl font-black text-white group-hover:scale-110 transition-transform duration-300 shadow-lg overflow-hidden">
                       {producer.avatar ? (
-                        <img src={producer.avatar} alt={producer.name} className="w-full h-full object-cover" />
+                        <Image src={producer.avatar} alt={producer.name} width={64} height={64} className="w-full h-full object-cover" />
                       ) : (
                         producer.name[0].toUpperCase()
                       )}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import ProducerClient from './ProducerClient'
+import { ProducerJsonLd } from '@/components/seo/JsonLd'
 
 interface Props {
   params: { id: string }
@@ -11,11 +12,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const producer = await prisma.user.findUnique({
       where: { id: params.id },
       select: {
+        id: true,
         name: true,
         displayName: true,
         avatar: true,
         producerBio: true,
         bio: true,
+        rating: true,
+        totalSales: true,
+        beats: {
+          select: { id: true },
+        },
+        followers: {
+          select: { id: true },
+        },
       },
     })
 
@@ -68,6 +78,61 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function ProducerPage() {
-  return <ProducerClient />
+interface ProducerPageProps {
+  params: { id: string }
+}
+
+export default async function ProducerPage({ params }: ProducerPageProps) {
+  let jsonLdData = null
+
+  try {
+    const producer = await prisma.user.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        name: true,
+        displayName: true,
+        avatar: true,
+        bio: true,
+        producerBio: true,
+        rating: true,
+        totalSales: true,
+        beats: {
+          select: { id: true },
+        },
+        followers: {
+          select: { id: true },
+        },
+      },
+    })
+
+    if (producer) {
+      jsonLdData = {
+        producer: {
+          id: producer.id,
+          name: producer.name,
+          displayName: producer.displayName,
+          avatar: producer.avatar,
+          bio: producer.producerBio || producer.bio,
+          rating: producer.rating,
+          totalSales: producer.totalSales,
+        },
+        totalBeats: producer.beats.length,
+        totalFollowers: producer.followers.length,
+      }
+    }
+  } catch {}
+
+  return (
+    <>
+      {jsonLdData && (
+        <ProducerJsonLd
+          producer={jsonLdData.producer}
+          totalBeats={jsonLdData.totalBeats}
+          totalFollowers={jsonLdData.totalFollowers}
+        />
+      )}
+      <ProducerClient />
+    </>
+  )
 }

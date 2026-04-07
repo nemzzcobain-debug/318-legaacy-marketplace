@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import AuctionClient from './AuctionClient'
+import { AuctionJsonLd } from '@/components/seo/JsonLd'
 
 interface Props {
   params: { id: string }
@@ -17,8 +18,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             title: true,
             description: true,
             coverImage: true,
+            genre: true,
+            bpm: true,
             producer: {
               select: {
+                id: true,
                 displayName: true,
                 name: true,
               },
@@ -26,6 +30,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           },
         },
         currentBid: true,
+        startPrice: true,
+        endTime: true,
+        status: true,
+        licenseType: true,
       },
     })
 
@@ -78,6 +86,78 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function AuctionPage() {
-  return <AuctionClient />
+interface AuctionPageProps {
+  params: { id: string }
+}
+
+export default async function AuctionPage({ params }: AuctionPageProps) {
+  let jsonLdData = null
+
+  try {
+    const auction = await prisma.auction.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        currentBid: true,
+        startPrice: true,
+        endTime: true,
+        status: true,
+        licenseType: true,
+        beat: {
+          select: {
+            title: true,
+            genre: true,
+            bpm: true,
+            audioUrl: true,
+            coverImage: true,
+            producer: {
+              select: {
+                id: true,
+                name: true,
+                displayName: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (auction) {
+      jsonLdData = {
+        auction: {
+          id: auction.id,
+          currentBid: auction.currentBid,
+          startPrice: auction.startPrice,
+          endTime: auction.endTime,
+          status: auction.status,
+          licenseType: auction.licenseType,
+        },
+        beat: {
+          title: auction.beat.title,
+          genre: auction.beat.genre,
+          bpm: auction.beat.bpm,
+          audioUrl: auction.beat.audioUrl,
+          coverImage: auction.beat.coverImage,
+        },
+        producer: {
+          id: auction.beat.producer.id,
+          name: auction.beat.producer.name,
+          displayName: auction.beat.producer.displayName,
+        },
+      }
+    }
+  } catch {}
+
+  return (
+    <>
+      {jsonLdData && (
+        <AuctionJsonLd
+          auction={jsonLdData.auction}
+          beat={jsonLdData.beat}
+          producer={jsonLdData.producer}
+        />
+      )}
+      <AuctionClient />
+    </>
+  )
 }

@@ -165,7 +165,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
     if (status === 'authenticated') {
-      if ((session?.user as any)?.role !== 'ADMIN') router.push('/');
+      if (session?.user?.role !== 'ADMIN') router.push('/');
       else {
         setLoading(false);
         fetchStats();

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
@@ -204,7 +205,7 @@ export default function WatchlistPage() {
                   {/* Cover + Play */}
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-[#1a0a2e] to-[#111] flex-shrink-0">
                     {beat.coverImage && (
-                      <img src={beat.coverImage} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                      <Image src={beat.coverImage} alt="" fill className="absolute inset-0 object-cover opacity-40" />
                     )}
                     <button
                       onClick={() => togglePlay(auction.id, beat.audioUrl)}

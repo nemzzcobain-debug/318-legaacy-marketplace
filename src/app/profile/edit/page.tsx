@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -42,6 +43,23 @@ interface ProfileData {
   }
 }
 
+interface ProfileFormData {
+  name: string
+  displayName: string
+  bio: string
+  website: string
+  instagram: string
+  twitter: string
+  youtube: string
+  soundcloud: string
+  spotify: string
+  notifEmail: boolean
+  notifBid: boolean
+  notifMessage: boolean
+  producerBio: string
+  portfolio: string
+}
+
 export default function ProfileEditPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -56,7 +74,7 @@ export default function ProfileEditPage() {
   const [activeTab, setActiveTab] = useState<'general' | 'social' | 'producer' | 'notifications'>('general')
 
   // Form state
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProfileFormData>({
     name: '',
     displayName: '',
     bio: '',
@@ -73,7 +91,7 @@ export default function ProfileEditPage() {
     portfolio: '',
   })
 
-  const user = session?.user as any
+  const user = session?.user
   const isProducer = user?.role === 'PRODUCER' || user?.role === 'ADMIN'
 
   useEffect(() => {
@@ -136,8 +154,8 @@ export default function ProfileEditPage() {
       setProfile(prev => prev ? { ...prev, ...updated } : prev)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {
       setSaving(false)
     }
@@ -168,8 +186,8 @@ export default function ProfileEditPage() {
       setProfile(prev => prev ? { ...prev, avatar: url } : prev)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {
       setUploadingAvatar(false)
     }
@@ -218,7 +236,7 @@ export default function ProfileEditPage() {
             <div className="relative group">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
                 {profile.avatar ? (
-                  <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  <Image src={profile.avatar} alt="Avatar" width={96} height={96} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-3xl font-bold text-white">
                     {profile.name?.[0]?.toUpperCase() || 'U'}
@@ -379,7 +397,7 @@ export default function ProfileEditPage() {
                   </label>
                   <input
                     type="url"
-                    value={(form as any)[key]}
+                    value={form[key as keyof ProfileFormData]}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors"
                     placeholder={placeholder}
@@ -479,14 +497,14 @@ export default function ProfileEditPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => setForm(f => ({ ...f, [key]: !(f as any)[key] }))}
+                    onClick={() => setForm(f => ({ ...f, [key]: !(f[key as keyof ProfileFormData] as boolean) }))}
                     className={`w-12 h-6 rounded-full transition-colors relative ${
-                      (form as any)[key] ? 'bg-red-500' : 'bg-gray-700'
+                      (form[key as keyof ProfileFormData]) ? 'bg-red-500' : 'bg-gray-700'
                     }`}
                   >
                     <div
                       className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                        (form as any)[key] ? 'translate-x-6' : 'translate-x-0.5'
+                        (form[key as keyof ProfileFormData]) ? 'translate-x-6' : 'translate-x-0.5'
                       }`}
                     />
                   </button>

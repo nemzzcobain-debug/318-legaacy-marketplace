@@ -15,7 +15,9 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
@@ -51,5 +53,9 @@
     "tailwindcss": "^3.4.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.4.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md,css}": ["prettier --write"]
   }
 }

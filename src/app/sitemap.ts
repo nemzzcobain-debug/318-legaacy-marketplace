@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const auctions = await prisma.auction.findMany({
       where: { status: { in: ['ACTIVE', 'ENDING_SOON'] } },
       select: { id: true, updatedAt: true },
-      take: 100,
+      take: 5000,
     })
     auctionPages = auctions.map(a => ({
       url: `${siteUrl}/auction/${a.id}`,
@@ -45,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const producers = await prisma.user.findMany({
       where: { role: 'PRODUCER', producerStatus: 'APPROVED' },
       select: { id: true, updatedAt: true },
-      take: 100,
+      take: 5000,
     })
     producerPages = producers.map(p => ({
       url: `${siteUrl}/producer/${p.id}`,
@@ -61,7 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const playlists = await prisma.playlist.findMany({
       where: { visibility: 'PUBLIC' },
       select: { id: true, updatedAt: true },
-      take: 100,
+      take: 5000,
     })
     playlistPages = playlists.map(p => ({
       url: `${siteUrl}/playlists/${p.id}`,

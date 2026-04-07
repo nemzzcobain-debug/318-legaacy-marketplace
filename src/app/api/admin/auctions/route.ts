@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -8,14 +9,14 @@ import { prisma } from '@/lib/prisma';
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || session.user?.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
 
-    const where: any = {};
+    const where: Prisma.AuctionWhereInput = {};
     if (status) where.status = status;
 
     const auctions = await prisma.auction.findMany({
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || session.user?.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
     }
 

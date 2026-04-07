@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Header from '@/components/layout/Header'
 import Link from 'next/link'
 import {
@@ -225,7 +226,7 @@ export default function StatsPage() {
                 >
                   <div className="relative inline-block mb-3">
                     {p.avatar ? (
-                      <img src={p.avatar} alt="" className="w-14 h-14 rounded-full object-cover mx-auto" />
+                      <Image src={p.avatar} alt="" width={56} height={56} className="w-14 h-14 rounded-full object-cover mx-auto" />
                     ) : (
                       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center text-lg font-bold text-white mx-auto">
                         {(p.displayName || p.name)[0]?.toUpperCase()}
@@ -272,7 +273,7 @@ export default function StatsPage() {
                 >
                   <div className="relative h-20 bg-gradient-to-br from-[#1a0a2e] to-[#111]">
                     {sale.beat.coverImage && (
-                      <img src={sale.beat.coverImage} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+                      <Image src={sale.beat.coverImage} alt="" fill className="absolute inset-0 object-cover opacity-20" />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#111] to-transparent" />
                     <div className="absolute bottom-2 right-2">

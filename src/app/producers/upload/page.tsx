@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
@@ -313,7 +314,7 @@ export default function UploadBeatPage() {
               </div>
             ) : (
               <div className="relative inline-block">
-                <img src={coverPreview} alt="Cover" className="w-32 h-32 rounded-xl object-cover" />
+                <Image src={coverPreview} alt="Cover" width={128} height={128} className="w-32 h-32 rounded-xl object-cover" />
                 <button
                   type="button"
                   onClick={removeCover}

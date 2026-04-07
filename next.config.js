@@ -27,7 +27,10 @@ const nextConfig = {
                 headers: [
                     {
                         key: 'Content-Security-Policy',
-                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://onfwowxfflnijuvpspkq.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self'; connect-src 'self' https://onfwowxfflnijuvpspkq.supabase.co wss://onfwowxfflnijuvpspkq.supabase.co https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com",
+                        // Remove unsafe-eval from script-src (not needed in production)
+                        // Keep unsafe-inline for style-src (Tailwind requires inline styles)
+                        // Keep unsafe-inline for script-src (Next.js injects inline scripts; nonce implementation requires middleware refactor)
+                        value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://onfwowxfflnijuvpspkq.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self'; connect-src 'self' https://onfwowxfflnijuvpspkq.supabase.co wss://onfwowxfflnijuvpspkq.supabase.co https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com",
                     },
                     {
                         key: 'X-Frame-Options',
