@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Providers from '@/components/Providers'
+import BPMChatbot from '@/components/ui/BPMChatbot'
 import { WebsiteJsonLd, OrganizationJsonLd } from '@/components/seo/JsonLd'
 // @ts-ignore - @vercel/analytics is optional
 import { Analytics } from '@vercel/analytics/react'
@@ -88,7 +89,10 @@ export default function RootLayout({
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-red-600 focus:text-white focus:rounded">
           Aller au contenu principal
         </a>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <BPMChatbot />
+        </Providers>
         <Analytics />
         <SpeedInsights />
       </body>
