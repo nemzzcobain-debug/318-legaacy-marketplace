@@ -8,6 +8,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle, Search, ShoppingBag, Eye, User, ListMusic } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import LanguageSelector from '@/components/ui/LanguageSelector'
 
 export default function Header() {
   const pathname = usePathname()
@@ -104,6 +105,7 @@ export default function Header() {
                 <LayoutDashboard size={20} className="text-gray-400" />
               </Link>
               <NotificationBell />
+              <LanguageSelector />
               <ThemeToggle />
 
               {/* User avatar + logout */}
@@ -122,6 +124,7 @@ export default function Header() {
             </>
           ) : (
             <>
+              <LanguageSelector />
               <ThemeToggle />
               <Link
                 href="/login"
@@ -191,6 +194,10 @@ export default function Header() {
               <Upload size={16} /> Upload un beat
             </Link>
           )}
+          {/* Language selector mobile */}
+          <div className="border-t border-[#1e1e2e] pt-2 mt-1">
+            <LanguageSelector />
+          </div>
         </div>
       )}
     </header>
