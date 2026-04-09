@@ -2,8 +2,6 @@ import { NextAuthOptions } from 'next-auth'
 import { DefaultSession } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
-import AppleProvider from 'next-auth/providers/apple'
-import DiscordProvider from 'next-auth/providers/discord'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
@@ -44,16 +42,6 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
       allowDangerousEmailAccountLinking: true,
     }),
-    AppleProvider({
-      clientId: process.env.APPLE_CLIENT_ID ?? '',
-      clientSecret: process.env.APPLE_CLIENT_SECRET ?? '',
-      allowDangerousEmailAccountLinking: true,
-    }),
-    DiscordProvider({
-      clientId: process.env.DISCORD_CLIENT_ID ?? '',
-      clientSecret: process.env.DISCORD_CLIENT_SECRET ?? '',
-      allowDangerousEmailAccountLinking: true,
-    }),
     // ─── Credentials Provider ───
     CredentialsProvider({
       name: 'credentials',
@@ -76,7 +64,7 @@ export const authOptions: NextAuthOptions = {
 
         // OAuth users trying to login with credentials
         if (!user.passwordHash) {
-          throw new Error('Ce compte utilise une connexion sociale (Google, Apple ou Discord). Connecte-toi avec le bon provider.')
+          throw new Error('Ce compte utilise une connexion Google. Connecte-toi avec Google.')
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash)
