@@ -217,6 +217,7 @@ export default function Home() {
               width={180}
               height={180}
               className="mx-auto drop-shadow-[0_0_50px_rgba(225,29,72,0.5)]"
+              style={{ maskImage: 'radial-gradient(circle, white 40%, transparent 75%)', WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)' }}
             />
           </div>
 
