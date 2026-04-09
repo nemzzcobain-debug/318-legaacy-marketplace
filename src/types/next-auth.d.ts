@@ -6,6 +6,7 @@ declare module 'next-auth' {
       id: string
       role: string
       producerStatus?: string
+      needsOnboarding?: boolean
     } & DefaultSession['user']
   }
 
@@ -21,5 +22,6 @@ declare module 'next-auth/jwt' {
     id: string
     role: string
     producerStatus?: string
+    needsOnboarding?: boolean
   }
 }

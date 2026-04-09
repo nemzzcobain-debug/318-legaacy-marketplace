@@ -125,5 +125,33 @@
     "label": "Langue",
     "choose": "Choisir la langue",
     "moreComingSoon": "Bientôt disponible dans plus de langues"
+  },
+  "auth": {
+    "login": "Connexion",
+    "register": "Créer un compte",
+    "loginSubtitle": "Accède à tes enchères",
+    "registerSubtitle": "Rejoins la première marketplace d'enchères de beats en France",
+    "orByEmail": "ou par email",
+    "continueWith": "Continuer avec",
+    "signUpWith": "S'inscrire avec",
+    "noAccount": "Pas encore de compte ?",
+    "haveAccount": "Déjà un compte ?",
+    "forgotPassword": "Oublié ?",
+    "socialGoogle": "Google",
+    "socialApple": "Apple",
+    "socialDiscord": "Discord"
+  },
+  "onboarding": {
+    "welcome": "Bienvenue sur 318 LEGAACY",
+    "lastStep": "Dernière étape !",
+    "subtitle": "Dis-nous qui tu es pour personnaliser ton expérience",
+    "iAm": "Je suis...",
+    "artistTitle": "Artiste / Acheteur",
+    "artistDesc": "Tu cherches des instrumentales exclusives. Participe aux enchères et décroche le beat parfait.",
+    "producerTitle": "Beatmaker / Producteur",
+    "producerDesc": "Tu crées des instrumentales. Mets tes beats aux enchères et vends à la communauté.",
+    "producerNotice": "En tant que beatmaker, ton compte sera en attente de validation par l'équipe 318 LEGAACY avant de pouvoir mettre des beats en vente.",
+    "letsGo": "C'est parti",
+    "artistName": "Ton nom d'artiste"
   }
 }

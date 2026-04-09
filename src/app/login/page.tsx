@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import Image from 'next/image'
 import { LogIn, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
+import SocialLoginButtons from '@/components/ui/SocialLoginButtons'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -104,6 +105,16 @@ export default function LoginPage() {
               {error}
             </div>
           )}
+
+          {/* Social Login */}
+          <SocialLoginButtons callbackUrl="/marketplace" label="login" />
+
+          {/* Separator */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-[#1e1e2e]" />
+            <span className="text-xs text-gray-500 font-medium uppercase">ou par email</span>
+            <div className="flex-1 h-px bg-[#1e1e2e]" />
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

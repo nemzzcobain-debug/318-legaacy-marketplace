@@ -1,6 +1,9 @@
 import { NextAuthOptions } from 'next-auth'
 import { DefaultSession } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import GoogleProvider from 'next-auth/providers/google'
+import AppleProvider from 'next-auth/providers/apple'
+import DiscordProvider from 'next-auth/providers/discord'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
@@ -18,6 +21,7 @@ declare module 'next-auth' {
     user: DefaultSession['user'] & {
       id: string
       role: string
+      needsOnboarding?: boolean
     }
   }
 }
@@ -34,6 +38,23 @@ export const authOptions: NextAuthOptions = {
     error: '/login',
   },
   providers: [
+    // ─── OAuth Providers ───
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+      allowDangerousEmailAccountLinking: true,
+    }),
+    AppleProvider({
+      clientId: process.env.APPLE_CLIENT_ID ?? '',
+      clientSecret: process.env.APPLE_CLIENT_SECRET ?? '',
+      allowDangerousEmailAccountLinking: true,
+    }),
+    DiscordProvider({
+      clientId: process.env.DISCORD_CLIENT_ID ?? '',
+      clientSecret: process.env.DISCORD_CLIENT_SECRET ?? '',
+      allowDangerousEmailAccountLinking: true,
+    }),
+    // ─── Credentials Provider ───
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -51,6 +72,11 @@ export const authOptions: NextAuthOptions = {
 
         if (!user) {
           throw new Error('Aucun compte avec cet email')
+        }
+
+        // OAuth users trying to login with credentials
+        if (!user.passwordHash) {
+          throw new Error('Ce compte utilise une connexion sociale (Google, Apple ou Discord). Connecte-toi avec le bon provider.')
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash)
@@ -74,17 +100,61 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account }) {
+      // For OAuth providers, auto-verify email
+      if (account?.provider && account.provider !== 'credentials') {
+        // Check if user exists already with this email
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email ?? '' },
+        })
+
+        if (existingUser && !existingUser.emailVerified) {
+          // Auto-verify email for OAuth users
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: { emailVerified: new Date() },
+          })
+        }
+      }
+      return true
+    },
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id
-        token.role = user.role
+        token.role = user.role || 'ARTIST'
+
+        // Check if this is a new OAuth user that needs onboarding
+        // A user needs onboarding if they have no role set yet (default ARTIST from schema)
+        // and they signed up via OAuth (no password)
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { passwordHash: true, role: true, createdAt: true, updatedAt: true },
+        })
+
+        if (dbUser && !dbUser.passwordHash) {
+          // OAuth user - check if they just created their account (within last 30 seconds)
+          const timeSinceCreation = Date.now() - dbUser.createdAt.getTime()
+          if (timeSinceCreation < 30000 && dbUser.role === 'ARTIST') {
+            token.needsOnboarding = true
+          }
+        }
       }
+
+      // Handle session update (from onboarding page)
+      if (trigger === 'update' && session) {
+        if (session.role) token.role = session.role
+        if (session.needsOnboarding === false) token.needsOnboarding = false
+      }
+
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string | undefined ?? ''
         session.user.role = token.role as string | undefined ?? ''
+        if (token.needsOnboarding) {
+          session.user.needsOnboarding = true
+        }
       }
       return session
     },

@@ -125,5 +125,33 @@
     "label": "Language",
     "choose": "Choose language",
     "moreComingSoon": "More languages coming soon"
+  },
+  "auth": {
+    "login": "Log in",
+    "register": "Create an account",
+    "loginSubtitle": "Access your auctions",
+    "registerSubtitle": "Join the first beat auction marketplace in France",
+    "orByEmail": "or by email",
+    "continueWith": "Continue with",
+    "signUpWith": "Sign up with",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "forgotPassword": "Forgot?",
+    "socialGoogle": "Google",
+    "socialApple": "Apple",
+    "socialDiscord": "Discord"
+  },
+  "onboarding": {
+    "welcome": "Welcome to 318 LEGAACY",
+    "lastStep": "One last step!",
+    "subtitle": "Tell us who you are to personalize your experience",
+    "iAm": "I am...",
+    "artistTitle": "Artist / Buyer",
+    "artistDesc": "You're looking for exclusive instrumentals. Join auctions and grab the perfect beat.",
+    "producerTitle": "Beatmaker / Producer",
+    "producerDesc": "You create instrumentals. Auction your beats and sell to the community.",
+    "producerNotice": "As a beatmaker, your account will need to be validated by the 318 LEGAACY team before you can sell beats.",
+    "letsGo": "Let's go",
+    "artistName": "Your artist name"
   }
 }

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import Image from 'next/image'
 import { UserPlus, Eye, EyeOff, AlertCircle, Music, Mic2 } from 'lucide-react'
+import SocialLoginButtons from '@/components/ui/SocialLoginButtons'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -89,6 +90,16 @@ export default function RegisterPage() {
               {error}
             </div>
           )}
+
+          {/* Social Login */}
+          <SocialLoginButtons callbackUrl="/onboarding" label="register" />
+
+          {/* Separator */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-[#1e1e2e]" />
+            <span className="text-xs text-gray-500 font-medium uppercase">ou par email</span>
+            <div className="flex-1 h-px bg-[#1e1e2e]" />
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Role selector */}
