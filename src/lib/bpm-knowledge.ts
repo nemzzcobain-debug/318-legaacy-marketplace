@@ -38,7 +38,7 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     confidence: 95,
   },
   {
-    keywords: ['comment', 'fonctionne', 'marche', 'utiliser', 'fonctionnement'],
+    keywords: ['comment', 'fonctionne', 'fonctionnent', 'marche', 'utiliser', 'fonctionnement', 'comment ça marche', 'how'],
     question: "Comment fonctionne le site ?",
     answer: "C'est simple :\n1. **Inscris-toi** (gratuit) en tant qu'Artiste ou Beatmaker\n2. **Explore** les beats disponibles aux enchères\n3. **Enchéris** sur les beats qui te plaisent\n4. **Gagne l'enchère** et télécharge ton beat\n\nLes producteurs peuvent uploader leurs beats et lancer des enchères avec un prix de départ.",
     confidence: 95,
@@ -46,7 +46,7 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
 
   // ── Inscription / Compte ──
   {
-    keywords: ['inscription', 'inscrire', 'créer compte', 'register', 'compte', 'enregistrer', 'google'],
+    keywords: ['inscription', 'inscrire', 'créer compte', 'register', 'compte', 'enregistrer', 'google', 'signup', 'sign up', 'créer un compte'],
     question: "Comment créer un compte ?",
     answer: "Tu peux t'inscrire de deux façons :\n• **Avec Google** : clique sur \"S'inscrire avec Google\" (rapide et sécurisé)\n• **Par email** : remplis le formulaire avec ton pseudo, email et mot de passe\n\nL'inscription est 100% gratuite !",
     confidence: 95,
@@ -66,13 +66,13 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
 
   // ── Enchères ──
   {
-    keywords: ['enchère', 'enchere', 'enchérir', 'encherir', 'bid', 'mise', 'miser', 'auction'],
+    keywords: ['enchère', 'enchères', 'enchere', 'encheres', 'enchérir', 'encherir', 'bid', 'mise', 'miser', 'auction', 'fonctionnent', 'fonctionne'],
     question: "Comment fonctionnent les enchères ?",
     answer: "Chaque beat a :\n• Un **prix de départ** fixé par le producteur\n• Une **durée** (généralement 7 jours)\n• Un **compte à rebours** en temps réel\n\nTu places ta mise (supérieure à la dernière). Si tu es le plus offrant à la fin, tu gagnes le beat !",
     confidence: 95,
   },
   {
-    keywords: ['prix', 'coût', 'cout', 'combien', 'tarif', 'gratuit', 'payant', 'cher'],
+    keywords: ['prix', 'coût', 'cout', 'combien', 'tarif', 'gratuit', 'payant', 'cher', 'coute', 'coûte', 'price', 'free'],
     question: "Combien ça coûte ?",
     answer: "• **L'inscription** est gratuite\n• **Le prix des beats** dépend des enchères (prix de départ fixé par le producteur)\n• **Commission** : une petite commission est prélevée sur les ventes\n\nChaque beat a un prix de départ différent, tu décides combien tu veux miser !",
     confidence: 85,
@@ -196,29 +196,49 @@ export function isMessageProblematic(message: string): { problematic: boolean; r
 
 /**
  * Find the best matching knowledge entry
+ * Scoring: based on absolute match count, not ratio
+ * 1 keyword match = 50 base score, each additional match adds 15
+ * Exact word match bonus: +10 per exact match
+ * Capped at entry confidence level
  */
 export function findBestMatch(message: string): { entry: KnowledgeEntry | null; matchScore: number } {
   const lower = message.toLowerCase()
-  const words = lower.split(/\s+/)
+  // Remove punctuation for better word matching
+  const cleanMessage = lower.replace(/[?!.,;:'"()]/g, ' ')
+  const words = cleanMessage.split(/\s+/).filter(w => w.length > 0)
 
   let bestEntry: KnowledgeEntry | null = null
   let bestScore = 0
 
   for (const entry of KNOWLEDGE_BASE) {
     let matchCount = 0
-    let totalKeywords = entry.keywords.length
+    let exactMatches = 0
 
     for (const keyword of entry.keywords) {
+      // Check if keyword appears in message (substring match)
       if (lower.includes(keyword)) {
         matchCount++
         // Bonus for exact word match
         if (words.includes(keyword)) {
-          matchCount += 0.5
+          exactMatches++
+        }
+      }
+      // Also check if any message word starts with the keyword (partial stem match)
+      else if (keyword.length >= 4) {
+        for (const word of words) {
+          if (word.startsWith(keyword) || keyword.startsWith(word)) {
+            matchCount += 0.5
+            break
+          }
         }
       }
     }
 
-    const score = (matchCount / totalKeywords) * entry.confidence
+    if (matchCount === 0) continue
+
+    // Score: 1 match = 60, 2 matches = 80, 3+ matches = 90+
+    let score = Math.min(60 + (matchCount - 1) * 20 + exactMatches * 10, entry.confidence)
+
     if (score > bestScore) {
       bestScore = score
       bestEntry = entry
