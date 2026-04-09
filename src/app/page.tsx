@@ -239,8 +239,8 @@ export default function Home() {
             </span>
             <br />
             <span className={`inline-block text-white transition-all duration-700 delay-500 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-              Crée ton{' '}
-            </span>
+              Crée ton
+            </span>{' '}
             <span className={`inline-block relative transition-all duration-700 delay-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <span className="bg-gradient-to-r from-red-500 via-purple-500 to-red-500 bg-clip-text text-transparent bg-[length:200%] animate-gradient-x">
                 hit.
