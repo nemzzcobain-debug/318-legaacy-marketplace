@@ -28,7 +28,7 @@ export default function RegisterPage() {
     }
 
     if (password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caracteres')
+      setError('Le mot de passe doit contenir au moins 8 caractères')
       return
     }
 
@@ -80,8 +80,8 @@ export default function RegisterPage() {
 
         {/* Card */}
         <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-8">
-          <h1 className="text-2xl font-extrabold text-white mb-1">Creer un compte</h1>
-          <p className="text-sm text-gray-400 mb-6">Rejoins la premiere marketplace d&apos;encheres de beats en France</p>
+          <h1 className="text-2xl font-extrabold text-white mb-1">Créer un compte</h1>
+          <p className="text-sm text-gray-400 mb-6">Rejoins la première marketplace d&apos;enchères de beats en France</p>
 
           {error && (
             <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-[#ff475715] border border-[#ff475730] text-[#ff4757] text-sm">
@@ -156,7 +156,7 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 8 caracteres"
+                  placeholder="Minimum 8 caractères"
                   required
                   minLength={8}
                   className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4850] transition-colors pr-12"
@@ -186,7 +186,7 @@ export default function RegisterPage() {
 
             {role === 'PRODUCER' && (
               <p className="text-xs text-gray-500 bg-white/5 p-3 rounded-lg">
-                En tant que beatmaker, ton compte sera en attente de validation par l&apos;equipe 318 LEGAACY avant de pouvoir mettre des beats en vente.
+                En tant que beatmaker, ton compte sera en attente de validation par l&apos;équipe 318 LEGAACY avant de pouvoir mettre des beats en vente.
               </p>
             )}
 
@@ -200,7 +200,7 @@ export default function RegisterPage() {
                 <span className="animate-spin w-5 h-5 border-2 border-black/30 border-t-black rounded-full" />
               ) : (
                 <>
-                  <UserPlus size={18} /> Creer mon compte
+                  <UserPlus size={18} /> Créer mon compte
                 </>
               )}
             </button>

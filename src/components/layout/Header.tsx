@@ -18,7 +18,7 @@ export default function Header() {
   const isProducer = user?.role === 'PRODUCER' || user?.role === 'ADMIN'
 
   const navItems = [
-    { href: '/marketplace', label: 'Encheres', icon: Gavel },
+    { href: '/marketplace', label: 'Enchères', icon: Gavel },
     { href: '/search', label: 'Recherche', icon: Search },
     { href: '/producers', label: 'Producteurs', icon: Users },
   ]

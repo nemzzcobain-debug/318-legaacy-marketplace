@@ -58,9 +58,9 @@ const LICENSE_COLORS: Record<string, string> = {
 }
 
 const SORT_OPTIONS = [
-  { value: 'ending_soon', label: 'Fin bientot' },
-  { value: 'newest', label: 'Plus recentes' },
-  { value: 'most_bids', label: 'Plus encheris' },
+  { value: 'ending_soon', label: 'Fin bientôt' },
+  { value: 'newest', label: 'Plus récentes' },
+  { value: 'most_bids', label: 'Plus enchéris' },
   { value: 'highest_bid', label: 'Prix le plus haut' },
   { value: 'lowest_bid', label: 'Prix le plus bas' },
 ]
@@ -311,7 +311,7 @@ function SearchPageContent() {
               {/* Key */}
               {filters.keys.length > 0 && (
                 <div className="bg-[#111111] border border-[#222222] rounded-xl p-4">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Tonalite</h3>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Tonalité</h3>
                   <div className="flex flex-wrap gap-1.5">
                     {filters.keys.map(k => (
                       <button
@@ -467,8 +467,8 @@ function SearchPageContent() {
             {!loading && auctions.length === 0 ? (
               <div className="text-center py-20 bg-[#111111] border border-[#222222] rounded-xl">
                 <Search size={48} className="text-gray-700 mx-auto mb-4" />
-                <p className="text-gray-400 font-bold text-lg">Aucun resultat</p>
-                <p className="text-gray-600 text-sm mt-1 mb-6">Essaie d&apos;elargir tes criteres de recherche</p>
+                <p className="text-gray-400 font-bold text-lg">Aucun résultat</p>
+                <p className="text-gray-600 text-sm mt-1 mb-6">Essaie d'élargir tes critères de recherche</p>
                 <button
                   onClick={clearFilters}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-red-500 border border-red-500/20 hover:bg-red-500/5 transition"
@@ -551,7 +551,7 @@ function SearchPageContent() {
                           </div>
                           <div className="text-right">
                             <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                              <Gavel size={10} /> {auction._count.bids} enchere{auction._count.bids > 1 ? 's' : ''}
+                              <Gavel size={10} /> {auction._count.bids} enchère{auction._count.bids > 1 ? 's' : ''}
                             </div>
                           </div>
                         </div>
@@ -570,7 +570,7 @@ function SearchPageContent() {
                   disabled={page <= 1}
                   className="px-4 py-2 rounded-lg text-sm font-bold text-gray-400 bg-[#111] border border-[#222] hover:text-white disabled:opacity-30 transition"
                 >
-                  Precedent
+                  Précédent
                 </button>
                 <span className="text-sm text-gray-500">
                   Page <strong className="text-white">{page}</strong> / {totalPages}

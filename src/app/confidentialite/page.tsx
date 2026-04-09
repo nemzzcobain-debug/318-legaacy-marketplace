@@ -3,8 +3,8 @@ import Link from 'next/link'
 import Header from '@/components/layout/Header'
 
 export const metadata: Metadata = {
-  title: 'Politique de Confidentialite — 318 LEGAACY Marketplace',
-  description: 'Politique de confidentialite et protection des donnees personnelles de la plateforme 318 LEGAACY Marketplace.',
+  title: 'Politique de Confidentialité — 318 LEGAACY Marketplace',
+  description: 'Politique de confidentialité et protection des données personnelles de la plateforme 318 LEGAACY Marketplace.',
 }
 
 export default function ConfidentialitePage() {
@@ -13,13 +13,13 @@ export default function ConfidentialitePage() {
       <Header />
 
       <main className="max-w-3xl mx-auto px-4 py-20">
-        <h1 className="text-3xl font-black text-white mb-2">Politique de Confidentialite</h1>
-        <p className="text-sm text-gray-500 mb-12">Derniere mise a jour : 2 avril 2026</p>
+        <h1 className="text-3xl font-black text-white mb-2">Politique de Confidentialité</h1>
+        <p className="text-sm text-gray-500 mb-12">Dernière mise à jour : 2 avril 2026</p>
 
         {/* Introduction */}
         <section className="mb-10">
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p><strong className="text-white">318 LEGAACY Studio</strong> s&apos;engage a proteger la vie privee des utilisateurs de sa plateforme www.318marketplace.com. La presente politique decrit comment vos donnees personnelles sont collectees, utilisees et protegees, conformement au <strong className="text-white">Reglement General sur la Protection des Donnees (RGPD)</strong>.</p>
+            <p><strong className="text-white">318 LEGAACY Studio</strong> s&apos;engage à protéger la vie privée des utilisateurs de sa plateforme www.318marketplace.com. La présente politique décrit comment vos données personnelles sont collectées, utilisées et protégées, conformément au <strong className="text-white">Règlement Général sur la Protection des Données (RGPD)</strong>.</p>
           </div>
         </section>
 
@@ -27,7 +27,7 @@ export default function ConfidentialitePage() {
         <section className="mb-10">
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">1. Responsable du traitement</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p>Le responsable du traitement des donnees est <strong className="text-white">318 LEGAACY Studio</strong>.</p>
+            <p>Le responsable du traitement des données est <strong className="text-white">318 LEGAACY Studio</strong>.</p>
             <p>Contact : <a href="mailto:contact@318marketplace.com" className="text-red-400 hover:text-red-300">contact@318marketplace.com</a></p>
           </div>
         </section>
@@ -106,8 +106,8 @@ export default function ConfidentialitePage() {
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">6. Duree de conservation</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
             <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-2">
-              <p><span className="text-gray-500">Donnees de compte :</span> conservees pendant la duree d&apos;utilisation du compte, puis 3 ans apres suppression</p>
-              <p><span className="text-gray-500">Donnees de transaction :</span> 10 ans (obligation legale comptable)</p>
+              <p><span className="text-gray-500">Données de compte :</span> conservées pendant la durée d&apos;utilisation du compte, puis 3 ans après suppression</p>
+              <p><span className="text-gray-500">Données de transaction :</span> 10 ans (obligation légale comptable)</p>
               <p><span className="text-gray-500">Logs techniques :</span> 12 mois</p>
               <p><span className="text-gray-500">Cookies :</span> 13 mois maximum</p>
             </div>
@@ -128,7 +128,7 @@ export default function ConfidentialitePage() {
               <p><strong className="text-white">Droit a la limitation</strong> — Restreindre le traitement dans certains cas</p>
             </div>
             <p className="mt-3">Pour exercer vos droits, contactez-nous a : <a href="mailto:contact@318marketplace.com" className="text-red-400 hover:text-red-300">contact@318marketplace.com</a></p>
-            <p>Vous pouvez egalement introduire une reclamation aupres de la <strong className="text-white">CNIL</strong> (Commission Nationale de l&apos;Informatique et des Libertes) : <span className="text-gray-300">www.cnil.fr</span></p>
+            <p>Vous pouvez également introduire une réclamation auprès de la <strong className="text-white">CNIL</strong> (Commission Nationale de l&apos;Informatique et des Libertés) : <span className="text-gray-300">www.cnil.fr</span></p>
           </div>
         </section>
 
@@ -170,10 +170,10 @@ export default function ConfidentialitePage() {
         <section className="mb-10">
           <div className="flex flex-wrap gap-3 pt-6 border-t border-[#1e1e2e]">
             <Link href="/mentions-legales" className="text-sm text-red-400 hover:text-red-300 border border-[#1e1e2e] px-4 py-2 rounded-lg hover:border-red-500/30 transition-all">
-              Mentions Legales
+              Mentions Légales
             </Link>
             <Link href="/cgv" className="text-sm text-red-400 hover:text-red-300 border border-[#1e1e2e] px-4 py-2 rounded-lg hover:border-red-500/30 transition-all">
-              Conditions Generales de Vente
+              Conditions Générales de Vente
             </Link>
           </div>
         </section>

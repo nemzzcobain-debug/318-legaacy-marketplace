@@ -81,7 +81,7 @@ export default function FAQPage() {
   const [activeSection, setActiveSection] = useState<string>('how')
 
   const sections = [
-    { id: 'how', label: 'Comment ca marche', icon: Zap },
+    { id: 'how', label: 'Comment ça marche', icon: Zap },
     { id: 'licenses', label: 'Licences', icon: FileText },
     { id: 'payments', label: 'Paiements', icon: CreditCard },
     { id: 'producers', label: 'Producteurs', icon: Music },
@@ -96,13 +96,13 @@ export default function FAQPage() {
         {/* Hero */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#e11d4810] border border-[#e11d4820] text-[#e11d48] text-xs font-bold mb-4">
-            <HelpCircle size={14} /> Centre d&apos;aide
+            <HelpCircle size={14} /> Centre d'aide
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-white mb-3">
             Comment fonctionne <span className="text-[#e11d48]">318 LEGAACY</span> ?
           </h1>
           <p className="text-gray-400 text-sm max-w-xl mx-auto">
-            La premiere plateforme d&apos;encheres de beats en France. Decouvre comment acheter, vendre et encherir sur des instrumentales uniques.
+            La première plateforme d'enchères de beats en France. Découvre comment acheter, vendre et enchérir sur des instrumentales uniques.
           </p>
         </div>
 
@@ -123,7 +123,7 @@ export default function FAQPage() {
           ))}
         </div>
 
-        {/* ═══ COMMENT CA MARCHE ═══ */}
+        {/* ═══ COMMENT ÇA MARCHE ═══ */}
         {activeSection === 'how' && (
           <div className="space-y-8">
             {/* For Buyers */}
@@ -131,31 +131,31 @@ export default function FAQPage() {
               <h2 className="text-lg font-extrabold text-white mb-1 flex items-center gap-2">
                 <Gavel size={18} className="text-[#e11d48]" /> Pour les acheteurs
               </h2>
-              <p className="text-xs text-gray-500 mb-4">Trouve et achete des beats uniques aux encheres</p>
+              <p className="text-xs text-gray-500 mb-4">Trouve et achète des beats uniques aux enchères</p>
 
               <div className="grid gap-3">
                 <StepCard
                   step={1}
-                  title="Cree ton compte gratuitement"
-                  description="Inscris-toi en quelques secondes pour acceder a toutes les encheres et commencer a encherir."
+                  title="Crée ton compte gratuitement"
+                  description="Inscris-toi en quelques secondes pour accéder à toutes les enchères et commencer à enchérir."
                   icon={Users}
                 />
                 <StepCard
                   step={2}
-                  title="Explore et ecoute les beats"
-                  description="Parcours le marketplace, filtre par genre, BPM, tonalite ou mood. Ecoute les previews avant d'encherir."
+                  title="Explore et écoute les beats"
+                  description="Parcours le marketplace, filtre par genre, BPM, tonalité ou mood. Écoute les previews avant d'enchérir."
                   icon={Music}
                 />
                 <StepCard
                   step={3}
-                  title="Encheris sur tes favoris"
-                  description="Place une enchere sur le beat qui te plait. Tu peux choisir le type de licence (Basic, Premium, Exclusive) qui multiplie le prix."
+                  title="Enchéris sur tes favoris"
+                  description="Place une enchère sur le beat qui te plaît. Tu peux choisir le type de licence (Basic, Premium, Exclusive) qui multiplie le prix."
                   icon={Gavel}
                 />
                 <StepCard
                   step={4}
-                  title="Gagne et telecharge"
-                  description="Si tu es le plus offrant a la fin du compte a rebours, tu gagnes ! Paye par Stripe et telecharge tes fichiers (MP3, WAV, Stems selon la licence)."
+                  title="Gagne et télécharge"
+                  description="Si tu es le plus offrant à la fin du compte à rebours, tu gagnes ! Paye par Stripe et télécharge tes fichiers (MP3, WAV, Stems selon la licence)."
                   icon={Award}
                 />
               </div>
@@ -166,31 +166,31 @@ export default function FAQPage() {
               <h2 className="text-lg font-extrabold text-white mb-1 flex items-center gap-2">
                 <Music size={18} className="text-[#667eea]" /> Pour les producteurs
               </h2>
-              <p className="text-xs text-gray-500 mb-4">Vends tes beats aux encheres et developpe ta fanbase</p>
+              <p className="text-xs text-gray-500 mb-4">Vends tes beats aux enchères et développe ta fanbase</p>
 
               <div className="grid gap-3">
                 <StepCard
                   step={1}
-                  title="Deviens producteur verifie"
-                  description="Fais une demande pour devenir producteur. Une fois approuve, tu peux uploader des beats et creer des encheres."
+                  title="Deviens producteur vérifié"
+                  description="Fais une demande pour devenir producteur. Une fois approuvé, tu peux uploader des beats et créer des enchères."
                   icon={Shield}
                 />
                 <StepCard
                   step={2}
                   title="Upload tes beats"
-                  description="Upload tes instrumentales avec les fichiers MP3, WAV et Stems. Ajoute genre, BPM, tonalite, mood et tags."
+                  description="Upload tes instrumentales avec les fichiers MP3, WAV et Stems. Ajoute genre, BPM, tonalité, mood et tags."
                   icon={Music}
                 />
                 <StepCard
                   step={3}
-                  title="Lance une enchere"
-                  description="Definis le prix de depart, la duree, le type de licence et le prix de reserve optionnel. L'anti-snipe protege les dernieres minutes."
+                  title="Lance une enchère"
+                  description="Définis le prix de départ, la durée, le type de licence et le prix de réserve optionnel. L'anti-snipe protège les dernières minutes."
                   icon={Clock}
                 />
                 <StepCard
                   step={4}
-                  title="Recois tes paiements"
-                  description="Connecte Stripe et recois 85% du prix final automatiquement. La plateforme prend 15% de commission."
+                  title="Reçois tes paiements"
+                  description="Connecte Stripe et reçois 85% du prix final automatiquement. La plateforme prend 15% de commission."
                   icon={DollarSign}
                 />
               </div>
@@ -199,10 +199,10 @@ export default function FAQPage() {
             {/* Anti-snipe */}
             <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
               <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                <Zap size={14} className="text-yellow-400" /> Systeme Anti-Snipe
+                <Zap size={14} className="text-yellow-400" /> Système Anti-Snipe
               </h3>
               <p className="text-xs text-gray-400 leading-relaxed">
-                Pour eviter les encheres de derniere seconde, notre systeme anti-snipe prolonge automatiquement le temps de 2 minutes si une enchere est placee dans les 2 dernieres minutes. Cela garantit une competition equitable pour tous les participants.
+                Pour éviter les enchères de dernière seconde, notre système anti-snipe prolonge automatiquement le temps de 2 minutes si une enchère est placée dans les 2 dernières minutes. Cela garantit une compétition équitable pour tous les participants.
               </p>
             </div>
           </div>
@@ -222,9 +222,9 @@ export default function FAQPage() {
                 color="#3b82f6"
                 features={[
                   'Format MP3 uniquement',
-                  'Jusqu\'a 5 000 streams',
+                  'Jusqu\'à 5 000 streams',
                   'Usage non-commercial',
-                  'Credits au producteur obligatoires',
+                  'Crédits au producteur obligatoires',
                   'Licence non-exclusive',
                 ]}
               />
@@ -235,9 +235,9 @@ export default function FAQPage() {
                 popular
                 features={[
                   'Formats WAV + MP3',
-                  'Jusqu\'a 50 000 streams',
-                  'Usage commercial autorise',
-                  'Credits au producteur obligatoires',
+                  'Jusqu\'à 50 000 streams',
+                  'Usage commercial autorisé',
+                  'Crédits au producteur obligatoires',
                   'Licence non-exclusive',
                 ]}
               />
@@ -246,11 +246,11 @@ export default function FAQPage() {
                 price="Prix de base x10"
                 color="#a855f7"
                 features={[
-                  'WAV + MP3 + Stems (pistes separees)',
-                  'Streams illimites',
+                  'WAV + MP3 + Stems (pistes séparées)',
+                  'Streams illimités',
                   'Droits exclusifs complets',
-                  'Pas de credits obligatoires',
-                  'Le beat est retire du marketplace',
+                  'Pas de crédits obligatoires',
+                  'Le beat est retiré du marketplace',
                 ]}
               />
             </div>
@@ -258,7 +258,7 @@ export default function FAQPage() {
             <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
               <h3 className="text-sm font-bold text-white mb-2">Comment fonctionne le multiplicateur ?</h3>
               <p className="text-xs text-gray-400 leading-relaxed mb-3">
-                Si tu encheries 50 EUR en licence Basic, tu paies 50 EUR. En Premium, tu paierais 125 EUR (50 x 2.5). En Exclusive, 500 EUR (50 x 10). Le multiplicateur s&apos;applique au montant de ton enchere.
+                Si tu enchéris 50 EUR en licence Basic, tu paies 50 EUR. En Premium, tu paierais 125 EUR (50 x 2.5). En Exclusive, 500 EUR (50 x 10). Le multiplicateur s'applique au montant de ton enchère.
               </p>
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 rounded-lg bg-white/[0.02] text-center">
@@ -284,9 +284,9 @@ export default function FAQPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
                 <CreditCard size={20} className="text-[#635bff] mb-3" />
-                <h3 className="text-sm font-bold text-white mb-2">Paiement securise par Stripe</h3>
+                <h3 className="text-sm font-bold text-white mb-2">Paiement sécurisé par Stripe</h3>
                 <p className="text-xs text-gray-400 leading-relaxed">
-                  Tous les paiements sont traites via Stripe, leader mondial du paiement en ligne. Tes informations bancaires sont protegees et jamais stockees sur nos serveurs.
+                  Tous les paiements sont traités via Stripe, leader mondial du paiement en ligne. Tes informations bancaires sont protégées et jamais stockées sur nos serveurs.
                 </p>
               </div>
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
@@ -300,28 +300,28 @@ export default function FAQPage() {
 
             <div className="space-y-3">
               <AccordionItem
-                question="Comment payer apres avoir gagne une enchere ?"
+                question="Comment payer après avoir gagné une enchère ?"
                 answer={
-                  <p>Apres avoir gagne une enchere, un bouton &quot;Payer&quot; apparait sur la page de l&apos;enchere et sur ta page &quot;Mes Encheres&quot;. Clique dessus pour etre redirige vers le paiement securise Stripe. Une fois le paiement confirme, tu peux telecharger tes fichiers dans &quot;Mes Achats&quot;.</p>
+                  <p>Après avoir gagné une enchère, un bouton &quot;Payer&quot; apparaît sur la page de l'enchère et sur ta page &quot;Mes Enchères&quot;. Clique dessus pour être redirigé vers le paiement sécurisé Stripe. Une fois le paiement confirmé, tu peux télécharger tes fichiers dans &quot;Mes Achats&quot;.</p>
                 }
                 defaultOpen
               />
               <AccordionItem
-                question="Quand est-ce que le producteur recoit son paiement ?"
+                question="Quand est-ce que le producteur reçoit son paiement ?"
                 answer={
-                  <p>Le producteur recoit son paiement (85% du prix final) automatiquement via Stripe Connect. Les virements sont effectues chaque semaine sur le compte bancaire du producteur.</p>
+                  <p>Le producteur reçoit son paiement (85% du prix final) automatiquement via Stripe Connect. Les virements sont effectués chaque semaine sur le compte bancaire du producteur.</p>
                 }
               />
               <AccordionItem
-                question="Quels moyens de paiement sont acceptes ?"
+                question="Quels moyens de paiement sont acceptés ?"
                 answer={
-                  <p>Stripe accepte les cartes bancaires (Visa, Mastercard, American Express), ainsi que Apple Pay, Google Pay et les virements SEPA selon ta region.</p>
+                  <p>Stripe accepte les cartes bancaires (Visa, Mastercard, American Express), ainsi que Apple Pay, Google Pay et les virements SEPA selon ta région.</p>
                 }
               />
               <AccordionItem
                 question="Puis-je obtenir un remboursement ?"
                 answer={
-                  <p>Les ventes de licences musicales sont des achats de biens numeriques. Contacte le support via la messagerie si tu rencontres un probleme avec un achat.</p>
+                  <p>Les ventes de licences musicales sont des achats de biens numériques. Contacte le support via la messagerie si tu rencontres un problème avec un achat.</p>
                 }
               />
             </div>
@@ -334,23 +334,23 @@ export default function FAQPage() {
             <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
               <h3 className="text-sm font-bold text-white mb-3">Devenir producteur sur 318 LEGAACY</h3>
               <div className="space-y-3 text-xs text-gray-400 leading-relaxed">
-                <p>Pour vendre tes beats sur la plateforme, tu dois obtenir le statut de producteur verifie. Voici les etapes :</p>
+                <p>Pour vendre tes beats sur la plateforme, tu dois obtenir le statut de producteur vérifié. Voici les étapes :</p>
                 <div className="space-y-2">
                   <div className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-[#e11d4815] text-[#e11d48] flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                    <span>Cree un compte et accede a ton dashboard</span>
+                    <span>Crée un compte et accède à ton dashboard</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-[#e11d4815] text-[#e11d48] flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                    <span>Ta demande est automatiquement envoyee aux administrateurs</span>
+                    <span>Ta demande est automatiquement envoyée aux administrateurs</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-[#e11d4815] text-[#e11d48] flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                    <span>Une fois approuve, connecte ton compte Stripe dans les parametres</span>
+                    <span>Une fois approuvé, connecte ton compte Stripe dans les paramètres</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-[#e11d4815] text-[#e11d48] flex items-center justify-center text-[10px] font-bold shrink-0">4</span>
-                    <span>Upload tes beats et lance tes premieres encheres !</span>
+                    <span>Upload tes beats et lance tes premières enchères !</span>
                   </div>
                 </div>
               </div>
@@ -358,25 +358,25 @@ export default function FAQPage() {
 
             <div className="space-y-3">
               <AccordionItem
-                question="Combien coute l'inscription en tant que producteur ?"
-                answer={<p>L&apos;inscription est 100% gratuite. La plateforme se remunere uniquement via la commission de 15% sur les ventes realisees.</p>}
+                question="Combien coûte l'inscription en tant que producteur ?"
+                answer={<p>L'inscription est 100% gratuite. La plateforme se rémunère uniquement via la commission de 15% sur les ventes réalisées.</p>}
                 defaultOpen
               />
               <AccordionItem
                 question="Quels formats de fichiers puis-je uploader ?"
-                answer={<p>Tu peux uploader des fichiers MP3 (obligatoire), WAV (pour les licences Premium/Exclusive) et un ZIP contenant les Stems (pistes separees) pour les licences Exclusive.</p>}
+                answer={<p>Tu peux uploader des fichiers MP3 (obligatoire), WAV (pour les licences Premium/Exclusive) et un ZIP contenant les Stems (pistes séparées) pour les licences Exclusive.</p>}
               />
               <AccordionItem
                 question="Comment fonctionnent les badges et niveaux ?"
-                answer={<p>Les badges sont attribues automatiquement en fonction de tes performances : nombre de beats, ventes, followers, notes, etc. Le systeme de niveaux (XP) recompense ton activite globale sur la plateforme. Plus tu es actif, plus ton niveau augmente.</p>}
+                answer={<p>Les badges sont attribués automatiquement en fonction de tes performances : nombre de beats, ventes, followers, notes, etc. Le système de niveaux (XP) récompense ton activité globale sur la plateforme. Plus tu es actif, plus ton niveau augmente.</p>}
               />
               <AccordionItem
-                question="Puis-je fixer un prix de reserve ?"
-                answer={<p>Oui ! Le prix de reserve est un montant minimum en dessous duquel le beat ne sera pas vendu, meme s&apos;il y a des encheres. C&apos;est optionnel mais recommande pour proteger la valeur de tes productions.</p>}
+                question="Puis-je fixer un prix de réserve ?"
+                answer={<p>Oui ! Le prix de réserve est un montant minimum en dessous duquel le beat ne sera pas vendu, même s'il y a des enchères. C'est optionnel mais recommandé pour protéger la valeur de tes productions.</p>}
               />
               <AccordionItem
-                question="Que se passe-t-il si mon enchere n'a pas d'acheteur ?"
-                answer={<p>Si l&apos;enchere se termine sans enchere ou en dessous du prix de reserve, le beat reste dans ton catalogue et tu peux relancer une nouvelle enchere quand tu veux.</p>}
+                question="Que se passe-t-il si mon enchère n'a pas d'acheteur ?"
+                answer={<p>Si l'enchère se termine sans enchère ou en dessous du prix de réserve, le beat reste dans ton catalogue et tu peux relancer une nouvelle enchère quand tu veux.</p>}
               />
             </div>
           </div>
@@ -387,16 +387,16 @@ export default function FAQPage() {
           <div className="space-y-3">
             <AccordionItem
               question="Qu'est-ce que 318 LEGAACY Marketplace ?"
-              answer={<p>318 LEGAACY Marketplace est la premiere plateforme francaise d&apos;encheres de beats. Elle permet aux producteurs de vendre leurs instrumentales aux encheres et aux artistes de les acquerir a prix competitif avec differents niveaux de licence.</p>}
+              answer={<p>318 LEGAACY Marketplace est la première plateforme française d'enchères de beats. Elle permet aux producteurs de vendre leurs instrumentales aux enchères et aux artistes de les acquérir à prix compétitif avec différents niveaux de licence.</p>}
               defaultOpen
             />
             <AccordionItem
-              question="Est-ce que je peux ecouter les beats avant d'encherir ?"
-              answer={<p>Oui ! Chaque beat dispose d&apos;un lecteur audio avec une preview complete. Tu peux ecouter autant de fois que tu veux avant de placer une enchere.</p>}
+              question="Est-ce que je peux écouter les beats avant d'enchérir ?"
+              answer={<p>Oui ! Chaque beat dispose d'un lecteur audio avec une preview complète. Tu peux écouter autant de fois que tu veux avant de placer une enchère.</p>}
             />
             <AccordionItem
               question="Comment fonctionne la messagerie ?"
-              answer={<p>Tu peux contacter n&apos;importe quel producteur via la messagerie privee. Clique sur &quot;Contacter&quot; sur le profil d&apos;un producteur pour demarrer une conversation.</p>}
+              answer={<p>Tu peux contacter n'importe quel producteur via la messagerie privée. Clique sur &quot;Contacter&quot; sur le profil d'un producteur pour démarrer une conversation.</p>}
             />
             <AccordionItem
               question="Comment suivre un producteur ?"
@@ -404,18 +404,18 @@ export default function FAQPage() {
             />
             <AccordionItem
               question="Puis-je laisser un avis sur un producteur ?"
-              answer={<p>Oui, apres avoir gagne et paye une enchere, tu peux laisser un avis et une note (1 a 5 etoiles) sur le profil du producteur. Les avis aident la communaute a identifier les meilleurs producteurs.</p>}
+              answer={<p>Oui, après avoir gagné et payé une enchère, tu peux laisser un avis et une note (1 à 5 étoiles) sur le profil du producteur. Les avis aident la communauté à identifier les meilleurs producteurs.</p>}
             />
             <AccordionItem
               question="Y a-t-il une application mobile ?"
-              answer={<p>Pas encore, mais le site est entierement responsive et optimise pour mobile. Tu peux l&apos;utiliser directement depuis le navigateur de ton telephone.</p>}
+              answer={<p>Pas encore, mais le site est entièrement responsive et optimisé pour mobile. Tu peux l'utiliser directement depuis le navigateur de ton téléphone.</p>}
             />
             <AccordionItem
               question="Comment contacter le support ?"
               answer={
                 <div>
-                  <p className="mb-2">Tu peux nous contacter de plusieurs manieres :</p>
-                  <p>Via la messagerie de la plateforme, par email, ou sur nos reseaux sociaux. Nous repondons generalement sous 24h.</p>
+                  <p className="mb-2">Tu peux nous contacter de plusieurs manières :</p>
+                  <p>Via la messagerie de la plateforme, par email, ou sur nos réseaux sociaux. Nous répondons généralement sous 24h.</p>
                 </div>
               }
             />
@@ -424,8 +424,8 @@ export default function FAQPage() {
 
         {/* CTA */}
         <div className="mt-12 text-center bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-8">
-          <h2 className="text-xl font-extrabold text-white mb-2">Tu as d&apos;autres questions ?</h2>
-          <p className="text-sm text-gray-400 mb-5">Notre equipe est la pour t&apos;aider</p>
+          <h2 className="text-xl font-extrabold text-white mb-2">Tu as d'autres questions ?</h2>
+          <p className="text-sm text-gray-400 mb-5">Notre équipe est là pour t'aider</p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <Link
               href="/marketplace"
@@ -438,7 +438,7 @@ export default function FAQPage() {
               href="/register"
               className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white border border-[#1e1e2e] hover:border-[#e11d48] transition-colors"
             >
-              <Users size={16} /> Creer un compte
+              <Users size={16} /> Créer un compte
             </Link>
           </div>
         </div>

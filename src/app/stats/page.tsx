@@ -144,7 +144,7 @@ export default function StatsPage() {
             <span className="block text-red-500">en chiffres</span>
           </h1>
           <p className="text-gray-500 max-w-lg mx-auto">
-            La premiere plateforme d&apos;encheres de beats en France. Decouvre nos statistiques en direct.
+            La première plateforme d'enchères de beats en France. Découvre nos statistiques en direct.
           </p>
         </div>
 
@@ -153,9 +153,9 @@ export default function StatsPage() {
           <StatCard icon={Users} label="Utilisateurs" value={overview.totalUsers} color="blue" />
           <StatCard icon={Shield} label="Producteurs" value={overview.totalProducers} color="purple" />
           <StatCard icon={Music} label="Beats actifs" value={overview.totalBeats} color="red" />
-          <StatCard icon={Gavel} label="Encheres totales" value={overview.totalAuctions} color="orange" />
-          <StatCard icon={Zap} label="Encheres en cours" value={overview.activeAuctions} color="green" />
-          <StatCard icon={Trophy} label="Ventes completees" value={overview.completedAuctions} color="yellow" />
+          <StatCard icon={Gavel} label="Enchères totales" value={overview.totalAuctions} color="orange" />
+          <StatCard icon={Zap} label="Enchères en cours" value={overview.activeAuctions} color="green" />
+          <StatCard icon={Trophy} label="Ventes complétées" value={overview.completedAuctions} color="yellow" />
           <StatCard icon={Target} label="Total des bids" value={overview.totalBids} color="blue" />
           <StatCard icon={DollarSign} label="Volume total" value={Math.round(overview.totalVolume)} suffix=" EUR" color="green" />
         </div>
@@ -262,7 +262,7 @@ export default function StatsPage() {
           <div className="mb-12">
             <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3">
               <Trophy size={24} className="text-green-500" />
-              Dernieres ventes
+              Dernières ventes
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {stats.recentSales.map((sale) => (
@@ -308,7 +308,7 @@ export default function StatsPage() {
 
         {/* CTA */}
         <div className="text-center bg-gradient-to-br from-red-600/10 to-red-900/5 border border-red-500/20 rounded-2xl p-10">
-          <h2 className="text-2xl font-black text-white mb-2">Rejoins la communaute</h2>
+          <h2 className="text-2xl font-black text-white mb-2">Rejoins la communauté</h2>
           <p className="text-gray-400 mb-6 max-w-md mx-auto">
             Que tu sois beatmaker ou artiste, 318 LEGAACY est la plateforme qu&apos;il te faut.
           </p>
@@ -318,13 +318,13 @@ export default function StatsPage() {
               className="px-6 py-3 rounded-xl font-bold text-sm text-black"
               style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
             >
-              Voir les encheres
+              Voir les enchères
             </Link>
             <Link
               href="/register"
               className="px-6 py-3 rounded-xl font-bold text-sm text-white border border-[#333] hover:border-red-500/50 transition"
             >
-              Creer un compte
+              Créer un compte
             </Link>
           </div>
         </div>

@@ -227,13 +227,13 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
             </span>
-            Premiere plateforme d&apos;encheres de beats en France
+            Première plateforme d&apos;enchères de beats en France
           </div>
 
           {/* Main title with staggered animation */}
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-[0.9] tracking-tight">
             <span className={`inline-block text-white transition-all duration-700 delay-100 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-              Encheris.
+              Enchéris.
             </span>{' '}
             <span className={`inline-block bg-gradient-to-r from-red-500 via-red-400 to-red-600 bg-clip-text text-transparent transition-all duration-700 delay-300 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               Remporte.
@@ -251,8 +251,8 @@ export default function Home() {
           </h1>
 
           <p className={`text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed transition-all duration-700 delay-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            Des instrumentales exclusives mises aux encheres par des beatmakers verifies.
-            Place ton enchere, decroche le beat, et lance ton prochain son.
+            Des instrumentales exclusives mises aux enchères par des beatmakers vérifiés.
+            Place ton enchère, décroche le beat, et lance ton prochain son.
           </p>
 
           {/* CTA Buttons */}
@@ -265,7 +265,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="absolute inset-[1px] rounded-2xl" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)' }} />
               <span className="relative z-10 flex items-center gap-2">
-                Explorer les encheres <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                Explorer les enchères <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </span>
             </Link>
             <Link
@@ -284,7 +284,7 @@ export default function Home() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                 </div>
-                <span className="text-gray-500"><strong className="text-white">{homepage.stats.totalAuctions}</strong> encheres live</span>
+                <span className="text-gray-500"><strong className="text-white">{homepage.stats.totalAuctions}</strong> enchères live</span>
               </div>
               <div className="hidden sm:flex items-center gap-2 text-sm">
                 <BadgeCheck size={16} className="text-red-500" />
@@ -292,7 +292,7 @@ export default function Home() {
               </div>
               <div className="hidden md:flex items-center gap-2 text-sm">
                 <Gavel size={14} className="text-red-500" />
-                <span className="text-gray-500"><strong className="text-white">{homepage.stats.totalBids}</strong> encheres placees</span>
+                <span className="text-gray-500"><strong className="text-white">{homepage.stats.totalBids}</strong> enchères placées</span>
               </div>
             </div>
           )}
@@ -333,7 +333,7 @@ export default function Home() {
                 </span>
                 <span className="text-sm font-bold text-red-500 uppercase tracking-wider">En direct</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-black text-white">Encheres en cours</h2>
+              <h2 className="text-3xl md:text-4xl font-black text-white">Enchères en cours</h2>
             </div>
             <Link href="/marketplace" className="text-sm font-bold text-gray-400 hover:text-red-500 flex items-center gap-1 transition-colors">
               Voir tout <ArrowRight size={14} />
@@ -349,8 +349,8 @@ export default function Home() {
           ) : auctions.length === 0 ? (
             <div className="text-center py-20 bg-[#111] rounded-2xl border border-[#222]">
               <Gavel size={48} className="text-gray-700 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg font-bold">Aucune enchere en cours</p>
-              <p className="text-gray-600 text-sm mt-1">Les prochaines encheres arrivent bientot</p>
+              <p className="text-gray-400 text-lg font-bold">Aucune enchère en cours</p>
+              <p className="text-gray-600 text-sm mt-1">Les prochaines enchères arrivent bientôt</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -407,14 +407,14 @@ export default function Home() {
 
                     <div className="flex items-end justify-between pt-3 border-t border-[#1e1e2e]">
                       <div>
-                        <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">Enchere actuelle</span>
+                        <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">Enchère actuelle</span>
                         <div className="text-2xl font-black text-white">{auction.currentBid}&euro;</div>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Gavel size={11} /> {auction.totalBids} enchere{auction.totalBids > 1 ? 's' : ''}
+                          <Gavel size={11} /> {auction.totalBids} enchère{auction.totalBids > 1 ? 's' : ''}
                         </div>
-                        <div className="text-[10px] text-gray-600 mt-0.5">Depart: {auction.startPrice}&euro;</div>
+                        <div className="text-[10px] text-gray-600 mt-0.5">Départ : {auction.startPrice}&euro;</div>
                       </div>
                     </div>
                   </div>
@@ -426,7 +426,7 @@ export default function Home() {
           {auctions.length > 0 && (
             <div className="text-center mt-10">
               <Link href="/marketplace" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-red-400 border border-red-500/20 hover:bg-red-500/5 transition-all hover:border-red-500/40">
-                Voir toutes les encheres <ChevronRight size={16} />
+                Voir toutes les enchères <ChevronRight size={16} />
               </Link>
             </div>
           )}
@@ -443,10 +443,10 @@ export default function Home() {
           {/* Header */}
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 text-xs font-bold text-orange-400 mb-4">
-              <Flame size={12} className="animate-pulse" /> Selection de la semaine
+              <Flame size={12} className="animate-pulse" /> Sélection de la semaine
             </div>
             <h2 className="text-3xl md:text-4xl font-black text-white mb-2">Le beat de la semaine</h2>
-            <p className="text-gray-500 max-w-md mx-auto text-sm">Chaque semaine, un beat exclusif est mis aux encheres pendant 7 jours. Ne rate pas ta chance.</p>
+            <p className="text-gray-500 max-w-md mx-auto text-sm">Chaque semaine, un beat exclusif est mis aux enchères pendant 7 jours. Ne rate pas ta chance.</p>
           </div>
 
           {/* Weekly Beat Card */}
@@ -462,8 +462,8 @@ export default function Home() {
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center mx-auto mb-5 border border-orange-500/20">
                       <Clock size={32} className="text-orange-400" />
                     </div>
-                    <h3 className="text-xl font-extrabold text-white mb-2">Prochaine selection bientot</h3>
-                    <p className="text-gray-500 text-sm max-w-sm mx-auto">La prochaine selection de la semaine sera annoncee tres bientot. Reste connecte !</p>
+                    <h3 className="text-xl font-extrabold text-white mb-2">Prochaine sélection bientôt</h3>
+                    <p className="text-gray-500 text-sm max-w-sm mx-auto">La prochaine sélection de la semaine sera annoncée très bientôt. Reste connecté !</p>
                     <Link href="/register" className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-xl font-bold text-sm text-orange-400 border border-orange-500/20 hover:bg-orange-500/5 transition-all hover:border-orange-500/40">
                       Activer les notifications <ArrowRight size={14} />
                     </Link>
@@ -492,7 +492,7 @@ export default function Home() {
                       {/* Badge "Selection" */}
                       <div className="absolute top-5 left-5 flex items-center gap-2">
                         <span className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-orange-900/40">
-                          Selection de la semaine
+                          Sélection de la semaine
                         </span>
                       </div>
 
@@ -563,14 +563,14 @@ export default function Home() {
                       {/* Price & Bids */}
                       <div className="flex items-end justify-between mb-6 pb-5 border-b border-[#222]">
                         <div>
-                          <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold block mb-1">Enchere actuelle</span>
+                          <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold block mb-1">Enchère actuelle</span>
                           <div className="text-3xl md:text-4xl font-black text-white">{weeklyAuction.currentBid}&euro;</div>
                         </div>
                         <div className="text-right">
                           <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-1">
                             <Gavel size={14} /> {weeklyAuction.totalBids} enchere{weeklyAuction.totalBids > 1 ? 's' : ''}
                           </div>
-                          <div className="text-xs text-gray-600">Depart: {weeklyAuction.startPrice}&euro;</div>
+                          <div className="text-xs text-gray-600">Départ : {weeklyAuction.startPrice}&euro;</div>
                         </div>
                       </div>
 
@@ -582,7 +582,7 @@ export default function Home() {
                         <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl" />
                         <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl opacity-0 group-hover/btn:opacity-100 transition-opacity" />
                         <span className="relative z-10 flex items-center justify-center gap-2">
-                          Placer mon enchere <ArrowRight size={18} />
+                          Placer mon enchère <ArrowRight size={18} />
                         </span>
                       </Link>
                     </div>
@@ -638,7 +638,7 @@ export default function Home() {
                   <h3 className="text-sm font-extrabold text-white truncate group-hover:text-red-400 transition-colors">{producer.name}</h3>
                   <div className="flex items-center justify-center gap-1 mt-1">
                     <BadgeCheck size={12} className="text-red-500" />
-                    <span className="text-[10px] text-gray-500">Verifie</span>
+                    <span className="text-[10px] text-gray-500">Vérifié</span>
                   </div>
                   <div className="flex items-center justify-center gap-3 mt-3 text-[10px] text-gray-500">
                     <span className="flex items-center gap-0.5"><Disc size={9} /> {producer.totalBeats}</span>
@@ -663,15 +663,15 @@ export default function Home() {
                 <BarChart3 size={14} /> Les chiffres
               </div>
               <h2 className="text-3xl md:text-4xl font-black text-white mb-3">318 LEGAACY en chiffres</h2>
-              <p className="text-gray-500 max-w-lg mx-auto">La marketplace de beats qui fait bouger la scene francaise</p>
+              <p className="text-gray-500 max-w-lg mx-auto">La marketplace de beats qui fait bouger la scène française</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               {[
                 { label: 'Beats disponibles', value: homepage.stats.totalBeats, icon: Disc, gradient: 'from-red-500/20 to-red-900/5', border: 'border-red-500/15', iconColor: 'text-red-500' },
-                { label: 'Producteurs verifies', value: homepage.stats.totalProducers, icon: BadgeCheck, gradient: 'from-purple-500/20 to-purple-900/5', border: 'border-purple-500/15', iconColor: 'text-purple-400' },
-                { label: 'Encheres placees', value: homepage.stats.totalBids, icon: Gavel, gradient: 'from-blue-500/20 to-blue-900/5', border: 'border-blue-500/15', iconColor: 'text-blue-400' },
-                { label: 'Ventes realisees', value: homepage.stats.totalCompleted, icon: TrendingUp, gradient: 'from-green-500/20 to-green-900/5', border: 'border-green-500/15', iconColor: 'text-green-400' },
+                { label: 'Producteurs vérifiés', value: homepage.stats.totalProducers, icon: BadgeCheck, gradient: 'from-purple-500/20 to-purple-900/5', border: 'border-purple-500/15', iconColor: 'text-purple-400' },
+                { label: 'Enchères placées', value: homepage.stats.totalBids, icon: Gavel, gradient: 'from-blue-500/20 to-blue-900/5', border: 'border-blue-500/15', iconColor: 'text-blue-400' },
+                { label: 'Ventes réalisées', value: homepage.stats.totalCompleted, icon: TrendingUp, gradient: 'from-green-500/20 to-green-900/5', border: 'border-green-500/15', iconColor: 'text-green-400' },
               ].map(({ label, value, icon: Icon, gradient, border, iconColor }) => (
                 <div key={label} className={`bg-gradient-to-br ${gradient} rounded-2xl border ${border} p-6 text-center hover:scale-105 transition-transform duration-300`}>
                   <div className={`w-12 h-12 rounded-xl bg-black/30 flex items-center justify-center ${iconColor} mx-auto mb-3`}>
@@ -690,15 +690,15 @@ export default function Home() {
       <section className="px-4 py-24 border-t border-[#1a1a1a]">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Comment ca marche</h2>
-            <p className="text-gray-500 max-w-lg mx-auto">En 3 etapes simples, tu peux remporter le beat de tes reves</p>
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Comment ça marche</h2>
+            <p className="text-gray-500 max-w-lg mx-auto">En 3 étapes simples, tu peux remporter le beat de tes rêves</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { step: '01', icon: <UserPlus size={24} />, title: 'Crée ton compte', desc: 'Inscris-toi gratuitement en 30 secondes et accede a toutes les encheres de la plateforme.' },
-              { step: '02', icon: <Gavel size={24} />, title: 'Place ton enchere', desc: 'Ecoute les beats, choisis ta licence (Basic, Premium, Exclusive) et encheris en temps reel.' },
-              { step: '03', icon: <Music size={24} />, title: 'Telecharge ton beat', desc: 'Tu as gagne ? Paye en ligne et recois tes fichiers audio instantanement.' },
+              { step: '01', icon: <UserPlus size={24} />, title: 'Crée ton compte', desc: 'Inscris-toi gratuitement en 30 secondes et accède à toutes les enchères de la plateforme.' },
+              { step: '02', icon: <Gavel size={24} />, title: 'Place ton enchère', desc: 'Écoute les beats, choisis ta licence (Basic, Premium, Exclusive) et enchéris en temps réel.' },
+              { step: '03', icon: <Music size={24} />, title: 'Télécharge ton beat', desc: 'Tu as gagné ? Paye en ligne et reçois tes fichiers audio instantanément.' },
             ].map((item) => (
               <div key={item.step} className="relative group bg-[#111] rounded-2xl border border-[#222] p-7 hover:border-red-500/20 transition-all hover:-translate-y-1 duration-300">
                 <span className="text-6xl font-black text-red-500/[0.07] absolute top-4 right-5 select-none">{item.step}</span>
@@ -730,17 +730,17 @@ export default function Home() {
         <div className="max-w-5xl mx-auto relative z-10">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Pourquoi 318 LEGAACY</h2>
-            <p className="text-gray-500 max-w-lg mx-auto">Une plateforme concue pour les artistes et les beatmakers</p>
+            <p className="text-gray-500 max-w-lg mx-auto">Une plateforme conçue pour les artistes et les beatmakers</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {[
-              { icon: <BadgeCheck size={22} />, title: 'Producteurs verifies', desc: 'Chaque beatmaker est valide par notre equipe avant de pouvoir vendre sur la plateforme.', color: 'bg-blue-500/10 text-blue-400' },
-              { icon: <Timer size={22} />, title: 'Anti-snipe integre', desc: 'Le timer est prolonge de 2 minutes si une enchere tombe dans les derniers instants.', color: 'bg-orange-500/10 text-orange-400' },
-              { icon: <Zap size={22} />, title: 'Encheres temps reel', desc: 'Les encheres se mettent a jour instantanement grace a la technologie Supabase Realtime.', color: 'bg-purple-500/10 text-purple-400' },
-              { icon: <CircleDollarSign size={22} />, title: 'Paiement securise', desc: 'Stripe gere tous les paiements. Le producteur recoit 85%, la plateforme prend 15%.', color: 'bg-green-500/10 text-green-400' },
-              { icon: <Smartphone size={22} />, title: 'Application mobile PWA', desc: 'Installe la marketplace sur ton telephone et accede a tes encheres partout.', color: 'bg-cyan-500/10 text-cyan-400' },
-              { icon: <ListMusic size={22} />, title: 'Playlists & Collections', desc: 'Organise tes beats favoris en playlists et ecoute-les avec le lecteur integre.', color: 'bg-pink-500/10 text-pink-400' },
+              { icon: <BadgeCheck size={22} />, title: 'Producteurs vérifiés', desc: 'Chaque beatmaker est validé par notre équipe avant de pouvoir vendre sur la plateforme.', color: 'bg-blue-500/10 text-blue-400' },
+              { icon: <Timer size={22} />, title: 'Anti-snipe intégré', desc: 'Le timer est prolongé de 2 minutes si une enchère tombe dans les derniers instants.', color: 'bg-orange-500/10 text-orange-400' },
+              { icon: <Zap size={22} />, title: 'Enchères temps réel', desc: 'Les enchères se mettent à jour instantanément grâce à la technologie Supabase Realtime.', color: 'bg-purple-500/10 text-purple-400' },
+              { icon: <CircleDollarSign size={22} />, title: 'Paiement sécurisé', desc: 'Stripe gère tous les paiements. Le producteur reçoit 85%, la plateforme prend 15%.', color: 'bg-green-500/10 text-green-400' },
+              { icon: <Smartphone size={22} />, title: 'Application mobile PWA', desc: 'Installe la marketplace sur ton téléphone et accède à tes enchères partout.', color: 'bg-cyan-500/10 text-cyan-400' },
+              { icon: <ListMusic size={22} />, title: 'Playlists & Collections', desc: 'Organise tes beats favoris en playlists et écoute-les avec le lecteur intégré.', color: 'bg-pink-500/10 text-pink-400' },
             ].map((item, i) => (
               <div key={i} className="flex gap-4 bg-[#111] rounded-2xl border border-[#222] p-5 hover:border-red-500/20 transition-all hover:-translate-y-0.5 duration-300">
                 <div className={`w-11 h-11 rounded-xl ${item.color} flex items-center justify-center shrink-0`}>
@@ -763,13 +763,13 @@ export default function Home() {
 
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-4 py-1.5 text-xs font-bold text-red-400 mb-6">
-            <Flame size={12} /> Rejoins la communaute
+            <Flame size={12} /> Rejoins la communauté
           </div>
           <h2 className="text-3xl md:text-5xl font-black text-white mb-5">
-            Pret a encherir ?
+            Prêt à enchérir ?
           </h2>
           <p className="text-gray-400 mb-10 text-lg max-w-xl mx-auto">
-            Rejoins la communaute 318 LEGAACY et decroche des beats exclusifs directement aupres des meilleurs producteurs
+            Rejoins la communauté 318 LEGAACY et décroche des beats exclusifs directement auprès des meilleurs producteurs
           </p>
           <div className="flex gap-4 flex-wrap justify-center">
             <Link
@@ -784,7 +784,7 @@ export default function Home() {
               href="/marketplace"
               className="px-8 py-4 rounded-2xl font-extrabold text-white text-lg border-2 border-[#2a2a2a] hover:border-red-500/40 transition-all backdrop-blur-sm"
             >
-              Voir les encheres
+              Voir les enchères
             </Link>
           </div>
         </div>
@@ -824,7 +824,7 @@ export default function Home() {
               </div>
               <div className="space-y-2.5">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Aide</h4>
-                <Link href="/faq" className="block text-gray-400 hover:text-white transition-colors">Comment ca marche</Link>
+                <Link href="/faq" className="block text-gray-400 hover:text-white transition-colors">Comment ça marche</Link>
                 <Link href="/stats" className="block text-gray-400 hover:text-white transition-colors">Statistiques</Link>
               </div>
             </div>
@@ -832,16 +832,16 @@ export default function Home() {
 
           <div className="pt-6 border-t border-[#1a1a1a]">
             <div className="flex flex-wrap items-center justify-center gap-4 mb-4 text-xs">
-              <Link href="/mentions-legales" className="text-gray-500 hover:text-gray-300 transition-colors">Mentions legales</Link>
+              <Link href="/mentions-legales" className="text-gray-500 hover:text-gray-300 transition-colors">Mentions légales</Link>
               <span className="text-gray-700">|</span>
               <Link href="/cgv" className="text-gray-500 hover:text-gray-300 transition-colors">CGV</Link>
               <span className="text-gray-700">|</span>
-              <Link href="/confidentialite" className="text-gray-500 hover:text-gray-300 transition-colors">Confidentialite</Link>
+              <Link href="/confidentialite" className="text-gray-500 hover:text-gray-300 transition-colors">Confidentialité</Link>
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-xs text-gray-600">&copy; 2026 318 LEGAACY Studio — Tous droits reserves</p>
+              <p className="text-xs text-gray-600">&copy; 2026 318 LEGAACY Studio — Tous droits réservés</p>
               <p className="text-xs text-gray-600 flex items-center gap-1">
-                <Globe size={10} /> Premiere plateforme d&apos;encheres de beats en France
+                <Globe size={10} /> Première plateforme d&apos;enchères de beats en France
               </p>
             </div>
           </div>

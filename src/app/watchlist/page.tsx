@@ -46,11 +46,11 @@ interface WatchlistItem {
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   ACTIVE: { label: 'En cours', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
-  ENDING_SOON: { label: 'Fin bientot', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
-  ENDED: { label: 'Terminee', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
+  ENDING_SOON: { label: 'Fin bientôt', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  ENDED: { label: 'Terminée', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
   COMPLETED: { label: 'Vendue', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
-  SCHEDULED: { label: 'Programmee', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  CANCELLED: { label: 'Annulee', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  SCHEDULED: { label: 'Programmée', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  CANCELLED: { label: 'Annulée', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
 }
 
 const LICENSE_COLORS: Record<string, string> = {
@@ -144,7 +144,7 @@ export default function WatchlistPage() {
               Ma Watchlist
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              {items.length} enchere{items.length > 1 ? 's' : ''} suivie{items.length > 1 ? 's' : ''}
+              {items.length} enchère{items.length > 1 ? 's' : ''} suivie{items.length > 1 ? 's' : ''}
               {activeCount > 0 && <span className="text-yellow-400"> · {activeCount} active{activeCount > 1 ? 's' : ''}</span>}
             </p>
           </div>
@@ -161,7 +161,7 @@ export default function WatchlistPage() {
                     : 'border-[#222] text-gray-500 hover:text-white'
                 }`}
               >
-                {f === 'all' ? 'Toutes' : f === 'active' ? 'En cours' : 'Terminees'}
+                {f === 'all' ? 'Toutes' : f === 'active' ? 'En cours' : 'Terminées'}
               </button>
             ))}
           </div>
@@ -175,14 +175,14 @@ export default function WatchlistPage() {
               {items.length === 0 ? 'Ta watchlist est vide' : 'Aucune enchere dans ce filtre'}
             </p>
             <p className="text-gray-600 text-sm mt-1 mb-6">
-              Ajoute des encheres depuis le marketplace pour les suivre ici
+              Ajoute des enchères depuis le marketplace pour les suivre ici
             </p>
             <Link
               href="/marketplace"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
               style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
             >
-              <Gavel size={16} /> Voir les encheres
+              <Gavel size={16} /> Voir les enchères
             </Link>
           </div>
         ) : (

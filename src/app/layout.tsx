@@ -15,11 +15,11 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.318marketplace.c
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.318marketplace.com'),
   title: {
-    default: '318 LEGAACY Marketplace — Encheres de Beats en France',
+    default: '318 LEGAACY Marketplace — Enchères de Beats en France',
     template: '%s | 318 LEGAACY',
   },
-  description: 'Premiere plateforme d\'encheres d\'instrumentales en France. Decouvre des beats uniques de producteurs verifies et encheris en temps reel.',
-  keywords: ['beats', 'instrumentales', 'encheres', 'marketplace', 'production musicale', 'rap', 'trap', 'drill', 'beatmaker', 'producteur', '318 legaacy'],
+  description: 'Première plateforme d\'enchères d\'instrumentales en France. Découvre des beats uniques de producteurs vérifiés et enchéris en temps réel.',
+  keywords: ['beats', 'instrumentales', 'enchères', 'marketplace', 'production musicale', 'rap', 'trap', 'drill', 'beatmaker', 'producteur', '318 legaacy'],
   authors: [{ name: '318 LEGAACY Studio' }],
   creator: '318 LEGAACY Studio',
   manifest: '/manifest.json',
@@ -43,8 +43,8 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: '318 LEGAACY Marketplace — Encheres de Beats',
-    description: 'Premiere plateforme d\'encheres d\'instrumentales en France. Encheris en temps reel sur des beats uniques.',
+    title: '318 LEGAACY Marketplace — Enchères de Beats',
+    description: 'Première plateforme d\'enchères d\'instrumentales en France. Enchéris en temps réel sur des beats uniques.',
     url: siteUrl,
     siteName: '318 LEGAACY Marketplace',
     locale: 'fr_FR',
@@ -60,8 +60,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '318 LEGAACY Marketplace — Encheres de Beats',
-    description: 'Premiere plateforme d\'encheres d\'instrumentales en France.',
+    title: '318 LEGAACY Marketplace — Enchères de Beats',
+    description: 'Première plateforme d\'enchères d\'instrumentales en France.',
     images: ['/api/og'],
   },
   robots: {

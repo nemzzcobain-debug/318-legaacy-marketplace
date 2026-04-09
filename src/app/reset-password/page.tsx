@@ -22,14 +22,14 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     if (!token) {
-      setError('Lien invalide. Demande une nouvelle reinitialisation.')
+      setError('Lien invalide. Demande une nouvelle réinitialisation.')
     }
   }, [token])
 
   const validatePassword = (pwd: string): string[] => {
     const errors: string[] = []
     if (pwd.length < 8) {
-      errors.push('Minimum 8 caracteres')
+      errors.push('Minimum 8 caractères')
     }
     if (!/[A-Z]/.test(pwd)) {
       errors.push('Au moins une majuscule')
@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
     }
 
     if (validationErrors.length > 0) {
-      setError('Le mot de passe ne respecte pas tous les criteres')
+      setError('Le mot de passe ne respecte pas tous les critères')
       return
     }
 
@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Erreur lors de la reinitialisation')
+        setError(data.error || 'Erreur lors de la réinitialisation')
         return
       }
 
@@ -132,8 +132,8 @@ export default function ResetPasswordPage() {
 
         {/* Card */}
         <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-8">
-          <h1 className="text-2xl font-extrabold text-white mb-1">Reinitialise ton mot de passe</h1>
-          <p className="text-sm text-gray-400 mb-6">Cree un nouveau mot de passe securise pour ton compte.</p>
+          <h1 className="text-2xl font-extrabold text-white mb-1">Réinitialise ton mot de passe</h1>
+          <p className="text-sm text-gray-400 mb-6">Crée un nouveau mot de passe sécurisé pour ton compte.</p>
 
           {error && (
             <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-[#ff475715] border border-[#ff475730] text-[#ff4757] text-sm">
@@ -145,7 +145,7 @@ export default function ResetPasswordPage() {
           {success && (
             <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-[#2ed57315] border border-[#2ed57330] text-[#2ed573] text-sm">
               <CheckCircle size={16} />
-              Mot de passe reinitialise ! Tu peux te connecter maintenant.
+              Mot de passe réinitialisé ! Tu peux te connecter maintenant.
             </div>
           )}
 
@@ -174,11 +174,11 @@ export default function ResetPasswordPage() {
                 {/* Validation checklist */}
                 {password && (
                   <div className="mt-3 space-y-1.5 px-3 py-2 rounded-lg bg-[#13131a] border border-[#1e1e2e]">
-                    <p className="text-xs text-gray-400 mb-2">Criteres :</p>
+                    <p className="text-xs text-gray-400 mb-2">Critères :</p>
                     <div className="space-y-1">
                       <div className={`text-xs flex items-center gap-2 ${password.length >= 8 ? 'text-[#2ed573]' : 'text-[#ff4757]'}`}>
                         <div className={`w-1.5 h-1.5 rounded-full ${password.length >= 8 ? 'bg-[#2ed573]' : 'bg-[#ff4757]'}`} />
-                        Minimum 8 caracteres
+                        Minimum 8 caractères
                       </div>
                       <div className={`text-xs flex items-center gap-2 ${/[A-Z]/.test(password) ? 'text-[#2ed573]' : 'text-[#ff4757]'}`}>
                         <div className={`w-1.5 h-1.5 rounded-full ${/[A-Z]/.test(password) ? 'bg-[#2ed573]' : 'bg-[#ff4757]'}`} />
@@ -235,7 +235,7 @@ export default function ResetPasswordPage() {
                   <span className="animate-spin w-5 h-5 border-2 border-black/30 border-t-black rounded-full" />
                 ) : (
                   <>
-                    <Lock size={18} /> Reinitialiser
+                    <Lock size={18} /> Réinitialiser
                   </>
                 )}
               </button>
@@ -247,7 +247,7 @@ export default function ResetPasswordPage() {
               href="/login"
               className="text-[#e11d48] font-semibold hover:underline flex items-center justify-center gap-2"
             >
-              <ArrowLeft size={16} /> Retour a la connexion
+              <ArrowLeft size={16} /> Retour à la connexion
             </Link>
           </p>
         </div>

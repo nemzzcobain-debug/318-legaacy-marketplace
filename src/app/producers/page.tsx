@@ -48,9 +48,9 @@ export default function ProducersPage() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-white mb-2">Producteurs verifies</h1>
+          <h1 className="text-3xl font-extrabold text-white mb-2">Producteurs vérifiés</h1>
           <p className="text-gray-400">
-            Marketplace ouverte sous validation — seuls les producteurs approuves peuvent vendre
+            Marketplace ouverte sous validation — seuls les producteurs approuvés peuvent vendre
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export default function ProducersPage() {
                   </span>
                 ) : producer.totalSales > 50 ? (
                   <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#667eea15] text-[#667eea]">
-                    Certifie
+                    Certifié
                   </span>
                 ) : (
                   <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2ed57315] text-[#2ed573]">
@@ -130,8 +130,8 @@ export default function ProducersPage() {
             Deviens producteur sur 318 LEGAACY
           </h3>
           <p className="text-sm text-gray-400 max-w-md mx-auto mb-5">
-            Soumets ta candidature pour vendre tes beats aux encheres.
-            Notre equipe verifie chaque profil pour garantir la qualite.
+            Soumets ta candidature pour vendre tes beats aux enchères.
+            Notre équipe vérifie chaque profil pour garantir la qualité.
           </p>
           <a
             href="/register"

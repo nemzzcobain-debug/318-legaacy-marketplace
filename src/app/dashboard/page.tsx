@@ -86,11 +86,11 @@ export default function DashboardPage() {
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: BarChart3 },
     { id: 'beats', label: 'Mes Beats', icon: Music },
-    { id: 'auctions', label: 'Mes Encheres', icon: Gavel },
+    { id: 'auctions', label: 'Mes Enchères', icon: Gavel },
     { id: 'earnings', label: 'Revenus', icon: DollarSign },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     { id: 'badges', label: 'Badges', icon: Award },
-    { id: 'settings', label: 'Parametres', icon: Settings },
+    { id: 'settings', label: 'Paramètres', icon: Settings },
   ]
 
   const userName = session?.user?.name || 'Producteur'
@@ -116,21 +116,21 @@ export default function DashboardPage() {
       color: '#e11d48',
     },
     {
-      label: 'Beats uploades',
+      label: 'Beats uploadés',
       value: String(stats?.totalBeats || 0),
       sub: 'sur la plateforme',
       icon: Music,
       color: '#667eea',
     },
     {
-      label: 'Encheres actives',
+      label: 'Enchères actives',
       value: String(stats?.activeAuctionsCount || 0),
       sub: 'en cours',
       icon: Gavel,
       color: '#ff0033',
     },
     {
-      label: 'Total encheres recues',
+      label: 'Total enchères reçues',
       value: String(stats?.totalBidsReceived || 0),
       sub: 'sur tes beats',
       icon: TrendingUp,
@@ -209,7 +209,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <h2 className="text-lg font-bold text-white">Encheres en cours</h2>
+                  <h2 className="text-lg font-bold text-white">Enchères en cours</h2>
                 </div>
                 <button
                   onClick={() => setActiveTab('auctions')}
@@ -222,8 +222,8 @@ export default function DashboardPage() {
               {(data?.activeAuctions?.length || 0) === 0 ? (
                 <div className="text-center py-8">
                   <Gavel size={36} className="mx-auto mb-3 text-gray-600" />
-                  <p className="text-gray-400 text-sm font-bold">Aucune enchere active</p>
-                  <p className="text-gray-600 text-xs mt-1">Cree une enchere depuis l&apos;onglet Mes Encheres</p>
+                  <p className="text-gray-400 text-sm font-bold">Aucune enchère active</p>
+                  <p className="text-gray-600 text-xs mt-1">Crée une enchère depuis l&apos;onglet Mes Enchères</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -259,7 +259,7 @@ export default function DashboardPage() {
             {/* Recent Activity */}
             {(data?.recentBids?.length || 0) > 0 && (
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
-                <h2 className="text-lg font-bold text-white mb-5">Activite recente</h2>
+                <h2 className="text-lg font-bold text-white mb-5">Activité récente</h2>
                 <div className="space-y-3">
                   {data!.recentBids.map((bid: any) => (
                     <div
@@ -305,9 +305,9 @@ export default function DashboardPage() {
             {(data?.beats?.length || 0) === 0 ? (
               <div className="text-center py-12">
                 <Music size={48} className="mx-auto mb-4 text-gray-600" />
-                <h3 className="text-lg font-bold text-white mb-2">Tes beats apparaitront ici</h3>
+                <h3 className="text-lg font-bold text-white mb-2">Tes beats apparaîtront ici</h3>
                 <p className="text-sm text-gray-400 mb-5">
-                  Upload ton premier beat pour commencer a le vendre aux encheres
+                  Upload ton premier beat pour commencer à le vendre aux enchères
                 </p>
                 <Link
                   href="/producers/upload"
@@ -387,7 +387,7 @@ export default function DashboardPage() {
             {(data?.activeAuctions?.length || 0) > 0 && (
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
                 <h2 className="text-lg font-bold text-white mb-5">
-                  Encheres actives ({data!.activeAuctions.length})
+                  Enchères actives ({data!.activeAuctions.length})
                 </h2>
                 <div className="space-y-3">
                   {data!.activeAuctions.map((auction: any) => (
@@ -418,7 +418,7 @@ export default function DashboardPage() {
             {(data?.completedAuctions?.length || 0) > 0 && (
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
                 <h2 className="text-lg font-bold text-white mb-5">
-                  Ventes terminees ({data!.completedAuctions.length})
+                  Ventes terminées ({data!.completedAuctions.length})
                 </h2>
                 <div className="space-y-3">
                   {data!.completedAuctions.map((auction: any) => (
@@ -429,14 +429,14 @@ export default function DashboardPage() {
                       <div>
                         <div className="text-sm font-bold text-white">{auction.beat.title}</div>
                         <div className="text-xs text-gray-500">
-                          Acheteur: {auction.winner?.displayName || auction.winner?.name || 'Inconnu'} · {auction.winningLicense}
+                          Acheteur : {auction.winner?.displayName || auction.winner?.name || 'Inconnu'} · {auction.winningLicense}
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-bold text-[#2ed573]">{auction.finalPrice}&euro;</div>
                         <div className="text-[10px] text-gray-600">
-                          Payout: {auction.producerPayout}&euro;
-                          {auction.paidAt ? ' · Paye' : ' · En attente'}
+                          Payout : {auction.producerPayout}&euro;
+                          {auction.paidAt ? ' · Payé' : ' · En attente'}
                         </div>
                       </div>
                     </div>
@@ -460,7 +460,7 @@ export default function DashboardPage() {
                       <div>
                         <div className="text-sm font-bold text-white">{auction.beat.title}</div>
                         <div className="text-xs text-gray-500">
-                          Depart: {auction.startPrice}&euro; · 0 enchere
+                          Départ : {auction.startPrice}&euro; · 0 enchère
                         </div>
                       </div>
                       <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#ffffff10] text-gray-500">
@@ -479,7 +479,7 @@ export default function DashboardPage() {
           <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-white">Revenus</h2>
-              <span className="text-xs text-gray-500">Commission plateforme: 15%</span>
+              <span className="text-xs text-gray-500">Commission plateforme : 15%</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -496,7 +496,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="p-4 rounded-xl bg-white/[0.02] border border-[#1e1e2e]">
-                <div className="text-xs text-gray-500 mb-1">Revenus total (85%)</div>
+                <div className="text-xs text-gray-500 mb-1">Revenus total (85 %)</div>
                 <div className="text-2xl font-extrabold text-white">
                   {(stats?.totalRevenue || 0).toLocaleString('fr-FR')}&euro;
                 </div>
@@ -506,7 +506,7 @@ export default function DashboardPage() {
             {/* Sales breakdown */}
             {(data?.completedAuctions?.length || 0) > 0 && (
               <div className="mb-6">
-                <h3 className="text-sm font-bold text-gray-400 mb-3">Detail des ventes</h3>
+                <h3 className="text-sm font-bold text-gray-400 mb-3">Détail des ventes</h3>
                 <div className="space-y-2">
                   {data!.completedAuctions.map((sale: any) => (
                     <div
@@ -518,11 +518,11 @@ export default function DashboardPage() {
                         <span className="text-xs text-gray-500 ml-2">{sale.winningLicense}</span>
                       </div>
                       <div className="flex items-center gap-4 text-xs">
-                        <span className="text-gray-500">Vente: {sale.finalPrice}&euro;</span>
-                        <span className="text-gray-500">Com: {sale.commissionAmount}&euro;</span>
+                        <span className="text-gray-500">Vente : {sale.finalPrice}&euro;</span>
+                        <span className="text-gray-500">Com : {sale.commissionAmount}&euro;</span>
                         <span className="font-bold text-[#2ed573]">{sale.producerPayout}&euro;</span>
                         <span className={`font-bold ${sale.paidAt ? 'text-[#2ed573]' : 'text-[#e11d48]'}`}>
-                          {sale.paidAt ? 'Paye' : 'En attente'}
+                          {sale.paidAt ? 'Payé' : 'En attente'}
                         </span>
                       </div>
                     </div>
@@ -622,7 +622,7 @@ function SettingsTab({ userName }: { userName: string }) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#635BFF15] text-[#635BFF] text-xs font-semibold hover:bg-[#635BFF25] transition"
               >
-                <ExternalLink size={14} /> Acceder au dashboard Stripe
+                <ExternalLink size={14} /> Accéder au dashboard Stripe
               </a>
             )}
           </div>
@@ -633,7 +633,7 @@ function SettingsTab({ userName }: { userName: string }) {
               <span className="text-sm font-semibold text-yellow-400">Configuration en cours</span>
             </div>
             <p className="text-xs text-gray-500">
-              Tu dois completer ton inscription Stripe pour recevoir des paiements.
+              Tu dois compléter ton inscription Stripe pour recevoir des paiements.
             </p>
             <button
               onClick={connectStripe}
@@ -643,7 +643,7 @@ function SettingsTab({ userName }: { userName: string }) {
             >
               {connecting
                 ? <><Loader2 size={14} className="animate-spin" /> Redirection...</>
-                : <><CreditCard size={14} /> Completer l&apos;inscription Stripe</>
+                : <><CreditCard size={14} /> Compléter l&apos;inscription Stripe</>
               }
             </button>
           </div>
@@ -664,7 +664,7 @@ function SettingsTab({ userName }: { userName: string }) {
               }
             </button>
             <p className="text-[11px] text-gray-600">
-              Stripe est notre partenaire de paiement securise. Tu seras redirige vers Stripe pour configurer ton compte.
+              Stripe est notre partenaire de paiement sécurisé. Tu seras redirigé vers Stripe pour configurer ton compte.
             </p>
           </div>
         )}

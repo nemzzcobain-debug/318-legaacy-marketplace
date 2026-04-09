@@ -44,15 +44,15 @@ const NOTIFICATION_COLORS: Record<string, string> = {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  BID_PLACED: 'Enchere placee',
-  OUTBID: 'Surencheri',
-  AUCTION_WON: 'Enchere gagnee',
+  BID_PLACED: 'Enchère placée',
+  OUTBID: 'Surenchéri',
+  AUCTION_WON: 'Enchère gagnée',
   AUCTION_ENDING: 'Fin imminente',
-  AUCTION_ENDED: 'Enchere terminee',
-  PAYMENT_RECEIVED: 'Paiement recu',
-  PRODUCER_APPROVED: 'Producteur approuve',
-  PRODUCER_REJECTED: 'Producteur refuse',
-  SYSTEM: 'Systeme',
+  AUCTION_ENDED: 'Enchère terminée',
+  PAYMENT_RECEIVED: 'Paiement reçu',
+  PRODUCER_APPROVED: 'Producteur approuvé',
+  PRODUCER_REJECTED: 'Producteur refusé',
+  SYSTEM: 'Système',
 }
 
 function formatDate(dateStr: string): string {
@@ -60,7 +60,7 @@ function formatDate(dateStr: string): string {
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-  if (diff < 60) return 'A l\'instant'
+  if (diff < 60) return 'À l\'instant'
   if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`
   if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`
   if (diff < 172800) return 'Hier'
@@ -164,7 +164,7 @@ export default function NotificationsPage() {
           <div>
             <h1 className="text-2xl font-black text-white">Notifications</h1>
             <p className="text-sm text-gray-400 mt-1">
-              {unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}` : 'Tout est a jour'}
+              {unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}` : 'Tout est à jour'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -295,8 +295,8 @@ export default function NotificationsPage() {
               </h3>
               <p className="text-sm text-gray-600">
                 {filter === 'unread'
-                  ? 'Tu es a jour ! Toutes les notifications ont ete lues.'
-                  : 'Les alertes d\'encheres, paiements et mises a jour apparaitront ici.'
+                  ? 'Tu es à jour ! Toutes les notifications ont été lues.'
+                  : 'Les alertes d\'enchères, paiements et mises à jour apparaîtront ici.'
                 }
               </p>
             </div>

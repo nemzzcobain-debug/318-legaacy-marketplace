@@ -36,7 +36,7 @@ export default function MarketplacePage() {
         const data = await res.json()
         setAuctions(data.auctions || [])
       } catch (err) {
-        console.error('Erreur chargement encheres:', err)
+        console.error('Erreur chargement enchères:', err)
       } finally {
         setLoading(false)
       }
@@ -68,23 +68,23 @@ export default function MarketplacePage() {
         {/* Hero Section */}
         <section className="pt-12 pb-8 text-center">
           <div className="inline-flex items-center gap-2 bg-[#e11d4810] border border-[#e11d4825] rounded-full px-3.5 py-1 text-xs font-semibold text-[#e11d48] mb-5">
-            Premiere plateforme d&apos;encheres de beats en France
+            Première plateforme d'enchères de beats en France
           </div>
 
           <h1 className="text-4xl md:text-5xl font-black mb-3 gradient-text leading-tight">
-            Encheris sur les meilleurs<br />instrumentales
+            Enchéris sur les meilleurs<br />instrumentales
           </h1>
 
           <p className="text-base text-gray-400 max-w-lg mx-auto mb-7 leading-relaxed">
-            Decouvre des beats uniques de producteurs verifies. Place ton enchere,
-            remporte l&apos;instrumentale et cree ton prochain hit.
+            Découvre des beats uniques de producteurs vérifiés. Place ton enchère,
+            remporte l'instrumentale et crée ton prochain hit.
           </p>
 
           {/* Stats */}
           <div className="flex justify-center gap-8 mb-8 flex-wrap">
             {[
-              { label: 'Encheres actives', value: auctions.length, icon: Gavel },
-              { label: 'Encheres totales', value: auctions.reduce((s, a) => s + a.totalBids, 0), icon: TrendingUp },
+              { label: 'Enchères actives', value: auctions.length, icon: Gavel },
+              { label: 'Enchères totales', value: auctions.reduce((s, a) => s + a.totalBids, 0), icon: TrendingUp },
               { label: 'Valeur totale', value: `${auctions.reduce((s, a) => s + a.currentBid, 0)}\u20AC`, icon: DollarSign },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export default function MarketplacePage() {
         ) : (
           <div className="text-center py-16 text-gray-500">
             <Music size={48} className="mx-auto mb-4 opacity-30" />
-            <p className="text-lg">Aucun beat trouve</p>
+            <p className="text-lg">Aucun beat trouvé</p>
             <p className="text-sm">Essaie un autre filtre ou recherche</p>
           </div>
         )}

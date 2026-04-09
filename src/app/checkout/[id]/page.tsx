@@ -185,7 +185,7 @@ export default function CheckoutPage() {
           <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
             <Check size={48} className="text-green-400" />
           </div>
-          <h1 className="text-3xl font-black text-white mb-3">Paiement confirme !</h1>
+          <h1 className="text-3xl font-black text-white mb-3">Paiement confirmé !</h1>
           <p className="text-gray-400 mb-2">
             Votre achat de <span className="text-white font-semibold">{auction?.beat.title}</span> est confirme.
           </p>
@@ -195,9 +195,9 @@ export default function CheckoutPage() {
 
           <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 mb-8">
             <Award size={32} className="text-red-500 mx-auto mb-3" />
-            <h3 className="text-white font-bold mb-2">Votre beat est pret !</h3>
+            <h3 className="text-white font-bold mb-2">Votre beat est prêt !</h3>
             <p className="text-gray-400 text-sm mb-4">
-              Vous pouvez maintenant telecharger vos fichiers depuis votre espace achats.
+              Vous pouvez maintenant télécharger vos fichiers depuis votre espace achats.
             </p>
             <button
               onClick={() => router.push('/dashboard')}
@@ -246,7 +246,7 @@ export default function CheckoutPage() {
         {/* Titre */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/25 rounded-full px-4 py-1.5 text-xs font-semibold text-red-500 mb-4">
-            <Lock size={12} /> Paiement securise
+            <Lock size={12} /> Paiement sécurisé
           </div>
           <h1 className="text-3xl font-black text-white">Finaliser votre achat</h1>
         </div>
@@ -294,7 +294,7 @@ export default function CheckoutPage() {
                   onClick={() => setShowDetails(!showDetails)}
                   className="flex items-center justify-between w-full text-xs text-gray-400 mb-3"
                 >
-                  <span>Details du prix</span>
+                  <span>Détails du prix</span>
                   {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
 
@@ -356,7 +356,7 @@ export default function CheckoutPage() {
           <div className="md:col-span-3">
             <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6">
               <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                <CreditCard size={20} className="text-red-500" /> Methode de paiement
+                <CreditCard size={20} className="text-red-500" /> Méthode de paiement
               </h2>
 
               {/* Erreur */}
@@ -417,7 +417,7 @@ export default function CheckoutPage() {
 
               {/* Securite */}
               <div className="flex items-center justify-center gap-4 mt-4 text-[10px] text-gray-600">
-                <span className="flex items-center gap-1"><Shield size={10} /> Paiement securise</span>
+                <span className="flex items-center gap-1"><Shield size={10} /> Paiement sécurisé</span>
                 <span className="flex items-center gap-1"><Lock size={10} /> Chiffrement SSL</span>
                 <span>Powered by Stripe</span>
               </div>
@@ -430,21 +430,21 @@ export default function CheckoutPage() {
                 {auction.winningLicense === 'EXCLUSIVE' ? (
                   <>
                     <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Fichiers WAV + MP3 + Stems</div>
-                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Droits exclusifs - vous etes le seul proprietaire</div>
-                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Streams illimites + Distribution mondiale</div>
+                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Droits exclusifs - vous êtes le seul propriétaire</div>
+                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Streams illimités + Distribution mondiale</div>
                     <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Droits d&apos;edition et de performance</div>
                   </>
                 ) : auction.winningLicense === 'PREMIUM' ? (
                   <>
                     <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Fichiers WAV + MP3</div>
-                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Jusqu&apos;a 50 000 streams</div>
-                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Usage commercial autorise</div>
+                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Jusqu&apos;à 50 000 streams</div>
+                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Usage commercial autorisé</div>
                     <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Distribution sur toutes les plateformes</div>
                   </>
                 ) : (
                   <>
                     <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Fichier MP3</div>
-                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Jusqu&apos;a 5 000 streams</div>
+                    <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Jusqu&apos;à 5 000 streams</div>
                     <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Usage non-commercial</div>
                     <div className="flex items-center gap-2 text-xs text-gray-300"><Check size={14} className="text-green-400" /> Credit producteur obligatoire</div>
                   </>
