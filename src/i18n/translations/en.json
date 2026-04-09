@@ -1,0 +1,129 @@
+{
+  "nav": {
+    "auctions": "Auctions",
+    "search": "Search",
+    "producers": "Producers",
+    "login": "Log in",
+    "register": "Sign up",
+    "dashboard": "Dashboard",
+    "messages": "Messages",
+    "myAuctions": "My Auctions",
+    "myPurchases": "My Purchases",
+    "myWatchlist": "My Watchlist",
+    "myPlaylists": "My Playlists",
+    "profile": "My Profile",
+    "logout": "Log out",
+    "upload": "Upload",
+    "admin": "Admin Panel",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "hero": {
+    "badge": "The first beat auction platform in France",
+    "title1": "Bid.",
+    "title2": "Win.",
+    "title3": "Create your",
+    "title4": "hit.",
+    "subtitle": "Exclusive instrumentals auctioned by verified beatmakers. Place your bid, grab the beat, and drop your next track.",
+    "cta": "Explore auctions",
+    "ctaSecondary": "Create an account",
+    "liveAuctions": "live auctions",
+    "producers": "producers",
+    "bidsPlaced": "bids placed"
+  },
+  "liveAuctions": {
+    "live": "Live",
+    "title": "Current auctions",
+    "viewAll": "View all",
+    "noAuctions": "No auctions right now",
+    "comingSoon": "More auctions coming soon",
+    "currentBid": "Current bid",
+    "startPrice": "Start",
+    "bid": "bid",
+    "bids": "bids",
+    "viewAllBtn": "View all auctions"
+  },
+  "weeklySelection": {
+    "badge": "Weekly selection",
+    "title": "Beat of the week",
+    "subtitle": "Every week, an exclusive beat goes on auction for 7 days. Don't miss your chance.",
+    "comingSoon": "Next selection coming soon",
+    "comingSoonDesc": "The next weekly selection will be announced very soon. Stay tuned!",
+    "enableNotifs": "Enable notifications",
+    "timeRemaining": "Time remaining",
+    "currentBid": "Current bid",
+    "startPrice": "Start",
+    "placeBid": "Place my bid"
+  },
+  "featuredProducers": {
+    "badge": "Beatmakers",
+    "title": "Featured producers",
+    "viewAll": "View all",
+    "verified": "Verified"
+  },
+  "stats": {
+    "badge": "The numbers",
+    "title": "318 LEGAACY in numbers",
+    "subtitle": "The beat marketplace shaking up the French music scene",
+    "availableBeats": "Available beats",
+    "verifiedProducers": "Verified producers",
+    "bidsPlaced": "Bids placed",
+    "salesCompleted": "Sales completed"
+  },
+  "howItWorks": {
+    "title": "How it works",
+    "subtitle": "In 3 simple steps, win the beat of your dreams",
+    "step1Title": "Create your account",
+    "step1Desc": "Sign up for free in 30 seconds and access all auctions on the platform.",
+    "step2Title": "Place your bid",
+    "step2Desc": "Listen to beats, choose your license (Basic, Premium, Exclusive) and bid in real time.",
+    "step3Title": "Download your beat",
+    "step3Desc": "You won? Pay online and get your audio files instantly."
+  },
+  "why318": {
+    "title": "Why 318 LEGAACY",
+    "subtitle": "A platform built for artists and beatmakers",
+    "verifiedProducers": "Verified producers",
+    "verifiedProducersDesc": "Every beatmaker is validated by our team before they can sell on the platform.",
+    "antiSnipe": "Built-in anti-snipe",
+    "antiSnipeDesc": "The timer extends by 2 minutes if a bid comes in during the final moments.",
+    "realtime": "Real-time auctions",
+    "realtimeDesc": "Auctions update instantly powered by Supabase Realtime technology.",
+    "securePayment": "Secure payment",
+    "securePaymentDesc": "Stripe handles all payments. The producer gets 85%, the platform takes 15%.",
+    "mobileApp": "Mobile PWA app",
+    "mobileAppDesc": "Install the marketplace on your phone and access your auctions anywhere.",
+    "playlists": "Playlists & Collections",
+    "playlistsDesc": "Organize your favorite beats into playlists and listen with the built-in player."
+  },
+  "ctaFinal": {
+    "badge": "Join the community",
+    "title": "Ready to bid?",
+    "subtitle": "Join the 318 LEGAACY community and grab exclusive beats directly from the best producers",
+    "cta": "Create my free account",
+    "ctaSecondary": "View auctions"
+  },
+  "footer": {
+    "platform": "Platform",
+    "marketplace": "Marketplace",
+    "producers": "Producers",
+    "playlists": "Playlists",
+    "account": "Account",
+    "register": "Sign up",
+    "login": "Log in",
+    "profile": "My Profile",
+    "help": "Help",
+    "howItWorks": "How it works",
+    "statistics": "Statistics",
+    "legalNotice": "Legal notice",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "copyright": "© 2026 318 LEGAACY Studio — All rights reserved",
+    "tagline": "The first beat auction platform in France"
+  },
+  "language": {
+    "label": "Language",
+    "choose": "Choose language",
+    "moreComingSoon": "More languages coming soon"
+  }
+}

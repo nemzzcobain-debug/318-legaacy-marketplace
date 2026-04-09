@@ -9,19 +9,21 @@ import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield
 import NotificationBell from '@/components/notifications/NotificationBell'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import LanguageSelector from '@/components/ui/LanguageSelector'
+import { useTranslation } from '@/i18n/LanguageContext'
 
 export default function Header() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { data: session } = useSession()
+  const { t } = useTranslation()
 
   const user = session?.user as any
   const isProducer = user?.role === 'PRODUCER' || user?.role === 'ADMIN'
 
   const navItems = [
-    { href: '/marketplace', label: 'Enchères', icon: Gavel },
-    { href: '/search', label: 'Recherche', icon: Search },
-    { href: '/producers', label: 'Producteurs', icon: Users },
+    { href: '/marketplace', label: t('nav.auctions'), icon: Gavel },
+    { href: '/search', label: t('nav.search'), icon: Search },
+    { href: '/producers', label: t('nav.producers'), icon: Users },
   ]
 
   return (
@@ -75,33 +77,33 @@ export default function Header() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-black transition-transform hover:scale-105"
                   style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
                 >
-                  <Upload size={14} /> Upload
+                  <Upload size={14} /> {t('nav.upload')}
                 </Link>
               )}
 
               {/* Admin link */}
               {user?.role === 'ADMIN' && (
-                <Link href="/admin" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Panneau administrateur">
+                <Link href="/admin" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.admin')}>
                   <Shield size={20} className="text-orange-400" />
                 </Link>
               )}
 
-              <Link href="/playlists" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Mes Playlists">
+              <Link href="/playlists" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.myPlaylists')}>
                 <ListMusic size={20} className="text-gray-400" />
               </Link>
-              <Link href="/watchlist" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Ma Watchlist">
+              <Link href="/watchlist" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.myWatchlist')}>
                 <Eye size={20} className="text-gray-400" />
               </Link>
-              <Link href="/purchases" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Mes Achats">
+              <Link href="/purchases" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.myPurchases')}>
                 <ShoppingBag size={20} className="text-gray-400" />
               </Link>
-              <Link href="/my-auctions" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Mes Enchères">
+              <Link href="/my-auctions" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.myAuctions')}>
                 <Gavel size={20} className="text-gray-400" />
               </Link>
-              <Link href="/messages" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Messages">
+              <Link href="/messages" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.messages')}>
                 <MessageCircle size={20} className="text-gray-400" />
               </Link>
-              <Link href="/dashboard" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Tableau de bord">
+              <Link href="/dashboard" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.dashboard')}>
                 <LayoutDashboard size={20} className="text-gray-400" />
               </Link>
               <NotificationBell />
@@ -110,13 +112,13 @@ export default function Header() {
 
               {/* User avatar + logout */}
               <div className="flex items-center gap-2">
-                <Link href="/profile/edit" className="w-8 h-8 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-red-500 transition-all" aria-label="Mon Profil">
+                <Link href="/profile/edit" className="w-8 h-8 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-red-500 transition-all" aria-label={t('nav.profile')}>
                   {user?.name?.[0] || 'U'}
                 </Link>
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-                  aria-label="Se déconnecter"
+                  aria-label={t('nav.logout')}
                 >
                   <LogOut size={18} className="text-gray-400" />
                 </button>
@@ -130,14 +132,14 @@ export default function Header() {
                 href="/login"
                 className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#1e1e2e] text-sm font-semibold text-white hover:border-red-500 transition-colors"
               >
-                <LogIn size={14} /> Connexion
+                <LogIn size={14} /> {t('nav.login')}
               </Link>
               <Link
                 href="/register"
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-black"
                 style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
               >
-                <UserPlus size={14} /> <span className="hidden sm:inline">S&apos;inscrire</span>
+                <UserPlus size={14} /> <span className="hidden sm:inline">{t('nav.register')}</span>
               </Link>
             </>
           )}
@@ -146,7 +148,7 @@ export default function Header() {
           <button
             className="md:hidden p-2 ml-1"
             onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-label={mobileOpen ? t('nav.closeMenu') : t('nav.openMenu')}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav"
           >
@@ -182,7 +184,7 @@ export default function Header() {
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <User size={16} /> Mon Profil
+              <User size={16} /> {t('nav.profile')}
             </Link>
           )}
           {session && isProducer && (

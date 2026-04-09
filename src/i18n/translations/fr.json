@@ -1,0 +1,129 @@
+{
+  "nav": {
+    "auctions": "Enchères",
+    "search": "Recherche",
+    "producers": "Producteurs",
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "dashboard": "Tableau de bord",
+    "messages": "Messages",
+    "myAuctions": "Mes Enchères",
+    "myPurchases": "Mes Achats",
+    "myWatchlist": "Ma Watchlist",
+    "myPlaylists": "Mes Playlists",
+    "profile": "Mon Profil",
+    "logout": "Se déconnecter",
+    "upload": "Upload",
+    "admin": "Panneau administrateur",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu"
+  },
+  "hero": {
+    "badge": "Première plateforme d'enchères de beats en France",
+    "title1": "Enchéris.",
+    "title2": "Remporte.",
+    "title3": "Crée ton",
+    "title4": "hit.",
+    "subtitle": "Des instrumentales exclusives mises aux enchères par des beatmakers vérifiés. Place ton enchère, décroche le beat, et lance ton prochain son.",
+    "cta": "Explorer les enchères",
+    "ctaSecondary": "Créer un compte",
+    "liveAuctions": "enchères live",
+    "producers": "producteurs",
+    "bidsPlaced": "enchères placées"
+  },
+  "liveAuctions": {
+    "live": "En direct",
+    "title": "Enchères en cours",
+    "viewAll": "Voir tout",
+    "noAuctions": "Aucune enchère en cours",
+    "comingSoon": "Les prochaines enchères arrivent bientôt",
+    "currentBid": "Enchère actuelle",
+    "startPrice": "Départ",
+    "bid": "enchère",
+    "bids": "enchères",
+    "viewAllBtn": "Voir toutes les enchères"
+  },
+  "weeklySelection": {
+    "badge": "Sélection de la semaine",
+    "title": "Le beat de la semaine",
+    "subtitle": "Chaque semaine, un beat exclusif est mis aux enchères pendant 7 jours. Ne rate pas ta chance.",
+    "comingSoon": "Prochaine sélection bientôt",
+    "comingSoonDesc": "La prochaine sélection de la semaine sera annoncée très bientôt. Reste connecté !",
+    "enableNotifs": "Activer les notifications",
+    "timeRemaining": "Temps restant",
+    "currentBid": "Enchère actuelle",
+    "startPrice": "Départ",
+    "placeBid": "Placer mon enchère"
+  },
+  "featuredProducers": {
+    "badge": "Beatmakers",
+    "title": "Producteurs vedettes",
+    "viewAll": "Voir tous",
+    "verified": "Vérifié"
+  },
+  "stats": {
+    "badge": "Les chiffres",
+    "title": "318 LEGAACY en chiffres",
+    "subtitle": "La marketplace de beats qui fait bouger la scène française",
+    "availableBeats": "Beats disponibles",
+    "verifiedProducers": "Producteurs vérifiés",
+    "bidsPlaced": "Enchères placées",
+    "salesCompleted": "Ventes réalisées"
+  },
+  "howItWorks": {
+    "title": "Comment ça marche",
+    "subtitle": "En 3 étapes simples, tu peux remporter le beat de tes rêves",
+    "step1Title": "Crée ton compte",
+    "step1Desc": "Inscris-toi gratuitement en 30 secondes et accède à toutes les enchères de la plateforme.",
+    "step2Title": "Place ton enchère",
+    "step2Desc": "Écoute les beats, choisis ta licence (Basic, Premium, Exclusive) et enchéris en temps réel.",
+    "step3Title": "Télécharge ton beat",
+    "step3Desc": "Tu as gagné ? Paye en ligne et reçois tes fichiers audio instantanément."
+  },
+  "why318": {
+    "title": "Pourquoi 318 LEGAACY",
+    "subtitle": "Une plateforme conçue pour les artistes et les beatmakers",
+    "verifiedProducers": "Producteurs vérifiés",
+    "verifiedProducersDesc": "Chaque beatmaker est validé par notre équipe avant de pouvoir vendre sur la plateforme.",
+    "antiSnipe": "Anti-snipe intégré",
+    "antiSnipeDesc": "Le timer est prolongé de 2 minutes si une enchère tombe dans les derniers instants.",
+    "realtime": "Enchères temps réel",
+    "realtimeDesc": "Les enchères se mettent à jour instantanément grâce à la technologie Supabase Realtime.",
+    "securePayment": "Paiement sécurisé",
+    "securePaymentDesc": "Stripe gère tous les paiements. Le producteur reçoit 85%, la plateforme prend 15%.",
+    "mobileApp": "Application mobile PWA",
+    "mobileAppDesc": "Installe la marketplace sur ton téléphone et accède à tes enchères partout.",
+    "playlists": "Playlists & Collections",
+    "playlistsDesc": "Organise tes beats favoris en playlists et écoute-les avec le lecteur intégré."
+  },
+  "ctaFinal": {
+    "badge": "Rejoins la communauté",
+    "title": "Prêt à enchérir ?",
+    "subtitle": "Rejoins la communauté 318 LEGAACY et décroche des beats exclusifs directement auprès des meilleurs producteurs",
+    "cta": "Créer mon compte gratuit",
+    "ctaSecondary": "Voir les enchères"
+  },
+  "footer": {
+    "platform": "Plateforme",
+    "marketplace": "Marketplace",
+    "producers": "Producteurs",
+    "playlists": "Playlists",
+    "account": "Compte",
+    "register": "S'inscrire",
+    "login": "Connexion",
+    "profile": "Mon Profil",
+    "help": "Aide",
+    "howItWorks": "Comment ça marche",
+    "statistics": "Statistiques",
+    "legalNotice": "Mentions légales",
+    "terms": "CGV",
+    "privacy": "Confidentialité",
+    "copyright": "© 2026 318 LEGAACY Studio — Tous droits réservés",
+    "tagline": "Première plateforme d'enchères de beats en France"
+  },
+  "language": {
+    "label": "Langue",
+    "choose": "Choisir la langue",
+    "moreComingSoon": "Bientôt disponible dans plus de langues"
+  }
+}
