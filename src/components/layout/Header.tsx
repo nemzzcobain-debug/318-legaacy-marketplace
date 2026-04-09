@@ -34,6 +34,7 @@ export default function Header() {
             width={56}
             height={56}
             className="rounded-lg"
+            style={{ maskImage: 'radial-gradient(circle, white 40%, transparent 75%)', WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)' }}
           />
           <div className="hidden sm:block">
             <span className="font-extrabold text-sm tracking-tight">318 LEGAACY</span>

@@ -801,6 +801,7 @@ export default function Home() {
                 width={72}
                 height={72}
                 className="rounded-lg"
+                style={{ maskImage: 'radial-gradient(circle, white 40%, transparent 75%)', WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)' }}
               />
               <div>
                 <span className="font-extrabold text-base text-white">318 LEGAACY</span>
