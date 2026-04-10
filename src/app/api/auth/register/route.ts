@@ -96,9 +96,11 @@ export async function POST(request: Request) {
       { status: 201 }
     )
   } catch (error) {
-    logger.error('Erreur inscription:', { error: String(error) })
+    const errMsg = error instanceof Error ? error.message : String(error)
+    const errStack = error instanceof Error ? error.stack?.substring(0, 300) : undefined
+    logger.error('Erreur inscription:', { error: errMsg, stack: errStack })
     return NextResponse.json(
-      { error: 'Erreur serveur' },
+      { error: 'Erreur serveur', debug: errMsg, stack: errStack },
       { status: 500 }
     )
   }
