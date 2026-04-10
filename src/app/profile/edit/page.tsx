@@ -242,7 +242,7 @@ export default function ProfileEditPage() {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      setIsOAuthUser(false) // Now they have a password
+      setIsOAuthUser(false)
       setTimeout(() => setPwSuccess(''), 4000)
     } catch (err) {
       setPwError(err instanceof Error ? err.message : 'Erreur inconnue')
@@ -312,8 +312,11 @@ export default function ProfileEditPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Link href="/dashboard" className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+          <Link href="/dashboard" className="relative group/back p-2 hover:bg-white/5 rounded-lg transition-colors">
             <ArrowLeft size={20} className="text-gray-400" />
+            <span className="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-white/10 backdrop-blur-md px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover/back:opacity-100 border border-white/10 shadow-lg">
+              Retour
+            </span>
           </Link>
           <div>
             <h1 className="text-2xl font-bold">Mon Profil</h1>
@@ -396,7 +399,7 @@ export default function ProfileEditPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
+              className={`relative group/tab flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
                 activeTab === tab.id
                   ? 'bg-red-500/20 text-red-400'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -404,6 +407,9 @@ export default function ProfileEditPage() {
             >
               <tab.icon size={16} />
               {tab.label}
+              <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-white/10 backdrop-blur-md px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover/tab:opacity-100 border border-white/10 shadow-lg">
+                {tab.label}
+              </span>
             </button>
           ))}
         </div>
@@ -671,7 +677,6 @@ export default function ProfileEditPage() {
                   </div>
                 )}
 
-                {/* Current password - only if not OAuth user */}
                 {!isOAuthUser && (
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1.5">
@@ -696,7 +701,6 @@ export default function ProfileEditPage() {
                   </div>
                 )}
 
-                {/* New password */}
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1.5">
                     Nouveau mot de passe
@@ -717,7 +721,6 @@ export default function ProfileEditPage() {
                       {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
-                  {/* Password strength indicators */}
                   {newPassword && (
                     <div className="mt-2 space-y-1">
                       {[
@@ -742,7 +745,6 @@ export default function ProfileEditPage() {
                   )}
                 </div>
 
-                {/* Confirm password */}
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1.5">
                     Confirmer le mot de passe
@@ -770,7 +772,6 @@ export default function ProfileEditPage() {
                   )}
                 </div>
 
-                {/* Submit button */}
                 <button
                   onClick={handleChangePassword}
                   disabled={
