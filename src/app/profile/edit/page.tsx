@@ -6,9 +6,28 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  User, Camera, Save, Globe, Instagram, Twitter, Youtube, Music, Headphones,
-  Bell, Mail, MessageCircle, Gavel, ArrowLeft, Loader2, Check, AlertCircle,
-  Link as LinkIcon
+  User,
+  Camera,
+  Save,
+  Globe,
+  Instagram,
+  Twitter,
+  Youtube,
+  Music,
+  Headphones,
+  Bell,
+  Mail,
+  MessageCircle,
+  Gavel,
+  ArrowLeft,
+  Loader2,
+  Check,
+  AlertCircle,
+  Link as LinkIcon,
+  Shield,
+  Eye,
+  EyeOff,
+  KeyRound,
 } from 'lucide-react'
 
 interface ProfileData {
@@ -71,7 +90,21 @@ export default function ProfileEditPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState<'general' | 'social' | 'producer' | 'notifications'>('general')
+  const [activeTab, setActiveTab] = useState<
+    'general' | 'social' | 'producer' | 'notifications' | 'security'
+  >('general')
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showCurrentPw, setShowCurrentPw] = useState(false)
+  const [showNewPw, setShowNewPw] = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwSuccess, setPwSuccess] = useState('')
+  const [pwError, setPwError] = useState('')
+  const [isOAuthUser, setIsOAuthUser] = useState(false)
 
   // Form state
   const [form, setForm] = useState<ProfileFormData>({
@@ -110,6 +143,7 @@ export default function ProfileEditPage() {
       if (!res.ok) throw new Error('Erreur')
       const data = await res.json()
       setProfile(data)
+      setIsOAuthUser(!data.hasPassword)
       setForm({
         name: data.name || '',
         displayName: data.displayName || '',
@@ -126,7 +160,7 @@ export default function ProfileEditPage() {
         producerBio: data.producerBio || '',
         portfolio: data.portfolio || '',
       })
-    } catch (err) {
+    } catch {
       setError('Impossible de charger le profil')
     } finally {
       setLoading(false)
@@ -151,13 +185,69 @@ export default function ProfileEditPage() {
       }
 
       const updated = await res.json()
-      setProfile(prev => prev ? { ...prev, ...updated } : prev)
+      setProfile((prev) => (prev ? { ...prev, ...updated } : prev))
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleChangePassword() {
+    setPwError('')
+    setPwSuccess('')
+
+    if (!newPassword || newPassword.length < 8) {
+      setPwError('Le mot de passe doit contenir au moins 8 caractères')
+      return
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      setPwError('Le mot de passe doit contenir au moins une majuscule')
+      return
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      setPwError('Le mot de passe doit contenir au moins une minuscule')
+      return
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      setPwError('Le mot de passe doit contenir au moins un chiffre')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError('Les mots de passe ne correspondent pas')
+      return
+    }
+    if (!isOAuthUser && !currentPassword) {
+      setPwError('Le mot de passe actuel est requis')
+      return
+    }
+
+    setPwLoading(true)
+    try {
+      const res = await fetch('/api/profile/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: isOAuthUser ? undefined : currentPassword,
+          newPassword,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Erreur lors du changement de mot de passe')
+      }
+      setPwSuccess('Mot de passe mis à jour avec succès !')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setIsOAuthUser(false) // Now they have a password
+      setTimeout(() => setPwSuccess(''), 4000)
+    } catch (err) {
+      setPwError(err instanceof Error ? err.message : 'Erreur inconnue')
+    } finally {
+      setPwLoading(false)
     }
   }
 
@@ -183,7 +273,7 @@ export default function ProfileEditPage() {
       }
 
       const { url } = await res.json()
-      setProfile(prev => prev ? { ...prev, avatar: url } : prev)
+      setProfile((prev) => (prev ? { ...prev, avatar: url } : prev))
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
@@ -214,6 +304,7 @@ export default function ProfileEditPage() {
     { id: 'social' as const, label: 'Réseaux sociaux', icon: LinkIcon },
     ...(isProducer ? [{ id: 'producer' as const, label: 'Producteur', icon: Headphones }] : []),
     { id: 'notifications' as const, label: 'Notifications', icon: Bell },
+    { id: 'security' as const, label: 'Sécurité', icon: Shield },
   ]
 
   return (
@@ -236,7 +327,13 @@ export default function ProfileEditPage() {
             <div className="relative group">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
                 {profile.avatar ? (
-                  <Image src={profile.avatar} alt="Avatar" width={96} height={96} className="w-full h-full object-cover" />
+                  <Image
+                    src={profile.avatar}
+                    alt="Avatar"
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <span className="text-3xl font-bold text-white">
                     {profile.name?.[0]?.toUpperCase() || 'U'}
@@ -269,7 +366,13 @@ export default function ProfileEditPage() {
                 <span>{profile._count.followers} abonnés</span>
                 <span>{profile._count.following} abonnements</span>
                 {isProducer && <span>{profile._count.beats} beats</span>}
-                <span>Membre depuis {new Date(profile.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</span>
+                <span>
+                  Membre depuis{' '}
+                  {new Date(profile.createdAt).toLocaleDateString('fr-FR', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
               </div>
             </div>
           </div>
@@ -289,7 +392,7 @@ export default function ProfileEditPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 mb-6 p-1 glass rounded-xl overflow-x-auto">
-          {tabs.map(tab => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -317,17 +420,19 @@ export default function ProfileEditPage() {
                   <input
                     type="text"
                     value={form.name}
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors"
                     placeholder="Votre nom"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Nom d&apos;affichage</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1.5">
+                    Nom d&apos;affichage
+                  </label>
                   <input
                     type="text"
                     value={form.displayName}
-                    onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))}
+                    onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors"
                     placeholder="Nom affiché publiquement"
                   />
@@ -340,7 +445,7 @@ export default function ProfileEditPage() {
                 </label>
                 <textarea
                   value={form.bio}
-                  onChange={e => setForm(f => ({ ...f, bio: e.target.value.slice(0, 500) }))}
+                  onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value.slice(0, 500) }))}
                   rows={4}
                   className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors resize-none"
                   placeholder="Parlez de vous en quelques mots..."
@@ -372,7 +477,9 @@ export default function ProfileEditPage() {
                   <p className="text-xs text-gray-500">Enchères</p>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-[#0a0a0f]">
-                  <p className="text-2xl font-bold text-green-400">{profile.rating > 0 ? profile.rating.toFixed(1) : '-'}</p>
+                  <p className="text-2xl font-bold text-green-400">
+                    {profile.rating > 0 ? profile.rating.toFixed(1) : '-'}
+                  </p>
                   <p className="text-xs text-gray-500">Note</p>
                 </div>
               </div>
@@ -398,7 +505,7 @@ export default function ProfileEditPage() {
                   <input
                     type="url"
                     value={(form[key as keyof ProfileFormData] as string) || ''}
-                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors"
                     placeholder={placeholder}
                   />
@@ -413,16 +520,22 @@ export default function ProfileEditPage() {
 
               <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
                 <Check size={16} />
-                Statut: {profile.producerStatus === 'APPROVED' ? 'Approuvé' : profile.producerStatus || 'En attente'}
+                Statut:{' '}
+                {profile.producerStatus === 'APPROVED'
+                  ? 'Approuvé'
+                  : profile.producerStatus || 'En attente'}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1.5">
-                  Bio Producteur <span className="text-gray-600">({form.producerBio.length}/1000)</span>
+                  Bio Producteur{' '}
+                  <span className="text-gray-600">({form.producerBio.length}/1000)</span>
                 </label>
                 <textarea
                   value={form.producerBio}
-                  onChange={e => setForm(f => ({ ...f, producerBio: e.target.value.slice(0, 1000) }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, producerBio: e.target.value.slice(0, 1000) }))
+                  }
                   rows={6}
                   className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors resize-none"
                   placeholder="Décrivez votre style, votre expérience, vos influences..."
@@ -436,7 +549,7 @@ export default function ProfileEditPage() {
                 <input
                   type="url"
                   value={form.portfolio}
-                  onChange={e => setForm(f => ({ ...f, portfolio: e.target.value }))}
+                  onChange={(e) => setForm((f) => ({ ...f, portfolio: e.target.value }))}
                   className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors"
                   placeholder="https://votre-portfolio.com"
                 />
@@ -452,7 +565,9 @@ export default function ProfileEditPage() {
                   <p className="text-xs text-gray-500">Ventes</p>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-[#0a0a0f]">
-                  <p className="text-2xl font-bold text-yellow-400">{profile.rating > 0 ? profile.rating.toFixed(1) : '-'}</p>
+                  <p className="text-2xl font-bold text-yellow-400">
+                    {profile.rating > 0 ? profile.rating.toFixed(1) : '-'}
+                  </p>
                   <p className="text-xs text-gray-500">Note moyenne</p>
                 </div>
               </div>
@@ -473,7 +588,7 @@ export default function ProfileEditPage() {
                 {
                   key: 'notifBid',
                   label: 'Alertes enchères',
-                  desc: 'Être notifié quand quelqu\'un surenchérit ou quand une enchère se termine',
+                  desc: "Être notifié quand quelqu'un surenchérit ou quand une enchère se termine",
                   icon: Gavel,
                 },
                 {
@@ -497,19 +612,224 @@ export default function ProfileEditPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => setForm(f => ({ ...f, [key]: !(f[key as keyof ProfileFormData] as boolean) }))}
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        [key]: !(f[key as keyof ProfileFormData] as boolean),
+                      }))
+                    }
                     className={`w-12 h-6 rounded-full transition-colors relative ${
-                      (form[key as keyof ProfileFormData]) ? 'bg-red-500' : 'bg-gray-700'
+                      form[key as keyof ProfileFormData] ? 'bg-red-500' : 'bg-gray-700'
                     }`}
                   >
                     <div
                       className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                        (form[key as keyof ProfileFormData]) ? 'translate-x-6' : 'translate-x-0.5'
+                        form[key as keyof ProfileFormData] ? 'translate-x-6' : 'translate-x-0.5'
                       }`}
                     />
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+
+          {activeTab === 'security' && (
+            <div className="space-y-5">
+              <h3 className="text-lg font-bold mb-4">Sécurité du compte</h3>
+
+              {/* Account info */}
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e]">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <KeyRound size={20} className="text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {isOAuthUser ? 'Compte Google' : 'Compte email / mot de passe'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {isOAuthUser
+                      ? 'Tu es connecté via Google. Tu peux définir un mot de passe pour aussi pouvoir te connecter par email.'
+                      : 'Tu peux modifier ton mot de passe ci-dessous.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Password change form */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-300">
+                  {isOAuthUser ? 'Définir un mot de passe' : 'Changer le mot de passe'}
+                </h4>
+
+                {pwSuccess && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
+                    <Check size={16} /> {pwSuccess}
+                  </div>
+                )}
+                {pwError && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                    <AlertCircle size={16} /> {pwError}
+                  </div>
+                )}
+
+                {/* Current password - only if not OAuth user */}
+                {!isOAuthUser && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1.5">
+                      Mot de passe actuel
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showCurrentPw ? 'text' : 'password'}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors pr-12"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPw(!showCurrentPw)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                      >
+                        {showCurrentPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* New password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1.5">
+                    Nouveau mot de passe
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPw ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors pr-12"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPw(!showNewPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    >
+                      {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {/* Password strength indicators */}
+                  {newPassword && (
+                    <div className="mt-2 space-y-1">
+                      {[
+                        { test: newPassword.length >= 8, label: 'Au moins 8 caractères' },
+                        { test: /[A-Z]/.test(newPassword), label: 'Une majuscule' },
+                        { test: /[a-z]/.test(newPassword), label: 'Une minuscule' },
+                        { test: /[0-9]/.test(newPassword), label: 'Un chiffre' },
+                      ].map(({ test, label }) => (
+                        <div
+                          key={label}
+                          className={`flex items-center gap-2 text-xs ${test ? 'text-green-400' : 'text-gray-600'}`}
+                        >
+                          {test ? (
+                            <Check size={12} />
+                          ) : (
+                            <div className="w-3 h-3 rounded-full border border-gray-600" />
+                          )}
+                          {label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Confirm password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1.5">
+                    Confirmer le mot de passe
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPw ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors pr-12"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPw(!showConfirmPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    >
+                      {showConfirmPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {confirmPassword && newPassword !== confirmPassword && (
+                    <p className="text-xs text-red-400 mt-1">
+                      Les mots de passe ne correspondent pas
+                    </p>
+                  )}
+                </div>
+
+                {/* Submit button */}
+                <button
+                  onClick={handleChangePassword}
+                  disabled={
+                    pwLoading || !newPassword || !confirmPassword || newPassword !== confirmPassword
+                  }
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                  style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+                >
+                  {pwLoading ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <Shield size={18} />
+                  )}
+                  {pwLoading
+                    ? 'Modification...'
+                    : isOAuthUser
+                      ? 'Définir le mot de passe'
+                      : 'Modifier le mot de passe'}
+                </button>
+              </div>
+
+              {/* Account info section */}
+              <div className="pt-5 border-t border-[#1e1e2e]">
+                <h4 className="text-sm font-semibold text-gray-300 mb-3">Informations du compte</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e]">
+                    <span className="text-sm text-gray-400">Email</span>
+                    <span className="text-sm text-white font-medium">{profile.email}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e]">
+                    <span className="text-sm text-gray-400">Rôle</span>
+                    <span
+                      className={`text-sm font-medium px-2 py-0.5 rounded-full ${
+                        profile.role === 'ADMIN'
+                          ? 'bg-orange-500/20 text-orange-400'
+                          : profile.role === 'PRODUCER'
+                            ? 'bg-purple-500/20 text-purple-400'
+                            : 'bg-blue-500/20 text-blue-400'
+                      }`}
+                    >
+                      {profile.role === 'ADMIN'
+                        ? 'Admin'
+                        : profile.role === 'PRODUCER'
+                          ? 'Producteur'
+                          : 'Artiste'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e]">
+                    <span className="text-sm text-gray-400">Membre depuis</span>
+                    <span className="text-sm text-white font-medium">
+                      {new Date(profile.createdAt).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -522,11 +842,7 @@ export default function ProfileEditPage() {
             className="flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-white transition-all hover:scale-105 disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
           >
-            {saving ? (
-              <Loader2 className="animate-spin" size={18} />
-            ) : (
-              <Save size={18} />
-            )}
+            {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
             {saving ? 'Sauvegarde...' : 'Sauvegarder'}
           </button>
         </div>
