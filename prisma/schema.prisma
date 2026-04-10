@@ -24,6 +24,7 @@ model User {
   name           String
   displayName    String?
   avatar         String?
+  image          String?
   bio            String?
   role           String    @default("ARTIST")
 
