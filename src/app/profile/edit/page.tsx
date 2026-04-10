@@ -242,7 +242,7 @@ export default function ProfileEditPage() {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      setIsOAuthUser(false)
+      setIsOAuthUser(false) // Now they have a password
       setTimeout(() => setPwSuccess(''), 4000)
     } catch (err) {
       setPwError(err instanceof Error ? err.message : 'Erreur inconnue')
@@ -314,8 +314,93 @@ export default function ProfileEditPage() {
         <div className="flex items-center gap-4 mb-8">
           <Link href="/dashboard" className="relative group/back p-2 hover:bg-white/5 rounded-lg transition-colors">
             <ArrowLeft size={20} className="text-gray-400" />
-            <span className="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-white/10 backdrop-blur-md px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover/back:opacity-100 border border-white/10 shadow-lg">
+            <span className="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap rounded-lg bg-[#1a1a2e] px-3 py-1.5 text-xs font-medium text-white opacity-0 scale-95 transition-all duration-200 group-hover/back:opacity-100 group-hover/back:scale-100 border border-white/10 shadow-xl">
               Retour
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1a2e] border-t border-l border-white/10 rotate-45" />
+            </span>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold">Mon Profil</h1>
+            <p className="text-sm text-gray-500">Gérez vos informations personnelles</p>
+          </div>
+        </div>
+
+        {/* Avatar Section */}
+        <div className="glass rounded-2xl p-6 mb-6">
+          <div className="flex items-center gap-6">
+            <div className="relative group">
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
+                {profile.avatar ? (
+                  <Image
+                    src={profile.avatar}
+                    alt="Avatar"
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl font-bold text-white">
+                    {profile.name?.[0]?.toUpperCase() || 'U'}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="animate-spin text-white" size={24} />
+                ) : (
+                  <Camera size={24} className="text-white" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">{profile.displayName || profile.name}</h2>
+              <p className="text-sm text-gray-400">{profile.email}</p>
+              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                <span>{profile._count.followers} abonнés</span>
+                <span>{profile._count.following} abonnements</span>
+                {isProducer && <span>{profile._count.beats} beats</span>}
+                <span>
+                  Membre depuis{' '}
+                  {new Date(profile.createdAt).toLocaleDateString('fr-FR', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Messages */}
+        {success && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm mb-4">
+            <Check size={16} />nkIcon },
+    ...(isProducer ? [{ id: 'producer' as const, label: 'Producteur', icon: Headphones }] : []),
+    { id: 'notifications' as const, label: 'Notifications', icon: Bell },
+    { id: 'security' as const, label: 'Sécurité', icon: Shield },
+  ]
+
+  return (
+    <div className="min-h-screen py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Link href="/dashboard" className="relative group/back p-2 hover:bg-white/5 rounded-lg transition-colors">
+            <ArrowLeft size={20} className="text-gray-400" />
+            <span className="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap rounded-lg bg-[#1a1a2e] px-3 py-1.5 text-xs font-medium text-white opacity-0 scale-95 transition-all duration-200 group-hover/back:opacity-100 group-hover/back:scale-100 border border-white/10 shadow-xl">
+              Retour
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1a2e] border-t border-l border-white/10 rotate-45" />
             </span>
           </Link>
           <div>
@@ -394,7 +479,7 @@ export default function ProfileEditPage() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 p-1 glass rounded-xl overflow-x-auto">
+        <div className="flex gap-1 mb-6 p-1 glass rounded-xl overflow-visible">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -407,8 +492,9 @@ export default function ProfileEditPage() {
             >
               <tab.icon size={16} />
               {tab.label}
-              <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-white/10 backdrop-blur-md px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover/tab:opacity-100 border border-white/10 shadow-lg">
+              <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap rounded-lg bg-[#1a1a2e] px-3 py-1.5 text-xs font-medium text-white opacity-0 scale-95 transition-all duration-200 group-hover/tab:opacity-100 group-hover/tab:scale-100 border border-white/10 shadow-xl">
                 {tab.label}
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1a2e] border-b border-r border-white/10 rotate-45" />
               </span>
             </button>
           ))}
@@ -497,12 +583,42 @@ export default function ProfileEditPage() {
               <h3 className="text-lg font-bold mb-4">Réseaux sociaux</h3>
 
               {[
-                { key: 'website', label: 'Site web', icon: Globe, placeholder: 'https://votre-site.com' },
-                { key: 'instagram', label: 'Instagram', icon: Instagram, placeholder: 'https://instagram.com/votre-profil' },
-                { key: 'twitter', label: 'X / Twitter', icon: Twitter, placeholder: 'https://x.com/votre-profil' },
-                { key: 'youtube', label: 'YouTube', icon: Youtube, placeholder: 'https://youtube.com/@votre-chaine' },
-                { key: 'soundcloud', label: 'SoundCloud', icon: Music, placeholder: 'https://soundcloud.com/votre-profil' },
-                { key: 'spotify', label: 'Spotify', icon: Headphones, placeholder: 'https://open.spotify.com/artist/...' },
+                {
+                  key: 'website',
+                  label: 'Site web',
+                  icon: Globe,
+                  placeholder: 'https://votre-site.com',
+                },
+                {
+                  key: 'instagram',
+                  label: 'Instagram',
+                  icon: Instagram,
+                  placeholder: 'https://instagram.com/votre-profil',
+                },
+                {
+                  key: 'twitter',
+                  label: 'X / Twitter',
+                  icon: Twitter,
+                  placeholder: 'https://x.com/votre-profil',
+                },
+                {
+                  key: 'youtube',
+                  label: 'YouTube',
+                  icon: Youtube,
+                  placeholder: 'https://youtube.com/@votre-chaine',
+                },
+                {
+                  key: 'soundcloud',
+                  label: 'SoundCloud',
+                  icon: Music,
+                  placeholder: 'https://soundcloud.com/votre-profil',
+                },
+                {
+                  key: 'spotify',
+                  label: 'Spotify',
+                  icon: Headphones,
+                  placeholder: 'https://open.spotify.com/artist/...',
+                },
               ].map(({ key, label, icon: Icon, placeholder }) => (
                 <div key={key}>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-1.5">
@@ -677,6 +793,7 @@ export default function ProfileEditPage() {
                   </div>
                 )}
 
+                {/* Current password - only if not OAuth user */}
                 {!isOAuthUser && (
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1.5">
@@ -701,6 +818,7 @@ export default function ProfileEditPage() {
                   </div>
                 )}
 
+                {/* New password */}
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1.5">
                     Nouveau mot de passe
@@ -721,6 +839,7 @@ export default function ProfileEditPage() {
                       {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
+                  {/* Password strength indicators */}
                   {newPassword && (
                     <div className="mt-2 space-y-1">
                       {[
@@ -745,6 +864,7 @@ export default function ProfileEditPage() {
                   )}
                 </div>
 
+                {/* Confirm password */}
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1.5">
                     Confirmer le mot de passe
@@ -772,6 +892,7 @@ export default function ProfileEditPage() {
                   )}
                 </div>
 
+                {/* Submit button */}
                 <button
                   onClick={handleChangePassword}
                   disabled={
