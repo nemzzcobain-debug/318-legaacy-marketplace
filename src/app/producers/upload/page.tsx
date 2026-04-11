@@ -1,105 +1,131 @@
-'use client';
+'use client'
 
-import { useState, useRef } from 'react';
-import Image from 'next/image';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import Header from '@/components/layout/Header';
-import AudioPlayer from '@/components/audio/AudioPlayer';
-import { Upload, Music, Image as ImageIcon, X, Check, Loader2 } from 'lucide-react';
-import { GENRES, MOODS } from '@/types';
+import { useState, useRef } from 'react'
+import Image from 'next/image'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import Header from '@/components/layout/Header'
+import AudioPlayer from '@/components/audio/AudioPlayer'
+import { Upload, Music, Image as ImageIcon, X, Check, Loader2 } from 'lucide-react'
+import { GENRES, MOODS } from '@/types'
 // Upload utilise des signed URLs generees par l'API (contourne RLS + limite 4.5MB Vercel)
 
-const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-              'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm'];
+const KEYS = [
+  'C Major',
+  'C# Major',
+  'D Major',
+  'D# Major',
+  'E Major',
+  'F Major',
+  'F# Major',
+  'G Major',
+  'G# Major',
+  'A Major',
+  'A# Major',
+  'B Major',
+  'C Minor',
+  'C# Minor',
+  'D Minor',
+  'D# Minor',
+  'E Minor',
+  'F Minor',
+  'F# Minor',
+  'G Minor',
+  'G# Minor',
+  'A Minor',
+  'A# Minor',
+  'B Minor',
+]
 
 export default function UploadBeatPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const { data: session, status } = useSession()
+  const router = useRouter()
 
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [audioPreview, setAudioPreview] = useState<string | null>(null);
-  const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null)
+  const [audioPreview, setAudioPreview] = useState<string | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
-  const [title, setTitle] = useState('');
-  const [genre, setGenre] = useState('');
-  const [bpm, setBpm] = useState('');
-  const [key, setKey] = useState('');
-  const [mood, setMood] = useState('');
-  const [description, setDescription] = useState('');
-  const [tags, setTags] = useState('');
+  const [title, setTitle] = useState('')
+  const [genre, setGenre] = useState('')
+  const [bpm, setBpm] = useState('')
+  const [key, setKey] = useState('')
+  const [mood, setMood] = useState('')
+  const [description, setDescription] = useState('')
+  const [tags, setTags] = useState('')
 
-  const [uploading, setUploading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [uploading, setUploading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
+  const [isPlaying, setIsPlaying] = useState(false)
 
-  const [dragOver, setDragOver] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState('');
-  const audioInputRef = useRef<HTMLInputElement>(null);
-  const coverInputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState('')
+  const audioInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   if (status === 'unauthenticated') {
-    router.push('/login');
-    return null;
+    router.push('/login')
+    return null
   }
 
   const handleAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]
+    if (!file) return
 
-    if (!['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/x-wav', 'audio/wave'].includes(file.type)) {
-      setError('Format non supporte. Utilise MP3 ou WAV.');
-      return;
+    if (
+      !['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/x-wav', 'audio/wave'].includes(file.type)
+    ) {
+      setError('Format non supporte. Utilise MP3 ou WAV.')
+      return
     }
     if (file.size > 50 * 1024 * 1024) {
-      setError('Le fichier ne doit pas depasser 50 MB.');
-      return;
+      setError('Le fichier ne doit pas depasser 50 MB.')
+      return
     }
 
-    setAudioFile(file);
-    setAudioPreview(URL.createObjectURL(file));
-    setError('');
+    setAudioFile(file)
+    setAudioPreview(URL.createObjectURL(file))
+    setError('')
 
     // Auto-fill title from filename
     if (!title) {
-      const name = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-      setTitle(name);
+      const name = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+      setTitle(name)
     }
-  };
+  }
 
   const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setCoverFile(file);
-    setCoverPreview(URL.createObjectURL(file));
-  };
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCoverFile(file)
+    setCoverPreview(URL.createObjectURL(file))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!audioFile || !title || !genre || !bpm) {
-      setError('Remplis tous les champs obligatoires (audio, titre, genre, BPM)');
-      return;
+      setError('Remplis tous les champs obligatoires (audio, titre, genre, BPM)')
+      return
     }
 
-    setUploading(true);
-    setError('');
+    setUploading(true)
+    setError('')
 
     try {
-      const timestamp = Date.now();
-      const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const audioExt = audioFile.name.split('.').pop() || 'mp3';
-      const audioFileName = `${timestamp}-${slug}.${audioExt}`;
+      const timestamp = Date.now()
+      const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-')
+      const audioExt = audioFile.name.split('.').pop() || 'mp3'
+      const audioFileName = `${timestamp}-${slug}.${audioExt}`
 
-      let coverFileName: string | null = null;
+      let coverFileName: string | null = null
       if (coverFile && coverFile.size > 0) {
-        const coverExt = coverFile.name.split('.').pop() || 'jpg';
-        coverFileName = `${timestamp}-cover.${coverExt}`;
+        const coverExt = coverFile.name.split('.').pop() || 'jpg'
+        coverFileName = `${timestamp}-cover.${coverExt}`
       }
 
       // 1. Obtenir les signed URLs depuis l'API
-      setUploadProgress('Preparation de l\'upload...');
+      setUploadProgress("Preparation de l'upload...")
       const signedRes = await fetch('/api/beats/signed-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,47 +135,47 @@ export default function UploadBeatPage() {
           coverFileName,
           coverContentType: coverFile?.type || null,
         }),
-      });
+      })
 
-      const signedData = await signedRes.json();
+      const signedData = await signedRes.json()
       if (!signedRes.ok) {
-        setError(signedData.error || 'Erreur preparation upload');
-        setUploading(false);
-        return;
+        setError(signedData.error || 'Erreur preparation upload')
+        setUploading(false)
+        return
       }
 
       // 2. Upload audio directement vers Supabase avec le signed URL
-      setUploadProgress('Upload du fichier audio...');
+      setUploadProgress('Upload du fichier audio...')
       const audioUploadRes = await fetch(signedData.audio.signedUrl, {
         method: 'PUT',
         headers: { 'Content-Type': audioFile.type },
         body: audioFile,
-      });
+      })
 
       if (!audioUploadRes.ok) {
-        setError('Erreur lors de l\'upload du fichier audio');
-        setUploading(false);
-        return;
+        setError("Erreur lors de l'upload du fichier audio")
+        setUploading(false)
+        return
       }
 
-      const audioUrl = signedData.audio.publicUrl;
+      const audioUrl = signedData.audio.publicUrl
 
       // 3. Upload cover si fournie
-      let coverUrl: string | null = null;
+      let coverUrl: string | null = null
       if (coverFile && coverFile.size > 0 && signedData.cover) {
-        setUploadProgress('Upload de la cover...');
+        setUploadProgress('Upload de la cover...')
         const coverUploadRes = await fetch(signedData.cover.signedUrl, {
           method: 'PUT',
           headers: { 'Content-Type': coverFile.type },
           body: coverFile,
-        });
+        })
         if (coverUploadRes.ok) {
-          coverUrl = signedData.cover.publicUrl;
+          coverUrl = signedData.cover.publicUrl
         }
       }
 
       // 4. Envoyer les metadonnees a l'API
-      setUploadProgress('Enregistrement du beat...');
+      setUploadProgress('Enregistrement du beat...')
       const res = await fetch('/api/beats/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -160,67 +186,74 @@ export default function UploadBeatPage() {
           key: key || null,
           mood: mood || null,
           description: description || null,
-          tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+          tags: tags
+            ? tags
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
+            : [],
           audioUrl,
           coverUrl,
           audioFileName: audioFile.name,
           audioSize: audioFile.size,
         }),
-      });
+      })
 
-      const data = await res.json();
+      const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Erreur lors de l\'enregistrement');
-        return;
+        setError(data.error || "Erreur lors de l'enregistrement")
+        return
       }
 
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 2000);
+      setSuccess(true)
+      setTimeout(() => router.push('/dashboard'), 2000)
     } catch (err) {
-      console.error('Upload error:', err);
-      setError('Erreur de connexion');
+      console.error('Upload error:', err)
+      setError('Erreur de connexion')
     } finally {
-      setUploading(false);
-      setUploadProgress('');
+      setUploading(false)
+      setUploadProgress('')
     }
-  };
+  }
 
   const handleAudioDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
     // Simulate change event by creating a synthetic target
-    const fakeEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
-    handleAudioSelect(fakeEvent);
-  };
+    const fakeEvent = {
+      target: { files: [file] },
+    } as unknown as React.ChangeEvent<HTMLInputElement>
+    handleAudioSelect(fakeEvent)
+  }
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(true);
-  };
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(true)
+  }
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(false);
-  };
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(false)
+  }
 
   const removeAudio = () => {
-    setAudioFile(null);
-    setAudioPreview(null);
-    setIsPlaying(false);
-    if (audioInputRef.current) audioInputRef.current.value = '';
-  };
+    setAudioFile(null)
+    setAudioPreview(null)
+    setIsPlaying(false)
+    if (audioInputRef.current) audioInputRef.current.value = ''
+  }
 
   const removeCover = () => {
-    setCoverFile(null);
-    setCoverPreview(null);
-    if (coverInputRef.current) coverInputRef.current.value = '';
-  };
+    setCoverFile(null)
+    setCoverPreview(null)
+    if (coverInputRef.current) coverInputRef.current.value = ''
+  }
 
   if (success) {
     return (
@@ -233,7 +266,7 @@ export default function UploadBeatPage() {
           <p className="text-gray-400">Redirection vers le dashboard...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -247,7 +280,6 @@ export default function UploadBeatPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-
           {/* Audio Upload */}
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">
@@ -276,10 +308,18 @@ export default function UploadBeatPage() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Music size={16} className="text-[#e11d48]" />
-                    <span className="text-sm text-white truncate max-w-[250px]">{audioFile.name}</span>
-                    <span className="text-xs text-gray-500">({(audioFile.size / 1024 / 1024).toFixed(1)} MB)</span>
+                    <span className="text-sm text-white truncate max-w-[250px]">
+                      {audioFile.name}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      ({(audioFile.size / 1024 / 1024).toFixed(1)} MB)
+                    </span>
                   </div>
-                  <button type="button" onClick={removeAudio} className="text-gray-500 hover:text-red-400 transition">
+                  <button
+                    type="button"
+                    onClick={removeAudio}
+                    className="text-gray-500 hover:text-red-400 transition"
+                  >
                     <X size={18} />
                   </button>
                 </div>
@@ -293,7 +333,13 @@ export default function UploadBeatPage() {
                 )}
               </div>
             )}
-            <input ref={audioInputRef} type="file" accept="audio/*" onChange={handleAudioSelect} className="hidden" />
+            <input
+              ref={audioInputRef}
+              type="file"
+              accept="audio/*"
+              onChange={handleAudioSelect}
+              className="hidden"
+            />
           </div>
 
           {/* Cover Image */}
@@ -314,7 +360,13 @@ export default function UploadBeatPage() {
               </div>
             ) : (
               <div className="relative inline-block">
-                <Image src={coverPreview} alt="Cover" width={128} height={128} className="w-32 h-32 rounded-xl object-cover" />
+                <Image
+                  src={coverPreview}
+                  alt="Cover"
+                  width={128}
+                  height={128}
+                  className="w-32 h-32 rounded-xl object-cover"
+                />
                 <button
                   type="button"
                   onClick={removeCover}
@@ -324,7 +376,13 @@ export default function UploadBeatPage() {
                 </button>
               </div>
             )}
-            <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverSelect} className="hidden" />
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCoverSelect}
+              className="hidden"
+            />
           </div>
 
           {/* Title */}
@@ -353,7 +411,11 @@ export default function UploadBeatPage() {
                 className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
               >
                 <option value="">Choisir</option>
-                {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                {GENRES.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -378,7 +440,11 @@ export default function UploadBeatPage() {
                 className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
               >
                 <option value="">Choisir</option>
-                {KEYS.map(k => <option key={k} value={k}>{k}</option>)}
+                {KEYS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -387,7 +453,7 @@ export default function UploadBeatPage() {
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">Mood</label>
             <div className="flex flex-wrap gap-2">
-              {MOODS.map(m => (
+              {MOODS.map((m) => (
                 <button
                   key={m}
                   type="button"
@@ -444,7 +510,8 @@ export default function UploadBeatPage() {
           >
             {uploading ? (
               <>
-                <Loader2 size={20} className="animate-spin" /> {uploadProgress || 'Upload en cours...'}
+                <Loader2 size={20} className="animate-spin" />{' '}
+                {uploadProgress || 'Upload en cours...'}
               </>
             ) : (
               <>
@@ -455,5 +522,5 @@ export default function UploadBeatPage() {
         </form>
       </main>
     </div>
-  );
+  )
 }

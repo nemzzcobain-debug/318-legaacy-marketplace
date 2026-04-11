@@ -1,18 +1,18 @@
-'use client';
+'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import Image from 'next/image';
-import { Play, Pause, Volume2, VolumeX, SkipBack } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react'
+import Image from 'next/image'
+import { Play, Pause, Volume2, VolumeX, SkipBack, Loader2 } from 'lucide-react'
 
 interface AudioPlayerProps {
-  src: string;
-  title?: string;
-  producer?: string;
-  coverImage?: string;
-  isPlaying?: boolean;
-  onPlayToggle?: () => void;
-  compact?: boolean;
-  accentColor?: string;
+  src: string
+  title?: string
+  producer?: string
+  coverImage?: string
+  isPlaying?: boolean
+  onPlayToggle?: () => void
+  compact?: boolean
+  accentColor?: string
 }
 
 export default function AudioPlayer({
@@ -25,186 +25,232 @@ export default function AudioPlayer({
   compact = false,
   accentColor = '#e11d48',
 }: AudioPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>(0);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  const [internalPlaying, setInternalPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8);
-  const [muted, setMuted] = useState(false);
-  const [waveformData, setWaveformData] = useState<number[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [internalPlaying, setInternalPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [volume, setVolume] = useState(0.8)
+  const [muted, setMuted] = useState(false)
+  const [waveformData, setWaveformData] = useState<number[]>([])
+  const [loading, setLoading] = useState(true)
+  const [audioError, setAudioError] = useState(false)
 
-  const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalPlaying;
+  const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalPlaying
 
-  // Generate waveform from audio
+  // Generate waveform from audio - with size limit to prevent memory issues
   const generateWaveform = useCallback(async () => {
-    if (!src) return;
+    if (!src) return
     try {
-      const response = await fetch(src);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      const rawData = audioBuffer.getChannelData(0);
+      const response = await fetch(src)
+      const arrayBuffer = await response.arrayBuffer()
 
-      const samples = compact ? 60 : 100;
-      const blockSize = Math.floor(rawData.length / samples);
-      const filteredData: number[] = [];
-
-      for (let i = 0; i < samples; i++) {
-        let sum = 0;
-        for (let j = 0; j < blockSize; j++) {
-          sum += Math.abs(rawData[i * blockSize + j]);
-        }
-        filteredData.push(sum / blockSize);
+      // Skip decode for files > 20MB to avoid memory/crash issues
+      if (arrayBuffer.byteLength > 20 * 1024 * 1024) {
+        const samples = compact ? 60 : 100
+        const fake = Array.from(
+          { length: samples },
+          (_, i) => 0.3 + 0.5 * Math.abs(Math.sin(i * 0.3)) + Math.random() * 0.2
+        )
+        setWaveformData(fake)
+        return
       }
 
-      const maxVal = Math.max(...filteredData);
-      const normalized = filteredData.map(d => d / maxVal);
-      setWaveformData(normalized);
-      audioContext.close();
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+      const rawData = audioBuffer.getChannelData(0)
+
+      const samples = compact ? 60 : 100
+      const blockSize = Math.floor(rawData.length / samples)
+      const filteredData: number[] = []
+
+      for (let i = 0; i < samples; i++) {
+        let sum = 0
+        for (let j = 0; j < blockSize; j++) {
+          sum += Math.abs(rawData[i * blockSize + j])
+        }
+        filteredData.push(sum / blockSize)
+      }
+
+      const maxVal = Math.max(...filteredData)
+      const normalized = maxVal > 0 ? filteredData.map((d) => d / maxVal) : filteredData
+      setWaveformData(normalized)
+      audioContext.close()
     } catch (err) {
-      // Fallback: generate random waveform
-      const samples = compact ? 60 : 100;
-      const fake = Array.from({ length: samples }, () => 0.2 + Math.random() * 0.8);
-      setWaveformData(fake);
+      console.warn('Waveform generation failed, using fallback:', err)
+      const samples = compact ? 60 : 100
+      const fake = Array.from({ length: samples }, () => 0.2 + Math.random() * 0.8)
+      setWaveformData(fake)
     }
-  }, [src, compact]);
+  }, [src, compact])
 
   useEffect(() => {
-    generateWaveform();
-  }, [generateWaveform]);
+    generateWaveform()
+  }, [generateWaveform])
 
   // Draw waveform
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || waveformData.length === 0) return;
+    const canvas = canvasRef.current
+    if (!canvas || waveformData.length === 0) return
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
+    const dpr = window.devicePixelRatio || 1
+    const rect = canvas.getBoundingClientRect()
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
+    ctx.scale(dpr, dpr)
 
-    const width = rect.width;
-    const height = rect.height;
-    const barWidth = width / waveformData.length;
-    const gap = 1;
-    const progress = duration > 0 ? currentTime / duration : 0;
+    const width = rect.width
+    const height = rect.height
+    const barWidth = width / waveformData.length
+    const gap = 1
+    const progress = duration > 0 ? currentTime / duration : 0
 
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, width, height)
 
     waveformData.forEach((val, i) => {
-      const barHeight = val * height * 0.85;
-      const x = i * barWidth;
-      const y = (height - barHeight) / 2;
-      const isPlayed = i / waveformData.length <= progress;
+      const barHeight = val * height * 0.85
+      const x = i * barWidth
+      const y = (height - barHeight) / 2
+      const isPlayed = i / waveformData.length <= progress
 
-      ctx.fillStyle = isPlayed ? accentColor : 'rgba(255, 255, 255, 0.15)';
-      ctx.beginPath();
-      ctx.roundRect(x + gap / 2, y, barWidth - gap, barHeight, 1);
-      ctx.fill();
-    });
-  }, [waveformData, currentTime, duration, accentColor]);
+      ctx.fillStyle = isPlayed ? accentColor : 'rgba(255, 255, 255, 0.15)'
+      ctx.beginPath()
+      ctx.roundRect(x + gap / 2, y, barWidth - gap, barHeight, 1)
+      ctx.fill()
+    })
+  }, [waveformData, currentTime, duration, accentColor])
 
   // Audio events
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const audio = audioRef.current
+    if (!audio) return
 
     const onLoadedMetadata = () => {
-      setDuration(audio.duration);
-      setLoaded(true);
-    };
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+      setDuration(audio.duration)
+    }
+    const onCanPlay = () => {
+      setLoading(false)
+      setAudioError(false)
+    }
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
     const onEnded = () => {
-      setInternalPlaying(false);
-      onPlayToggle?.();
-    };
+      if (onPlayToggle) {
+        onPlayToggle()
+      } else {
+        setInternalPlaying(false)
+      }
+    }
+    const onError = () => {
+      setAudioError(true)
+      setLoading(false)
+      console.error('Audio loading error for:', src)
+    }
+    const onWaiting = () => setLoading(true)
+    const onPlaying = () => setLoading(false)
 
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata)
+    audio.addEventListener('canplay', onCanPlay)
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('ended', onEnded)
+    audio.addEventListener('error', onError)
+    audio.addEventListener('waiting', onWaiting)
+    audio.addEventListener('playing', onPlaying)
 
     return () => {
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('ended', onEnded);
-    };
-  }, [onPlayToggle]);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
+      audio.removeEventListener('canplay', onCanPlay)
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('ended', onEnded)
+      audio.removeEventListener('error', onError)
+      audio.removeEventListener('waiting', onWaiting)
+      audio.removeEventListener('playing', onPlaying)
+    }
+  }, [onPlayToggle, src])
 
   // Sync play state
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const audio = audioRef.current
+    if (!audio) return
 
     if (isPlaying) {
-      audio.play().catch(() => {});
+      const playPromise = audio.play()
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Audio play failed:', err.message)
+          // Reset play state if play fails
+          if (onPlayToggle) {
+            onPlayToggle()
+          } else {
+            setInternalPlaying(false)
+          }
+        })
+      }
     } else {
-      audio.pause();
+      audio.pause()
     }
-  }, [isPlaying]);
+  }, [isPlaying, onPlayToggle])
 
   // Volume
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = muted ? 0 : volume;
+      audioRef.current.volume = muted ? 0 : volume
     }
-  }, [volume, muted]);
+  }, [volume, muted])
 
   const togglePlay = () => {
+    if (audioError) return
     if (onPlayToggle) {
-      onPlayToggle();
+      onPlayToggle()
     } else {
-      setInternalPlaying(!internalPlaying);
+      setInternalPlaying(!internalPlaying)
     }
-  };
+  }
 
   const handleWaveformClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    const audio = audioRef.current;
-    if (!canvas || !audio || !duration) return;
+    const canvas = canvasRef.current
+    const audio = audioRef.current
+    if (!canvas || !audio || !duration) return
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const progress = x / rect.width;
-    audio.currentTime = progress * duration;
-  };
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const progress = x / rect.width
+    audio.currentTime = progress * duration
+  }
 
   const restart = () => {
     if (audioRef.current) {
-      audioRef.current.currentTime = 0;
+      audioRef.current.currentTime = 0
     }
-  };
+  }
 
   const formatTime = (t: number) => {
-    const m = Math.floor(t / 60);
-    const s = Math.floor(t % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
+    if (!t || isNaN(t) || !isFinite(t)) return '0:00'
+    const m = Math.floor(t / 60)
+    const s = Math.floor(t % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
 
-  // Compact mode (for cards)
+  // Compact mode (for cards & upload preview)
   if (compact) {
     return (
       <div className="w-full">
-        <audio ref={audioRef} src={src} preload="metadata" />
+        <audio ref={audioRef} src={src} preload="auto" crossOrigin="anonymous" />
         <div className="flex items-center gap-2">
           <button
             onClick={togglePlay}
-            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform hover:scale-110"
-            style={{ backgroundColor: accentColor }}
+            disabled={audioError}
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: audioError ? '#666' : accentColor }}
             aria-label={isPlaying ? 'Arrêter la lecture' : 'Lire le beat'}
             aria-pressed={isPlaying}
           >
-            {isPlaying ? (
+            {loading && !audioError ? (
+              <Loader2 size={14} className="text-black animate-spin" />
+            ) : isPlaying ? (
               <Pause size={14} className="text-black" />
             ) : (
               <Play size={14} className="text-black ml-0.5" />
@@ -222,24 +268,33 @@ export default function AudioPlayer({
             aria-valuenow={currentTime}
           />
           <span className="text-[10px] text-gray-400 flex-shrink-0 w-8 text-right">
-            {formatTime(duration - currentTime)}
+            {audioError ? 'ERR' : formatTime(duration - currentTime)}
           </span>
         </div>
+        {audioError && (
+          <p className="text-[10px] text-red-400 mt-1">Impossible de lire ce fichier audio</p>
+        )}
       </div>
-    );
+    )
   }
 
   // Full mode
   return (
     <div className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-2xl overflow-hidden">
-      <audio ref={audioRef} src={src} preload="metadata" />
+      <audio ref={audioRef} src={src} preload="auto" crossOrigin="anonymous" />
 
       {/* Top section with cover + info */}
       {(title || coverImage) && (
         <div className="flex items-center gap-3 p-4 pb-2">
           {coverImage && (
             <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0 relative">
-              <Image src={coverImage} alt={title || 'Beat cover'} width={48} height={48} className="w-full h-full object-cover" />
+              <Image
+                src={coverImage}
+                alt={title || 'Beat cover'}
+                width={48}
+                height={48}
+                className="w-full h-full object-cover"
+              />
             </div>
           )}
           <div className="flex-1 min-w-0">
@@ -261,17 +316,24 @@ export default function AudioPlayer({
       {/* Controls */}
       <div className="flex items-center justify-between px-4 pb-4">
         <div className="flex items-center gap-2">
-          <button onClick={restart} className="text-gray-400 hover:text-white transition p-1" aria-label="Recommencer la lecture">
+          <button
+            onClick={restart}
+            className="text-gray-400 hover:text-white transition p-1"
+            aria-label="Recommencer la lecture"
+          >
             <SkipBack size={16} />
           </button>
           <button
             onClick={togglePlay}
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-105"
-            style={{ backgroundColor: accentColor }}
+            disabled={audioError}
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-105 disabled:opacity-50"
+            style={{ backgroundColor: audioError ? '#666' : accentColor }}
             aria-label={isPlaying ? 'Arrêter la lecture' : 'Lire le beat'}
             aria-pressed={isPlaying}
           >
-            {isPlaying ? (
+            {loading && !audioError ? (
+              <Loader2 size={18} className="text-black animate-spin" />
+            ) : isPlaying ? (
               <Pause size={18} className="text-black" />
             ) : (
               <Play size={18} className="text-black ml-0.5" />
@@ -286,7 +348,11 @@ export default function AudioPlayer({
 
         {/* Volume */}
         <div className="flex items-center gap-2">
-          <button onClick={() => setMuted(!muted)} className="text-gray-400 hover:text-white transition" aria-label={muted ? 'Activer le son' : 'Mute'}>
+          <button
+            onClick={() => setMuted(!muted)}
+            className="text-gray-400 hover:text-white transition"
+            aria-label={muted ? 'Activer le son' : 'Mute'}
+          >
             {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
           <input
@@ -295,12 +361,18 @@ export default function AudioPlayer({
             max="1"
             step="0.05"
             value={muted ? 0 : volume}
-            onChange={(e) => { setVolume(parseFloat(e.target.value)); setMuted(false); }}
+            onChange={(e) => {
+              setVolume(parseFloat(e.target.value))
+              setMuted(false)
+            }}
             className="w-16 h-1 accent-[#e11d48] cursor-pointer"
             aria-label="Volume"
           />
         </div>
       </div>
+      {audioError && (
+        <p className="text-xs text-red-400 text-center pb-3">Impossible de lire ce fichier audio</p>
+      )}
     </div>
-  );
+  )
 }
