@@ -303,6 +303,15 @@ export default function Header() {
               <Upload size={16} /> Upload un beat
             </Link>
           )}
+          {session && user?.role === 'ADMIN' && (
+            <Link
+              href="/admin"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-orange-400 hover:bg-orange-500/10 transition-colors"
+            >
+              <Shield size={16} /> Administration
+            </Link>
+          )}
           {/* Language selector mobile */}
           <div className="border-t border-[#1e1e2e] pt-2 mt-1">
             <LanguageSelector />
