@@ -6,8 +6,9 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import AudioPlayer from '@/components/audio/AudioPlayer'
-import { Upload, Music, Image as ImageIcon, X, Check, Loader2 } from 'lucide-react'
+import { Upload, Music, Image as ImageIcon, X, Check, Loader2, Wand2 } from 'lucide-react'
 import { GENRES, MOODS } from '@/types'
+import CoverGenerator from '@/components/ai/CoverGenerator'
 // Upload utilise des signed URLs generees par l'API (contourne RLS + limite 4.5MB Vercel)
 
 const KEYS = [
@@ -61,6 +62,8 @@ export default function UploadBeatPage() {
 
   const [dragOver, setDragOver] = useState(false)
   const [uploadProgress, setUploadProgress] = useState('')
+  const [showAiGenerator, setShowAiGenerator] = useState(false)
+  const [aiCoverUrl, setAiCoverUrl] = useState<string | null>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
@@ -160,9 +163,40 @@ export default function UploadBeatPage() {
 
       const audioUrl = signedData.audio.publicUrl
 
-      // 3. Upload cover si fournie
+      // 3. Upload cover si fournie (fichier local ou URL IA)
       let coverUrl: string | null = null
-      if (coverFile && coverFile.size > 0 && signedData.cover) {
+      if (aiCoverUrl) {
+        // Cover générée par IA — télécharger et uploader vers Supabase
+        setUploadProgress('Transfert de la cover IA...')
+        try {
+          const aiRes = await fetch(aiCoverUrl)
+          const aiBlob = await aiRes.blob()
+          const aiCoverFileName = `${timestamp}-cover-ai.png`
+          const aiSignedRes = await fetch('/api/beats/signed-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              audioFileName: null,
+              audioContentType: null,
+              coverFileName: aiCoverFileName,
+              coverContentType: 'image/png',
+            }),
+          })
+          const aiSignedData = await aiSignedRes.json()
+          if (aiSignedRes.ok && aiSignedData.cover) {
+            const aiUploadRes = await fetch(aiSignedData.cover.signedUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'image/png' },
+              body: aiBlob,
+            })
+            if (aiUploadRes.ok) {
+              coverUrl = aiSignedData.cover.publicUrl
+            }
+          }
+        } catch (err) {
+          console.error('AI cover upload error:', err)
+        }
+      } else if (coverFile && coverFile.size > 0 && signedData.cover) {
         setUploadProgress('Upload de la cover...')
         const coverUploadRes = await fetch(signedData.cover.signedUrl, {
           method: 'PUT',
@@ -345,37 +379,71 @@ export default function UploadBeatPage() {
           {/* Cover Image */}
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">Cover (optionnel)</label>
-            {!coverPreview ? (
-              <div
-                onClick={() => coverInputRef.current?.click()}
-                className="border-2 border-dashed border-[#1e1e2e] rounded-2xl p-6 text-center cursor-pointer hover:border-[#e11d4840] transition group inline-flex items-center gap-3"
-              >
-                <div className="w-12 h-12 rounded-lg bg-[#e11d4810] flex items-center justify-center group-hover:scale-110 transition">
-                  <ImageIcon size={20} className="text-[#e11d48]" />
+            {!coverPreview && !aiCoverUrl && !showAiGenerator ? (
+              <div className="flex flex-wrap gap-3">
+                <div
+                  onClick={() => coverInputRef.current?.click()}
+                  className="border-2 border-dashed border-[#1e1e2e] rounded-2xl p-6 text-center cursor-pointer hover:border-[#e11d4840] transition group inline-flex items-center gap-3"
+                >
+                  <div className="w-12 h-12 rounded-lg bg-[#e11d4810] flex items-center justify-center group-hover:scale-110 transition">
+                    <ImageIcon size={20} className="text-[#e11d48]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white text-sm font-semibold">Ajouter une cover</p>
+                    <p className="text-gray-500 text-xs">JPG, PNG, max 5 MB</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <p className="text-white text-sm font-semibold">Ajouter une cover</p>
-                  <p className="text-gray-500 text-xs">JPG, PNG, max 5 MB</p>
+                <div
+                  onClick={() => setShowAiGenerator(true)}
+                  className="border-2 border-dashed border-purple-500/20 rounded-2xl p-6 text-center cursor-pointer hover:border-purple-500/40 transition group inline-flex items-center gap-3"
+                >
+                  <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition">
+                    <Wand2 size={20} className="text-purple-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-purple-300 text-sm font-semibold">Générer avec l&apos;IA</p>
+                    <p className="text-gray-500 text-xs">DALL·E 3 — cover unique</p>
+                  </div>
                 </div>
               </div>
-            ) : (
+            ) : showAiGenerator && !aiCoverUrl ? (
+              <CoverGenerator
+                onSelect={(url) => {
+                  setAiCoverUrl(url)
+                  setShowAiGenerator(false)
+                  setCoverFile(null)
+                  setCoverPreview(null)
+                }}
+                onCancel={() => setShowAiGenerator(false)}
+              />
+            ) : coverPreview || aiCoverUrl ? (
               <div className="relative inline-block">
                 <Image
-                  src={coverPreview}
+                  src={(aiCoverUrl || coverPreview)!}
                   alt="Cover"
                   width={128}
                   height={128}
                   className="w-32 h-32 rounded-xl object-cover"
+                  unoptimized={!!aiCoverUrl}
                 />
+                {aiCoverUrl && (
+                  <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-purple-600/80 backdrop-blur-sm">
+                    <span className="text-[9px] text-white font-bold">IA</span>
+                  </div>
+                )}
                 <button
                   type="button"
-                  onClick={removeCover}
+                  onClick={() => {
+                    removeCover()
+                    setAiCoverUrl(null)
+                    setShowAiGenerator(false)
+                  }}
                   className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center"
                 >
                   <X size={12} className="text-white" />
                 </button>
               </div>
-            )}
+            ) : null}
             <input
               ref={coverInputRef}
               type="file"
