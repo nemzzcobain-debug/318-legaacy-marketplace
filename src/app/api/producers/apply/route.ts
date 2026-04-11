@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { producerApplicationSchema } from '@/lib/validations'
-import { sendProducerApplicationEmail } from '@/lib/emails/resend'
+import { sendProducerApplicationEmail, sendAdminNewApplicationEmail } from '@/lib/emails/resend'
 
 // POST /api/producers/apply - Postuler comme producteur
 export async function POST(request: Request) {
@@ -56,10 +56,10 @@ export async function POST(request: Request) {
       },
     })
 
-    // Notifier les admins
+    // Notifier les admins (notification in-app + email)
     const admins = await prisma.user.findMany({
       where: { role: 'ADMIN' },
-      select: { id: true },
+      select: { id: true, email: true },
     })
 
     if (admins.length > 0) {
@@ -69,9 +69,22 @@ export async function POST(request: Request) {
           type: 'SYSTEM' as const,
           title: 'Nouvelle candidature producteur',
           message: `${user.name} souhaite devenir producteur`,
-          link: '/admin/producers',
+          link: '/admin',
         })),
       })
+
+      // Envoyer email à chaque admin
+      for (const admin of admins) {
+        if (admin.email) {
+          sendAdminNewApplicationEmail({
+            adminEmail: admin.email,
+            applicantName: user.name || 'Inconnu',
+            applicantEmail: user.email || '',
+            bio: validated.data.producerBio,
+            portfolio: validated.data.portfolio,
+          }).catch((err) => console.error('Email admin notification échoué:', err))
+        }
+      }
     }
 
     // Envoyer email de confirmation

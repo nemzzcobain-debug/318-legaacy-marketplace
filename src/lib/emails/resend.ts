@@ -403,6 +403,52 @@ export async function sendProducerRejectedEmail(params: {
   return sendEmail(to, `Résultat de ta candidature producteur — 318 LEGAACY`, html)
 }
 
+export async function sendAdminNewApplicationEmail(params: {
+  adminEmail: string
+  applicantName: string
+  applicantEmail: string
+  bio: string
+  portfolio?: string
+}) {
+  const { adminEmail, applicantName, applicantEmail, bio, portfolio } = params
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouvelle candidature producteur 🔔</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      <strong style="color:#fff;">${applicantName}</strong> souhaite devenir producteur sur 318 LEGAACY.
+    </p>
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Nom</td>
+          <td style="color:#fff;font-size:12px;padding:6px 0;text-align:right;font-weight:600;">${applicantName}</td>
+        </tr>
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Email</td>
+          <td style="color:#fff;font-size:12px;padding:6px 0;text-align:right;">${applicantEmail}</td>
+        </tr>
+        ${
+          portfolio
+            ? `<tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Portfolio</td>
+          <td style="color:#e11d48;font-size:12px;padding:6px 0;text-align:right;"><a href="${portfolio}" style="color:#e11d48;">${portfolio}</a></td>
+        </tr>`
+            : ''
+        }
+      </table>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #1e1e2e;">
+        <p style="color:#666;font-size:11px;margin:0 0 4px;">BIO</p>
+        <p style="color:#ccc;font-size:12px;margin:0;line-height:1.5;">${bio}</p>
+      </div>
+    </div>
+
+    ${button('Examiner la candidature', `${PLATFORM_URL}/admin`)}
+  `)
+
+  return sendEmail(adminEmail, `🔔 Nouvelle candidature producteur — ${applicantName}`, html)
+}
+
 // ─── Core Send Function ───
 async function sendEmail(to: string, subject: string, html: string) {
   // F19 FIX: Vérifier que toutes les config sont présentes
