@@ -1,29 +1,30 @@
 export const dynamic = 'force-dynamic'
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { sendProducerApprovedEmail, sendProducerRejectedEmail } from '@/lib/emails/resend'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
+      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
     }
 
-    const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status');
-    const search = searchParams.get('search');
+    const { searchParams } = new URL(req.url)
+    const status = searchParams.get('status')
+    const search = searchParams.get('search')
 
-    const where: any = { role: 'PRODUCER' };
-    if (status) where.producerStatus = status;
+    const where: any = { role: 'PRODUCER' }
+    if (status) where.producerStatus = status
     if (search) {
       where.OR = [
         { name: { contains: search } },
         { email: { contains: search } },
-        { displayName: { contains: search } }
-      ];
+        { displayName: { contains: search } },
+      ]
     }
 
     const producers = await prisma.user.findMany({
@@ -39,53 +40,83 @@ export async function GET(req: NextRequest) {
         totalSales: true,
         rating: true,
         createdAt: true,
-        _count: { select: { beats: true } }
+        _count: { select: { beats: true } },
       },
-      orderBy: { createdAt: 'desc' }
-    });
+      orderBy: { createdAt: 'desc' },
+    })
 
-    return NextResponse.json(producers);
+    return NextResponse.json(producers)
   } catch (error) {
-    console.error('Admin producers error:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error('Admin producers error:', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
+      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
     }
 
-    const { producerId, status } = await req.json();
+    const { producerId, status } = await req.json()
     if (!producerId || !['APPROVED', 'REJECTED', 'SUSPENDED', 'PENDING'].includes(status)) {
-      return NextResponse.json({ error: 'Donnees invalides' }, { status: 400 });
+      return NextResponse.json({ error: 'Donnees invalides' }, { status: 400 })
     }
 
     const producer = await prisma.user.update({
       where: { id: producerId },
-      data: { producerStatus: status }
-    });
+      data: { producerStatus: status },
+      select: { id: true, name: true, email: true, role: true, producerStatus: true },
+    })
 
     const notifMessages: Record<string, { title: string; message: string; type: string }> = {
-      APPROVED: { title: 'Compte approuve!', message: 'Votre compte producteur a ete approuve. Vous pouvez maintenant mettre vos beats aux encheres!', type: 'PRODUCER_APPROVED' },
-      REJECTED: { title: 'Compte refuse', message: 'Votre demande de compte producteur a ete refusee. Contactez-nous pour plus d\'informations.', type: 'PRODUCER_REJECTED' },
-      SUSPENDED: { title: 'Compte suspendu', message: 'Votre compte producteur a ete suspendu. Contactez-nous pour plus d\'informations.', type: 'SYSTEM' }
-    };
+      APPROVED: {
+        title: 'Compte approuve!',
+        message:
+          'Votre compte producteur a ete approuve. Vous pouvez maintenant mettre vos beats aux encheres!',
+        type: 'PRODUCER_APPROVED',
+      },
+      REJECTED: {
+        title: 'Compte refuse',
+        message:
+          "Votre demande de compte producteur a ete refusee. Contactez-nous pour plus d'informations.",
+        type: 'PRODUCER_REJECTED',
+      },
+      SUSPENDED: {
+        title: 'Compte suspendu',
+        message: "Votre compte producteur a ete suspendu. Contactez-nous pour plus d'informations.",
+        type: 'SYSTEM',
+      },
+    }
 
     if (notifMessages[status]) {
       await prisma.notification.create({
         data: {
           userId: producerId,
-          ...notifMessages[status]
-        }
-      });
+          ...notifMessages[status],
+        },
+      })
     }
 
-    return NextResponse.json(producer);
+    // Envoyer email de notification au producteur
+    if (producer.email) {
+      if (status === 'APPROVED') {
+        sendProducerApprovedEmail({
+          to: producer.email,
+          name: producer.name || 'Producteur',
+        }).catch((err) => console.error('Email approbation échoué:', err))
+      } else if (status === 'REJECTED') {
+        sendProducerRejectedEmail({
+          to: producer.email,
+          name: producer.name || 'Producteur',
+        }).catch((err) => console.error('Email refus échoué:', err))
+      }
+    }
+
+    return NextResponse.json(producer)
   } catch (error) {
-    console.error('Admin producer update error:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error('Admin producer update error:', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

@@ -1,11 +1,9 @@
-// @ts-ignore - resend is optional
+// @ts-expect-error - resend is optional
 import { Resend } from 'resend'
 
 // Initialize Resend client (conditionnel — ne crashe pas si la clé est absente)
 // Set RESEND_API_KEY in your .env
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 // F19 FIX: Supprimer les fallbacks hardcodés — les variables d'env DOIVENT être définies
 const FROM_EMAIL = process.env.EMAIL_FROM
@@ -119,7 +117,16 @@ export async function sendPaymentReceivedEmail(params: {
   payout: number
   license: string
 }) {
-  const { to, producerName, beatTitle, buyerName, finalPrice, commission, payout, license } = params
+  const {
+    to,
+    producerName: _producerName,
+    beatTitle,
+    buyerName,
+    finalPrice,
+    commission,
+    payout,
+    license,
+  } = params
 
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Vente realisee ! 💰</h1>
@@ -168,7 +175,7 @@ export async function sendNewFollowerEmail(params: {
   followerAvatar?: string
   totalFollowers: number
 }) {
-  const { to, producerName, followerName, totalFollowers } = params
+  const { to, producerName: _producerName, followerName, totalFollowers } = params
 
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouveau follower ! 👥</h1>
@@ -196,7 +203,7 @@ export async function sendOutbidEmail(params: {
   newBid: number
   auctionId: string
 }) {
-  const { to, userName, beatTitle, yourBid, newBid, auctionId } = params
+  const { to, userName: _userName, beatTitle, yourBid, newBid, auctionId } = params
 
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Tu as ete surencherit ! ⚡</h1>
@@ -232,7 +239,7 @@ export async function sendAuctionEndingSoonEmail(params: {
   auctionId: string
   minutesLeft: number
 }) {
-  const { to, userName, beatTitle, currentBid, auctionId, minutesLeft } = params
+  const { to, userName: _userName, beatTitle, currentBid, auctionId, minutesLeft } = params
 
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Enchere bientot terminee ! ⏰</h1>
@@ -245,16 +252,13 @@ export async function sendAuctionEndingSoonEmail(params: {
       <div style="font-size:28px;font-weight:900;color:#e11d48;">${currentBid} EUR</div>
     </div>
 
-    ${button('Voir l\'enchere', `${PLATFORM_URL}/auction/${auctionId}`)}
+    ${button("Voir l'enchere", `${PLATFORM_URL}/auction/${auctionId}`)}
   `)
 
   return sendEmail(to, `⏰ "${beatTitle}" — Plus que ${minutesLeft} min !`, html)
 }
 
-export async function sendWelcomeEmail(params: {
-  to: string
-  name: string
-}) {
+export async function sendWelcomeEmail(params: { to: string; name: string }) {
   const { to, name } = params
 
   const html = emailLayout(`
@@ -276,12 +280,8 @@ export async function sendWelcomeEmail(params: {
   return sendEmail(to, `🎵 Bienvenue sur 318 LEGAACY Marketplace !`, html)
 }
 
-export async function sendVerificationEmail(params: {
-  to: string
-  name: string
-  token: string
-}) {
-  const { to, name, token } = params
+export async function sendVerificationEmail(params: { to: string; name: string; token: string }) {
+  const { to, name: _name, token } = params
 
   const verificationUrl = `${PLATFORM_URL}/verify-email?token=${token}`
 
@@ -304,12 +304,8 @@ export async function sendVerificationEmail(params: {
   return sendEmail(to, `Confirme ton email — 318 LEGAACY Marketplace`, html)
 }
 
-export async function sendPasswordResetEmail(params: {
-  to: string
-  name: string
-  token: string
-}) {
-  const { to, name, token } = params
+export async function sendPasswordResetEmail(params: { to: string; name: string; token: string }) {
+  const { to, name: _name, token } = params
 
   const resetUrl = `${PLATFORM_URL}/reset-password?token=${token}`
 
@@ -328,6 +324,83 @@ export async function sendPasswordResetEmail(params: {
   `)
 
   return sendEmail(to, `🔐 Reinitialise ton mot de passe — 318 LEGAACY`, html)
+}
+
+// ─── Producer Application Emails ───
+
+export async function sendProducerApplicationEmail(params: { to: string; name: string }) {
+  const { to, name } = params
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Candidature reçue ! 📩</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      Merci <strong style="color:#fff;">${name}</strong>, ta candidature pour devenir producteur sur 318 LEGAACY a bien été enregistrée.
+    </p>
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <h3 style="color:#fff;font-size:14px;margin:0 0 12px;">Et maintenant ?</h3>
+      <p style="color:#999;font-size:12px;margin:0 0 8px;">1️⃣ Notre équipe examine ta candidature (sous 48h)</p>
+      <p style="color:#999;font-size:12px;margin:0 0 8px;">2️⃣ Tu recevras un email de confirmation ou de refus</p>
+      <p style="color:#999;font-size:12px;margin:0;">3️⃣ Si approuvé, tu pourras immédiatement mettre tes beats aux enchères</p>
+    </div>
+
+    <p style="color:#999;font-size:13px;margin:0 0 8px;text-align:center;">Tu peux suivre l'état de ta demande ici :</p>
+    ${button('Voir ma candidature', `${PLATFORM_URL}/producers`)}
+  `)
+
+  return sendEmail(to, `📩 Candidature producteur reçue — 318 LEGAACY`, html)
+}
+
+export async function sendProducerApprovedEmail(params: { to: string; name: string }) {
+  const { to, name } = params
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Bienvenue dans l'équipe ! 🎉</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      <strong style="color:#fff;">${name}</strong>, ta candidature producteur a été <strong style="color:#2ed573;">approuvée</strong> !
+    </p>
+
+    <div style="background:#13131a;border:1px solid #2ed57330;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <span style="display:inline-block;background:#2ed57320;color:#2ed573;font-weight:700;font-size:14px;padding:8px 24px;border-radius:8px;">✅ APPROUVÉ</span>
+      </div>
+      <p style="color:#999;font-size:12px;margin:0 0 8px;">🎵 <strong style="color:#fff;">Upload</strong> tes beats depuis ton dashboard</p>
+      <p style="color:#999;font-size:12px;margin:0 0 8px;">🔨 <strong style="color:#fff;">Crée des enchères</strong> pour vendre tes productions</p>
+      <p style="color:#999;font-size:12px;margin:0;">💰 <strong style="color:#fff;">Encaisse</strong> tes ventes directement via Stripe</p>
+    </div>
+
+    ${button('Commencer à vendre', `${PLATFORM_URL}/producers/upload`)}
+  `)
+
+  return sendEmail(to, `🎉 Candidature approuvée — Bienvenue producteur 318 LEGAACY !`, html)
+}
+
+export async function sendProducerRejectedEmail(params: {
+  to: string
+  name: string
+  reason?: string
+}) {
+  const { to, name, reason } = params
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Résultat de ta candidature</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      <strong style="color:#fff;">${name}</strong>, après examen, ta candidature producteur n'a pas été retenue pour le moment.
+    </p>
+
+    <div style="background:#13131a;border:1px solid #e11d4830;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <span style="display:inline-block;background:#e11d4820;color:#e11d48;font-weight:700;font-size:14px;padding:8px 24px;border-radius:8px;">❌ NON RETENUE</span>
+      </div>
+      ${reason ? `<p style="color:#999;font-size:12px;margin:0 0 12px;"><strong style="color:#fff;">Motif :</strong> ${reason}</p>` : ''}
+      <p style="color:#999;font-size:12px;margin:0;">Tu peux améliorer ton profil et resoumettre une candidature ultérieurement.</p>
+    </div>
+
+    <p style="color:#999;font-size:13px;margin:0 0 8px;text-align:center;">Des questions ? Contacte-nous directement.</p>
+    ${button('Retour au marketplace', `${PLATFORM_URL}/marketplace`)}
+  `)
+
+  return sendEmail(to, `Résultat de ta candidature producteur — 318 LEGAACY`, html)
 }
 
 // ─── Core Send Function ───

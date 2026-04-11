@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { producerApplicationSchema } from '@/lib/validations'
+import { sendProducerApplicationEmail } from '@/lib/emails/resend'
 
 // POST /api/producers/apply - Postuler comme producteur
 export async function POST(request: Request) {
@@ -26,16 +27,16 @@ export async function POST(request: Request) {
     }
 
     if (user.producerStatus === 'PENDING') {
-      return NextResponse.json({ error: 'Ta candidature est deja en cours d\'examen' }, { status: 400 })
+      return NextResponse.json(
+        { error: "Ta candidature est deja en cours d'examen" },
+        { status: 400 }
+      )
     }
 
     const body = await request.json()
     const validated = producerApplicationSchema.safeParse(body)
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.errors[0].message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
 
     // Mettre a jour l'utilisateur
@@ -71,6 +72,14 @@ export async function POST(request: Request) {
           link: '/admin/producers',
         })),
       })
+    }
+
+    // Envoyer email de confirmation
+    if (user.email) {
+      sendProducerApplicationEmail({
+        to: user.email,
+        name: user.name || 'Artiste',
+      }).catch((err) => console.error('Email confirmation candidature échoué:', err))
     }
 
     return NextResponse.json({
