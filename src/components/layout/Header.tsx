@@ -5,11 +5,52 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Gavel, Users, LogIn, UserPlus, Menu, X, LayoutDashboard, Upload, Shield, LogOut, MessageCircle, Search, ShoppingBag, Eye, User, ListMusic } from 'lucide-react'
+import {
+  Gavel,
+  Users,
+  LogIn,
+  UserPlus,
+  Menu,
+  X,
+  LayoutDashboard,
+  Upload,
+  Shield,
+  LogOut,
+  MessageCircle,
+  Search,
+  ShoppingBag,
+  Eye,
+  User,
+  ListMusic,
+} from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import LanguageSelector from '@/components/ui/LanguageSelector'
 import { useTranslation } from '@/i18n/LanguageContext'
+
+// Tooltip component for header icon links
+function HeaderTooltip({
+  name,
+  description,
+  indicator,
+}: {
+  name: string
+  description: string
+  indicator?: string
+}) {
+  return (
+    <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[100] w-52 rounded-xl bg-[#1a1a2e]/95 backdrop-blur-xl px-4 py-3 opacity-0 scale-95 transition-all duration-200 group-hover/tip:opacity-100 group-hover/tip:scale-100 border border-white/10 shadow-2xl">
+      <span className="block text-sm font-bold text-white mb-0.5">{name}</span>
+      <span className="block text-[11px] text-gray-400 leading-relaxed">{description}</span>
+      {indicator && (
+        <span className="inline-block mt-2 px-2 py-0.5 rounded-md bg-red-500/20 text-red-400 text-[10px] font-semibold">
+          {indicator}
+        </span>
+      )}
+      <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1a2e] border-t border-l border-white/10 rotate-45" />
+    </span>
+  )
+}
 
 export default function Header() {
   const pathname = usePathname()
@@ -26,8 +67,25 @@ export default function Header() {
     { href: '/producers', label: t('nav.producers'), icon: Users },
   ]
 
+  // Tooltip data for icon-only header links
+  const iconTooltips: Record<string, { name: string; description: string; indicator?: string }> = {
+    playlists: {
+      name: 'Mes Playlists',
+      description: 'Retrouvez et gérez vos playlists de beats favoris',
+    },
+    watchlist: {
+      name: 'Watchlist',
+      description: 'Les beats que vous surveillez et suivez en temps réel',
+    },
+    purchases: { name: 'Mes Achats', description: 'Vos beats achetés et licences obtenues' },
+    auctions: { name: 'Mes Enchères', description: 'Vos enchères en cours et passées' },
+    messages: { name: 'Messages', description: 'Conversations avec les producteurs et acheteurs' },
+    dashboard: { name: 'Dashboard', description: 'Gérez votre activité, stats et paramètres' },
+    admin: { name: 'Administration', description: "Panneau d'administration du site" },
+  }
+
   return (
-    <header className="sticky top-0 z-50 glass">
+    <header className="sticky top-0 z-50 glass overflow-visible">
       <div className="max-w-7xl mx-auto h-16 flex items-center justify-between px-4 md:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
@@ -37,7 +95,10 @@ export default function Header() {
             width={56}
             height={56}
             className="rounded-lg"
-            style={{ maskImage: 'radial-gradient(circle, white 40%, transparent 75%)', WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)' }}
+            style={{
+              maskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
+              WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
+            }}
           />
           <div className="hidden sm:block">
             <span className="font-extrabold text-sm tracking-tight">318 LEGAACY</span>
@@ -48,7 +109,11 @@ export default function Header() {
         </Link>
 
         {/* Nav Desktop */}
-        <nav className="hidden md:flex items-center gap-6" role="navigation" aria-label="Navigation principale">
+        <nav
+          className="hidden md:flex items-center gap-6"
+          role="navigation"
+          aria-label="Navigation principale"
+        >
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
@@ -83,28 +148,63 @@ export default function Header() {
 
               {/* Admin link */}
               {user?.role === 'ADMIN' && (
-                <Link href="/admin" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.admin')}>
+                <Link
+                  href="/admin"
+                  className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
+                  aria-label={t('nav.admin')}
+                >
                   <Shield size={20} className="text-orange-400" />
+                  <HeaderTooltip {...iconTooltips.admin} />
                 </Link>
               )}
 
-              <Link href="/playlists" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.myPlaylists')}>
+              <Link
+                href="/playlists"
+                className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
+                aria-label={t('nav.myPlaylists')}
+              >
                 <ListMusic size={20} className="text-gray-400" />
+                <HeaderTooltip {...iconTooltips.playlists} />
               </Link>
-              <Link href="/watchlist" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.myWatchlist')}>
+              <Link
+                href="/watchlist"
+                className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
+                aria-label={t('nav.myWatchlist')}
+              >
                 <Eye size={20} className="text-gray-400" />
+                <HeaderTooltip {...iconTooltips.watchlist} />
               </Link>
-              <Link href="/purchases" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.myPurchases')}>
+              <Link
+                href="/purchases"
+                className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
+                aria-label={t('nav.myPurchases')}
+              >
                 <ShoppingBag size={20} className="text-gray-400" />
+                <HeaderTooltip {...iconTooltips.purchases} />
               </Link>
-              <Link href="/my-auctions" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.myAuctions')}>
+              <Link
+                href="/my-auctions"
+                className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
+                aria-label={t('nav.myAuctions')}
+              >
                 <Gavel size={20} className="text-gray-400" />
+                <HeaderTooltip {...iconTooltips.auctions} />
               </Link>
-              <Link href="/messages" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.messages')}>
+              <Link
+                href="/messages"
+                className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
+                aria-label={t('nav.messages')}
+              >
                 <MessageCircle size={20} className="text-gray-400" />
+                <HeaderTooltip {...iconTooltips.messages} />
               </Link>
-              <Link href="/dashboard" className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label={t('nav.dashboard')}>
+              <Link
+                href="/dashboard"
+                className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
+                aria-label={t('nav.dashboard')}
+              >
                 <LayoutDashboard size={20} className="text-gray-400" />
+                <HeaderTooltip {...iconTooltips.dashboard} />
               </Link>
               <NotificationBell />
               <LanguageSelector />
@@ -112,7 +212,11 @@ export default function Header() {
 
               {/* User avatar + logout */}
               <div className="flex items-center gap-2">
-                <Link href="/profile/edit" className="w-8 h-8 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-red-500 transition-all" aria-label={t('nav.profile')}>
+                <Link
+                  href="/profile/edit"
+                  className="w-8 h-8 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-red-500 transition-all"
+                  aria-label={t('nav.profile')}
+                >
                   {user?.name?.[0] || 'U'}
                 </Link>
                 <button
@@ -159,7 +263,10 @@ export default function Header() {
 
       {/* Mobile Nav */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-[#1e1e2e] px-4 py-3 flex flex-col gap-2" id="mobile-nav">
+        <div
+          className="md:hidden border-t border-[#1e1e2e] px-4 py-3 flex flex-col gap-2"
+          id="mobile-nav"
+        >
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
