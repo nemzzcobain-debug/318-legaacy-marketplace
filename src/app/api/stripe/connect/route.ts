@@ -83,8 +83,17 @@ export async function POST(req: NextRequest) {
     })
   } catch (error: any) {
     console.error('Erreur Stripe Connect:', error)
+    // Renvoyer plus de details pour aider au debug (sans fuiter de secrets)
+    const stripeMsg = error?.raw?.message || error?.message || 'inconnue'
+    const stripeCode = error?.raw?.code || error?.code || null
+    const stripeType = error?.raw?.type || error?.type || null
     return NextResponse.json(
-      { error: 'Erreur serveur' },
+      {
+        error: 'Erreur Stripe Connect',
+        details: stripeMsg,
+        code: stripeCode,
+        type: stripeType,
+      },
       { status: 500 }
     )
   }
