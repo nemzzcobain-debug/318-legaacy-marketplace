@@ -256,12 +256,7 @@ export default function AudioPlayer({
   if (compact) {
     return (
       <div className="w-full">
-        <audio
-          ref={audioRef}
-          src={src}
-          preload="auto"
-          {...(isLocalUrl ? {} : { crossOrigin: 'anonymous' as const })}
-        />
+        <audio ref={audioRef} src={src} preload="auto" />
         <div className="flex items-center gap-2">
           <button
             onClick={togglePlay}
@@ -304,12 +299,7 @@ export default function AudioPlayer({
   // Full mode
   return (
     <div className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-2xl overflow-hidden">
-      <audio
-        ref={audioRef}
-        src={src}
-        preload="auto"
-        {...(isLocalUrl ? {} : { crossOrigin: 'anonymous' as const })}
-      />
+      <audio ref={audioRef} src={src} preload="auto" />
 
       {/* Top section with cover + info */}
       {(title || coverImage) && (
