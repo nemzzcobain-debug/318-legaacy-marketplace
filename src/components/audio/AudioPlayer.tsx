@@ -195,22 +195,41 @@ export default function AudioPlayer({
     if (!audio) return
 
     if (isPlaying) {
-      const playPromise = audio.play()
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn('Audio play failed:', err.message)
-          // Reset play state if play fails
-          if (onPlayToggle) {
-            onPlayToggle()
-          } else {
+      // Si l'audio n'est pas encore pret, attendre le canplay avant de play()
+      // Evite les echecs silencieux qui fermaient l'AudioPlayer completement.
+      const tryPlay = () => {
+        const playPromise = audio.play()
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn('Audio play failed:', err.message, err.name)
+            // Ne PAS appeler onPlayToggle ici : cela demonte l'AudioPlayer
+            // avant meme que l'utilisateur puisse voir ce qui se passe.
+            // On laisse juste l'utilisateur recliquer sur play si besoin.
             setInternalPlaying(false)
-          }
-        })
+          })
+        }
+      }
+
+      if (audio.readyState >= 2) {
+        // HAVE_CURRENT_DATA ou mieux : on peut jouer
+        tryPlay()
+      } else {
+        // Pas encore pret : attendre l'event canplay
+        const onCanPlayOnce = () => {
+          audio.removeEventListener('canplay', onCanPlayOnce)
+          tryPlay()
+        }
+        audio.addEventListener('canplay', onCanPlayOnce)
+        // Force le chargement
+        if (audio.networkState === 3 || audio.networkState === 0) {
+          audio.load()
+        }
+        return () => audio.removeEventListener('canplay', onCanPlayOnce)
       }
     } else {
       audio.pause()
     }
-  }, [isPlaying, onPlayToggle])
+  }, [isPlaying])
 
   // Volume
   useEffect(() => {
