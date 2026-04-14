@@ -282,47 +282,45 @@ export default function AudioPlayer({
     }
   }, [onPlayToggle, src])
 
-  // Sync play state
+  // Sync play state. Se redeclenche quand isPlaying change OU quand la source
+  // effective change (p.ex. quand le fallback Web Audio bascule sur un blob
+  // reconstruit).
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
 
     if (isPlaying) {
-      // Si l'audio n'est pas encore pret, attendre le canplay avant de play()
-      // Evite les echecs silencieux qui fermaient l'AudioPlayer completement.
       const tryPlay = () => {
         const playPromise = audio.play()
         if (playPromise !== undefined) {
           playPromise.catch((err) => {
             console.warn('Audio play failed:', err.message, err.name)
-            // Ne PAS appeler onPlayToggle ici : cela demonte l'AudioPlayer
-            // avant meme que l'utilisateur puisse voir ce qui se passe.
-            // On laisse juste l'utilisateur recliquer sur play si besoin.
             setInternalPlaying(false)
           })
         }
       }
 
-      if (audio.readyState >= 2) {
-        // HAVE_CURRENT_DATA ou mieux : on peut jouer
+      if (audio.readyState >= 3) {
+        // HAVE_FUTURE_DATA : on peut jouer maintenant
         tryPlay()
       } else {
-        // Pas encore pret : attendre l'event canplay
+        // Attendre que ca soit pret
         const onCanPlayOnce = () => {
           audio.removeEventListener('canplay', onCanPlayOnce)
+          audio.removeEventListener('loadeddata', onCanPlayOnce)
           tryPlay()
         }
         audio.addEventListener('canplay', onCanPlayOnce)
-        // Force le chargement
-        if (audio.networkState === 3 || audio.networkState === 0) {
-          audio.load()
+        audio.addEventListener('loadeddata', onCanPlayOnce)
+        return () => {
+          audio.removeEventListener('canplay', onCanPlayOnce)
+          audio.removeEventListener('loadeddata', onCanPlayOnce)
         }
-        return () => audio.removeEventListener('canplay', onCanPlayOnce)
       }
     } else {
       audio.pause()
     }
-  }, [isPlaying])
+  }, [isPlaying, effectiveSrc])
 
   // Volume
   useEffect(() => {
