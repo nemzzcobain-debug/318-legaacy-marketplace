@@ -39,6 +39,11 @@ export default function AudioPlayer({
 
   const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalPlaying
 
+  // crossOrigin ne doit PAS etre defini pour les blob: ou data: URLs
+  // (fichiers locaux utilises pour l'apercu avant upload) car cela cause
+  // l'evenement "error" dans Chrome sur macOS et bloque la lecture.
+  const isLocalUrl = src?.startsWith('blob:') || src?.startsWith('data:')
+
   // Generate waveform from audio - with size limit to prevent memory issues
   const generateWaveform = useCallback(async () => {
     if (!src) return
@@ -145,6 +150,15 @@ export default function AudioPlayer({
       }
     }
     const onError = () => {
+      // Pour les blob: URLs (apercu avant upload), on retry une fois avant d'abandonner
+      // car Chrome sur macOS declenche parfois un "error" transitoire a l'init.
+      if (src?.startsWith('blob:') && audio.dataset.retried !== 'true') {
+        audio.dataset.retried = 'true'
+        setTimeout(() => {
+          audio.load()
+        }, 100)
+        return
+      }
       setAudioError(true)
       setLoading(false)
       console.error('Audio loading error for:', src)
@@ -238,7 +252,12 @@ export default function AudioPlayer({
   if (compact) {
     return (
       <div className="w-full">
-        <audio ref={audioRef} src={src} preload="auto" crossOrigin="anonymous" />
+        <audio
+          ref={audioRef}
+          src={src}
+          preload="auto"
+          {...(isLocalUrl ? {} : { crossOrigin: 'anonymous' as const })}
+        />
         <div className="flex items-center gap-2">
           <button
             onClick={togglePlay}
@@ -281,7 +300,12 @@ export default function AudioPlayer({
   // Full mode
   return (
     <div className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-2xl overflow-hidden">
-      <audio ref={audioRef} src={src} preload="auto" crossOrigin="anonymous" />
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="auto"
+        {...(isLocalUrl ? {} : { crossOrigin: 'anonymous' as const })}
+      />
 
       {/* Top section with cover + info */}
       {(title || coverImage) && (
