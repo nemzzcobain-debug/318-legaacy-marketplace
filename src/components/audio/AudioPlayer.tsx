@@ -4,52 +4,6 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Play, Pause, Volume2, VolumeX, SkipBack, Loader2 } from 'lucide-react'
 
-// Recode an AudioBuffer into a clean PCM16 WAV blob. Utilise comme fallback
-// quand le fichier WAV original a un header non strictement conforme et que
-// l'element <audio> natif le refuse (MediaError code 4). Web Audio API est
-// tolerant au decodage ; on utilise ce decodage pour reconstruire un WAV
-// que tous les navigateurs savent lire.
-function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
-  const numChannels = buffer.numberOfChannels
-  const sampleRate = buffer.sampleRate
-  const bitDepth = 16
-  const bytesPerSample = bitDepth / 8
-  const blockAlign = numChannels * bytesPerSample
-  const byteRate = sampleRate * blockAlign
-  const dataSize = buffer.length * blockAlign
-  const bufferSize = 44 + dataSize
-  const ab = new ArrayBuffer(bufferSize)
-  const view = new DataView(ab)
-  const writeStr = (offset: number, s: string) => {
-    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i))
-  }
-  writeStr(0, 'RIFF')
-  view.setUint32(4, bufferSize - 8, true)
-  writeStr(8, 'WAVE')
-  writeStr(12, 'fmt ')
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true) // PCM
-  view.setUint16(22, numChannels, true)
-  view.setUint32(24, sampleRate, true)
-  view.setUint32(28, byteRate, true)
-  view.setUint16(32, blockAlign, true)
-  view.setUint16(34, bitDepth, true)
-  writeStr(36, 'data')
-  view.setUint32(40, dataSize, true)
-  const channels: Float32Array[] = []
-  for (let c = 0; c < numChannels; c++) channels.push(buffer.getChannelData(c))
-  let offset = 44
-  for (let i = 0; i < buffer.length; i++) {
-    for (let c = 0; c < numChannels; c++) {
-      let s = Math.max(-1, Math.min(1, channels[c][i]))
-      const intSample = s < 0 ? s * 0x8000 : s * 0x7fff
-      view.setInt16(offset, intSample, true)
-      offset += 2
-    }
-  }
-  return new Blob([ab], { type: 'audio/wav' })
-}
-
 interface AudioPlayerProps {
   src: string
   title?: string
@@ -61,6 +15,13 @@ interface AudioPlayerProps {
   accentColor?: string
 }
 
+/**
+ * AudioPlayer — utilise Web Audio API (AudioContext + AudioBufferSourceNode)
+ * pour la lecture audio, plutot que l'element <audio>. Web Audio API est
+ * plus tolerant aux fichiers WAV avec headers non strictement conformes
+ * (qui sont typiques des exports DAW) et offre un controle plus fiable
+ * de la lecture.
+ */
 export default function AudioPlayer({
   src,
   title,
@@ -71,8 +32,19 @@ export default function AudioPlayer({
   compact = false,
   accentColor = '#e11d48',
 }: AudioPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Web Audio refs — pas re-crees a chaque render
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const audioBufferRef = useRef<AudioBuffer | null>(null)
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null)
+  const gainNodeRef = useRef<GainNode | null>(null)
+  // Timestamp (dans le repere AudioContext) ou la lecture a demarre, pour
+  // calculer le currentTime en temps reel.
+  const startedAtCtxTimeRef = useRef<number>(0)
+  // Offset dans le buffer ou reprendre la lecture apres un pause.
+  const offsetRef = useRef<number>(0)
+  const progressIntervalRef = useRef<number | null>(null)
 
   const [internalPlaying, setInternalPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -82,290 +54,235 @@ export default function AudioPlayer({
   const [waveformData, setWaveformData] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
   const [audioError, setAudioError] = useState(false)
-  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null)
-  // Refs pour eviter les stale closures dans les event listeners
-  const fallbackTriedRef = useRef(false)
-  const fallbackInProgressRef = useRef(false)
 
   const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalPlaying
 
-  // La vraie source utilisee par l'<audio> : si le fallback a ete genere,
-  // on utilise le blob reconstruit a la place de l'URL originale.
-  const effectiveSrc = fallbackSrc || src
-
-  // Quand fallbackSrc est cree, force le rechargement de l'audio element
-  // et nettoie le blob URL a l'unmount pour eviter les fuites memoire.
-  useEffect(() => {
-    if (fallbackSrc && audioRef.current) {
-      audioRef.current.load()
+  // Cree (ou reutilise) le singleton AudioContext. iOS/Safari refusent de
+  // creer ou resume l'AudioContext hors d'un user gesture — on le cree donc
+  // de facon lazy au premier play().
+  const getContext = useCallback(() => {
+    if (!audioContextRef.current) {
+      const AC = window.AudioContext || (window as any).webkitAudioContext
+      audioContextRef.current = new AC()
+      gainNodeRef.current = audioContextRef.current.createGain()
+      gainNodeRef.current.gain.value = volume
+      gainNodeRef.current.connect(audioContextRef.current.destination)
     }
-    return () => {
-      if (fallbackSrc) URL.revokeObjectURL(fallbackSrc)
-    }
-  }, [fallbackSrc])
+    return audioContextRef.current
+  }, [volume])
 
-  // Reset le fallback quand src change (nouveau beat)
+  // Fetch + decode l'audio une fois par src.
   useEffect(() => {
-    setFallbackSrc(null)
-    fallbackTriedRef.current = false
-    fallbackInProgressRef.current = false
-  }, [src])
-
-  // crossOrigin ne doit PAS etre defini pour les blob: ou data: URLs
-  // (fichiers locaux utilises pour l'apercu avant upload) car cela cause
-  // l'evenement "error" dans Chrome sur macOS et bloque la lecture.
-  const isLocalUrl = src?.startsWith('blob:') || src?.startsWith('data:')
-
-  // Generate waveform from audio - with size limit to prevent memory issues
-  const generateWaveform = useCallback(async () => {
     if (!src) return
-    try {
-      const response = await fetch(src)
-      const arrayBuffer = await response.arrayBuffer()
+    let cancelled = false
+    setLoading(true)
+    setAudioError(false)
+    setCurrentTime(0)
+    setDuration(0)
+    offsetRef.current = 0
 
-      // Skip decode for files > 20MB to avoid memory/crash issues
-      if (arrayBuffer.byteLength > 20 * 1024 * 1024) {
+    ;(async () => {
+      try {
+        const res = await fetch(src)
+        if (!res.ok) throw new Error('fetch ' + res.status)
+        const buf = await res.arrayBuffer()
+        if (cancelled) return
+        const ctx = getContext()
+        const decoded = await ctx.decodeAudioData(buf)
+        if (cancelled) return
+        audioBufferRef.current = decoded
+        setDuration(decoded.duration)
+        setLoading(false)
+        // Calcule la waveform depuis les donnees decodees (plus efficace
+        // que de refetch).
+        const rawData = decoded.getChannelData(0)
         const samples = compact ? 60 : 100
-        const fake = Array.from(
-          { length: samples },
-          (_, i) => 0.3 + 0.5 * Math.abs(Math.sin(i * 0.3)) + Math.random() * 0.2
-        )
-        setWaveformData(fake)
-        return
-      }
-
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-      const rawData = audioBuffer.getChannelData(0)
-
-      const samples = compact ? 60 : 100
-      const blockSize = Math.floor(rawData.length / samples)
-      const filteredData: number[] = []
-
-      for (let i = 0; i < samples; i++) {
-        let sum = 0
-        for (let j = 0; j < blockSize; j++) {
-          sum += Math.abs(rawData[i * blockSize + j])
+        const blockSize = Math.floor(rawData.length / samples)
+        const filteredData: number[] = []
+        for (let i = 0; i < samples; i++) {
+          let sum = 0
+          for (let j = 0; j < blockSize; j++) sum += Math.abs(rawData[i * blockSize + j])
+          filteredData.push(sum / blockSize)
         }
-        filteredData.push(sum / blockSize)
+        const maxVal = Math.max(...filteredData)
+        const normalized = maxVal > 0 ? filteredData.map((d) => d / maxVal) : filteredData
+        if (!cancelled) setWaveformData(normalized)
+      } catch (e) {
+        console.error('Audio decode failed:', e)
+        if (!cancelled) {
+          setAudioError(true)
+          setLoading(false)
+          const samples = compact ? 60 : 100
+          setWaveformData(Array.from({ length: samples }, () => 0.2 + Math.random() * 0.8))
+        }
       }
+    })()
 
-      const maxVal = Math.max(...filteredData)
-      const normalized = maxVal > 0 ? filteredData.map((d) => d / maxVal) : filteredData
-      setWaveformData(normalized)
-      audioContext.close()
-    } catch (err) {
-      console.warn('Waveform generation failed, using fallback:', err)
-      const samples = compact ? 60 : 100
-      const fake = Array.from({ length: samples }, () => 0.2 + Math.random() * 0.8)
-      setWaveformData(fake)
+    return () => {
+      cancelled = true
     }
-  }, [src, compact])
+  }, [src, compact, getContext])
 
+  // Cleanup final a l'unmount : stop, disconnect, close context.
   useEffect(() => {
-    generateWaveform()
-  }, [generateWaveform])
+    return () => {
+      if (progressIntervalRef.current) {
+        window.clearInterval(progressIntervalRef.current)
+        progressIntervalRef.current = null
+      }
+      if (sourceNodeRef.current) {
+        try {
+          sourceNodeRef.current.stop()
+        } catch {}
+        sourceNodeRef.current.disconnect()
+        sourceNodeRef.current = null
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {})
+        audioContextRef.current = null
+      }
+    }
+  }, [])
 
   // Draw waveform
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || waveformData.length === 0) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
+    const ctx2d = canvas.getContext('2d')
+    if (!ctx2d) return
     const dpr = window.devicePixelRatio || 1
     const rect = canvas.getBoundingClientRect()
     canvas.width = rect.width * dpr
     canvas.height = rect.height * dpr
-    ctx.scale(dpr, dpr)
-
+    ctx2d.scale(dpr, dpr)
     const width = rect.width
     const height = rect.height
     const barWidth = width / waveformData.length
     const gap = 1
     const progress = duration > 0 ? currentTime / duration : 0
-
-    ctx.clearRect(0, 0, width, height)
-
+    ctx2d.clearRect(0, 0, width, height)
     waveformData.forEach((val, i) => {
       const barHeight = val * height * 0.85
       const x = i * barWidth
       const y = (height - barHeight) / 2
       const isPlayed = i / waveformData.length <= progress
-
-      ctx.fillStyle = isPlayed ? accentColor : 'rgba(255, 255, 255, 0.15)'
-      ctx.beginPath()
-      ctx.roundRect(x + gap / 2, y, barWidth - gap, barHeight, 1)
-      ctx.fill()
+      ctx2d.fillStyle = isPlayed ? accentColor : 'rgba(255, 255, 255, 0.15)'
+      ctx2d.beginPath()
+      ctx2d.roundRect(x + gap / 2, y, barWidth - gap, barHeight, 1)
+      ctx2d.fill()
     })
   }, [waveformData, currentTime, duration, accentColor])
 
-  // Audio events
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
+  const stopSource = useCallback(() => {
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.onended = null
+        sourceNodeRef.current.stop()
+      } catch {}
+      sourceNodeRef.current.disconnect()
+      sourceNodeRef.current = null
+    }
+    if (progressIntervalRef.current) {
+      window.clearInterval(progressIntervalRef.current)
+      progressIntervalRef.current = null
+    }
+  }, [])
 
-    const onLoadedMetadata = () => {
-      setDuration(audio.duration)
-    }
-    const onCanPlay = () => {
-      setLoading(false)
-      setAudioError(false)
-    }
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
-    const onEnded = () => {
-      if (onPlayToggle) {
-        onPlayToggle()
-      } else {
-        setInternalPlaying(false)
-      }
-    }
-    const onError = () => {
-      // Pour les blob: URLs (apercu avant upload), Chrome sur macOS declenche
-      // parfois un event "error" transitoire. Retry silencieusement.
-      if (src?.startsWith('blob:') || src?.startsWith('data:')) {
-        setLoading(false)
-        if (audio.dataset.retried !== 'true') {
-          audio.dataset.retried = 'true'
-          setTimeout(() => audio.load(), 200)
+  const startFrom = useCallback(
+    (offsetSec: number) => {
+      const buffer = audioBufferRef.current
+      const ctx = audioContextRef.current
+      const gain = gainNodeRef.current
+      if (!buffer || !ctx || !gain) return
+
+      // AudioContext peut etre suspendu initialement sur certains navigateurs.
+      // On le reprend apres le user gesture (le click du user).
+      if (ctx.state === 'suspended') ctx.resume()
+
+      const source = ctx.createBufferSource()
+      source.buffer = buffer
+      source.connect(gain)
+
+      // Callback quand la lecture est finie naturellement
+      source.onended = () => {
+        if (sourceNodeRef.current === source) {
+          stopSource()
+          offsetRef.current = 0
+          setCurrentTime(0)
+          if (onPlayToggle) onPlayToggle()
+          else setInternalPlaying(false)
         }
-        return
       }
-      // Pour les URLs distantes (Supabase), tenter UNE SEULE FOIS le fallback
-      // Web Audio API qui re-decode et reconstruit un WAV propre en blob.
-      // Utilise des refs pour eviter les stale closures qui causaient une
-      // boucle infinie de tentatives.
-      if (
-        !fallbackTriedRef.current &&
-        !fallbackInProgressRef.current &&
-        src &&
-        !src.startsWith('blob:')
-      ) {
-        fallbackTriedRef.current = true
-        fallbackInProgressRef.current = true
-        console.warn('Audio error, tentative fallback Web Audio pour:', src)
-        ;(async () => {
-          try {
-            const res = await fetch(src)
-            if (!res.ok) throw new Error('fetch ' + res.status)
-            const buf = await res.arrayBuffer()
-            const ctx = new (window.AudioContext ||
-              (window as any).webkitAudioContext)()
-            const decoded = await ctx.decodeAudioData(buf)
-            const wavBlob = audioBufferToWavBlob(decoded)
-            ctx.close()
-            const blobUrl = URL.createObjectURL(wavBlob)
-            console.log('Fallback OK, blob URL prete, taille:', wavBlob.size)
-            setFallbackSrc(blobUrl)
-            setAudioError(false)
-            setLoading(false)
-          } catch (e) {
-            console.error('Fallback Web Audio a echoue:', e)
-            setAudioError(true)
-            setLoading(false)
-          } finally {
-            fallbackInProgressRef.current = false
-          }
-        })()
-        return
-      }
-      setAudioError(true)
-      setLoading(false)
-      console.error('Audio loading error for:', src)
-    }
-    const onWaiting = () => setLoading(true)
-    const onPlaying = () => setLoading(false)
 
-    audio.addEventListener('loadedmetadata', onLoadedMetadata)
-    audio.addEventListener('canplay', onCanPlay)
-    audio.addEventListener('timeupdate', onTimeUpdate)
-    audio.addEventListener('ended', onEnded)
-    audio.addEventListener('error', onError)
-    audio.addEventListener('waiting', onWaiting)
-    audio.addEventListener('playing', onPlaying)
+      source.start(0, offsetSec)
+      sourceNodeRef.current = source
+      startedAtCtxTimeRef.current = ctx.currentTime - offsetSec
+      offsetRef.current = offsetSec
 
-    return () => {
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
-      audio.removeEventListener('canplay', onCanPlay)
-      audio.removeEventListener('timeupdate', onTimeUpdate)
-      audio.removeEventListener('ended', onEnded)
-      audio.removeEventListener('error', onError)
-      audio.removeEventListener('waiting', onWaiting)
-      audio.removeEventListener('playing', onPlaying)
-    }
-  }, [onPlayToggle, src, effectiveSrc])
+      // Track progress every 100ms
+      if (progressIntervalRef.current) window.clearInterval(progressIntervalRef.current)
+      progressIntervalRef.current = window.setInterval(() => {
+        const c = audioContextRef.current
+        if (!c) return
+        const t = c.currentTime - startedAtCtxTimeRef.current
+        setCurrentTime(Math.min(t, buffer.duration))
+      }, 100)
+    },
+    [stopSource, onPlayToggle]
+  )
 
-  // Sync play state. Se redeclenche quand isPlaying change OU quand la source
-  // effective change (p.ex. quand le fallback Web Audio bascule sur un blob
-  // reconstruit).
+  // Sync avec l'etat isPlaying externe
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-
+    if (audioError || !audioBufferRef.current) return
     if (isPlaying) {
-      const tryPlay = () => {
-        const playPromise = audio.play()
-        if (playPromise !== undefined) {
-          playPromise.catch((err) => {
-            console.warn('Audio play failed:', err.message, err.name)
-            setInternalPlaying(false)
-          })
-        }
-      }
-
-      if (audio.readyState >= 3) {
-        // HAVE_FUTURE_DATA : on peut jouer maintenant
-        tryPlay()
-      } else {
-        // Attendre que ca soit pret
-        const onCanPlayOnce = () => {
-          audio.removeEventListener('canplay', onCanPlayOnce)
-          audio.removeEventListener('loadeddata', onCanPlayOnce)
-          tryPlay()
-        }
-        audio.addEventListener('canplay', onCanPlayOnce)
-        audio.addEventListener('loadeddata', onCanPlayOnce)
-        return () => {
-          audio.removeEventListener('canplay', onCanPlayOnce)
-          audio.removeEventListener('loadeddata', onCanPlayOnce)
-        }
-      }
+      // Demarrer depuis l'offset sauvegarde
+      startFrom(offsetRef.current)
     } else {
-      audio.pause()
+      // Pause : sauvegarder l'offset courant et stopper
+      const ctx = audioContextRef.current
+      if (ctx && sourceNodeRef.current) {
+        offsetRef.current = ctx.currentTime - startedAtCtxTimeRef.current
+      }
+      stopSource()
     }
-  }, [isPlaying, effectiveSrc])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, audioBufferRef.current, audioError])
 
   // Volume
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = muted ? 0 : volume
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = muted ? 0 : volume
     }
   }, [volume, muted])
 
   const togglePlay = () => {
-    if (audioError) return
-    if (onPlayToggle) {
-      onPlayToggle()
-    } else {
-      setInternalPlaying(!internalPlaying)
-    }
+    if (audioError || !audioBufferRef.current) return
+    if (onPlayToggle) onPlayToggle()
+    else setInternalPlaying(!internalPlaying)
   }
 
   const handleWaveformClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
-    const audio = audioRef.current
-    if (!canvas || !audio || !duration) return
-
+    const buffer = audioBufferRef.current
+    if (!canvas || !buffer) return
     const rect = canvas.getBoundingClientRect()
     const x = e.clientX - rect.left
     const progress = x / rect.width
-    audio.currentTime = progress * duration
+    const newOffset = progress * buffer.duration
+    offsetRef.current = newOffset
+    setCurrentTime(newOffset)
+    if (isPlaying) {
+      stopSource()
+      startFrom(newOffset)
+    }
   }
 
   const restart = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0
+    offsetRef.current = 0
+    setCurrentTime(0)
+    if (isPlaying) {
+      stopSource()
+      startFrom(0)
     }
   }
 
@@ -380,12 +297,6 @@ export default function AudioPlayer({
   if (compact) {
     return (
       <div className="w-full">
-        <audio
-          key={effectiveSrc}
-          ref={audioRef}
-          src={effectiveSrc}
-          preload="auto"
-        />
         <div className="flex items-center gap-2">
           <button
             onClick={togglePlay}
@@ -418,7 +329,7 @@ export default function AudioPlayer({
             {audioError ? 'ERR' : formatTime(duration - currentTime)}
           </span>
         </div>
-        {audioError && !isLocalUrl && (
+        {audioError && (
           <p className="text-[10px] text-red-400 mt-1">Impossible de lire ce fichier audio</p>
         )}
       </div>
@@ -428,14 +339,6 @@ export default function AudioPlayer({
   // Full mode
   return (
     <div className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-2xl overflow-hidden">
-      <audio
-          key={effectiveSrc}
-          ref={audioRef}
-          src={effectiveSrc}
-          preload="auto"
-        />
-
-      {/* Top section with cover + info */}
       {(title || coverImage) && (
         <div className="flex items-center gap-3 p-4 pb-2">
           {coverImage && (
@@ -456,7 +359,6 @@ export default function AudioPlayer({
         </div>
       )}
 
-      {/* Waveform */}
       <div className="px-4 py-2">
         <canvas
           ref={canvasRef}
@@ -465,7 +367,6 @@ export default function AudioPlayer({
         />
       </div>
 
-      {/* Controls */}
       <div className="flex items-center justify-between px-4 pb-4">
         <div className="flex items-center gap-2">
           <button
@@ -493,12 +394,10 @@ export default function AudioPlayer({
           </button>
         </div>
 
-        {/* Time */}
         <div className="text-xs text-gray-400">
           {formatTime(currentTime)} / {formatTime(duration)}
         </div>
 
-        {/* Volume */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setMuted(!muted)}
@@ -522,7 +421,7 @@ export default function AudioPlayer({
           />
         </div>
       </div>
-      {audioError && !isLocalUrl && (
+      {audioError && (
         <p className="text-xs text-red-400 text-center pb-3">Impossible de lire ce fichier audio</p>
       )}
     </div>
