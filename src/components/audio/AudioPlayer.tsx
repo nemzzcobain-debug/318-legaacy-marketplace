@@ -150,13 +150,17 @@ export default function AudioPlayer({
       }
     }
     const onError = () => {
-      // Pour les blob: URLs (apercu avant upload), on retry une fois avant d'abandonner
-      // car Chrome sur macOS declenche parfois un "error" transitoire a l'init.
-      if (src?.startsWith('blob:') && audio.dataset.retried !== 'true') {
-        audio.dataset.retried = 'true'
-        setTimeout(() => {
-          audio.load()
-        }, 100)
+      // Pour les blob: URLs (apercu avant upload), Chrome sur macOS declenche
+      // parfois un event "error" transitoire (ex: lecture concurrente du File
+      // pendant l'upload vers Supabase). On ignore silencieusement ces erreurs
+      // — l'apercu n'est pas critique, et le message rouge inquietait le user.
+      if (src?.startsWith('blob:') || src?.startsWith('data:')) {
+        setLoading(false)
+        // Retry une fois au cas ou c'est transitoire
+        if (audio.dataset.retried !== 'true') {
+          audio.dataset.retried = 'true'
+          setTimeout(() => audio.load(), 200)
+        }
         return
       }
       setAudioError(true)
@@ -290,7 +294,7 @@ export default function AudioPlayer({
             {audioError ? 'ERR' : formatTime(duration - currentTime)}
           </span>
         </div>
-        {audioError && (
+        {audioError && !isLocalUrl && (
           <p className="text-[10px] text-red-400 mt-1">Impossible de lire ce fichier audio</p>
         )}
       </div>
@@ -394,7 +398,7 @@ export default function AudioPlayer({
           />
         </div>
       </div>
-      {audioError && (
+      {audioError && !isLocalUrl && (
         <p className="text-xs text-red-400 text-center pb-3">Impossible de lire ce fichier audio</p>
       )}
     </div>
