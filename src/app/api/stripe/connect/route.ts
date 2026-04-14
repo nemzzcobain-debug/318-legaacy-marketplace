@@ -22,23 +22,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Acces reserve aux producteurs' }, { status: 403 })
     }
 
-    // Si le producteur a deja un compte Stripe, on cree juste un nouveau lien
+    // Si le producteur a deja un compte Stripe, on essaye de reutiliser
     if (user.stripeAccountId) {
-      // Verifier si le compte est deja actif
-      const isReady = await isConnectAccountReady(user.stripeAccountId)
-      if (isReady) {
+      try {
+        const isReady = await isConnectAccountReady(user.stripeAccountId)
+        if (isReady) {
+          return NextResponse.json({
+            status: 'active',
+            message: 'Votre compte Stripe est deja actif',
+          })
+        }
+        // Sinon regenerer un lien d'onboarding
+        const accountLink = await createOnboardingLink(user.stripeAccountId)
         return NextResponse.json({
-          status: 'active',
-          message: 'Votre compte Stripe est deja actif',
+          status: 'pending',
+          onboardingUrl: accountLink.url,
         })
+      } catch (err: any) {
+        // Le compte Stripe sauvegarde n'existe plus / a ete supprime / appartient
+        // a un autre environnement (test vs live). On nettoie et on recree.
+        const msg = err?.message || ''
+        const code = err?.code || err?.raw?.code || ''
+        const isNotFound =
+          code === 'resource_missing' ||
+          msg.includes('No such account') ||
+          msg.includes('does not have access')
+        if (isNotFound) {
+          console.warn(
+            'Compte Stripe sauvegarde invalide (' + msg + '), recreation pour user',
+            user.id
+          )
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { stripeAccountId: null },
+          })
+          // Continue vers la creation d'un nouveau compte ci-dessous
+        } else {
+          // Erreur Stripe differente : propager
+          throw err
+        }
       }
-
-      // Sinon regenerer un lien d'onboarding
-      const accountLink = await createOnboardingLink(user.stripeAccountId)
-      return NextResponse.json({
-        status: 'pending',
-        onboardingUrl: accountLink.url,
-      })
     }
 
     // Creer un nouveau compte Connect
