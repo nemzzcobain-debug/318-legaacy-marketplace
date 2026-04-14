@@ -294,7 +294,7 @@ export default function AudioPlayer({
       audio.removeEventListener('waiting', onWaiting)
       audio.removeEventListener('playing', onPlaying)
     }
-  }, [onPlayToggle, src])
+  }, [onPlayToggle, src, effectiveSrc])
 
   // Sync play state. Se redeclenche quand isPlaying change OU quand la source
   // effective change (p.ex. quand le fallback Web Audio bascule sur un blob
@@ -380,7 +380,12 @@ export default function AudioPlayer({
   if (compact) {
     return (
       <div className="w-full">
-        <audio ref={audioRef} src={effectiveSrc} preload="auto" />
+        <audio
+          key={effectiveSrc}
+          ref={audioRef}
+          src={effectiveSrc}
+          preload="auto"
+        />
         <div className="flex items-center gap-2">
           <button
             onClick={togglePlay}
@@ -423,7 +428,12 @@ export default function AudioPlayer({
   // Full mode
   return (
     <div className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-2xl overflow-hidden">
-      <audio ref={audioRef} src={effectiveSrc} preload="auto" />
+      <audio
+          key={effectiveSrc}
+          ref={audioRef}
+          src={effectiveSrc}
+          preload="auto"
+        />
 
       {/* Top section with cover + info */}
       {(title || coverImage) && (
