@@ -4,6 +4,52 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Play, Pause, Volume2, VolumeX, SkipBack, Loader2 } from 'lucide-react'
 
+// Recode an AudioBuffer into a clean PCM16 WAV blob. Utilise comme fallback
+// quand le fichier WAV original a un header non strictement conforme et que
+// l'element <audio> natif le refuse (MediaError code 4). Web Audio API est
+// tolerant au decodage ; on utilise ce decodage pour reconstruire un WAV
+// que tous les navigateurs savent lire.
+function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
+  const numChannels = buffer.numberOfChannels
+  const sampleRate = buffer.sampleRate
+  const bitDepth = 16
+  const bytesPerSample = bitDepth / 8
+  const blockAlign = numChannels * bytesPerSample
+  const byteRate = sampleRate * blockAlign
+  const dataSize = buffer.length * blockAlign
+  const bufferSize = 44 + dataSize
+  const ab = new ArrayBuffer(bufferSize)
+  const view = new DataView(ab)
+  const writeStr = (offset: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i))
+  }
+  writeStr(0, 'RIFF')
+  view.setUint32(4, bufferSize - 8, true)
+  writeStr(8, 'WAVE')
+  writeStr(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true) // PCM
+  view.setUint16(22, numChannels, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, byteRate, true)
+  view.setUint16(32, blockAlign, true)
+  view.setUint16(34, bitDepth, true)
+  writeStr(36, 'data')
+  view.setUint32(40, dataSize, true)
+  const channels: Float32Array[] = []
+  for (let c = 0; c < numChannels; c++) channels.push(buffer.getChannelData(c))
+  let offset = 44
+  for (let i = 0; i < buffer.length; i++) {
+    for (let c = 0; c < numChannels; c++) {
+      let s = Math.max(-1, Math.min(1, channels[c][i]))
+      const intSample = s < 0 ? s * 0x8000 : s * 0x7fff
+      view.setInt16(offset, intSample, true)
+      offset += 2
+    }
+  }
+  return new Blob([ab], { type: 'audio/wav' })
+}
+
 interface AudioPlayerProps {
   src: string
   title?: string
@@ -36,8 +82,31 @@ export default function AudioPlayer({
   const [waveformData, setWaveformData] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
   const [audioError, setAudioError] = useState(false)
+  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null)
+  const [fallbackTried, setFallbackTried] = useState(false)
 
   const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalPlaying
+
+  // La vraie source utilisee par l'<audio> : si le fallback a ete genere,
+  // on utilise le blob reconstruit a la place de l'URL originale.
+  const effectiveSrc = fallbackSrc || src
+
+  // Quand fallbackSrc est cree, force le rechargement de l'audio element
+  // et nettoie le blob URL a l'unmount pour eviter les fuites memoire.
+  useEffect(() => {
+    if (fallbackSrc && audioRef.current) {
+      audioRef.current.load()
+    }
+    return () => {
+      if (fallbackSrc) URL.revokeObjectURL(fallbackSrc)
+    }
+  }, [fallbackSrc])
+
+  // Reset le fallback quand src change (nouveau beat)
+  useEffect(() => {
+    setFallbackSrc(null)
+    setFallbackTried(false)
+  }, [src])
 
   // crossOrigin ne doit PAS etre defini pour les blob: ou data: URLs
   // (fichiers locaux utilises pour l'apercu avant upload) car cela cause
@@ -151,16 +220,40 @@ export default function AudioPlayer({
     }
     const onError = () => {
       // Pour les blob: URLs (apercu avant upload), Chrome sur macOS declenche
-      // parfois un event "error" transitoire (ex: lecture concurrente du File
-      // pendant l'upload vers Supabase). On ignore silencieusement ces erreurs
-      // — l'apercu n'est pas critique, et le message rouge inquietait le user.
+      // parfois un event "error" transitoire. Retry silencieusement.
       if (src?.startsWith('blob:') || src?.startsWith('data:')) {
         setLoading(false)
-        // Retry une fois au cas ou c'est transitoire
         if (audio.dataset.retried !== 'true') {
           audio.dataset.retried = 'true'
           setTimeout(() => audio.load(), 200)
         }
+        return
+      }
+      // Pour les URLs distantes (Supabase), tenter le fallback Web Audio API
+      // qui re-decode le fichier et reconstruit un WAV propre en blob.
+      if (!fallbackTried && src && !fallbackSrc) {
+        setFallbackTried(true)
+        console.warn('Audio error, tentative fallback Web Audio pour:', src)
+        ;(async () => {
+          try {
+            const res = await fetch(src)
+            if (!res.ok) throw new Error('fetch ' + res.status)
+            const buf = await res.arrayBuffer()
+            const ctx = new (window.AudioContext ||
+              (window as any).webkitAudioContext)()
+            const decoded = await ctx.decodeAudioData(buf)
+            const wavBlob = audioBufferToWavBlob(decoded)
+            ctx.close()
+            const blobUrl = URL.createObjectURL(wavBlob)
+            setFallbackSrc(blobUrl)
+            setAudioError(false)
+            setLoading(false)
+          } catch (e) {
+            console.error('Fallback Web Audio a echoue:', e)
+            setAudioError(true)
+            setLoading(false)
+          }
+        })()
         return
       }
       setAudioError(true)
@@ -275,7 +368,7 @@ export default function AudioPlayer({
   if (compact) {
     return (
       <div className="w-full">
-        <audio ref={audioRef} src={src} preload="auto" />
+        <audio ref={audioRef} src={effectiveSrc} preload="auto" />
         <div className="flex items-center gap-2">
           <button
             onClick={togglePlay}
@@ -318,7 +411,7 @@ export default function AudioPlayer({
   // Full mode
   return (
     <div className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-2xl overflow-hidden">
-      <audio ref={audioRef} src={src} preload="auto" />
+      <audio ref={audioRef} src={effectiveSrc} preload="auto" />
 
       {/* Top section with cover + info */}
       {(title || coverImage) && (
