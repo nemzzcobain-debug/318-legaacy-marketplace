@@ -83,7 +83,9 @@ export default function AudioPlayer({
   const [loading, setLoading] = useState(true)
   const [audioError, setAudioError] = useState(false)
   const [fallbackSrc, setFallbackSrc] = useState<string | null>(null)
-  const [fallbackTried, setFallbackTried] = useState(false)
+  // Refs pour eviter les stale closures dans les event listeners
+  const fallbackTriedRef = useRef(false)
+  const fallbackInProgressRef = useRef(false)
 
   const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalPlaying
 
@@ -105,7 +107,8 @@ export default function AudioPlayer({
   // Reset le fallback quand src change (nouveau beat)
   useEffect(() => {
     setFallbackSrc(null)
-    setFallbackTried(false)
+    fallbackTriedRef.current = false
+    fallbackInProgressRef.current = false
   }, [src])
 
   // crossOrigin ne doit PAS etre defini pour les blob: ou data: URLs
@@ -229,10 +232,18 @@ export default function AudioPlayer({
         }
         return
       }
-      // Pour les URLs distantes (Supabase), tenter le fallback Web Audio API
-      // qui re-decode le fichier et reconstruit un WAV propre en blob.
-      if (!fallbackTried && src && !fallbackSrc) {
-        setFallbackTried(true)
+      // Pour les URLs distantes (Supabase), tenter UNE SEULE FOIS le fallback
+      // Web Audio API qui re-decode et reconstruit un WAV propre en blob.
+      // Utilise des refs pour eviter les stale closures qui causaient une
+      // boucle infinie de tentatives.
+      if (
+        !fallbackTriedRef.current &&
+        !fallbackInProgressRef.current &&
+        src &&
+        !src.startsWith('blob:')
+      ) {
+        fallbackTriedRef.current = true
+        fallbackInProgressRef.current = true
         console.warn('Audio error, tentative fallback Web Audio pour:', src)
         ;(async () => {
           try {
@@ -245,6 +256,7 @@ export default function AudioPlayer({
             const wavBlob = audioBufferToWavBlob(decoded)
             ctx.close()
             const blobUrl = URL.createObjectURL(wavBlob)
+            console.log('Fallback OK, blob URL prete, taille:', wavBlob.size)
             setFallbackSrc(blobUrl)
             setAudioError(false)
             setLoading(false)
@@ -252,6 +264,8 @@ export default function AudioPlayer({
             console.error('Fallback Web Audio a echoue:', e)
             setAudioError(true)
             setLoading(false)
+          } finally {
+            fallbackInProgressRef.current = false
           }
         })()
         return
