@@ -370,7 +370,7 @@ export default function UploadBeatPage() {
             <input
               ref={audioInputRef}
               type="file"
-              accept="audio/*"
+              accept="audio/mpeg,audio/wav,audio/mp3,audio/x-wav,audio/wave,audio/mp4,audio/aac,audio/ogg,audio/flac,.mp3,.wav,.m4a,.aac,.ogg,.flac"
               onChange={handleAudioSelect}
               className="hidden"
             />
