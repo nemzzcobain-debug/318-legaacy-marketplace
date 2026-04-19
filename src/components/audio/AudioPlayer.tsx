@@ -80,12 +80,25 @@ export default function AudioPlayer({
     setCurrentTime(0)
     setDuration(0)
     offsetRef.current = 0
-
     ;(async () => {
       try {
-        const res = await fetch(src)
-        if (!res.ok) throw new Error('fetch ' + res.status)
-        const buf = await res.arrayBuffer()
+        // Pour les blob: URLs, on utilise XMLHttpRequest comme fallback
+        // car fetch() peut etre bloque par CSP connect-src
+        let buf: ArrayBuffer
+        if (src.startsWith('blob:')) {
+          buf = await new Promise<ArrayBuffer>((resolve, reject) => {
+            const xhr = new XMLHttpRequest()
+            xhr.open('GET', src)
+            xhr.responseType = 'arraybuffer'
+            xhr.onload = () => resolve(xhr.response)
+            xhr.onerror = () => reject(new Error('XHR failed for blob'))
+            xhr.send()
+          })
+        } else {
+          const res = await fetch(src)
+          if (!res.ok) throw new Error('fetch ' + res.status)
+          buf = await res.arrayBuffer()
+        }
         if (cancelled) return
         const ctx = getContext()
         const decoded = await ctx.decodeAudioData(buf)
