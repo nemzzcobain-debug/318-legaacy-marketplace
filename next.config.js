@@ -20,8 +20,6 @@ const nextConfig = {
             },
           ],
     },
-    // Prisma: necessaire pour Vercel
-    output: 'standalone',
     // Disable ESLint and TypeScript checks during build to allow faster deployment
     eslint: { ignoreDuringBuilds: true },
     typescript: { ignoreBuildErrors: true },
