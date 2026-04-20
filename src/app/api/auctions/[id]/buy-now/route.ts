@@ -4,8 +4,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { createAuctionPaymentIntent, isConnectAccountReady } from '@/lib/stripe'
 
-// POST /api/auctions/[id]/buy-now — Achat immediat au buyNowPrice
+// POST /api/auctions/[id]/buy-now — Creer un PaymentIntent pour achat immediat
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
@@ -51,64 +52,53 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       )
     }
 
-    // Terminer l'enchere immediatement avec l'acheteur comme gagnant
-    const updatedAuction = await prisma.auction.update({
+    // Verifier que le producteur a un compte Stripe Connect actif
+    const producer = auction.beat.producer
+    if (!producer.stripeAccountId) {
+      return NextResponse.json(
+        { error: "Le producteur n'a pas encore configure son compte de paiement." },
+        { status: 400 }
+      )
+    }
+
+    const isProducerReady = await isConnectAccountReady(producer.stripeAccountId)
+    if (!isProducerReady) {
+      return NextResponse.json(
+        { error: 'Le compte de paiement du producteur est en cours de verification.' },
+        { status: 400 }
+      )
+    }
+
+    // Creer le PaymentIntent avec le buyNowPrice
+    const amount = auction.buyNowPrice
+    const { paymentIntent, clientSecret, commission, producerPayout } =
+      await createAuctionPaymentIntent({
+        amount,
+        producerStripeAccountId: producer.stripeAccountId,
+        auctionId: auction.id,
+        buyerEmail: session.user.email!,
+        beatTitle: auction.beat.title,
+        licenseType: 'EXCLUSIVE',
+      })
+
+    // Sauvegarder le PaymentIntent dans l'enchere (sans finaliser)
+    await prisma.auction.update({
       where: { id: auctionId },
       data: {
-        status: 'ENDED',
-        winnerId: userId,
-        finalPrice: auction.buyNowPrice,
-        winningLicense: 'EXCLUSIVE',
-        endTime: new Date(), // Termine maintenant
+        stripePaymentId: paymentIntent.id,
+        commissionAmount: commission,
+        producerPayout,
       },
     })
 
-    // Mettre a jour le statut du beat
-    await prisma.beat.update({
-      where: { id: auction.beatId },
-      data: { status: 'SOLD' },
-    })
-
-    // Notifier le producteur
-    try {
-      const buyerName = session.user.name || 'Un acheteur'
-      await prisma.notification.create({
-        data: {
-          type: 'AUCTION_WON',
-          title: `Achat immediat sur "${auction.beat.title}"`,
-          message: `${buyerName} a achete "${auction.beat.title}" en achat immediat pour ${auction.buyNowPrice} EUR`,
-          link: `/auction/${auctionId}`,
-          userId: auction.beat.producerId,
-        },
-      })
-
-      // Notifier les autres encherisseurs que l'enchere est terminee
-      const otherBidders = await prisma.bid.findMany({
-        where: {
-          auctionId,
-          userId: { not: userId },
-        },
-        select: { userId: true },
-        distinct: ['userId'],
-      })
-
-      if (otherBidders.length > 0) {
-        await prisma.notification.createMany({
-          data: otherBidders.map((b) => ({
-            type: 'AUCTION_ENDED',
-            title: `Enchere terminee — "${auction.beat.title}"`,
-            message: `L'enchere sur "${auction.beat.title}" s'est terminee par un achat immediat.`,
-            link: `/auction/${auctionId}`,
-            userId: b.userId,
-          })),
-        })
-      }
-    } catch {}
-
     return NextResponse.json({
-      success: true,
-      auction: updatedAuction,
-      message: `Achat immediat confirme pour ${auction.buyNowPrice} EUR`,
+      clientSecret,
+      paymentIntentId: paymentIntent.id,
+      amount,
+      commission,
+      producerPayout,
+      beatTitle: auction.beat.title,
+      licenseType: 'EXCLUSIVE',
     })
   } catch (error) {
     console.error('Erreur buy-now:', error)

@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useParams, useRouter } from 'next/navigation'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import Header from '@/components/layout/Header'
 import AudioPlayer from '@/components/audio/AudioPlayer'
 import CountdownTimer from '@/components/ui/CountdownTimer'
@@ -26,6 +28,8 @@ import {
   Download,
   FileText,
   ShoppingBag,
+  Loader2,
+  Lock,
 } from 'lucide-react'
 import Link from 'next/link'
 import ShareButton from '@/components/ui/ShareButton'
@@ -106,6 +110,81 @@ const LICENSE_INFO: Record<
   },
 }
 
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+
+// Mini formulaire de paiement Stripe pour l'achat immediat
+function BuyNowPaymentForm({
+  amount,
+  auctionId,
+  onSuccess,
+  onError,
+}: {
+  amount: number
+  auctionId: string
+  onSuccess: () => void
+  onError: (msg: string) => void
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [paying, setPaying] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!stripe || !elements) return
+
+    setPaying(true)
+    onError('')
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.href,
+      },
+      redirect: 'if_required',
+    })
+
+    if (error) {
+      onError(error.message || 'Erreur lors du paiement')
+      setPaying(false)
+    } else {
+      // Paiement reussi → finaliser l'enchere
+      try {
+        await fetch(`/api/auctions/${auctionId}/buy-now/confirm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      } catch {}
+      onSuccess()
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4">
+      <PaymentElement
+        options={{
+          layout: 'tabs',
+          defaultValues: { billingDetails: { address: { country: 'FR' } } },
+        }}
+      />
+      <button
+        type="submit"
+        disabled={!stripe || paying}
+        className="w-full mt-4 py-3.5 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 hover:scale-[1.02] bg-gradient-to-r from-amber-400 to-amber-500"
+      >
+        {paying ? (
+          <>
+            <Loader2 size={18} className="animate-spin" /> Traitement en cours...
+          </>
+        ) : (
+          <>
+            <Lock size={16} /> Payer {amount} EUR
+          </>
+        )}
+      </button>
+    </form>
+  )
+}
+
 export default function AuctionClient() {
   const { id } = useParams()
   const { data: session } = useSession()
@@ -120,6 +199,7 @@ export default function AuctionClient() {
   const [bidSuccess, setBidSuccess] = useState('')
   const [isPlaying, setIsPlaying] = useState(false)
   const [buyingNow, setBuyingNow] = useState(false)
+  const [buyNowClientSecret, setBuyNowClientSecret] = useState<string | null>(null)
 
   // Realtime hooks
   const realtimeState = useRealtimeAuction(id as string)
@@ -247,8 +327,8 @@ export default function AuctionClient() {
         return
       }
 
-      // Rediriger vers la page de paiement
-      router.push(`/checkout/${auction?.id}`)
+      // Afficher le formulaire de paiement Stripe
+      setBuyNowClientSecret(data.clientSecret)
     } catch (e) {
       setBidError('Erreur de connexion')
     } finally {
@@ -542,19 +622,71 @@ export default function AuctionClient() {
                         </span>
                         <div className="flex-1 border-t border-[#222]" />
                       </div>
-                      <button
-                        onClick={buyNow}
-                        disabled={buyingNow}
-                        className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 bg-gradient-to-r from-amber-400 to-amber-500"
-                      >
-                        <ShoppingBag size={20} />
-                        {buyingNow
-                          ? 'Achat en cours...'
-                          : `Achat immediat — ${auction.buyNowPrice} EUR`}
-                      </button>
-                      <p className="text-[10px] text-gray-500 text-center mt-2">
-                        Achetez ce beat maintenant sans attendre la fin de l&apos;enchere
-                      </p>
+
+                      {!buyNowClientSecret ? (
+                        <>
+                          <button
+                            onClick={buyNow}
+                            disabled={buyingNow}
+                            className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 bg-gradient-to-r from-amber-400 to-amber-500"
+                          >
+                            {buyingNow ? (
+                              <>
+                                <Loader2 size={18} className="animate-spin" /> Chargement...
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag size={20} />
+                                {`Achat immediat — ${auction.buyNowPrice} EUR`}
+                              </>
+                            )}
+                          </button>
+                          <p className="text-[10px] text-gray-500 text-center mt-2">
+                            Achetez ce beat maintenant sans attendre la fin de l&apos;enchere
+                          </p>
+                        </>
+                      ) : (
+                        <div className="bg-[#0a0a0a] border border-amber-500/20 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <ShoppingBag size={16} className="text-amber-400" />
+                            <span className="text-sm font-bold text-amber-400">
+                              Achat immediat — {auction.buyNowPrice} EUR
+                            </span>
+                          </div>
+                          <Elements
+                            stripe={stripePromise}
+                            options={{
+                              clientSecret: buyNowClientSecret,
+                              appearance: {
+                                theme: 'night',
+                                variables: {
+                                  colorPrimary: '#f59e0b',
+                                  colorBackground: '#111',
+                                  colorText: '#fff',
+                                  borderRadius: '12px',
+                                },
+                              },
+                            }}
+                          >
+                            <BuyNowPaymentForm
+                              amount={auction.buyNowPrice}
+                              auctionId={auction.id}
+                              onSuccess={() => {
+                                setBuyNowClientSecret(null)
+                                fetchAuction()
+                                setBidSuccess('Paiement confirme ! Le beat est a vous.')
+                              }}
+                              onError={(msg) => setBidError(msg)}
+                            />
+                          </Elements>
+                          <button
+                            onClick={() => setBuyNowClientSecret(null)}
+                            className="w-full mt-3 text-xs text-gray-500 hover:text-white transition"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
