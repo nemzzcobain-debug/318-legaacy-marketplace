@@ -41,14 +41,7 @@ import {
 
 // ─── Types ───
 
-type ProducerTab =
-  | 'overview'
-  | 'beats'
-  | 'auctions'
-  | 'earnings'
-  | 'analytics'
-  | 'badges'
-  | 'settings'
+type ProducerTab = 'overview' | 'beats' | 'auctions' | 'analytics' | 'badges' | 'settings'
 type ArtistTab = 'overview' | 'my-auctions' | 'purchases' | 'badges' | 'settings'
 
 interface DashboardData {
@@ -882,8 +875,7 @@ function ProducerDashboard({ session }: { session: any }) {
   const tabs: { id: ProducerTab; label: string; icon: any }[] = [
     { id: 'overview', label: "Vue d'ensemble", icon: BarChart3 },
     { id: 'beats', label: 'Mes Beats', icon: Music },
-    { id: 'auctions', label: 'Mes Encheres', icon: Gavel },
-    { id: 'earnings', label: 'Revenus', icon: DollarSign },
+    { id: 'auctions', label: 'Mes Ventes', icon: DollarSign },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     { id: 'badges', label: 'Badges', icon: Award },
     { id: 'settings', label: 'Parametres', icon: Settings },
@@ -1181,9 +1173,31 @@ function ProducerDashboard({ session }: { session: any }) {
           </div>
         )}
 
-        {/* ═══ AUCTIONS TAB ═══ */}
+        {/* ═══ VENTES TAB ═══ */}
         {activeTab === 'auctions' && (
           <div className="space-y-6">
+            {/* Revenue Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
+                <div className="text-xs text-gray-500 mb-1">Disponible (en attente)</div>
+                <div className="text-2xl font-extrabold text-[#e11d48]">
+                  {(stats?.pendingRevenue || 0).toLocaleString('fr-FR')}&euro;
+                </div>
+              </div>
+              <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
+                <div className="text-xs text-gray-500 mb-1">Total verse</div>
+                <div className="text-2xl font-extrabold text-[#2ed573]">
+                  {(stats?.paidRevenue || 0).toLocaleString('fr-FR')}&euro;
+                </div>
+              </div>
+              <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
+                <div className="text-xs text-gray-500 mb-1">Revenus total (85%)</div>
+                <div className="text-2xl font-extrabold text-white">
+                  {(stats?.totalRevenue || 0).toLocaleString('fr-FR')}&euro;
+                </div>
+              </div>
+            </div>
+
             <CreateAuctionForm onCreated={() => fetchData()} />
             {(data?.activeAuctions?.length || 0) > 0 && (
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
@@ -1276,70 +1290,6 @@ function ProducerDashboard({ session }: { session: any }) {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* ═══ EARNINGS TAB ═══ */}
-        {activeTab === 'earnings' && (
-          <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-white">Revenus</h2>
-              <span className="text-xs text-gray-500">Commission plateforme : 15%</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 rounded-xl bg-white/[0.02] border border-[#1e1e2e]">
-                <div className="text-xs text-gray-500 mb-1">Disponible (en attente)</div>
-                <div className="text-2xl font-extrabold text-[#e11d48]">
-                  {(stats?.pendingRevenue || 0).toLocaleString('fr-FR')}&euro;
-                </div>
-              </div>
-              <div className="p-4 rounded-xl bg-white/[0.02] border border-[#1e1e2e]">
-                <div className="text-xs text-gray-500 mb-1">Total verse</div>
-                <div className="text-2xl font-extrabold text-[#2ed573]">
-                  {(stats?.paidRevenue || 0).toLocaleString('fr-FR')}&euro;
-                </div>
-              </div>
-              <div className="p-4 rounded-xl bg-white/[0.02] border border-[#1e1e2e]">
-                <div className="text-xs text-gray-500 mb-1">Revenus total (85 %)</div>
-                <div className="text-2xl font-extrabold text-white">
-                  {(stats?.totalRevenue || 0).toLocaleString('fr-FR')}&euro;
-                </div>
-              </div>
-            </div>
-            {(data?.completedAuctions?.length || 0) > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-bold text-gray-400 mb-3">Detail des ventes</h3>
-                <div className="space-y-2">
-                  {data!.completedAuctions.map((sale: any) => (
-                    <div
-                      key={sale.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02]"
-                    >
-                      <div>
-                        <span className="text-sm font-semibold text-white">{sale.beat.title}</span>
-                        <span className="text-xs text-gray-500 ml-2">{sale.winningLicense}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs">
-                        <span className="text-gray-500">Vente : {sale.finalPrice}&euro;</span>
-                        <span className="text-gray-500">Com : {sale.commissionAmount}&euro;</span>
-                        <span className="font-bold text-[#2ed573]">
-                          {sale.producerPayout}&euro;
-                        </span>
-                        <span
-                          className={`font-bold ${sale.paidAt ? 'text-[#2ed573]' : 'text-[#e11d48]'}`}
-                        >
-                          {sale.paidAt ? 'Paye' : 'En attente'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <p className="text-xs text-gray-500">
-              Les paiements sont traites via Stripe Connect. Tu recois 85% du montant final de
-              chaque vente. Les virements sont effectues automatiquement chaque semaine.
-            </p>
           </div>
         )}
 

@@ -161,14 +161,6 @@ export default function Header() {
               )}
 
               <Link
-                href="/nouveautes"
-                className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
-                aria-label="Nouveautés"
-              >
-                <Sparkles size={20} className="text-amber-400" />
-                <HeaderTooltip name="Nouveautés" description="Beats en achat direct" />
-              </Link>
-              <Link
                 href="/playlists"
                 className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
                 aria-label={t('nav.myPlaylists')}
