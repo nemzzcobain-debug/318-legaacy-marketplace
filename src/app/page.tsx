@@ -660,21 +660,21 @@ export default function Home() {
         </section>
 
         {/* ═══════════ SELECTION DE LA SEMAINE ═══════════ */}
-        <section className="px-4 py-14 border-t border-[#1a1a1a] relative overflow-hidden">
+        <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-hidden">
           {/* Background glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-radial from-[#E50914]/12 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-gradient-radial from-[#E50914]/8 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-[#E50914]/15 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gradient-radial from-[#E50914]/10 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
 
-          <div className="max-w-4xl mx-auto relative z-10">
+          <div className="max-w-5xl mx-auto relative z-10">
             {/* Header */}
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 bg-[#E50914]/10 border border-[#E50914]/20 rounded-full px-3 py-1 text-[11px] font-bold text-[#E50914] mb-3">
-                <Flame size={11} className="animate-pulse" /> {t('weeklySelection.badge')}
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 bg-[#E50914]/10 border border-[#E50914]/20 rounded-full px-4 py-1.5 text-xs font-bold text-[#E50914] mb-4">
+                <Flame size={12} className="animate-pulse" /> {t('weeklySelection.badge')}
               </div>
-              <h2 className="text-2xl md:text-3xl font-black text-white mb-1.5">
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
                 {t('weeklySelection.title')}
               </h2>
-              <p className="text-gray-500 max-w-md mx-auto text-xs">
+              <p className="text-gray-500 max-w-md mx-auto text-sm">
                 {t('weeklySelection.subtitle')}
               </p>
             </div>
@@ -686,23 +686,23 @@ export default function Home() {
 
               if (!weeklyAuction) {
                 return (
-                  <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-2xl border border-[#E50914]/20 overflow-hidden">
+                  <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl border border-[#E50914]/20 overflow-hidden">
                     <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5" />
-                    <div className="relative z-10 py-12 text-center">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#E50914]/20 to-[#B20710]/20 flex items-center justify-center mx-auto mb-4 border border-[#E50914]/20">
-                        <Clock size={24} className="text-[#E50914]" />
+                    <div className="relative z-10 py-20 text-center">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#E50914]/20 to-[#B20710]/20 flex items-center justify-center mx-auto mb-5 border border-[#E50914]/20">
+                        <Clock size={32} className="text-[#E50914]" />
                       </div>
-                      <h3 className="text-lg font-extrabold text-white mb-1.5">
+                      <h3 className="text-xl font-extrabold text-white mb-2">
                         {t('weeklySelection.comingSoon')}
                       </h3>
-                      <p className="text-gray-500 text-xs max-w-sm mx-auto">
+                      <p className="text-gray-500 text-sm max-w-sm mx-auto">
                         {t('weeklySelection.comingSoonDesc')}
                       </p>
                       <Link
                         href="/register"
-                        className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-lg font-bold text-xs text-[#E50914] border border-[#E50914]/20 hover:bg-[#E50914]/5 transition-all hover:border-[#E50914]/40"
+                        className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-xl font-bold text-sm text-[#E50914] border border-[#E50914]/20 hover:bg-[#E50914]/5 transition-all hover:border-[#E50914]/40"
                       >
-                        {t('weeklySelection.enableNotifs')} <ArrowRight size={12} />
+                        {t('weeklySelection.enableNotifs')} <ArrowRight size={14} />
                       </Link>
                     </div>
                   </div>
@@ -710,14 +710,14 @@ export default function Home() {
               }
 
               return (
-                <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-2xl border border-[#E50914]/20 overflow-hidden group">
+                <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl border border-[#E50914]/20 overflow-hidden group">
                   {/* Animated border glow */}
-                  <div className="absolute -inset-[1px] bg-gradient-to-r from-[#E50914]/30 via-[#B20710]/30 to-[#E50914]/30 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-sm" />
+                  <div className="absolute -inset-[1px] bg-gradient-to-r from-[#E50914]/30 via-[#B20710]/30 to-[#E50914]/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-sm" />
 
-                  <div className="relative z-10 bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-2xl">
+                  <div className="relative z-10 bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl">
                     <div className="grid md:grid-cols-2 gap-0">
                       {/* Left: Cover & Audio */}
-                      <div className="relative min-h-[240px] md:min-h-[300px] overflow-hidden rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none">
+                      <div className="relative min-h-[320px] md:min-h-[400px] overflow-hidden rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none">
                         {weeklyAuction.beat.coverImage ? (
                           <Image
                             src={weeklyAuction.beat.coverImage}
@@ -750,15 +750,15 @@ export default function Home() {
                         {/* Play button center */}
                         <button
                           onClick={() => togglePlay(weeklyAuction.id, weeklyAuction.beat.audioUrl)}
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl shadow-[#E50914]/50 hover:scale-110 transition-transform z-10 border-2 border-white/10 backdrop-blur-sm"
+                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-[#E50914]/50 hover:scale-110 transition-transform z-10 border-2 border-white/10 backdrop-blur-sm"
                           style={{
                             background: 'linear-gradient(135deg, #E50914 0%, #B20710 100%)',
                           }}
                         >
                           {playingId === weeklyAuction.id ? (
-                            <Pause size={22} className="text-white" fill="white" />
+                            <Pause size={28} className="text-white" fill="white" />
                           ) : (
-                            <Play size={22} className="text-white ml-0.5" fill="white" />
+                            <Play size={28} className="text-white ml-1" fill="white" />
                           )}
                         </button>
 
@@ -770,9 +770,9 @@ export default function Home() {
                       </div>
 
                       {/* Right: Info */}
-                      <div className="p-5 md:p-7 flex flex-col justify-center">
+                      <div className="p-8 md:p-10 flex flex-col justify-center">
                         {/* Genre tags */}
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-4">
                           <span className="text-[10px] font-bold text-[#E50914] bg-[#E50914]/10 rounded-full px-3 py-1 border border-[#E50914]/20">
                             {weeklyAuction.beat.genre}
                           </span>
@@ -787,12 +787,12 @@ export default function Home() {
                         </div>
 
                         {/* Title */}
-                        <h3 className="text-xl md:text-2xl font-black text-white mb-1.5 group-hover:text-[#ff4d4d] transition-colors">
+                        <h3 className="text-2xl md:text-3xl font-black text-white mb-2 group-hover:text-[#ff4d4d] transition-colors">
                           {weeklyAuction.beat.title}
                         </h3>
 
                         {/* Producer */}
-                        <div className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center gap-2 mb-6">
                           <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#E50914] to-[#B20710] flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
                             {weeklyAuction.beat.producer.avatar ? (
                               <Image
@@ -814,40 +814,40 @@ export default function Home() {
                         </div>
 
                         {/* Timer */}
-                        <div className="bg-black/40 rounded-xl border border-[#E50914]/10 p-3.5 mb-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Timer size={12} className="text-[#E50914]" />
-                            <span className="text-[10px] font-bold text-[#E50914] uppercase tracking-wider">
+                        <div className="bg-black/40 rounded-2xl border border-[#E50914]/10 p-5 mb-6">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Timer size={14} className="text-[#E50914]" />
+                            <span className="text-xs font-bold text-[#E50914] uppercase tracking-wider">
                               {t('weeklySelection.timeRemaining')}
                             </span>
                           </div>
-                          <div className="text-lg font-black text-white">
+                          <div className="text-2xl font-black text-white">
                             <CountdownTimer
                               endTime={weeklyAuction.endTime}
-                              size="sm"
+                              size="lg"
                               showIcon={false}
                             />
                           </div>
                         </div>
 
                         {/* Price & Bids */}
-                        <div className="flex items-end justify-between mb-4 pb-4 border-b border-[#222]">
+                        <div className="flex items-end justify-between mb-6 pb-5 border-b border-[#222]">
                           <div>
-                            <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold block mb-0.5">
+                            <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold block mb-1">
                               {t('weeklySelection.currentBid')}
                             </span>
-                            <div className="text-2xl md:text-3xl font-black text-white">
+                            <div className="text-3xl md:text-4xl font-black text-white">
                               {weeklyAuction.currentBid}&euro;
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
-                              <Gavel size={12} /> {weeklyAuction.totalBids}{' '}
+                            <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-1">
+                              <Gavel size={14} /> {weeklyAuction.totalBids}{' '}
                               {weeklyAuction.totalBids > 1
                                 ? t('liveAuctions.bids')
                                 : t('liveAuctions.bid')}
                             </div>
-                            <div className="text-[11px] text-gray-600">
+                            <div className="text-xs text-gray-600">
                               {t('weeklySelection.startPrice')} : {weeklyAuction.startPrice}&euro;
                             </div>
                           </div>
@@ -856,12 +856,12 @@ export default function Home() {
                         {/* CTA */}
                         <Link
                           href={`/auction/${weeklyAuction.id}`}
-                          className="group/btn relative w-full py-3 rounded-xl font-extrabold text-white text-center text-sm transition-all hover:scale-[1.02] overflow-hidden block"
+                          className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
                         >
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-xl" />
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl opacity-0 group-hover/btn:opacity-100 transition-opacity" />
                           <span className="relative z-10 flex items-center justify-center gap-2">
-                            {t('weeklySelection.placeBid')} <ArrowRight size={16} />
+                            {t('weeklySelection.placeBid')} <ArrowRight size={18} />
                           </span>
                         </Link>
                       </div>
