@@ -1,0 +1,597 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
+import {
+  Music,
+  Play,
+  Pause,
+  SkipForward,
+  SkipBack,
+  Loader2,
+  ShoppingCart,
+  Check,
+  AlertCircle,
+  Sparkles,
+  Crown,
+  Star,
+  Volume2,
+  Clock,
+} from 'lucide-react'
+
+interface Beat {
+  id: string
+  title: string
+  genre: string
+  bpm: number
+  key: string | null
+  mood: string | null
+  duration: number | null
+  coverImage: string | null
+  audioUrl: string
+  plays: number
+  producer: {
+    id: string
+    name: string
+    displayName: string | null
+    avatar: string | null
+  }
+  basePrice: number // Prix de base (startPrice de la derniere enchere)
+}
+
+const LICENSES = [
+  {
+    id: 'BASIC',
+    name: 'Basic',
+    icon: Star,
+    color: 'from-gray-500 to-gray-600',
+    border: 'border-gray-500',
+    bg: 'bg-gray-500/10',
+    text: 'text-gray-400',
+    multiplier: 1,
+    rights: 'MP3 - 5000 streams - Non-commercial',
+    features: ['Format MP3', '5 000 streams max', 'Usage non-commercial', 'Credit obligatoire'],
+  },
+  {
+    id: 'PREMIUM',
+    name: 'Premium',
+    icon: Crown,
+    color: 'from-[#e11d48] to-[#ff0033]',
+    border: 'border-[#e11d48]',
+    bg: 'bg-[#e11d48]/10',
+    text: 'text-[#e11d48]',
+    multiplier: 2.5,
+    rights: 'WAV + MP3 - 50K streams - Commercial',
+    features: ['Format WAV + MP3', '50 000 streams max', 'Usage commercial', 'Credit obligatoire'],
+  },
+  {
+    id: 'EXCLUSIVE',
+    name: 'Exclusive',
+    icon: Sparkles,
+    color: 'from-amber-500 to-orange-600',
+    border: 'border-amber-500',
+    bg: 'bg-amber-500/10',
+    text: 'text-amber-400',
+    multiplier: 10,
+    rights: 'WAV + Stems - Illimite - Droits complets',
+    features: ['WAV + Stems + MP3', 'Streams illimites', 'Droits complets', 'Pas de credit requis'],
+  },
+]
+
+export default function NouveautesClient() {
+  const { data: session } = useSession()
+  const router = useRouter()
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  const [beats, setBeats] = useState<Beat[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currentTrack, setCurrentTrack] = useState<number>(-1)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+
+  // Purchase state
+  const [selectedBeat, setSelectedBeat] = useState<string | null>(null)
+  const [selectedLicense, setSelectedLicense] = useState<string>('BASIC')
+  const [purchasing, setPurchasing] = useState(false)
+  const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null)
+  const [purchaseError, setPurchaseError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchNouveautes()
+  }, [])
+
+  async function fetchNouveautes() {
+    try {
+      const res = await fetch('/api/nouveautes')
+      if (res.ok) {
+        const data = await res.json()
+        setBeats(data.beats || [])
+      }
+    } catch (err) {
+      console.error('Erreur chargement nouveautes:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Audio player functions
+  function playTrack(index: number) {
+    if (!audioRef.current) return
+    const beat = beats[index]
+    if (!beat) return
+
+    if (currentTrack === index && isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+      return
+    }
+
+    audioRef.current.src = beat.audioUrl
+    audioRef.current.play().catch(() => {})
+    setCurrentTrack(index)
+    setIsPlaying(true)
+  }
+
+  function nextTrack() {
+    const next = currentTrack + 1 < beats.length ? currentTrack + 1 : 0
+    playTrack(next)
+  }
+
+  function prevTrack() {
+    const prev = currentTrack - 1 >= 0 ? currentTrack - 1 : beats.length - 1
+    playTrack(prev)
+  }
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const updateProgress = () => {
+      if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100)
+    }
+    const handleEnded = () => nextTrack()
+
+    audio.addEventListener('timeupdate', updateProgress)
+    audio.addEventListener('ended', handleEnded)
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress)
+      audio.removeEventListener('ended', handleEnded)
+    }
+  }, [currentTrack, beats])
+
+  // Purchase
+  async function handlePurchase(beatId: string) {
+    if (!session?.user) {
+      router.push('/auth/signin')
+      return
+    }
+
+    setPurchasing(true)
+    setPurchaseError(null)
+
+    try {
+      const res = await fetch(`/api/beats/${beatId}/purchase`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ licenseType: selectedLicense }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setPurchaseError(data.error || "Erreur lors de l'achat")
+        return
+      }
+
+      // Rediriger vers la page de paiement Stripe
+      router.push(
+        `/checkout/beat/${beatId}?pi=${data.paymentIntentId}&cs=${data.clientSecret}&license=${selectedLicense}&price=${data.finalPrice}&title=${encodeURIComponent(data.beatTitle)}`
+      )
+    } catch {
+      setPurchaseError('Erreur de connexion')
+    } finally {
+      setPurchasing(false)
+    }
+  }
+
+  function formatDuration(seconds: number | null) {
+    if (!seconds) return '--:--'
+    const m = Math.floor(seconds / 60)
+    const s = Math.floor(seconds % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  const currentBeat = currentTrack >= 0 ? beats[currentTrack] : null
+  const currentLicenseInfo = LICENSES.find((l) => l.id === selectedLicense)!
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-red-500" size={40} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen pb-32">
+      <audio ref={audioRef} />
+
+      {/* Hero Header */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-red-900/30 via-[#0a0a0f]/80 to-[#0a0a0f]" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
+        <div className="relative max-w-6xl mx-auto px-4 pt-12 pb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center">
+              <Sparkles size={24} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black text-white">Nouveautes</h1>
+              <p className="text-sm text-gray-400">Beats disponibles a l&apos;achat direct</p>
+            </div>
+          </div>
+          <p className="text-gray-500 text-sm max-w-2xl">
+            Ces beats n&apos;ont pas trouve preneur aux encheres et sont maintenant disponibles a
+            l&apos;achat direct avec le choix de ta licence : Basic, Premium ou Exclusive.
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4">
+        {beats.length === 0 ? (
+          <div className="text-center py-20">
+            <Music size={48} className="mx-auto mb-4 text-gray-700" />
+            <h3 className="text-lg font-bold text-white mb-2">
+              Aucun beat disponible pour le moment
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Les beats invendus aux encheres apparaitront ici automatiquement
+            </p>
+            <Link
+              href="/beats"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
+              style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+            >
+              Voir les encheres
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Beat List - Left Side */}
+            <div className="lg:col-span-2 space-y-2">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+                  {beats.length} beat{beats.length > 1 ? 's' : ''} disponible
+                  {beats.length > 1 ? 's' : ''}
+                </h2>
+              </div>
+
+              {beats.map((beat, index) => (
+                <div
+                  key={beat.id}
+                  className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                    selectedBeat === beat.id
+                      ? 'border-[#e11d48] bg-[#e11d48]/5'
+                      : currentTrack === index
+                        ? 'border-[#1e1e2e] bg-white/[0.02]'
+                        : 'border-transparent hover:border-[#1e1e2e] hover:bg-white/[0.01]'
+                  }`}
+                  onClick={() => setSelectedBeat(selectedBeat === beat.id ? null : beat.id)}
+                >
+                  {/* Play Button / Cover */}
+                  <div
+                    className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      playTrack(index)
+                    }}
+                  >
+                    {beat.coverImage ? (
+                      <Image src={beat.coverImage} alt={beat.title} fill className="object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center">
+                        <Music size={16} className="text-gray-600" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      {currentTrack === index && isPlaying ? (
+                        <Pause size={16} className="text-white" />
+                      ) : (
+                        <Play size={16} className="text-white ml-0.5" />
+                      )}
+                    </div>
+                    {/* Playing indicator */}
+                    {currentTrack === index && isPlaying && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#e11d48]">
+                        <div className="h-full bg-white/50" style={{ width: `${progress}%` }} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Beat Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white truncate">{beat.title}</span>
+                      {currentTrack === index && isPlaying && (
+                        <Volume2 size={12} className="text-[#e11d48] shrink-0 animate-pulse" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Link
+                        href={`/producer/${beat.producer.id}`}
+                        className="hover:text-white transition"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {beat.producer.displayName || beat.producer.name}
+                      </Link>
+                      <span>•</span>
+                      <span>{beat.genre}</span>
+                      <span>•</span>
+                      <span>{beat.bpm} BPM</span>
+                      {beat.key && (
+                        <>
+                          <span>•</span>
+                          <span>{beat.key}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Duration */}
+                  <div className="hidden sm:flex items-center gap-1 text-xs text-gray-600">
+                    <Clock size={12} />
+                    {formatDuration(beat.duration)}
+                  </div>
+
+                  {/* Price */}
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-bold text-white">{beat.basePrice} EUR</div>
+                    <div className="text-[10px] text-gray-600">prix de base</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* License Selector - Right Side */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-4 space-y-4">
+                {/* License Cards */}
+                <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-white mb-4">Choisis ta licence</h3>
+
+                  <div className="space-y-3">
+                    {LICENSES.map((license) => {
+                      const Icon = license.icon
+                      const isSelected = selectedLicense === license.id
+                      const selectedBeatData = beats.find((b) => b.id === selectedBeat)
+                      const price = selectedBeatData
+                        ? Math.round(selectedBeatData.basePrice * license.multiplier * 100) / 100
+                        : null
+
+                      return (
+                        <button
+                          key={license.id}
+                          onClick={() => setSelectedLicense(license.id)}
+                          className={`w-full p-4 rounded-xl border text-left transition-all ${
+                            isSelected
+                              ? `${license.border} ${license.bg}`
+                              : 'border-[#1e1e2e] hover:border-[#2e2e3e]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <div
+                              className={`w-8 h-8 rounded-lg bg-gradient-to-br ${license.color} flex items-center justify-center`}
+                            >
+                              <Icon size={14} className="text-white" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <span
+                                  className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-gray-300'}`}
+                                >
+                                  {license.name}
+                                </span>
+                                {price !== null && (
+                                  <span className={`text-sm font-bold ${license.text}`}>
+                                    {price} EUR
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-gray-500">
+                                x{license.multiplier}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="space-y-1 ml-11">
+                            {license.features.map((feat, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center gap-1.5 text-[11px] text-gray-500"
+                              >
+                                <Check
+                                  size={10}
+                                  className={isSelected ? license.text : 'text-gray-600'}
+                                />
+                                {feat}
+                              </div>
+                            ))}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Buy Button */}
+                {selectedBeat && (
+                  <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-5">
+                    {(() => {
+                      const beatData = beats.find((b) => b.id === selectedBeat)
+                      if (!beatData) return null
+                      const finalPrice =
+                        Math.round(beatData.basePrice * currentLicenseInfo.multiplier * 100) / 100
+
+                      return (
+                        <>
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+                              {beatData.coverImage ? (
+                                <Image
+                                  src={beatData.coverImage}
+                                  alt=""
+                                  width={40}
+                                  height={40}
+                                  className="object-cover w-full h-full"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-[#1a1a2e] flex items-center justify-center">
+                                  <Music size={14} className="text-gray-600" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-bold text-white truncate">
+                                {beatData.title}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {beatData.producer.displayName || beatData.producer.name}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between mb-1 text-xs text-gray-400">
+                            <span>Prix de base</span>
+                            <span>{beatData.basePrice} EUR</span>
+                          </div>
+                          <div className="flex items-center justify-between mb-1 text-xs text-gray-400">
+                            <span>
+                              Licence {currentLicenseInfo.name} (x{currentLicenseInfo.multiplier})
+                            </span>
+                          </div>
+                          <div className="border-t border-[#1e1e2e] my-3" />
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-bold text-white">Total</span>
+                            <span className="text-lg font-black text-white">{finalPrice} EUR</span>
+                          </div>
+
+                          {purchaseError && (
+                            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 mb-3">
+                              <AlertCircle size={14} className="text-red-400 shrink-0" />
+                              <span className="text-xs text-red-400">{purchaseError}</span>
+                            </div>
+                          )}
+
+                          {purchaseSuccess === selectedBeat ? (
+                            <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/30">
+                              <Check size={16} className="text-green-400" />
+                              <span className="text-sm font-bold text-green-400">
+                                Redirection vers le paiement...
+                              </span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handlePurchase(selectedBeat)}
+                              disabled={purchasing}
+                              className="w-full py-3 rounded-xl font-bold text-sm text-black flex items-center justify-center gap-2 transition disabled:opacity-50"
+                              style={{
+                                background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)',
+                              }}
+                            >
+                              {purchasing ? (
+                                <>
+                                  <Loader2 size={16} className="animate-spin" /> Traitement...
+                                </>
+                              ) : (
+                                <>
+                                  <ShoppingCart size={16} /> Acheter - {finalPrice} EUR
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </>
+                      )
+                    })()}
+                  </div>
+                )}
+
+                {!selectedBeat && (
+                  <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-5 text-center">
+                    <Music size={24} className="mx-auto mb-2 text-gray-600" />
+                    <p className="text-xs text-gray-500">
+                      Selectionne un beat pour voir le prix et acheter
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Audio Player */}
+      {currentBeat && (
+        <div className="fixed bottom-0 left-0 right-0 bg-[#0a0a0f]/95 backdrop-blur-xl border-t border-[#1e1e2e] z-50">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
+            {/* Track Info */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+                {currentBeat.coverImage ? (
+                  <Image
+                    src={currentBeat.coverImage}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#1a1a2e] flex items-center justify-center">
+                    <Music size={14} className="text-gray-600" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-white truncate">{currentBeat.title}</div>
+                <div className="text-xs text-gray-500">
+                  {currentBeat.producer.displayName || currentBeat.producer.name}
+                </div>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-3">
+              <button onClick={prevTrack} className="text-gray-400 hover:text-white transition">
+                <SkipBack size={18} />
+              </button>
+              <button
+                onClick={() => playTrack(currentTrack)}
+                className="w-10 h-10 rounded-full bg-white flex items-center justify-center"
+              >
+                {isPlaying ? (
+                  <Pause size={18} className="text-black" />
+                ) : (
+                  <Play size={18} className="text-black ml-0.5" />
+                )}
+              </button>
+              <button onClick={nextTrack} className="text-gray-400 hover:text-white transition">
+                <SkipForward size={18} />
+              </button>
+            </div>
+
+            {/* Progress */}
+            <div className="hidden sm:block flex-1 max-w-xs">
+              <div className="w-full h-1 bg-[#1e1e2e] rounded-full">
+                <div
+                  className="h-full bg-[#e11d48] rounded-full transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
