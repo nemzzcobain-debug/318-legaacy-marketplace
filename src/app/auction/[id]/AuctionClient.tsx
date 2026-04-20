@@ -25,6 +25,7 @@ import {
   XCircle,
   Download,
   FileText,
+  ShoppingBag,
 } from 'lucide-react'
 import Link from 'next/link'
 import ShareButton from '@/components/ui/ShareButton'
@@ -47,6 +48,7 @@ interface AuctionDetail {
   startPrice: number
   currentBid: number
   bidIncrement: number
+  buyNowPrice: number | null
   licenseType: string
   status: string
   startTime: string
@@ -117,6 +119,7 @@ export default function AuctionClient() {
   const [bidError, setBidError] = useState('')
   const [bidSuccess, setBidSuccess] = useState('')
   const [isPlaying, setIsPlaying] = useState(false)
+  const [buyingNow, setBuyingNow] = useState(false)
 
   // Realtime hooks
   const realtimeState = useRealtimeAuction(id as string)
@@ -219,6 +222,37 @@ export default function AuctionClient() {
       setBidError('Erreur de connexion')
     } finally {
       setBidding(false)
+    }
+  }
+
+  const buyNow = async () => {
+    if (!session) {
+      router.push('/login')
+      return
+    }
+
+    setBuyingNow(true)
+    setBidError('')
+
+    try {
+      const res = await fetch(`/api/auctions/${id}/buy-now`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setBidError(data.error)
+        return
+      }
+
+      // Rediriger vers la page de paiement
+      router.push(`/checkout/${auction?.id}`)
+    } catch (e) {
+      setBidError('Erreur de connexion')
+    } finally {
+      setBuyingNow(false)
     }
   }
 
@@ -497,6 +531,32 @@ export default function AuctionClient() {
                     <Gavel size={20} />
                     {bidding ? 'Enchere en cours...' : `Encherir ${bidAmount} EUR`}
                   </button>
+
+                  {/* Buy Now Button */}
+                  {auction.buyNowPrice && (
+                    <div className="mt-3">
+                      <div className="relative flex items-center my-3">
+                        <div className="flex-1 border-t border-[#222]" />
+                        <span className="px-3 text-[10px] text-gray-500 uppercase tracking-wider">
+                          ou
+                        </span>
+                        <div className="flex-1 border-t border-[#222]" />
+                      </div>
+                      <button
+                        onClick={buyNow}
+                        disabled={buyingNow}
+                        className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 bg-gradient-to-r from-amber-400 to-amber-500"
+                      >
+                        <ShoppingBag size={20} />
+                        {buyingNow
+                          ? 'Achat en cours...'
+                          : `Achat immediat — ${auction.buyNowPrice} EUR`}
+                      </button>
+                      <p className="text-[10px] text-gray-500 text-center mt-2">
+                        Achetez ce beat maintenant sans attendre la fin de l&apos;enchere
+                      </p>
+                    </div>
+                  )}
                 </>
               )}
 
