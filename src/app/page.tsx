@@ -181,7 +181,7 @@ export default function Home() {
   const [homepage, setHomepage] = useState<HomepageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [playingId, setPlayingId] = useState<string | null>(null)
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
   const [heroVisible, setHeroVisible] = useState(false)
   const { t } = useTranslation()
 
@@ -215,29 +215,33 @@ export default function Home() {
   }, [])
 
   const togglePlay = (auctionId: string, audioUrl: string) => {
+    const el = audioRef.current
+    if (!el) return
+
     if (playingId === auctionId) {
-      audio?.pause()
+      el.pause()
       setPlayingId(null)
       return
     }
-    if (audio) {
-      audio.pause()
-      audio.src = ''
-    }
-    const newAudio = new Audio(audioUrl)
-    newAudio.crossOrigin = 'anonymous'
-    newAudio.onended = () => setPlayingId(null)
-    newAudio.onerror = () => {
-      console.error('Erreur audio:', audioUrl)
-      setPlayingId(null)
-    }
-    setAudio(newAudio)
+
+    el.pause()
+    el.src = audioUrl
+    el.load()
     setPlayingId(auctionId)
-    newAudio.play().catch((err) => {
+    el.play().catch((err) => {
       console.error('Play bloque:', err)
       setPlayingId(null)
     })
   }
+
+  // Quand l'audio se termine
+  useEffect(() => {
+    const el = audioRef.current
+    if (!el) return
+    const handleEnded = () => setPlayingId(null)
+    el.addEventListener('ended', handleEnded)
+    return () => el.removeEventListener('ended', handleEnded)
+  }, [])
 
   const licenseColors: Record<string, string> = {
     EXCLUSIVE: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
@@ -248,6 +252,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
+      <audio ref={audioRef} preload="none" />
 
       <main id="main-content">
         {/* ═══════════ HERO ═══════════ */}
