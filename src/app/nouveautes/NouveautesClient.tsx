@@ -431,7 +431,7 @@ export default function NouveautesClient() {
               Les beats invendus aux encheres apparaitront ici automatiquement
             </p>
             <Link
-              href="/beats"
+              href="/marketplace"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
               style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
             >
