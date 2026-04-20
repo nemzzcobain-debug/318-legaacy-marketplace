@@ -312,7 +312,10 @@ export default function ProfileEditPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Link href="/dashboard" className="relative group/back p-2 hover:bg-white/5 rounded-lg transition-colors">
+          <Link
+            href="/dashboard"
+            className="relative group/back p-2 hover:bg-white/5 rounded-lg transition-colors"
+          >
             <ArrowLeft size={20} className="text-gray-400" />
             <span className="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap rounded-lg bg-[#1a1a2e] px-3 py-1.5 text-xs font-medium text-white opacity-0 scale-95 transition-all duration-200 group-hover/back:opacity-100 group-hover/back:scale-100 border border-white/10 shadow-xl">
               Retour
