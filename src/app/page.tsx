@@ -479,7 +479,11 @@ export default function Home() {
                 {auctions.map((auction) => (
                   <div
                     key={auction.id}
-                    onClick={() => router.push(`/auction/${auction.id}`)}
+                    onClick={(e) => {
+                      // Ne pas naviguer si on clique sur le bouton play
+                      if ((e.target as HTMLElement).closest('[data-play-btn]')) return
+                      router.push(`/auction/${auction.id}`)
+                    }}
                     className="group relative bg-[#111] rounded-2xl border border-[#1e1e2e] hover:border-red-500/30 transition-all hover:-translate-y-1 duration-300 cursor-pointer"
                   >
                     {/* Cover + Play button wrapper */}
@@ -511,20 +515,12 @@ export default function Home() {
 
                       {/* Play button - outside overflow-hidden */}
                       <div
+                        data-play-btn
                         role="button"
                         tabIndex={0}
                         onClick={(e) => {
-                          e.preventDefault()
                           e.stopPropagation()
-                          e.nativeEvent.stopImmediatePropagation()
                           togglePlay(auction.id, auction.beat.audioUrl)
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            togglePlay(auction.id, auction.beat.audioUrl)
-                          }
                         }}
                         className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-red-900/40 hover:scale-110 transition-transform z-20 border-4 border-[#111] cursor-pointer"
                         style={{ background: 'linear-gradient(135deg, #e11d48 0%, #9f1239 100%)' }}
