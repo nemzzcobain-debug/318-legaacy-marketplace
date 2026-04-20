@@ -22,6 +22,7 @@ import {
   Star,
   UserPlus,
   Sparkles,
+  Crown,
   Volume2,
   Timer,
   BadgeCheck,
@@ -772,6 +773,105 @@ export default function Home() {
                 </div>
               )
             })()}
+          </div>
+        </section>
+
+        {/* ═══════════ NOUVEAUTES SECTION ═══════════ */}
+        <section className="px-4 py-20 border-t border-[#1a1a1a] relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-[500px] h-[400px] bg-gradient-radial from-[#e11d48]/8 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
+
+          <div className="max-w-6xl mx-auto relative z-10">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              {/* Left: Text content */}
+              <div>
+                <div className="inline-flex items-center gap-2 bg-[#e11d48]/10 border border-[#e11d48]/20 rounded-full px-4 py-1.5 text-xs font-bold text-[#e11d48] mb-5">
+                  <Sparkles size={12} /> Nouveautes
+                </div>
+                <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+                  Beats en achat
+                  <br />
+                  <span className="text-[#e11d48]">direct</span>
+                </h2>
+                <p className="text-gray-400 text-sm leading-relaxed mb-6 max-w-md">
+                  Des beats qui n&apos;ont pas trouve preneur aux encheres sont maintenant
+                  disponibles a l&apos;achat immediat. Choisis ta licence et telecharge ton beat en
+                  quelques clics.
+                </p>
+                <div className="flex flex-wrap gap-3 mb-8">
+                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                    <Star size={12} className="text-gray-400" /> Licence Basic
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                    <Crown size={12} className="text-[#e11d48]" /> Licence Premium
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                    <Sparkles size={12} className="text-amber-400" /> Licence Exclusive
+                  </div>
+                </div>
+                <Link
+                  href="/nouveautes"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm text-black transition-transform hover:scale-105"
+                  style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+                >
+                  Decouvrir les nouveautes <ArrowRight size={16} />
+                </Link>
+              </div>
+
+              {/* Right: Visual card stack */}
+              <div className="relative hidden md:block">
+                <div className="absolute -top-10 -right-10 w-64 h-64 bg-gradient-radial from-[#e11d48]/10 via-transparent to-transparent rounded-full blur-2xl" />
+
+                {/* Stacked cards effect */}
+                <div className="relative">
+                  {/* Background card 3 */}
+                  <div className="absolute top-8 left-8 right-0 h-48 bg-[#13131a] rounded-2xl border border-[#1e1e2e] transform rotate-3 opacity-30" />
+                  {/* Background card 2 */}
+                  <div className="absolute top-4 left-4 right-2 h-48 bg-[#15151f] rounded-2xl border border-[#1e1e2e] transform rotate-1.5 opacity-50" />
+                  {/* Main card */}
+                  <div className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-colors">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center">
+                        <Music size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-white">Achat immediat</div>
+                        <div className="text-xs text-gray-500">Prix fixes &middot; 3 licences</div>
+                      </div>
+                    </div>
+
+                    {/* Fake beat rows */}
+                    <div className="space-y-2.5">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02]"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center shrink-0">
+                            <Play size={10} className="text-white ml-0.5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div
+                              className={`h-2.5 rounded-full bg-white/10 ${i === 1 ? 'w-3/4' : i === 2 ? 'w-1/2' : 'w-2/3'}`}
+                            />
+                            <div className="h-2 rounded-full bg-white/5 w-1/3 mt-1.5" />
+                          </div>
+                          <div className="text-xs font-bold text-[#e11d48]">
+                            {i === 1 ? '25€' : i === 2 ? '40€' : '30€'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between">
+                      <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
+                        Beats disponibles
+                      </span>
+                      <span className="text-xs font-bold text-[#e11d48]">Voir tout →</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

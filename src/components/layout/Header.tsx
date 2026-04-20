@@ -64,7 +64,6 @@ export default function Header() {
 
   const navItems = [
     { href: '/marketplace', label: t('nav.auctions'), icon: Gavel },
-    { href: '/nouveautes', label: 'Nouveautés', icon: Sparkles },
     { href: '/search', label: t('nav.search'), icon: Search },
     { href: '/producers', label: t('nav.producers'), icon: Users },
   ]
