@@ -38,11 +38,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Webhook non configuré' }, { status: 500 })
     }
 
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    )
+    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err: any) {
     logger.error('[WEBHOOK] Erreur de vérification:', { error: err.message })
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 400 })
@@ -179,8 +175,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     }
 
     // Envoyer les emails (non-bloquant)
-    const payoutAmount = producerPayout ? parseFloat(producerPayout) : (auction.producerPayout || 0)
-    const commissionAmount = commission ? parseFloat(commission) : (auction.commissionAmount || 0)
+    const payoutAmount = producerPayout ? parseFloat(producerPayout) : auction.producerPayout || 0
+    const commissionAmount = commission ? parseFloat(commission) : auction.commissionAmount || 0
     const finalPrice = auction.finalPrice || auction.currentBid
 
     if (auction.beat.producer?.email) {
@@ -201,7 +197,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         to: auction.winner.email,
         winnerName: auction.winner.displayName || auction.winner.name,
         beatTitle: auction.beat.title,
-        producerName: auction.beat.producer?.displayName || auction.beat.producer?.name || 'Producteur',
+        producerName:
+          auction.beat.producer?.displayName || auction.beat.producer?.name || 'Producteur',
         finalPrice,
         license: auction.winningLicense || auction.licenseType,
         auctionId,
@@ -216,7 +213,16 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 }
 
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-  const auctionId = paymentIntent.metadata?.auctionId
+  const metadata = paymentIntent.metadata || {}
+
+  // ─── Achat direct de beat (hors encheres) ───
+  if (metadata.type === 'direct_purchase' && metadata.beatId) {
+    await handleDirectPurchaseSucceeded(paymentIntent)
+    return
+  }
+
+  // ─── Paiement d'enchère gagnée ───
+  const auctionId = metadata.auctionId
   if (!auctionId) return
 
   try {
@@ -287,6 +293,109 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     if (isDev) logger.debug(`[WEBHOOK] ✓ PaymentIntent ${auctionId} complété`)
   } catch (err: any) {
     logger.error(`[WEBHOOK] Erreur PaymentIntent (${auctionId}):`, { error: err.message })
+    throw err
+  }
+}
+
+/**
+ * Gère le paiement réussi d'un achat direct de beat (hors enchères)
+ */
+async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  const { beatId, licenseType, commission, producerPayout } = paymentIntent.metadata
+
+  try {
+    const beat = await prisma.beat.findUnique({
+      where: { id: beatId },
+      include: { producer: true },
+    })
+
+    if (!beat) {
+      logger.error(`[WEBHOOK] Achat direct: beat ${beatId} introuvable`)
+      return
+    }
+
+    // Si licence EXCLUSIVE, marquer le beat comme vendu
+    if (licenseType === 'EXCLUSIVE') {
+      await prisma.beat.update({
+        where: { id: beatId },
+        data: { status: 'SOLD' },
+      })
+
+      // Retirer de la playlist Nouveautés
+      const nouveautesPlaylist = await prisma.playlist.findFirst({
+        where: { name: 'Nouveautés', visibility: 'PUBLIC' },
+        select: { id: true },
+      })
+      if (nouveautesPlaylist) {
+        await prisma.playlistBeat.deleteMany({
+          where: { playlistId: nouveautesPlaylist.id, beatId },
+        })
+      }
+    }
+
+    // Incrémenter les ventes du producteur
+    await prisma.user.update({
+      where: { id: beat.producerId },
+      data: { totalSales: { increment: 1 } },
+    })
+
+    // Trouver l'acheteur via l'email du PaymentIntent
+    const buyerEmail = paymentIntent.receipt_email
+    if (buyerEmail) {
+      const buyer = await prisma.user.findFirst({
+        where: { email: buyerEmail },
+      })
+      if (buyer) {
+        await prisma.user.update({
+          where: { id: buyer.id },
+          data: { totalPurchases: { increment: 1 } },
+        })
+
+        // Notifier l'acheteur
+        await prisma.notification.create({
+          data: {
+            type: 'AUCTION_WON',
+            title: 'Achat confirmé !',
+            message: `Votre achat de "${beat.title}" (Licence ${licenseType}) est confirmé.`,
+            link: '/dashboard?tab=purchases',
+            userId: buyer.id,
+          },
+        })
+      }
+    }
+
+    // Notifier le producteur
+    const payoutAmount = producerPayout ? parseFloat(producerPayout) : 0
+    await prisma.notification.create({
+      data: {
+        type: 'PAYMENT_RECEIVED',
+        title: 'Vente directe !',
+        message: `Votre beat "${beat.title}" a été vendu (Licence ${licenseType}). Votre part: ${payoutAmount}€`,
+        link: '/dashboard?tab=earnings',
+        userId: beat.producerId,
+      },
+    })
+
+    // Envoyer email au producteur (non-bloquant)
+    if (beat.producer?.email) {
+      const finalPrice = paymentIntent.amount / 100
+      sendPaymentReceivedEmail({
+        to: beat.producer.email,
+        producerName: beat.producer.displayName || beat.producer.name,
+        beatTitle: beat.title,
+        buyerName: buyerEmail || 'Acheteur',
+        finalPrice,
+        commission: commission ? parseFloat(commission) : 0,
+        payout: payoutAmount,
+        license: licenseType,
+      }).catch((e) =>
+        logger.error('[WEBHOOK] Erreur envoi email achat direct:', { error: e?.message })
+      )
+    }
+
+    if (isDev) logger.debug(`[WEBHOOK] ✓ Achat direct beat ${beatId} (${licenseType}) complété`)
+  } catch (err: any) {
+    logger.error(`[WEBHOOK] Erreur achat direct (${beatId}):`, { error: err.message })
     throw err
   }
 }
@@ -388,7 +497,8 @@ async function handleAccountUpdated(account: Stripe.Account) {
         data: {
           type: 'SYSTEM',
           title: 'Compte approuvé !',
-          message: 'Votre compte Stripe a été approuvé. Vous pouvez maintenant recevoir des paiements.',
+          message:
+            'Votre compte Stripe a été approuvé. Vous pouvez maintenant recevoir des paiements.',
           link: '/dashboard?tab=settings',
           userId: user.id,
         },

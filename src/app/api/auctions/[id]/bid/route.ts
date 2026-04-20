@@ -1,79 +1,75 @@
 export const dynamic = 'force-dynamic'
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 const LICENSE_MULTIPLIERS: Record<string, number> = {
   BASIC: 1,
   PREMIUM: 2.5,
   EXCLUSIVE: 10,
-};
+}
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions)
     if (!session) {
-      return NextResponse.json({ error: 'Non connecte' }, { status: 401 });
+      return NextResponse.json({ error: 'Non connecte' }, { status: 401 })
     }
 
     // Use session.user.id if available, fallback to email only if needed
-    let user = null;
+    let user = null
     if (session.user?.id) {
       user = await prisma.user.findUnique({
-        where: { id: session.user.id }
-      });
+        where: { id: session.user.id },
+      })
     } else if (session.user?.email) {
       user = await prisma.user.findUnique({
-        where: { email: session.user.email }
-      });
+        where: { email: session.user.email },
+      })
     }
 
     if (!user) {
-      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
+      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
     }
 
-    const { amount, licenseType = 'BASIC' } = await req.json();
-
-    // Validate license type
-    if (!['BASIC', 'PREMIUM', 'EXCLUSIVE'].includes(licenseType)) {
-      return NextResponse.json({ error: 'Type de licence invalide' }, { status: 400 });
-    }
+    const { amount } = await req.json()
+    const licenseType = 'EXCLUSIVE' // Encheres = licence exclusive uniquement
 
     const auction = await prisma.auction.findUnique({
       where: { id: params.id },
-      include: { beat: { select: { producerId: true } } }
-    });
+      include: { beat: { select: { producerId: true } } },
+    })
 
     if (!auction) {
-      return NextResponse.json({ error: 'Enchere introuvable' }, { status: 404 });
+      return NextResponse.json({ error: 'Enchere introuvable' }, { status: 404 })
     }
 
     // Validations
     if (auction.status !== 'ACTIVE' && auction.status !== 'ENDING_SOON') {
-      return NextResponse.json({ error: 'Cette enchere n\'est plus active' }, { status: 400 });
+      return NextResponse.json({ error: "Cette enchere n'est plus active" }, { status: 400 })
     }
 
     if (new Date(auction.endTime) < new Date()) {
-      return NextResponse.json({ error: 'Cette enchere est terminee' }, { status: 400 });
+      return NextResponse.json({ error: 'Cette enchere est terminee' }, { status: 400 })
     }
 
     if (auction.beat.producerId === user.id) {
-      return NextResponse.json({ error: 'Vous ne pouvez pas encherir sur votre propre beat' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Vous ne pouvez pas encherir sur votre propre beat' },
+        { status: 400 }
+      )
     }
 
-    const minBid = auction.currentBid + auction.bidIncrement;
+    const minBid = auction.currentBid + auction.bidIncrement
     if (amount < minBid) {
-      return NextResponse.json({ error: `L'enchere minimum est de ${minBid} EUR` }, { status: 400 });
+      return NextResponse.json({ error: `L'enchere minimum est de ${minBid} EUR` }, { status: 400 })
     }
 
     // Calculate final amount with license multiplier
-    const multiplier = LICENSE_MULTIPLIERS[licenseType] || 1;
-    const finalAmount = amount * multiplier;
+    const multiplier = LICENSE_MULTIPLIERS[licenseType] || 1
+    const finalAmount = amount * multiplier
 
     // Create bid
     const bid = await prisma.bid.create({
@@ -85,21 +81,21 @@ export async function POST(
         userId: user.id,
       },
       include: {
-        user: { select: { name: true, displayName: true } }
-      }
-    });
+        user: { select: { name: true, displayName: true } },
+      },
+    })
 
     // Anti-snipe: extend auction if less than 2 minutes remaining
-    const now = new Date();
-    const endTime = new Date(auction.endTime);
-    const timeLeft = (endTime.getTime() - now.getTime()) / 60000; // in minutes
+    const now = new Date()
+    const endTime = new Date(auction.endTime)
+    const timeLeft = (endTime.getTime() - now.getTime()) / 60000 // in minutes
 
-    let newEndTime = auction.endTime;
-    let antiSnipeTriggered = false;
+    let newEndTime = auction.endTime
+    let antiSnipeTriggered = false
 
     if (timeLeft < auction.antiSnipeMinutes) {
-      newEndTime = new Date(endTime.getTime() + auction.antiSnipeExtension * 60000);
-      antiSnipeTriggered = true;
+      newEndTime = new Date(endTime.getTime() + auction.antiSnipeExtension * 60000)
+      antiSnipeTriggered = true
     }
 
     // Update auction
@@ -110,29 +106,29 @@ export async function POST(
         totalBids: { increment: 1 },
         endTime: newEndTime,
         status: timeLeft < 5 ? 'ENDING_SOON' : auction.status,
-      }
-    });
+      },
+    })
 
     // Notify outbid users
     const previousBids = await prisma.bid.findMany({
       where: {
         auctionId: auction.id,
-        userId: { not: user.id }
+        userId: { not: user.id },
       },
       select: { userId: true },
-      distinct: ['userId']
-    });
+      distinct: ['userId'],
+    })
 
     if (previousBids.length > 0) {
       await prisma.notification.createMany({
-        data: previousBids.map(b => ({
+        data: previousBids.map((b) => ({
           userId: b.userId,
           type: 'OUTBID',
           title: 'Surenchere !',
           message: `Quelqu'un a surencheri a ${amount} EUR. Replique vite !`,
-          link: `/auction/${auction.id}`
-        }))
-      });
+          link: `/auction/${auction.id}`,
+        })),
+      })
     }
 
     return NextResponse.json({
@@ -150,11 +146,10 @@ export async function POST(
         totalBids: auction.totalBids + 1,
         endTime: newEndTime,
         antiSnipeTriggered,
-      }
-    });
-
+      },
+    })
   } catch (error) {
-    console.error('Bid error on auction [id]:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error('Bid error on auction [id]:', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

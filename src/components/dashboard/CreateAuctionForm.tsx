@@ -11,12 +11,6 @@ interface Beat {
   coverImage: string | null
 }
 
-const LICENSE_TYPES = [
-  { value: 'BASIC', label: 'Basic (x1)', desc: 'Droits non-exclusifs' },
-  { value: 'PREMIUM', label: 'Premium (x2.5)', desc: 'Droits etendus' },
-  { value: 'EXCLUSIVE', label: 'Exclusive (x10)', desc: 'Droits exclusifs' },
-]
-
 const DURATIONS = [
   { value: 1, label: '1 heure' },
   { value: 6, label: '6 heures' },
@@ -40,7 +34,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
   const [startPrice, setStartPrice] = useState('10')
   const [reservePrice, setReservePrice] = useState('')
   const [buyNowPrice, setBuyNowPrice] = useState('')
-  const [licenseType, setLicenseType] = useState('BASIC')
+  const licenseType = 'EXCLUSIVE' // Encheres = licence exclusive uniquement
   const [durationHours, setDurationHours] = useState('24')
   const [bidIncrement, setBidIncrement] = useState('5')
 
@@ -157,7 +151,9 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
               <Loader2 size={16} className="animate-spin" /> Chargement des beats...
             </div>
           ) : beats.length === 0 ? (
-            <p className="text-sm text-gray-400">Aucun beat disponible. Uploade un beat d&apos;abord.</p>
+            <p className="text-sm text-gray-400">
+              Aucun beat disponible. Uploade un beat d&apos;abord.
+            </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {beats.map((beat) => (
@@ -176,7 +172,9 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-bold text-white truncate">{beat.title}</div>
-                    <div className="text-xs text-gray-500">{beat.genre} - {beat.bpm} BPM</div>
+                    <div className="text-xs text-gray-500">
+                      {beat.genre} - {beat.bpm} BPM
+                    </div>
                   </div>
                 </button>
               ))}
@@ -200,11 +198,15 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
                 step="0.01"
                 className="w-full bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] pr-8"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&euro;</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                &euro;
+              </span>
             </div>
           </div>
           <div>
-            <label htmlFor="reservePrice" className="text-sm font-semibold text-white mb-2 block">Prix reserve</label>
+            <label htmlFor="reservePrice" className="text-sm font-semibold text-white mb-2 block">
+              Prix reserve
+            </label>
             <div className="relative">
               <input
                 id="reservePrice"
@@ -216,11 +218,15 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
                 placeholder="Optionnel"
                 className="w-full bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] pr-8"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&euro;</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                &euro;
+              </span>
             </div>
           </div>
           <div>
-            <label htmlFor="buyNowPrice" className="text-sm font-semibold text-white mb-2 block">Achat immediat</label>
+            <label htmlFor="buyNowPrice" className="text-sm font-semibold text-white mb-2 block">
+              Achat immediat
+            </label>
             <div className="relative">
               <input
                 id="buyNowPrice"
@@ -232,30 +238,25 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
                 placeholder="Optionnel"
                 className="w-full bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] pr-8"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&euro;</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                &euro;
+              </span>
             </div>
           </div>
         </div>
 
-        {/* License type */}
-        <div>
-          <label className="text-sm font-semibold text-white mb-2 block">Type de licence</label>
-          <div className="grid grid-cols-3 gap-2">
-            {LICENSE_TYPES.map((lt) => (
-              <button
-                key={lt.value}
-                type="button"
-                onClick={() => setLicenseType(lt.value)}
-                className={`p-3 rounded-xl border text-left transition ${
-                  licenseType === lt.value
-                    ? 'border-[#e11d48] bg-[#e11d4810]'
-                    : 'border-[#1e1e2e] hover:border-[#e11d4840]'
-                }`}
-              >
-                <div className="text-sm font-bold text-white">{lt.label}</div>
-                <div className="text-xs text-gray-500">{lt.desc}</div>
-              </button>
-            ))}
+        {/* License info (exclusive only for auctions) */}
+        <div className="bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center flex-shrink-0">
+              <Gavel size={16} className="text-white" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-white">Licence Exclusive</div>
+              <div className="text-xs text-gray-500">
+                Les encheres sont exclusivement pour les droits exclusifs (WAV + Stems - Illimite)
+              </div>
+            </div>
           </div>
         </div>
 
@@ -269,7 +270,9 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
               className="w-full bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840]"
             >
               {DURATIONS.map((d) => (
-                <option key={d.value} value={d.value}>{d.label}</option>
+                <option key={d.value} value={d.value}>
+                  {d.label}
+                </option>
               ))}
             </select>
           </div>
@@ -284,7 +287,9 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
                 step="0.01"
                 className="w-full bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] pr-8"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">&euro;</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                &euro;
+              </span>
             </div>
           </div>
         </div>
@@ -312,9 +317,13 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
           >
             {submitting ? (
-              <><Loader2 size={16} className="animate-spin" /> Creation...</>
+              <>
+                <Loader2 size={16} className="animate-spin" /> Creation...
+              </>
             ) : (
-              <><Gavel size={16} /> Lancer l&apos;enchere</>
+              <>
+                <Gavel size={16} /> Lancer l&apos;enchere
+              </>
             )}
           </button>
         </div>

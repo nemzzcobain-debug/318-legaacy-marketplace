@@ -27,13 +27,11 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validated = placeBidSchema.safeParse(body)
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.errors[0].message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
 
-    const { amount, licenseType, isAutoBid, maxAutoBid } = validated.data
+    const { amount, isAutoBid, maxAutoBid } = validated.data
+    const licenseType = 'EXCLUSIVE' // Encheres = licence exclusive uniquement
 
     // Recuperer l'enchere avec le beat
     const auction = await prisma.auction.findUnique({
@@ -54,7 +52,7 @@ export async function POST(request: Request) {
 
     // Verifications
     if (auction.status !== 'ACTIVE' && auction.status !== 'ENDING_SOON') {
-      return NextResponse.json({ error: 'Cette enchere n\'est plus active' }, { status: 400 })
+      return NextResponse.json({ error: "Cette enchere n'est plus active" }, { status: 400 })
     }
 
     if (auction.endTime < new Date()) {
@@ -62,7 +60,10 @@ export async function POST(request: Request) {
     }
 
     if (auction.beat.producerId === userId) {
-      return NextResponse.json({ error: 'Tu ne peux pas encherir sur ton propre beat' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Tu ne peux pas encherir sur ton propre beat' },
+        { status: 400 }
+      )
     }
 
     if (amount < auction.currentBid + auction.bidIncrement) {
@@ -102,10 +103,7 @@ export async function POST(request: Request) {
               ? new Date(auction.endTime.getTime() + auction.antiSnipeExtension * 60000)
               : auction.endTime,
           // Mettre en ENDING_SOON si moins de 10 min
-          status:
-            auction.endTime.getTime() - Date.now() < 600000
-              ? 'ENDING_SOON'
-              : auction.status,
+          status: auction.endTime.getTime() - Date.now() < 600000 ? 'ENDING_SOON' : auction.status,
         },
       })
 
@@ -138,7 +136,7 @@ export async function POST(request: Request) {
       if (previousBidder && previousBidder.userId !== userId) {
         const prevUser = await tx.user.findUnique({
           where: { id: previousBidder.userId },
-          select: { email: true, name: true, displayName: true }
+          select: { email: true, name: true, displayName: true },
         })
         if (prevUser?.email) {
           // Fire and forget - will be sent after transaction

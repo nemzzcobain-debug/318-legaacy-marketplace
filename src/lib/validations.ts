@@ -4,10 +4,13 @@ import { z } from 'zod'
 export const registerSchema = z.object({
   name: z.string().min(2, 'Nom trop court').max(50, 'Nom trop long'),
   email: z.string().email('Email invalide'),
-  password: z.string().min(8, 'Minimum 8 caracteres').regex(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-    'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre'
-  ),
+  password: z
+    .string()
+    .min(8, 'Minimum 8 caracteres')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre'
+    ),
   role: z.enum(['ARTIST', 'PRODUCER']),
 })
 
@@ -20,17 +23,22 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email('Email invalide'),
 })
 
-export const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'Token invalide'),
-  password: z.string().min(8, 'Minimum 8 caracteres').regex(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-    'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre'
-  ),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Les mots de passe ne correspondent pas",
-  path: ["confirmPassword"],
-})
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, 'Token invalide'),
+    password: z
+      .string()
+      .min(8, 'Minimum 8 caracteres')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre'
+      ),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Les mots de passe ne correspondent pas',
+    path: ['confirmPassword'],
+  })
 
 // ─── Beat ───
 export const createBeatSchema = z.object({
@@ -44,29 +52,33 @@ export const createBeatSchema = z.object({
 })
 
 // ─── Auction (F14 FIX: validation complète avec contraintes croisées) ───
-export const createAuctionSchema = z.object({
-  beatId: z.string().min(1, 'Beat requis'),
-  startPrice: z.number().positive('Prix doit etre positif').max(100000, 'Prix max 100 000€'),
-  reservePrice: z.number().positive().max(100000).optional(),
-  buyNowPrice: z.number().positive().max(100000).optional(),
-  licenseType: z.enum(['BASIC', 'PREMIUM', 'EXCLUSIVE']),
-  durationHours: z.number().int().min(1).max(168), // 1h a 7 jours
-  bidIncrement: z.number().positive().min(1).max(1000).default(5),
-}).refine(
-  (data) => !data.reservePrice || data.reservePrice >= data.startPrice,
-  { message: 'Le prix de réserve doit être >= au prix de départ', path: ['reservePrice'] }
-).refine(
-  (data) => !data.buyNowPrice || data.buyNowPrice > data.startPrice,
-  { message: 'Le prix achat immédiat doit être > au prix de départ', path: ['buyNowPrice'] }
-).refine(
-  (data) => !data.buyNowPrice || !data.reservePrice || data.buyNowPrice >= data.reservePrice,
-  { message: 'Le prix achat immédiat doit être >= au prix de réserve', path: ['buyNowPrice'] }
-)
+export const createAuctionSchema = z
+  .object({
+    beatId: z.string().min(1, 'Beat requis'),
+    startPrice: z.number().positive('Prix doit etre positif').max(100000, 'Prix max 100 000€'),
+    reservePrice: z.number().positive().max(100000).optional(),
+    buyNowPrice: z.number().positive().max(100000).optional(),
+    licenseType: z.literal('EXCLUSIVE').default('EXCLUSIVE'),
+    durationHours: z.number().int().min(1).max(168), // 1h a 7 jours
+    bidIncrement: z.number().positive().min(1).max(1000).default(5),
+  })
+  .refine((data) => !data.reservePrice || data.reservePrice >= data.startPrice, {
+    message: 'Le prix de réserve doit être >= au prix de départ',
+    path: ['reservePrice'],
+  })
+  .refine((data) => !data.buyNowPrice || data.buyNowPrice > data.startPrice, {
+    message: 'Le prix achat immédiat doit être > au prix de départ',
+    path: ['buyNowPrice'],
+  })
+  .refine(
+    (data) => !data.buyNowPrice || !data.reservePrice || data.buyNowPrice >= data.reservePrice,
+    { message: 'Le prix achat immédiat doit être >= au prix de réserve', path: ['buyNowPrice'] }
+  )
 
 // ─── Bid ───
 export const placeBidSchema = z.object({
   amount: z.number().positive('Montant doit etre positif'),
-  licenseType: z.enum(['BASIC', 'PREMIUM', 'EXCLUSIVE']).default('BASIC'),
+  licenseType: z.literal('EXCLUSIVE').default('EXCLUSIVE'),
   isAutoBid: z.boolean().default(false),
   maxAutoBid: z.number().positive().optional(),
 })
@@ -106,6 +118,7 @@ export const producerApplicationSchema = z.object({
     .transform((val) => {
       const trimmed = val.trim()
       if (trimmed === '') return undefined
+      // Auto-ajouter https:// si pas de protocole
       if (trimmed && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
         return `https://${trimmed}`
       }

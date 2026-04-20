@@ -22,6 +22,7 @@ import {
   Eye,
   User,
   ListMusic,
+  Sparkles,
 } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import ThemeToggle from '@/components/ui/ThemeToggle'
@@ -63,6 +64,7 @@ export default function Header() {
 
   const navItems = [
     { href: '/marketplace', label: t('nav.auctions'), icon: Gavel },
+    { href: '/nouveautes', label: 'Nouveautés', icon: Sparkles },
     { href: '/search', label: t('nav.search'), icon: Search },
     { href: '/producers', label: t('nav.producers'), icon: Users },
   ]
@@ -158,6 +160,14 @@ export default function Header() {
                 </Link>
               )}
 
+              <Link
+                href="/nouveautes"
+                className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"
+                aria-label="Nouveautés"
+              >
+                <Sparkles size={20} className="text-amber-400" />
+                <HeaderTooltip name="Nouveautés" description="Beats en achat direct" />
+              </Link>
               <Link
                 href="/playlists"
                 className="relative group/tip p-2 hover:bg-white/5 rounded-lg transition-colors"

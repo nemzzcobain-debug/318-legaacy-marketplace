@@ -122,6 +122,57 @@ export async function createDashboardLink(accountId: string) {
 }
 
 /**
+ * Cree un PaymentIntent pour un achat direct de beat (hors encheres)
+ */
+export async function createBeatPurchaseIntent({
+  amount,
+  producerStripeAccountId,
+  beatId,
+  buyerEmail,
+  beatTitle,
+  licenseType,
+}: {
+  amount: number
+  producerStripeAccountId: string
+  beatId: string
+  buyerEmail: string
+  beatTitle: string
+  licenseType: string
+}) {
+  const { commission, producerPayout } = calculatePaymentSplit(amount)
+
+  const amountInCents = Math.round(amount * 100)
+  const commissionInCents = Math.round(commission * 100)
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amountInCents,
+    currency: 'eur',
+    application_fee_amount: commissionInCents,
+    transfer_data: {
+      destination: producerStripeAccountId,
+    },
+    metadata: {
+      beatId,
+      type: 'direct_purchase',
+      platform: '318_legaacy',
+      beatTitle,
+      licenseType,
+      commission: commission.toString(),
+      producerPayout: producerPayout.toString(),
+    },
+    receipt_email: buyerEmail,
+    description: `318 LEGAACY - ${beatTitle} (Licence ${licenseType})`,
+  })
+
+  return {
+    paymentIntent,
+    clientSecret: paymentIntent.client_secret,
+    commission,
+    producerPayout,
+  }
+}
+
+/**
  * Cree un PaymentIntent avec split automatique vers le producteur
  */
 export async function createAuctionPaymentIntent({
