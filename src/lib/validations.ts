@@ -111,19 +111,22 @@ export const updateProfileSchema = z.object({
 })
 
 // ─── Producer Application ───
+const optionalUrl = z
+  .string()
+  .transform((val) => {
+    const trimmed = val.trim()
+    if (trimmed === '') return undefined
+    // Auto-ajouter https:// si pas de protocole
+    if (trimmed && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      return `https://${trimmed}`
+    }
+    return trimmed
+  })
+  .pipe(z.string().url('URL invalide').optional())
+
 export const producerApplicationSchema = z.object({
   producerBio: z.string().min(20, 'Bio trop courte, minimum 20 caracteres').max(1000),
-  portfolio: z
-    .string()
-    .transform((val) => {
-      const trimmed = val.trim()
-      if (trimmed === '') return undefined
-      // Auto-ajouter https:// si pas de protocole
-      if (trimmed && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
-        return `https://${trimmed}`
-      }
-      return trimmed
-    })
-    .pipe(z.string().url('URL invalide').optional()),
+  portfolio: optionalUrl,
+  youtube: optionalUrl,
   genres: z.array(z.string()).min(1, 'Selectionne au moins un genre'),
 })

@@ -47,6 +47,7 @@ export async function POST(request: Request) {
         producerStatus: 'PENDING',
         producerBio: validated.data.producerBio,
         portfolio: validated.data.portfolio,
+        youtube: validated.data.youtube,
       },
       select: {
         id: true,

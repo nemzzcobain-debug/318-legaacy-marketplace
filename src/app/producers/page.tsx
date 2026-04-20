@@ -19,6 +19,8 @@ import {
   Loader2,
   FileText,
   Globe,
+  Youtube,
+  FolderOpen,
 } from 'lucide-react'
 import { GENRES } from '@/types'
 
@@ -56,6 +58,7 @@ export default function ProducersPage() {
   const [showForm, setShowForm] = useState(false)
   const [producerBio, setProducerBio] = useState('')
   const [portfolio, setPortfolio] = useState('')
+  const [youtube, setYoutube] = useState('')
   const [genres, setGenres] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
@@ -110,7 +113,12 @@ export default function ProducersPage() {
       const res = await fetch('/api/producers/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ producerBio, portfolio: portfolio.trim() || undefined, genres }),
+        body: JSON.stringify({
+          producerBio,
+          portfolio: portfolio.trim() || undefined,
+          youtube: youtube.trim() || undefined,
+          genres,
+        }),
       })
 
       const data = await res.json()
@@ -372,17 +380,38 @@ export default function ProducersPage() {
                   <p className="text-xs text-gray-600 mt-1">{producerBio.length}/1000 (min. 20)</p>
                 </div>
 
-                {/* Portfolio */}
+                {/* Liens optionnels */}
                 <div className="mb-4">
-                  <label className="text-sm font-semibold text-white mb-1.5 flex items-center gap-1.5">
-                    <Globe size={14} /> Portfolio / Lien (optionnel)
+                  <label className="text-sm font-semibold text-white mb-3 flex items-center gap-1.5">
+                    <Globe size={14} /> Liens (optionnels)
                   </label>
-                  <input
-                    value={portfolio}
-                    onChange={(e) => setPortfolio(e.target.value)}
-                    placeholder="https://soundcloud.com/ton-profil"
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4850]"
-                  />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
+                        <Youtube size={16} className="text-red-500" />
+                      </div>
+                      <input
+                        value={youtube}
+                        onChange={(e) => setYoutube(e.target.value)}
+                        placeholder="https://youtube.com/@ta-chaine"
+                        className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4850]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <FolderOpen size={16} className="text-blue-400" />
+                      </div>
+                      <input
+                        value={portfolio}
+                        onChange={(e) => setPortfolio(e.target.value)}
+                        placeholder="https://drive.google.com/drive/folders/..."
+                        className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4850]"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">
+                    Tu peux ajouter un ou plusieurs liens, ou passer directement a la suite
+                  </p>
                 </div>
 
                 {/* Genres */}
