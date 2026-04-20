@@ -87,24 +87,41 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Notifier tous les followers du producteur
+    // Notifier tous les followers du producteur + les admins
     try {
+      const producerName = user.displayName || user.name;
+
+      // Notifier les followers
       const followers = await prisma.follow.findMany({
         where: { followingId: user.id },
         select: { followerId: true },
       });
 
-      if (followers.length > 0) {
-        const producerName = user.displayName || user.name;
-        await prisma.notification.createMany({
-          data: followers.map(f => ({
-            type: 'NEW_BEAT',
-            title: `Nouveau beat de ${producerName}`,
-            message: `${producerName} a publie "${title}" (${genre}, ${bpm} BPM)`,
-            link: `/producer/${user.id}`,
-            userId: f.followerId,
-          })),
-        });
+      // Notifier les admins (sauf si c'est un admin qui uploade)
+      const admins = await prisma.user.findMany({
+        where: { role: 'ADMIN', id: { not: user.id } },
+        select: { id: true },
+      });
+
+      const notifications = [
+        ...followers.map(f => ({
+          type: 'NEW_BEAT',
+          title: `Nouveau beat de ${producerName}`,
+          message: `${producerName} a publi\u00e9 "${title}" (${genre}, ${bpm} BPM)`,
+          link: `/producer/${user.id}`,
+          userId: f.followerId,
+        })),
+        ...admins.map(a => ({
+          type: 'NEW_BEAT',
+          title: `Nouveau beat upload\u00e9`,
+          message: `${producerName} a upload\u00e9 "${title}" (${genre}, ${bpm} BPM)`,
+          link: `/beats/${beat.id}`,
+          userId: a.id,
+        })),
+      ];
+
+      if (notifications.length > 0) {
+        await prisma.notification.createMany({ data: notifications });
       }
     } catch {}
 
