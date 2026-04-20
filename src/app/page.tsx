@@ -935,14 +935,17 @@ export default function Home() {
                       ))}
                     </div>
 
-                    {/* Fake upload area */}
-                    <div className="border-2 border-dashed border-[#1e1e2e] rounded-xl p-4 text-center hover:border-[#e11d48]/30 transition-colors">
+                    {/* Upload CTA */}
+                    <Link
+                      href="/producers"
+                      className="block border-2 border-dashed border-[#1e1e2e] rounded-xl p-4 text-center hover:border-[#e11d48]/30 hover:bg-[#e11d48]/5 transition-all"
+                    >
                       <Music size={20} className="mx-auto mb-2 text-gray-600" />
                       <div className="text-xs text-gray-500 font-semibold">Drop ton beat ici</div>
                       <div className="text-[10px] text-gray-700 mt-1">
                         WAV, MP3 &middot; Max 50MB
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between">
                       <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
