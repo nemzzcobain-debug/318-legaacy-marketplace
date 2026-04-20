@@ -223,3 +223,80 @@ export async function createAuctionPaymentIntent({
     producerPayout,
   }
 }
+
+/**
+ * Cree un PaymentIntent ou la marketplace encaisse directement.
+ * Utilise quand le producteur n'a pas encore de compte Stripe Connect.
+ * L'argent est retenu par la plateforme et sera reverse plus tard.
+ */
+export async function createHeldPaymentIntent({
+  amount,
+  auctionId,
+  buyerEmail,
+  beatTitle,
+  licenseType,
+  producerId,
+}: {
+  amount: number
+  auctionId: string
+  buyerEmail: string
+  beatTitle: string
+  licenseType: string
+  producerId: string
+}) {
+  const { commission, producerPayout } = calculatePaymentSplit(amount)
+  const amountInCents = Math.round(amount * 100)
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amountInCents,
+    currency: 'eur',
+    metadata: {
+      auctionId,
+      platform: '318_legaacy',
+      beatTitle,
+      licenseType,
+      commission: commission.toString(),
+      producerPayout: producerPayout.toString(),
+      producerId,
+      held: 'true',
+    },
+    receipt_email: buyerEmail,
+    description: `318 LEGAACY - ${beatTitle} (Licence ${licenseType}) [Paiement retenu]`,
+  })
+
+  return {
+    paymentIntent,
+    clientSecret: paymentIntent.client_secret,
+    commission,
+    producerPayout,
+  }
+}
+
+/**
+ * Transfere un paiement retenu vers le compte Connect du producteur.
+ * A appeler quand le producteur configure enfin son compte Stripe.
+ */
+export async function transferHeldPayment({
+  paymentIntentId,
+  producerStripeAccountId,
+  producerPayout,
+}: {
+  paymentIntentId: string
+  producerStripeAccountId: string
+  producerPayout: number
+}) {
+  const amountInCents = Math.round(producerPayout * 100)
+
+  const transfer = await stripe.transfers.create({
+    amount: amountInCents,
+    currency: 'eur',
+    destination: producerStripeAccountId,
+    transfer_group: paymentIntentId,
+    metadata: {
+      platform: '318_legaacy',
+      type: 'held_payout',
+    },
+  })
+
+  return transfer
+}

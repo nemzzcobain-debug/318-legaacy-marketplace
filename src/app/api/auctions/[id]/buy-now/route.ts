@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { createAuctionPaymentIntent, isConnectAccountReady } from '@/lib/stripe'
+import {
+  createAuctionPaymentIntent,
+  createHeldPaymentIntent,
+  isConnectAccountReady,
+} from '@/lib/stripe'
 
 // POST /api/auctions/[id]/buy-now — Creer un PaymentIntent pour achat immediat
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -52,51 +56,61 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       )
     }
 
-    // Verifier que le producteur a un compte Stripe Connect actif
     const producer = auction.beat.producer
-    if (!producer.stripeAccountId) {
-      return NextResponse.json(
-        { error: "Le producteur n'a pas encore configure son compte de paiement." },
-        { status: 400 }
-      )
-    }
-
-    const isProducerReady = await isConnectAccountReady(producer.stripeAccountId)
-    if (!isProducerReady) {
-      return NextResponse.json(
-        { error: 'Le compte de paiement du producteur est en cours de verification.' },
-        { status: 400 }
-      )
-    }
-
-    // Creer le PaymentIntent avec le buyNowPrice
     const amount = auction.buyNowPrice
-    const { paymentIntent, clientSecret, commission, producerPayout } =
-      await createAuctionPaymentIntent({
+    let result
+
+    // Si le producteur a un compte Stripe Connect actif → split direct
+    if (producer.stripeAccountId) {
+      const isReady = await isConnectAccountReady(producer.stripeAccountId)
+      if (isReady) {
+        result = await createAuctionPaymentIntent({
+          amount,
+          producerStripeAccountId: producer.stripeAccountId,
+          auctionId: auction.id,
+          buyerEmail: session.user.email!,
+          beatTitle: auction.beat.title,
+          licenseType: 'EXCLUSIVE',
+        })
+      } else {
+        // Compte pas encore verifie → marketplace encaisse
+        result = await createHeldPaymentIntent({
+          amount,
+          auctionId: auction.id,
+          buyerEmail: session.user.email!,
+          beatTitle: auction.beat.title,
+          licenseType: 'EXCLUSIVE',
+          producerId: producer.id,
+        })
+      }
+    } else {
+      // Pas de compte Stripe → marketplace encaisse et reversera plus tard
+      result = await createHeldPaymentIntent({
         amount,
-        producerStripeAccountId: producer.stripeAccountId,
         auctionId: auction.id,
         buyerEmail: session.user.email!,
         beatTitle: auction.beat.title,
         licenseType: 'EXCLUSIVE',
+        producerId: producer.id,
       })
+    }
 
-    // Sauvegarder le PaymentIntent dans l'enchere (sans finaliser)
+    // Sauvegarder le PaymentIntent dans l'enchere
     await prisma.auction.update({
       where: { id: auctionId },
       data: {
-        stripePaymentId: paymentIntent.id,
-        commissionAmount: commission,
-        producerPayout,
+        stripePaymentId: result.paymentIntent.id,
+        commissionAmount: result.commission,
+        producerPayout: result.producerPayout,
       },
     })
 
     return NextResponse.json({
-      clientSecret,
-      paymentIntentId: paymentIntent.id,
+      clientSecret: result.clientSecret,
+      paymentIntentId: result.paymentIntent.id,
       amount,
-      commission,
-      producerPayout,
+      commission: result.commission,
+      producerPayout: result.producerPayout,
       beatTitle: auction.beat.title,
       licenseType: 'EXCLUSIVE',
     })

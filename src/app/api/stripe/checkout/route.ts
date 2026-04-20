@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { createAuctionPaymentIntent, isConnectAccountReady } from '@/lib/stripe'
+import {
+  createAuctionPaymentIntent,
+  createHeldPaymentIntent,
+  isConnectAccountReady,
+} from '@/lib/stripe'
 
 // POST — Creer un PaymentIntent pour payer une enchere gagnee
 export async function POST(req: NextRequest) {
@@ -37,12 +41,18 @@ export async function POST(req: NextRequest) {
 
     // Verifier que l'enchere est terminee
     if (auction.status !== 'ENDED' && auction.status !== 'COMPLETED') {
-      return NextResponse.json({ error: 'Cette enchere n\'est pas encore terminee' }, { status: 400 })
+      return NextResponse.json(
+        { error: "Cette enchere n'est pas encore terminee" },
+        { status: 400 }
+      )
     }
 
     // Verifier que l'utilisateur est le gagnant
     if (auction.winnerId !== session.user.id) {
-      return NextResponse.json({ error: 'Vous n\'etes pas le gagnant de cette enchere' }, { status: 403 })
+      return NextResponse.json(
+        { error: "Vous n'etes pas le gagnant de cette enchere" },
+        { status: 403 }
+      )
     }
 
     // Verifier si deja paye
@@ -50,60 +60,66 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cette enchere a deja ete payee' }, { status: 400 })
     }
 
-    // Verifier que le producteur a un compte Stripe Connect actif
     const producer = auction.beat.producer
-    if (!producer.stripeAccountId) {
-      return NextResponse.json(
-        { error: 'Le producteur n\'a pas encore configure son compte de paiement. Contactez le support.' },
-        { status: 400 }
-      )
-    }
-
-    const isProducerReady = await isConnectAccountReady(producer.stripeAccountId)
-    if (!isProducerReady) {
-      return NextResponse.json(
-        { error: 'Le compte de paiement du producteur est en cours de verification. Reessayez plus tard.' },
-        { status: 400 }
-      )
-    }
-
-    // Montant final de l'enchere
     const amount = auction.finalPrice || auction.currentBid
+    let result
 
-    // Creer le PaymentIntent avec split
-    const { paymentIntent, clientSecret, commission, producerPayout } = await createAuctionPaymentIntent({
-      amount,
-      producerStripeAccountId: producer.stripeAccountId,
-      auctionId: auction.id,
-      buyerEmail: session.user.email!,
-      beatTitle: auction.beat.title,
-      licenseType: auction.winningLicense || auction.licenseType,
-    })
+    // Si le producteur a un compte Stripe Connect actif → split direct
+    if (producer.stripeAccountId) {
+      const isReady = await isConnectAccountReady(producer.stripeAccountId)
+      if (isReady) {
+        result = await createAuctionPaymentIntent({
+          amount,
+          producerStripeAccountId: producer.stripeAccountId,
+          auctionId: auction.id,
+          buyerEmail: session.user.email!,
+          beatTitle: auction.beat.title,
+          licenseType: auction.winningLicense || auction.licenseType,
+        })
+      } else {
+        // Compte pas encore verifie → marketplace encaisse
+        result = await createHeldPaymentIntent({
+          amount,
+          auctionId: auction.id,
+          buyerEmail: session.user.email!,
+          beatTitle: auction.beat.title,
+          licenseType: auction.winningLicense || auction.licenseType,
+          producerId: producer.id,
+        })
+      }
+    } else {
+      // Pas de compte Stripe → marketplace encaisse
+      result = await createHeldPaymentIntent({
+        amount,
+        auctionId: auction.id,
+        buyerEmail: session.user.email!,
+        beatTitle: auction.beat.title,
+        licenseType: auction.winningLicense || auction.licenseType,
+        producerId: producer.id,
+      })
+    }
 
     // Sauvegarder le PaymentIntent ID dans l'enchere
     await prisma.auction.update({
       where: { id: auction.id },
       data: {
-        stripePaymentId: paymentIntent.id,
-        commissionAmount: commission,
-        producerPayout,
+        stripePaymentId: result.paymentIntent.id,
+        commissionAmount: result.commission,
+        producerPayout: result.producerPayout,
       },
     })
 
     return NextResponse.json({
-      clientSecret,
-      paymentIntentId: paymentIntent.id,
+      clientSecret: result.clientSecret,
+      paymentIntentId: result.paymentIntent.id,
       amount,
-      commission,
-      producerPayout,
+      commission: result.commission,
+      producerPayout: result.producerPayout,
       beatTitle: auction.beat.title,
       licenseType: auction.winningLicense || auction.licenseType,
     })
   } catch (error: any) {
     console.error('Erreur checkout:', error)
-    return NextResponse.json(
-      { error: 'Erreur serveur' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
