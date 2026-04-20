@@ -72,20 +72,30 @@ export default function MarketplacePage() {
           </div>
 
           <h1 className="text-4xl md:text-5xl font-black mb-3 gradient-text leading-tight">
-            Enchéris sur les meilleurs<br />instrumentales
+            Enchéris sur les meilleures
+            <br />
+            instrumentales
           </h1>
 
           <p className="text-base text-gray-400 max-w-lg mx-auto mb-7 leading-relaxed">
-            Découvre des beats uniques de producteurs vérifiés. Place ton enchère,
-            remporte l'instrumentale et crée ton prochain hit.
+            Découvre des beats uniques de producteurs vérifiés. Place ton enchère, remporte
+            l'instrumentale et crée ton prochain hit.
           </p>
 
           {/* Stats */}
           <div className="flex justify-center gap-8 mb-8 flex-wrap">
             {[
               { label: 'Enchères actives', value: auctions.length, icon: Gavel },
-              { label: 'Enchères totales', value: auctions.reduce((s, a) => s + a.totalBids, 0), icon: TrendingUp },
-              { label: 'Valeur totale', value: `${auctions.reduce((s, a) => s + a.currentBid, 0)}\u20AC`, icon: DollarSign },
+              {
+                label: 'Enchères totales',
+                value: auctions.reduce((s, a) => s + a.totalBids, 0),
+                icon: TrendingUp,
+              },
+              {
+                label: 'Valeur totale',
+                value: `${auctions.reduce((s, a) => s + a.currentBid, 0)}\u20AC`,
+                icon: DollarSign,
+              },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-lg bg-[#e11d4810] flex items-center justify-center">
@@ -119,9 +129,10 @@ export default function MarketplacePage() {
               onClick={() => setActiveFilter(id)}
               className={`
                 px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-1 transition-all border
-                ${activeFilter === id
-                  ? 'text-[#e11d48] bg-[#e11d4815] border-[#e11d4830]'
-                  : 'text-gray-400 bg-white/[0.02] border-[#1e1e2e] hover:text-white'
+                ${
+                  activeFilter === id
+                    ? 'text-[#e11d48] bg-[#e11d4815] border-[#e11d4830]'
+                    : 'text-gray-400 bg-white/[0.02] border-[#1e1e2e] hover:text-white'
                 }
               `}
             >
@@ -134,7 +145,10 @@ export default function MarketplacePage() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-10">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl h-80 animate-pulse" />
+              <div
+                key={i}
+                className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl h-80 animate-pulse"
+              />
             ))}
           </div>
         ) : filtered.length > 0 ? (
