@@ -110,7 +110,7 @@ export default function ProducersPage() {
       const res = await fetch('/api/producers/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ producerBio, portfolio, genres }),
+        body: JSON.stringify({ producerBio, portfolio: portfolio.trim() || undefined, genres }),
       })
 
       const data = await res.json()

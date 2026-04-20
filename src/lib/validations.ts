@@ -101,6 +101,16 @@ export const updateProfileSchema = z.object({
 // ─── Producer Application ───
 export const producerApplicationSchema = z.object({
   producerBio: z.string().min(20, 'Bio trop courte, minimum 20 caracteres').max(1000),
-  portfolio: z.string().url('URL invalide').optional(),
+  portfolio: z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim()
+      if (trimmed === '') return undefined
+      if (trimmed && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+        return `https://${trimmed}`
+      }
+      return trimmed
+    })
+    .pipe(z.string().url('URL invalide').optional()),
   genres: z.array(z.string()).min(1, 'Selectionne au moins un genre'),
 })
