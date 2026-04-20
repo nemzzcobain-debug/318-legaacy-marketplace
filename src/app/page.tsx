@@ -564,13 +564,13 @@ export default function Home() {
         {/* ═══════════ SELECTION DE LA SEMAINE ═══════════ */}
         <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-hidden">
           {/* Background glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-orange-900/15 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gradient-radial from-amber-900/10 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-[#E50914]/15 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gradient-radial from-[#E50914]/10 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
 
           <div className="max-w-5xl mx-auto relative z-10">
             {/* Header */}
             <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 text-xs font-bold text-orange-400 mb-4">
+              <div className="inline-flex items-center gap-2 bg-[#E50914]/10 border border-[#E50914]/20 rounded-full px-4 py-1.5 text-xs font-bold text-[#E50914] mb-4">
                 <Flame size={12} className="animate-pulse" /> {t('weeklySelection.badge')}
               </div>
               <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
@@ -588,11 +588,11 @@ export default function Home() {
 
               if (!weeklyAuction) {
                 return (
-                  <div className="relative bg-gradient-to-br from-[#1a1008] via-[#111] to-[#0a0a1a] rounded-3xl border border-orange-500/20 overflow-hidden">
+                  <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl border border-[#E50914]/20 overflow-hidden">
                     <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5" />
                     <div className="relative z-10 py-20 text-center">
-                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center mx-auto mb-5 border border-orange-500/20">
-                        <Clock size={32} className="text-orange-400" />
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#E50914]/20 to-[#B20710]/20 flex items-center justify-center mx-auto mb-5 border border-[#E50914]/20">
+                        <Clock size={32} className="text-[#E50914]" />
                       </div>
                       <h3 className="text-xl font-extrabold text-white mb-2">
                         {t('weeklySelection.comingSoon')}
@@ -602,7 +602,7 @@ export default function Home() {
                       </p>
                       <Link
                         href="/register"
-                        className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-xl font-bold text-sm text-orange-400 border border-orange-500/20 hover:bg-orange-500/5 transition-all hover:border-orange-500/40"
+                        className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-xl font-bold text-sm text-[#E50914] border border-[#E50914]/20 hover:bg-[#E50914]/5 transition-all hover:border-[#E50914]/40"
                       >
                         {t('weeklySelection.enableNotifs')} <ArrowRight size={14} />
                       </Link>
@@ -612,11 +612,11 @@ export default function Home() {
               }
 
               return (
-                <div className="relative bg-gradient-to-br from-[#1a1008] via-[#111] to-[#0a0a1a] rounded-3xl border border-orange-500/20 overflow-hidden group">
+                <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl border border-[#E50914]/20 overflow-hidden group">
                   {/* Animated border glow */}
-                  <div className="absolute -inset-[1px] bg-gradient-to-r from-orange-500/30 via-amber-500/30 to-orange-500/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-sm" />
+                  <div className="absolute -inset-[1px] bg-gradient-to-r from-[#E50914]/30 via-[#B20710]/30 to-[#E50914]/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-sm" />
 
-                  <div className="relative z-10 bg-gradient-to-br from-[#1a1008] via-[#111] to-[#0a0a1a] rounded-3xl">
+                  <div className="relative z-10 bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl">
                     <div className="grid md:grid-cols-2 gap-0">
                       {/* Left: Cover & Audio */}
                       <div className="relative min-h-[320px] md:min-h-[400px] overflow-hidden rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none">
@@ -628,14 +628,14 @@ export default function Home() {
                             className="object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-700"
                           />
                         ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-orange-900/40 via-amber-900/20 to-[#111]" />
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#E50914]/40 via-[#B20710]/20 to-[#111]" />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#111] hidden md:block" />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent md:hidden" />
 
                         {/* Badge "Selection" */}
                         <div className="absolute top-5 left-5 flex items-center gap-2">
-                          <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-orange-900/40">
+                          <span className="bg-gradient-to-r from-[#E50914] to-[#B20710] text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-[#E50914]/40">
                             {t('weeklySelection.badge')}
                           </span>
                         </div>
@@ -652,9 +652,9 @@ export default function Home() {
                         {/* Play button center */}
                         <button
                           onClick={() => togglePlay(weeklyAuction.id, weeklyAuction.beat.audioUrl)}
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-orange-900/50 hover:scale-110 transition-transform z-10 border-2 border-white/10 backdrop-blur-sm"
+                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-[#E50914]/50 hover:scale-110 transition-transform z-10 border-2 border-white/10 backdrop-blur-sm"
                           style={{
-                            background: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)',
+                            background: 'linear-gradient(135deg, #E50914 0%, #B20710 100%)',
                           }}
                         >
                           {playingId === weeklyAuction.id ? (
@@ -667,7 +667,7 @@ export default function Home() {
                         {/* Waveform bottom */}
                         <div className="absolute bottom-5 left-5 right-5 flex items-center gap-3">
                           <WaveformVisual active={playingId === weeklyAuction.id} />
-                          <div className="h-[2px] flex-1 bg-gradient-to-r from-orange-500/40 via-amber-500/20 to-transparent rounded-full" />
+                          <div className="h-[2px] flex-1 bg-gradient-to-r from-[#E50914]/40 via-[#E50914]/20 to-transparent rounded-full" />
                         </div>
                       </div>
 
@@ -675,7 +675,7 @@ export default function Home() {
                       <div className="p-8 md:p-10 flex flex-col justify-center">
                         {/* Genre tags */}
                         <div className="flex items-center gap-2 mb-4">
-                          <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 rounded-full px-3 py-1 border border-orange-500/20">
+                          <span className="text-[10px] font-bold text-[#E50914] bg-[#E50914]/10 rounded-full px-3 py-1 border border-[#E50914]/20">
                             {weeklyAuction.beat.genre}
                           </span>
                           <span className="text-[10px] font-bold text-gray-500 bg-white/5 rounded-full px-3 py-1">
@@ -689,13 +689,13 @@ export default function Home() {
                         </div>
 
                         {/* Title */}
-                        <h3 className="text-2xl md:text-3xl font-black text-white mb-2 group-hover:text-orange-300 transition-colors">
+                        <h3 className="text-2xl md:text-3xl font-black text-white mb-2 group-hover:text-[#ff4d4d] transition-colors">
                           {weeklyAuction.beat.title}
                         </h3>
 
                         {/* Producer */}
                         <div className="flex items-center gap-2 mb-6">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#E50914] to-[#B20710] flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
                             {weeklyAuction.beat.producer.avatar ? (
                               <Image
                                 src={weeklyAuction.beat.producer.avatar}
@@ -712,14 +712,14 @@ export default function Home() {
                             {weeklyAuction.beat.producer.displayName ||
                               weeklyAuction.beat.producer.name}
                           </span>
-                          <BadgeCheck size={14} className="text-orange-500" />
+                          <BadgeCheck size={14} className="text-[#E50914]" />
                         </div>
 
                         {/* Timer */}
-                        <div className="bg-black/40 rounded-2xl border border-amber-500/10 p-5 mb-6">
+                        <div className="bg-black/40 rounded-2xl border border-[#E50914]/10 p-5 mb-6">
                           <div className="flex items-center gap-2 mb-3">
-                            <Timer size={14} className="text-orange-400" />
-                            <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">
+                            <Timer size={14} className="text-[#E50914]" />
+                            <span className="text-xs font-bold text-[#E50914] uppercase tracking-wider">
                               {t('weeklySelection.timeRemaining')}
                             </span>
                           </div>
@@ -760,8 +760,8 @@ export default function Home() {
                           href={`/auction/${weeklyAuction.id}`}
                           className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
                         >
-                          <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-amber-600 rounded-2xl" />
-                          <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl opacity-0 group-hover/btn:opacity-100 transition-opacity" />
                           <span className="relative z-10 flex items-center justify-center gap-2">
                             {t('weeklySelection.placeBid')} <ArrowRight size={18} />
                           </span>
