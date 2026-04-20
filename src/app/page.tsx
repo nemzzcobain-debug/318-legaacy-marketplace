@@ -464,38 +464,41 @@ export default function Home() {
                     href={`/auction/${auction.id}`}
                     className="group bg-[#111] rounded-2xl border border-[#1e1e2e] hover:border-red-500/30 transition-all overflow-hidden hover:-translate-y-1 duration-300"
                   >
-                    {/* Cover */}
-                    <div className="relative h-28 bg-gradient-to-br from-[#1a0a2e] via-[#111] to-[#0a0a1a] overflow-hidden">
-                      {auction.beat.coverImage && (
-                        <Image
-                          src={auction.beat.coverImage}
-                          alt={auction.beat.title}
-                          fill
-                          className="absolute inset-0 object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-500"
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/50 to-transparent" />
+                    {/* Cover + Play button wrapper */}
+                    <div className="relative">
+                      <div className="relative h-28 bg-gradient-to-br from-[#1a0a2e] via-[#111] to-[#0a0a1a] overflow-hidden">
+                        {auction.beat.coverImage && (
+                          <Image
+                            src={auction.beat.coverImage}
+                            alt={auction.beat.title}
+                            fill
+                            className="absolute inset-0 object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-500"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/50 to-transparent" />
 
-                      <div className="absolute top-3 right-3">
-                        <span
-                          className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${licenseColors[auction.licenseType] || licenseColors.BASIC}`}
-                        >
-                          {auction.licenseType}
-                        </span>
+                        <div className="absolute top-3 right-3">
+                          <span
+                            className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${licenseColors[auction.licenseType] || licenseColors.BASIC}`}
+                          >
+                            {auction.licenseType}
+                          </span>
+                        </div>
+
+                        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1">
+                          <Timer size={11} className="text-red-500" />
+                          <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
+                        </div>
                       </div>
 
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1">
-                        <Timer size={11} className="text-red-500" />
-                        <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
-                      </div>
-
+                      {/* Play button - outside overflow-hidden */}
                       <button
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
                           togglePlay(auction.id, auction.beat.audioUrl)
                         }}
-                        className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-red-900/40 hover:scale-110 transition-transform z-10 border-4 border-[#111]"
+                        className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-red-900/40 hover:scale-110 transition-transform z-20 border-4 border-[#111]"
                         style={{ background: 'linear-gradient(135deg, #e11d48 0%, #9f1239 100%)' }}
                       >
                         {playingId === auction.id ? (
