@@ -20,6 +20,9 @@ import {
   Star,
   Volume2,
   Clock,
+  SlidersHorizontal,
+  X,
+  ChevronDown,
 } from 'lucide-react'
 
 interface Beat {
@@ -41,6 +44,40 @@ interface Beat {
   }
   basePrice: number // Prix de base (startPrice de la derniere enchere)
 }
+
+const BPM_PRESETS = [
+  { label: 'Slow', range: '60-90', min: 60, max: 90 },
+  { label: 'Medium', range: '90-120', min: 90, max: 120 },
+  { label: 'Fast', range: '120-150', min: 120, max: 150 },
+  { label: 'Rapide+', range: '150+', min: 150, max: 999 },
+]
+
+const MUSICAL_KEYS = [
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B',
+  'Cm',
+  'C#m',
+  'Dm',
+  'D#m',
+  'Em',
+  'Fm',
+  'F#m',
+  'Gm',
+  'G#m',
+  'Am',
+  'A#m',
+  'Bm',
+]
 
 const LICENSES = [
   {
@@ -98,6 +135,33 @@ export default function NouveautesClient() {
   const [purchasing, setPurchasing] = useState(false)
   const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null)
   const [purchaseError, setPurchaseError] = useState<string | null>(null)
+
+  // Filters
+  const [bpmPreset, setBpmPreset] = useState<string | null>(null)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+
+  // Filtered beats
+  const filteredBeats = beats.filter((beat) => {
+    // BPM filter
+    if (bpmPreset) {
+      const preset = BPM_PRESETS.find((p) => p.label === bpmPreset)
+      if (preset && (beat.bpm < preset.min || beat.bpm > preset.max)) return false
+    }
+    // Key filter
+    if (selectedKey && beat.key !== selectedKey) return false
+    return true
+  })
+
+  // Available keys from current beats (for dynamic filter)
+  const availableKeys = [...new Set(beats.map((b) => b.key).filter(Boolean))] as string[]
+
+  const activeFilterCount = (bpmPreset ? 1 : 0) + (selectedKey ? 1 : 0)
+
+  function clearFilters() {
+    setBpmPreset(null)
+    setSelectedKey(null)
+  }
 
   useEffect(() => {
     fetchNouveautes()
@@ -240,8 +304,124 @@ export default function NouveautesClient() {
         </div>
       </div>
 
+      {/* Filter Bar */}
+      <div className="max-w-6xl mx-auto px-4 mt-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Toggle filters button */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
+              activeFilterCount > 0
+                ? 'border-[#e11d48] text-[#e11d48] bg-[#e11d48]/10'
+                : 'border-[#1e1e2e] text-gray-400 hover:text-white hover:border-[#333]'
+            }`}
+          >
+            <SlidersHorizontal size={14} />
+            Filtres
+            {activeFilterCount > 0 && (
+              <span className="w-5 h-5 rounded-full bg-[#e11d48] text-white text-[10px] flex items-center justify-center font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          {/* Active filter pills */}
+          {bpmPreset && (
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1e1e2e] text-xs font-semibold text-white">
+              {bpmPreset} ({BPM_PRESETS.find((p) => p.label === bpmPreset)?.range})
+              <button onClick={() => setBpmPreset(null)} className="hover:text-red-400 transition">
+                <X size={12} />
+              </button>
+            </span>
+          )}
+          {selectedKey && (
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1e1e2e] text-xs font-semibold text-white">
+              Tonalite: {selectedKey}
+              <button
+                onClick={() => setSelectedKey(null)}
+                className="hover:text-red-400 transition"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          )}
+          {activeFilterCount > 0 && (
+            <button
+              onClick={clearFilters}
+              className="text-xs text-gray-500 hover:text-red-400 underline underline-offset-2 transition"
+            >
+              Effacer tout
+            </button>
+          )}
+        </div>
+
+        {/* Expanded Filters Panel */}
+        {showFilters && (
+          <div className="mt-3 p-4 rounded-2xl bg-[#13131a] border border-[#1e1e2e] space-y-4">
+            {/* BPM */}
+            <div>
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">BPM</h4>
+              <div className="flex flex-wrap gap-2">
+                {BPM_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    onClick={() => setBpmPreset(bpmPreset === preset.label ? null : preset.label)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                      bpmPreset === preset.label
+                        ? 'border-[#e11d48] text-[#e11d48] bg-[#e11d48]/10'
+                        : 'border-[#1e1e2e] text-gray-500 hover:text-white hover:border-[#333]'
+                    }`}
+                  >
+                    {preset.label} <span className="text-gray-600 ml-1">{preset.range}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tonalite / Key */}
+            <div>
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Tonalite
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {(availableKeys.length > 0 ? availableKeys.sort() : MUSICAL_KEYS).map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => setSelectedKey(selectedKey === k ? null : k)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                      selectedKey === k
+                        ? 'border-[#e11d48] text-[#e11d48] bg-[#e11d48]/10'
+                        : 'border-[#1e1e2e] text-gray-500 hover:text-white hover:border-[#333]'
+                    }`}
+                  >
+                    {k}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="max-w-6xl mx-auto px-4">
-        {beats.length === 0 ? (
+        {filteredBeats.length === 0 && beats.length > 0 ? (
+          <div className="text-center py-20">
+            <SlidersHorizontal size={48} className="mx-auto mb-4 text-gray-700" />
+            <h3 className="text-lg font-bold text-white mb-2">
+              Aucun beat ne correspond a tes filtres
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Essaie d&apos;ajuster le BPM ou la tonalite
+            </p>
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
+              style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+            >
+              Effacer les filtres
+            </button>
+          </div>
+        ) : beats.length === 0 ? (
           <div className="text-center py-20">
             <Music size={48} className="mx-auto mb-4 text-gray-700" />
             <h3 className="text-lg font-bold text-white mb-2">
@@ -264,95 +444,106 @@ export default function NouveautesClient() {
             <div className="lg:col-span-2 space-y-2">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
-                  {beats.length} beat{beats.length > 1 ? 's' : ''} disponible
-                  {beats.length > 1 ? 's' : ''}
+                  {filteredBeats.length} beat{filteredBeats.length > 1 ? 's' : ''} disponible
+                  {filteredBeats.length > 1 ? 's' : ''}
+                  {activeFilterCount > 0 && beats.length !== filteredBeats.length && (
+                    <span className="text-gray-600 font-normal ml-1">(sur {beats.length})</span>
+                  )}
                 </h2>
               </div>
 
-              {beats.map((beat, index) => (
-                <div
-                  key={beat.id}
-                  className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                    selectedBeat === beat.id
-                      ? 'border-[#e11d48] bg-[#e11d48]/5'
-                      : currentTrack === index
-                        ? 'border-[#1e1e2e] bg-white/[0.02]'
-                        : 'border-transparent hover:border-[#1e1e2e] hover:bg-white/[0.01]'
-                  }`}
-                  onClick={() => setSelectedBeat(selectedBeat === beat.id ? null : beat.id)}
-                >
-                  {/* Play Button / Cover */}
+              {filteredBeats.map((beat) => {
+                const index = beats.findIndex((b) => b.id === beat.id)
+                return (
                   <div
-                    className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      playTrack(index)
-                    }}
+                    key={beat.id}
+                    className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                      selectedBeat === beat.id
+                        ? 'border-[#e11d48] bg-[#e11d48]/5'
+                        : currentTrack === index
+                          ? 'border-[#1e1e2e] bg-white/[0.02]'
+                          : 'border-transparent hover:border-[#1e1e2e] hover:bg-white/[0.01]'
+                    }`}
+                    onClick={() => setSelectedBeat(selectedBeat === beat.id ? null : beat.id)}
                   >
-                    {beat.coverImage ? (
-                      <Image src={beat.coverImage} alt={beat.title} fill className="object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center">
-                        <Music size={16} className="text-gray-600" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      {currentTrack === index && isPlaying ? (
-                        <Pause size={16} className="text-white" />
+                    {/* Play Button / Cover */}
+                    <div
+                      className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        playTrack(index)
+                      }}
+                    >
+                      {beat.coverImage ? (
+                        <Image
+                          src={beat.coverImage}
+                          alt={beat.title}
+                          fill
+                          className="object-cover"
+                        />
                       ) : (
-                        <Play size={16} className="text-white ml-0.5" />
+                        <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center">
+                          <Music size={16} className="text-gray-600" />
+                        </div>
                       )}
-                    </div>
-                    {/* Playing indicator */}
-                    {currentTrack === index && isPlaying && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#e11d48]">
-                        <div className="h-full bg-white/50" style={{ width: `${progress}%` }} />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        {currentTrack === index && isPlaying ? (
+                          <Pause size={16} className="text-white" />
+                        ) : (
+                          <Play size={16} className="text-white ml-0.5" />
+                        )}
                       </div>
-                    )}
-                  </div>
-
-                  {/* Beat Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white truncate">{beat.title}</span>
+                      {/* Playing indicator */}
                       {currentTrack === index && isPlaying && (
-                        <Volume2 size={12} className="text-[#e11d48] shrink-0 animate-pulse" />
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#e11d48]">
+                          <div className="h-full bg-white/50" style={{ width: `${progress}%` }} />
+                        </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <Link
-                        href={`/producer/${beat.producer.id}`}
-                        className="hover:text-white transition"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {beat.producer.displayName || beat.producer.name}
-                      </Link>
-                      <span>•</span>
-                      <span>{beat.genre}</span>
-                      <span>•</span>
-                      <span>{beat.bpm} BPM</span>
-                      {beat.key && (
-                        <>
-                          <span>•</span>
-                          <span>{beat.key}</span>
-                        </>
-                      )}
+
+                    {/* Beat Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-white truncate">{beat.title}</span>
+                        {currentTrack === index && isPlaying && (
+                          <Volume2 size={12} className="text-[#e11d48] shrink-0 animate-pulse" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <Link
+                          href={`/producer/${beat.producer.id}`}
+                          className="hover:text-white transition"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {beat.producer.displayName || beat.producer.name}
+                        </Link>
+                        <span>&bull;</span>
+                        <span>{beat.genre}</span>
+                        <span>&bull;</span>
+                        <span>{beat.bpm} BPM</span>
+                        {beat.key && (
+                          <>
+                            <span>&bull;</span>
+                            <span>{beat.key}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Duration */}
+                    <div className="hidden sm:flex items-center gap-1 text-xs text-gray-600">
+                      <Clock size={12} />
+                      {formatDuration(beat.duration)}
+                    </div>
+
+                    {/* Price */}
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-bold text-white">{beat.basePrice} EUR</div>
+                      <div className="text-[10px] text-gray-600">prix de base</div>
                     </div>
                   </div>
-
-                  {/* Duration */}
-                  <div className="hidden sm:flex items-center gap-1 text-xs text-gray-600">
-                    <Clock size={12} />
-                    {formatDuration(beat.duration)}
-                  </div>
-
-                  {/* Price */}
-                  <div className="text-right shrink-0">
-                    <div className="text-sm font-bold text-white">{beat.basePrice} EUR</div>
-                    <div className="text-[10px] text-gray-600">prix de base</div>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {/* License Selector - Right Side */}
