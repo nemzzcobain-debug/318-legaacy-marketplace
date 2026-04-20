@@ -200,7 +200,7 @@ export default function ProfileEditPage() {
     setPwSuccess('')
 
     if (!newPassword || newPassword.length < 8) {
-      setPwError('Le mot de passe doit contenir au moins 8 caractÃ¨res')
+      setPwError('Le mot de passe doit contenir au moins 8 caractères')
       return
     }
     if (!/[A-Z]/.test(newPassword)) {
@@ -238,7 +238,7 @@ export default function ProfileEditPage() {
       if (!res.ok) {
         throw new Error(data.error || 'Erreur lors du changement de mot de passe')
       }
-      setPwSuccess('Mot de passe mis Ã  jour avec succÃ¨s !')
+      setPwSuccess('Mot de passe mis à jour avec succès !')
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
@@ -294,17 +294,17 @@ export default function ProfileEditPage() {
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">Profil non trouvÃ©</p>
+        <p className="text-gray-400">Profil non trouvé</p>
       </div>
     )
   }
 
   const tabs = [
-    { id: 'general' as const, label: 'GÃ©nÃ©ral', icon: User },
-    { id: 'social' as const, label: 'RÃ©seaux sociaux', icon: LinkIcon },
+    { id: 'general' as const, label: 'Général', icon: User },
+    { id: 'social' as const, label: 'Réseaux sociaux', icon: LinkIcon },
     ...(isProducer ? [{ id: 'producer' as const, label: 'Producteur', icon: Headphones }] : []),
     { id: 'notifications' as const, label: 'Notifications', icon: Bell },
-    { id: 'security' as const, label: 'SÃ©curitÃ©', icon: Shield },
+    { id: 'security' as const, label: 'Sécurité', icon: Shield },
   ]
 
   return (
@@ -321,7 +321,7 @@ export default function ProfileEditPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold">Mon Profil</h1>
-            <p className="text-sm text-gray-500">GÃ©rez vos informations personnelles</p>
+            <p className="text-sm text-gray-500">Gérez vos informations personnelles</p>
           </div>
         </div>
 
@@ -367,7 +367,7 @@ export default function ProfileEditPage() {
               <h2 className="text-xl font-bold">{profile.displayName || profile.name}</h2>
               <p className="text-sm text-gray-400">{profile.email}</p>
               <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                <span>{profile._count.followers} abonnÃ©s</span>
+                <span>{profile._count.followers} abonnés</span>
                 <span>{profile._count.following} abonnements</span>
                 {isProducer && <span>{profile._count.beats} beats</span>}
                 <span>
@@ -385,7 +385,7 @@ export default function ProfileEditPage() {
         {/* Messages */}
         {success && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm mb-4">
-            <Check size={16} /> Profil mis Ã  jour avec succÃ¨s
+            <Check size={16} /> Profil mis à jour avec succès
           </div>
         )}
         {error && (
@@ -420,7 +420,7 @@ export default function ProfileEditPage() {
         <div className="glass rounded-2xl p-6">
           {activeTab === 'general' && (
             <div className="space-y-5">
-              <h3 className="text-lg font-bold mb-4">Informations gÃ©nÃ©rales</h3>
+              <h3 className="text-lg font-bold mb-4">Informations générales</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
@@ -442,7 +442,7 @@ export default function ProfileEditPage() {
                     value={form.displayName}
                     onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors"
-                    placeholder="Nom affichÃ© publiquement"
+                    placeholder="Nom affiché publiquement"
                   />
                 </div>
               </div>
@@ -468,7 +468,7 @@ export default function ProfileEditPage() {
                   disabled
                   className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f]/50 border border-[#1e1e2e] text-gray-500 cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-600 mt-1">L&apos;email ne peut pas Ãªtre modifiÃ©</p>
+                <p className="text-xs text-gray-600 mt-1">L&apos;email ne peut pas être modifié</p>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-[#1e1e2e]">
@@ -482,7 +482,7 @@ export default function ProfileEditPage() {
                 </div>
                 <div className="text-center p-3 rounded-xl bg-[#0a0a0f]">
                   <p className="text-2xl font-bold text-yellow-400">{profile._count.bids}</p>
-                  <p className="text-xs text-gray-500">EnchÃ¨res</p>
+                  <p className="text-xs text-gray-500">Enchères</p>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-[#0a0a0f]">
                   <p className="text-2xl font-bold text-green-400">
@@ -496,7 +496,7 @@ export default function ProfileEditPage() {
 
           {activeTab === 'social' && (
             <div className="space-y-5">
-              <h3 className="text-lg font-bold mb-4">RÃ©seaux sociaux</h3>
+              <h3 className="text-lg font-bold mb-4">Réseaux sociaux</h3>
 
               {[
                 {
@@ -560,7 +560,7 @@ export default function ProfileEditPage() {
                 <Check size={16} />
                 Statut:{' '}
                 {profile.producerStatus === 'APPROVED'
-                  ? 'ApprouvÃ©'
+                  ? 'Approuvé'
                   : profile.producerStatus || 'En attente'}
               </div>
 
@@ -576,7 +576,7 @@ export default function ProfileEditPage() {
                   }
                   rows={6}
                   className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e] text-white focus:outline-none focus:border-red-500 transition-colors resize-none"
-                  placeholder="DÃ©crivez votre style, votre expÃ©rience, vos influences..."
+                  placeholder="Décrivez votre style, votre expérience, vos influences..."
                 />
               </div>
 
@@ -596,7 +596,7 @@ export default function ProfileEditPage() {
               <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#1e1e2e]">
                 <div className="text-center p-3 rounded-xl bg-[#0a0a0f]">
                   <p className="text-2xl font-bold text-red-400">{profile._count.beats}</p>
-                  <p className="text-xs text-gray-500">Beats uploadÃ©s</p>
+                  <p className="text-xs text-gray-500">Beats uploadés</p>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-[#0a0a0f]">
                   <p className="text-2xl font-bold text-green-400">{profile.totalSales}</p>
@@ -614,25 +614,25 @@ export default function ProfileEditPage() {
 
           {activeTab === 'notifications' && (
             <div className="space-y-5">
-              <h3 className="text-lg font-bold mb-4">PrÃ©fÃ©rences de notification</h3>
+              <h3 className="text-lg font-bold mb-4">Préférences de notification</h3>
 
               {[
                 {
                   key: 'notifEmail',
                   label: 'Notifications par email',
-                  desc: 'Recevoir des emails pour les enchÃ¨res gagnÃ©es, paiements reÃ§us',
+                  desc: 'Recevoir des emails pour les enchères gagnées, paiements reçus',
                   icon: Mail,
                 },
                 {
                   key: 'notifBid',
-                  label: 'Alertes enchÃ¨res',
-                  desc: "Ãtre notifiÃ© quand quelqu'un surenchÃ©rit ou quand une enchÃ¨re se termine",
+                  label: 'Alertes enchères',
+                  desc: "Être notifié quand quelqu'un surenchérit ou quand une enchère se termine",
                   icon: Gavel,
                 },
                 {
                   key: 'notifMessage',
                   label: 'Notifications messages',
-                  desc: 'Recevoir des notifications pour les nouveaux messages privÃ©s',
+                  desc: 'Recevoir des notifications pour les nouveaux messages privés',
                   icon: MessageCircle,
                 },
               ].map(({ key, label, desc, icon: Icon }) => (
@@ -673,7 +673,7 @@ export default function ProfileEditPage() {
 
           {activeTab === 'security' && (
             <div className="space-y-5">
-              <h3 className="text-lg font-bold mb-4">SÃ©curitÃ© du compte</h3>
+              <h3 className="text-lg font-bold mb-4">Sécurité du compte</h3>
 
               {/* Account info */}
               <div className="flex items-center gap-3 p-4 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e]">
@@ -686,7 +686,7 @@ export default function ProfileEditPage() {
                   </p>
                   <p className="text-xs text-gray-500">
                     {isOAuthUser
-                      ? 'Tu es connectÃ© via Google. Tu peux dÃ©finir un mot de passe pour aussi pouvoir te connecter par email.'
+                      ? 'Tu es connecté via Google. Tu peux définir un mot de passe pour aussi pouvoir te connecter par email.'
                       : 'Tu peux modifier ton mot de passe ci-dessous.'}
                   </p>
                 </div>
@@ -695,7 +695,7 @@ export default function ProfileEditPage() {
               {/* Password change form */}
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold text-gray-300">
-                  {isOAuthUser ? 'DÃ©finir un mot de passe' : 'Changer le mot de passe'}
+                  {isOAuthUser ? 'Définir un mot de passe' : 'Changer le mot de passe'}
                 </h4>
 
                 {pwSuccess && (
@@ -759,7 +759,7 @@ export default function ProfileEditPage() {
                   {newPassword && (
                     <div className="mt-2 space-y-1">
                       {[
-                        { test: newPassword.length >= 8, label: 'Au moins 8 caractÃ¨res' },
+                        { test: newPassword.length >= 8, label: 'Au moins 8 caractères' },
                         { test: /[A-Z]/.test(newPassword), label: 'Une majuscule' },
                         { test: /[a-z]/.test(newPassword), label: 'Une minuscule' },
                         { test: /[0-9]/.test(newPassword), label: 'Un chiffre' },
@@ -825,7 +825,7 @@ export default function ProfileEditPage() {
                   {pwLoading
                     ? 'Modification...'
                     : isOAuthUser
-                      ? 'DÃ©finir le mot de passe'
+                      ? 'Définir le mot de passe'
                       : 'Modifier le mot de passe'}
                 </button>
               </div>
@@ -839,7 +839,7 @@ export default function ProfileEditPage() {
                     <span className="text-sm text-white font-medium">{profile.email}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a0a0f] border border-[#1e1e2e]">
-                    <span className="text-sm text-gray-400">RÃ´le</span>
+                    <span className="text-sm text-gray-400">Rôle</span>
                     <span
                       className={`text-sm font-medium px-2 py-0.5 rounded-full ${
                         profile.role === 'ADMIN'
