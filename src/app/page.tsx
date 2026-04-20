@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Gavel,
@@ -175,6 +176,7 @@ function WaveformVisual({ active }: { active: boolean }) {
 }
 
 export default function Home() {
+  const router = useRouter()
   const [auctions, setAuctions] = useState<LiveAuction[]>([])
   const [homepage, setHomepage] = useState<HomepageData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -218,12 +220,23 @@ export default function Home() {
       setPlayingId(null)
       return
     }
-    audio?.pause()
+    if (audio) {
+      audio.pause()
+      audio.src = ''
+    }
     const newAudio = new Audio(audioUrl)
-    newAudio.play()
+    newAudio.crossOrigin = 'anonymous'
     newAudio.onended = () => setPlayingId(null)
+    newAudio.onerror = () => {
+      console.error('Erreur audio:', audioUrl)
+      setPlayingId(null)
+    }
     setAudio(newAudio)
     setPlayingId(auctionId)
+    newAudio.play().catch((err) => {
+      console.error('Play bloque:', err)
+      setPlayingId(null)
+    })
   }
 
   const licenseColors: Record<string, string> = {
@@ -459,10 +472,10 @@ export default function Home() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {auctions.map((auction) => (
-                  <Link
+                  <div
                     key={auction.id}
-                    href={`/auction/${auction.id}`}
-                    className="group relative bg-[#111] rounded-2xl border border-[#1e1e2e] hover:border-red-500/30 transition-all hover:-translate-y-1 duration-300"
+                    onClick={() => router.push(`/auction/${auction.id}`)}
+                    className="group relative bg-[#111] rounded-2xl border border-[#1e1e2e] hover:border-red-500/30 transition-all hover:-translate-y-1 duration-300 cursor-pointer"
                   >
                     {/* Cover + Play button wrapper */}
                     <div className="relative">
@@ -557,7 +570,7 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             )}
