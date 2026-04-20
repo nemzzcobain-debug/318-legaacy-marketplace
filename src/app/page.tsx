@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -181,7 +181,22 @@ export default function Home() {
   const [homepage, setHomepage] = useState<HomepageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [playingId, setPlayingId] = useState<string | null>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
+  // Web Audio API refs — meme approche que AudioPlayer.tsx pour les WAV DAW
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const bufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map())
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null)
+  const gainNodeRef = useRef<GainNode | null>(null)
+
+  const getAudioContext = useCallback(() => {
+    if (!audioCtxRef.current) {
+      const AC = window.AudioContext || (window as any).webkitAudioContext
+      audioCtxRef.current = new AC()
+      gainNodeRef.current = audioCtxRef.current.createGain()
+      gainNodeRef.current.gain.value = 0.8
+      gainNodeRef.current.connect(audioCtxRef.current.destination)
+    }
+    return audioCtxRef.current
+  }, [])
   const [heroVisible, setHeroVisible] = useState(false)
   const { t } = useTranslation()
 
@@ -214,33 +229,88 @@ export default function Home() {
       .finally(() => setLoading(false))
   }, [])
 
-  const togglePlay = (auctionId: string, audioUrl: string) => {
-    const el = audioRef.current
-    if (!el) return
-
-    if (playingId === auctionId) {
-      el.pause()
-      setPlayingId(null)
-      return
+  const stopCurrentSource = useCallback(() => {
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.onended = null
+        sourceNodeRef.current.stop()
+      } catch {}
+      sourceNodeRef.current.disconnect()
+      sourceNodeRef.current = null
     }
+  }, [])
 
-    el.pause()
-    el.src = audioUrl
-    el.load()
-    setPlayingId(auctionId)
-    el.play().catch((err) => {
-      console.error('Play bloque:', err)
-      setPlayingId(null)
-    })
-  }
+  const togglePlay = useCallback(
+    async (auctionId: string, audioUrl: string) => {
+      // Si on reclique sur le meme beat → stop
+      if (playingId === auctionId) {
+        stopCurrentSource()
+        setPlayingId(null)
+        return
+      }
 
-  // Quand l'audio se termine
+      // Stop le beat precedent
+      stopCurrentSource()
+      setPlayingId(auctionId)
+
+      try {
+        const ctx = getAudioContext()
+        if (ctx.state === 'suspended') await ctx.resume()
+
+        // Cache le buffer pour eviter de re-telecharger
+        let buffer = bufferCacheRef.current.get(audioUrl)
+        if (!buffer) {
+          let arrayBuf: ArrayBuffer
+          if (audioUrl.startsWith('blob:')) {
+            arrayBuf = await new Promise<ArrayBuffer>((resolve, reject) => {
+              const xhr = new XMLHttpRequest()
+              xhr.open('GET', audioUrl)
+              xhr.responseType = 'arraybuffer'
+              xhr.onload = () => resolve(xhr.response)
+              xhr.onerror = () => reject(new Error('XHR failed'))
+              xhr.send()
+            })
+          } else {
+            const res = await fetch(audioUrl)
+            if (!res.ok) throw new Error('fetch ' + res.status)
+            arrayBuf = await res.arrayBuffer()
+          }
+          buffer = await ctx.decodeAudioData(arrayBuf)
+          bufferCacheRef.current.set(audioUrl, buffer)
+        }
+
+        const source = ctx.createBufferSource()
+        source.buffer = buffer
+        source.connect(gainNodeRef.current!)
+        source.onended = () => {
+          if (sourceNodeRef.current === source) {
+            sourceNodeRef.current = null
+            setPlayingId(null)
+          }
+        }
+        source.start(0)
+        sourceNodeRef.current = source
+      } catch (err) {
+        console.error('Web Audio play error:', err)
+        setPlayingId(null)
+      }
+    },
+    [playingId, getAudioContext, stopCurrentSource]
+  )
+
+  // Cleanup Web Audio a l'unmount
   useEffect(() => {
-    const el = audioRef.current
-    if (!el) return
-    const handleEnded = () => setPlayingId(null)
-    el.addEventListener('ended', handleEnded)
-    return () => el.removeEventListener('ended', handleEnded)
+    return () => {
+      if (sourceNodeRef.current) {
+        try {
+          sourceNodeRef.current.stop()
+        } catch {}
+        sourceNodeRef.current.disconnect()
+      }
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+        audioCtxRef.current.close().catch(() => {})
+      }
+    }
   }, [])
 
   const licenseColors: Record<string, string> = {
@@ -252,7 +322,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
-      <audio ref={audioRef} preload="none" />
+      {/* Audio via Web Audio API — pas d'element <audio> necessaire */}
 
       <main id="main-content">
         {/* ═══════════ HERO ═══════════ */}
