@@ -875,6 +875,109 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ═══════════ DEVENIR BEATMAKER SECTION ═══════════ */}
+        <section className="px-4 py-20 border-t border-[#1a1a1a] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-[500px] h-[400px] bg-gradient-radial from-[#e11d48]/8 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
+
+          <div className="max-w-6xl mx-auto relative z-10">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              {/* Left: Visual card stack */}
+              <div className="relative hidden md:block">
+                <div className="absolute -top-10 -left-10 w-64 h-64 bg-gradient-radial from-[#e11d48]/10 via-transparent to-transparent rounded-full blur-2xl" />
+
+                {/* Stacked cards effect */}
+                <div className="relative">
+                  {/* Background card 3 */}
+                  <div className="absolute top-8 left-0 right-8 h-48 bg-[#13131a] rounded-2xl border border-[#1e1e2e] transform -rotate-3 opacity-30" />
+                  {/* Background card 2 */}
+                  <div className="absolute top-4 left-2 right-4 h-48 bg-[#15151f] rounded-2xl border border-[#1e1e2e] transform -rotate-1.5 opacity-50" />
+                  {/* Main card */}
+                  <div className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-colors">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center">
+                        <Headphones size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-white">Dashboard Producteur</div>
+                        <div className="text-xs text-gray-500">
+                          Upload &middot; Encheres &middot; Revenus
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Fake stats */}
+                    <div className="grid grid-cols-3 gap-3 mb-5">
+                      {[
+                        { label: 'Beats', value: '12' },
+                        { label: 'Ventes', value: '8' },
+                        { label: 'Revenus', value: '2.4k€' },
+                      ].map((stat) => (
+                        <div
+                          key={stat.label}
+                          className="bg-white/[0.03] rounded-xl p-3 text-center"
+                        >
+                          <div className="text-sm font-extrabold text-white">{stat.value}</div>
+                          <div className="text-[10px] text-gray-600 mt-0.5">{stat.label}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Fake upload area */}
+                    <div className="border-2 border-dashed border-[#1e1e2e] rounded-xl p-4 text-center hover:border-[#e11d48]/30 transition-colors">
+                      <Music size={20} className="mx-auto mb-2 text-gray-600" />
+                      <div className="text-xs text-gray-500 font-semibold">Drop ton beat ici</div>
+                      <div className="text-[10px] text-gray-700 mt-1">
+                        WAV, MP3 &middot; Max 50MB
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between">
+                      <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
+                        Stripe Connect
+                      </span>
+                      <span className="text-[10px] font-bold text-[#2ed573]">● Actif</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Text content */}
+              <div>
+                <div className="inline-flex items-center gap-2 bg-[#e11d48]/10 border border-[#e11d48]/20 rounded-full px-4 py-1.5 text-xs font-bold text-[#e11d48] mb-5">
+                  <Music size={12} /> Beatmaker
+                </div>
+                <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+                  Vends tes beats
+                  <br />
+                  <span className="text-[#e11d48]">aux encheres</span>
+                </h2>
+                <p className="text-gray-400 text-sm leading-relaxed mb-6 max-w-md">
+                  Rejoins la communaute 318 LEGAACY en tant que producteur. Upload tes beats, lance
+                  des encheres et recois 85% de chaque vente directement sur ton compte via Stripe.
+                </p>
+                <div className="flex flex-wrap gap-3 mb-8">
+                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                    <TrendingUp size={12} className="text-[#2ed573]" /> 85% des revenus
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                    <Gavel size={12} className="text-[#e11d48]" /> Systeme d&apos;encheres
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                    <Zap size={12} className="text-amber-400" /> Paiements auto
+                  </div>
+                </div>
+                <Link
+                  href="/producers"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm text-black transition-transform hover:scale-105"
+                  style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+                >
+                  Devenir producteur <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ═══════════ FEATURED PRODUCERS ═══════════ */}
         {homepage && homepage.featuredProducers.length > 0 && (
           <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-hidden">
