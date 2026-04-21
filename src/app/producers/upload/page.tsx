@@ -70,6 +70,8 @@ export default function UploadBeatPage() {
   // Auction fields
   const [enableAuction, setEnableAuction] = useState(true)
   const [startPrice, setStartPrice] = useState('10')
+  const [premiumPrice, setPremiumPrice] = useState('25')
+  const [exclusivePrice, setExclusivePrice] = useState('100')
   const [buyNowPrice, setBuyNowPrice] = useState('')
   const [auctionDuration, setAuctionDuration] = useState('24')
   const [licenseType, setLicenseType] = useState('BASIC')
@@ -253,6 +255,8 @@ export default function UploadBeatPage() {
           // Auction data
           enableAuction,
           startPrice: enableAuction ? parseFloat(startPrice) : null,
+          premiumPrice: enableAuction && premiumPrice ? parseFloat(premiumPrice) : null,
+          exclusivePrice: enableAuction && exclusivePrice ? parseFloat(exclusivePrice) : null,
           buyNowPrice: enableAuction && buyNowPrice ? parseFloat(buyNowPrice) : null,
           auctionDuration: enableAuction ? parseInt(auctionDuration) : null,
           licenseType: enableAuction ? licenseType : null,
@@ -620,27 +624,12 @@ export default function UploadBeatPage() {
 
             {enableAuction && (
               <div className="px-5 py-5 space-y-5 border-t border-[#1e1e2e] bg-[#0d0d14]">
-                {/* Prix de depart + Increment */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
-                      <DollarSign size={14} className="text-[#e11d48]" />
-                      Prix de depart (EUR) <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      value={startPrice}
-                      onChange={(e) => setStartPrice(e.target.value)}
-                      placeholder="10"
-                      min="1"
-                      step="1"
-                      className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
-                    />
-                  </div>
+                {/* Increment + Achat immediat + Duree */}
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <DollarSign size={14} className="text-green-400" />
-                      Increment minimum (EUR)
+                      Increment (EUR)
                     </label>
                     <input
                       type="number"
@@ -652,14 +641,10 @@ export default function UploadBeatPage() {
                       className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
                     />
                   </div>
-                </div>
-
-                {/* Achat immediat + Duree */}
-                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <Tag size={14} className="text-amber-400" />
-                      Achat immediat (EUR)
+                      Achat immediat
                       <span className="text-gray-500 text-xs font-normal ml-1">optionnel</span>
                     </label>
                     <input
@@ -692,46 +677,51 @@ export default function UploadBeatPage() {
                   </div>
                 </div>
 
-                {/* Type de licence */}
+                {/* Prix par licence */}
                 <div>
                   <label className="text-sm font-semibold text-white mb-3 block">
-                    Type de licence
+                    Prix par type de licence (EUR)
                   </label>
                   <div className="grid grid-cols-3 gap-3">
-                    {[
-                      {
-                        value: 'BASIC',
-                        label: 'Basic',
-                        desc: 'Usage non-commercial',
-                        color: 'text-blue-400 border-blue-500/30 bg-blue-500/5',
-                      },
-                      {
-                        value: 'PREMIUM',
-                        label: 'Premium',
-                        desc: 'Usage commercial',
-                        color: 'text-purple-400 border-purple-500/30 bg-purple-500/5',
-                      },
-                      {
-                        value: 'EXCLUSIVE',
-                        label: 'Exclusive',
-                        desc: 'Droits exclusifs',
-                        color: 'text-amber-400 border-amber-500/30 bg-amber-500/5',
-                      },
-                    ].map((l) => (
-                      <button
-                        key={l.value}
-                        type="button"
-                        onClick={() => setLicenseType(l.value)}
-                        className={`p-3 rounded-xl border text-left transition ${
-                          licenseType === l.value
-                            ? l.color
-                            : 'border-[#1e1e2e] text-gray-400 hover:border-[#2e2e3e]'
-                        }`}
-                      >
-                        <p className="text-sm font-bold">{l.label}</p>
-                        <p className="text-[11px] opacity-70 mt-0.5">{l.desc}</p>
-                      </button>
-                    ))}
+                    {/* Basic */}
+                    <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5">
+                      <p className="text-sm font-bold text-blue-400">Basic</p>
+                      <p className="text-[11px] text-blue-400/70 mb-2">Usage non-commercial</p>
+                      <input
+                        type="number"
+                        value={startPrice}
+                        onChange={(e) => setStartPrice(e.target.value)}
+                        placeholder="10"
+                        min="1"
+                        className="w-full bg-[#0a0a12] border border-blue-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500/50 transition"
+                      />
+                    </div>
+                    {/* Premium */}
+                    <div className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/5">
+                      <p className="text-sm font-bold text-purple-400">Premium</p>
+                      <p className="text-[11px] text-purple-400/70 mb-2">Usage commercial</p>
+                      <input
+                        type="number"
+                        value={premiumPrice}
+                        onChange={(e) => setPremiumPrice(e.target.value)}
+                        placeholder="25"
+                        min="1"
+                        className="w-full bg-[#0a0a12] border border-purple-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-purple-500/50 transition"
+                      />
+                    </div>
+                    {/* Exclusive */}
+                    <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
+                      <p className="text-sm font-bold text-amber-400">Exclusive</p>
+                      <p className="text-[11px] text-amber-400/70 mb-2">Droits exclusifs</p>
+                      <input
+                        type="number"
+                        value={exclusivePrice}
+                        onChange={(e) => setExclusivePrice(e.target.value)}
+                        placeholder="100"
+                        min="1"
+                        className="w-full bg-[#0a0a12] border border-amber-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-500/50 transition"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
       // Auction fields
       enableAuction,
       startPrice,
+      premiumPrice,
+      exclusivePrice,
       buyNowPrice,
       auctionDuration,
       licenseType,
@@ -106,6 +108,13 @@ export async function POST(req: NextRequest) {
       const durationHours = auctionDuration || 24
       const endTime = new Date(now.getTime() + durationHours * 60 * 60 * 1000)
 
+      // Calculer les multiplicateurs a partir des prix definis
+      const basePrice = startPrice || 10
+      const premMult =
+        premiumPrice && basePrice > 0 ? Math.round((premiumPrice / basePrice) * 100) / 100 : 2.5
+      const exclMult =
+        exclusivePrice && basePrice > 0 ? Math.round((exclusivePrice / basePrice) * 100) / 100 : 10
+
       auction = await prisma.auction.create({
         data: {
           beatId: beat.id,
@@ -114,6 +123,8 @@ export async function POST(req: NextRequest) {
           buyNowPrice: buyNowPrice || null,
           bidIncrement: bidIncrement || 5,
           licenseType: licenseType || 'BASIC',
+          premiumMultiplier: premMult,
+          exclusiveMultiplier: exclMult,
           startTime: now,
           endTime: endTime,
           status: 'ACTIVE',
