@@ -39,7 +39,25 @@ export async function POST(req: NextRequest) {
 
     // Extraction des métadonnées JSON
     const body = await req.json()
-    const { title, genre, bpm, key, mood, description, tags, audioUrl, coverUrl, audioSize } = body
+    const {
+      title,
+      genre,
+      bpm,
+      key,
+      mood,
+      description,
+      tags,
+      audioUrl,
+      coverUrl,
+      audioSize,
+      // Auction fields
+      enableAuction,
+      startPrice,
+      buyNowPrice,
+      auctionDuration,
+      licenseType,
+      bidIncrement,
+    } = body
 
     // Validations des champs requis
     if (!title || !genre || !bpm || !audioUrl) {
@@ -80,6 +98,29 @@ export async function POST(req: NextRequest) {
         },
       },
     })
+
+    // ─── Création de l'enchère si demandée ───
+    let auction = null
+    if (enableAuction && startPrice) {
+      const now = new Date()
+      const durationHours = auctionDuration || 24
+      const endTime = new Date(now.getTime() + durationHours * 60 * 60 * 1000)
+
+      auction = await prisma.auction.create({
+        data: {
+          beatId: beat.id,
+          startPrice: startPrice,
+          currentBid: startPrice,
+          buyNowPrice: buyNowPrice || null,
+          bidIncrement: bidIncrement || 5,
+          licenseType: licenseType || 'BASIC',
+          startTime: now,
+          endTime: endTime,
+          status: 'ACTIVE',
+          commissionPercent: 15,
+        },
+      })
+    }
 
     // Notifier tous les followers du producteur + les admins
     try {
@@ -123,7 +164,8 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         beat,
-        message: 'Beat uploade avec succes!',
+        auction,
+        message: enableAuction ? 'Beat uploade et enchere lancee !' : 'Beat uploade avec succes!',
       },
       { status: 201 }
     )

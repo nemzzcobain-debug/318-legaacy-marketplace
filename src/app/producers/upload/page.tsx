@@ -6,7 +6,19 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import AudioPlayer from '@/components/audio/AudioPlayer'
-import { Upload, Music, Image as ImageIcon, X, Check, Loader2, Wand2 } from 'lucide-react'
+import {
+  Upload,
+  Music,
+  Image as ImageIcon,
+  X,
+  Check,
+  Loader2,
+  Wand2,
+  Gavel,
+  Clock,
+  DollarSign,
+  Tag,
+} from 'lucide-react'
 import { GENRES, MOODS } from '@/types'
 import CoverGenerator from '@/components/ai/CoverGenerator'
 // Upload utilise des signed URLs generees par l'API (contourne RLS + limite 4.5MB Vercel)
@@ -54,6 +66,14 @@ export default function UploadBeatPage() {
   const [mood, setMood] = useState('')
   const [description, setDescription] = useState('')
   const [tags, setTags] = useState('')
+
+  // Auction fields
+  const [enableAuction, setEnableAuction] = useState(true)
+  const [startPrice, setStartPrice] = useState('10')
+  const [buyNowPrice, setBuyNowPrice] = useState('')
+  const [auctionDuration, setAuctionDuration] = useState('24')
+  const [licenseType, setLicenseType] = useState('BASIC')
+  const [bidIncrement, setBidIncrement] = useState('5')
 
   const [uploading, setUploading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -230,6 +250,13 @@ export default function UploadBeatPage() {
           coverUrl,
           audioFileName: audioFile.name,
           audioSize: audioFile.size,
+          // Auction data
+          enableAuction,
+          startPrice: enableAuction ? parseFloat(startPrice) : null,
+          buyNowPrice: enableAuction && buyNowPrice ? parseFloat(buyNowPrice) : null,
+          auctionDuration: enableAuction ? parseInt(auctionDuration) : null,
+          licenseType: enableAuction ? licenseType : null,
+          bidIncrement: enableAuction ? parseFloat(bidIncrement) : null,
         }),
       })
 
@@ -562,6 +589,155 @@ export default function UploadBeatPage() {
             />
           </div>
 
+          {/* ─── MISE AUX ENCHÈRES ─── */}
+          <div className="border border-[#1e1e2e] rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setEnableAuction(!enableAuction)}
+              className="w-full flex items-center justify-between px-5 py-4 bg-[#13131a] hover:bg-[#1a1a25] transition"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${enableAuction ? 'bg-[#e11d4820]' : 'bg-white/5'}`}
+                >
+                  <Gavel size={20} className={enableAuction ? 'text-[#e11d48]' : 'text-gray-500'} />
+                </div>
+                <div className="text-left">
+                  <p className="text-white font-semibold text-sm">Mettre aux encheres</p>
+                  <p className="text-gray-500 text-xs">
+                    Configure les parametres de l&apos;enchere
+                  </p>
+                </div>
+              </div>
+              <div
+                className={`w-11 h-6 rounded-full relative transition-colors ${enableAuction ? 'bg-[#e11d48]' : 'bg-[#2a2a3a]'}`}
+              >
+                <div
+                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${enableAuction ? 'translate-x-[22px]' : 'translate-x-0.5'}`}
+                />
+              </div>
+            </button>
+
+            {enableAuction && (
+              <div className="px-5 py-5 space-y-5 border-t border-[#1e1e2e] bg-[#0d0d14]">
+                {/* Prix de depart + Increment */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
+                      <DollarSign size={14} className="text-[#e11d48]" />
+                      Prix de depart (EUR) <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={startPrice}
+                      onChange={(e) => setStartPrice(e.target.value)}
+                      placeholder="10"
+                      min="1"
+                      step="1"
+                      className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
+                      <DollarSign size={14} className="text-green-400" />
+                      Increment minimum (EUR)
+                    </label>
+                    <input
+                      type="number"
+                      value={bidIncrement}
+                      onChange={(e) => setBidIncrement(e.target.value)}
+                      placeholder="5"
+                      min="1"
+                      step="1"
+                      className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
+                    />
+                  </div>
+                </div>
+
+                {/* Achat immediat + Duree */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
+                      <Tag size={14} className="text-amber-400" />
+                      Achat immediat (EUR)
+                      <span className="text-gray-500 text-xs font-normal ml-1">optionnel</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={buyNowPrice}
+                      onChange={(e) => setBuyNowPrice(e.target.value)}
+                      placeholder="Ex: 500"
+                      min="1"
+                      step="1"
+                      className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
+                      <Clock size={14} className="text-blue-400" />
+                      Duree de l&apos;enchere
+                    </label>
+                    <select
+                      value={auctionDuration}
+                      onChange={(e) => setAuctionDuration(e.target.value)}
+                      className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
+                    >
+                      <option value="6">6 heures</option>
+                      <option value="12">12 heures</option>
+                      <option value="24">24 heures</option>
+                      <option value="48">48 heures</option>
+                      <option value="72">3 jours</option>
+                      <option value="168">7 jours</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Type de licence */}
+                <div>
+                  <label className="text-sm font-semibold text-white mb-3 block">
+                    Type de licence
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      {
+                        value: 'BASIC',
+                        label: 'Basic',
+                        desc: 'Usage non-commercial',
+                        color: 'text-blue-400 border-blue-500/30 bg-blue-500/5',
+                      },
+                      {
+                        value: 'PREMIUM',
+                        label: 'Premium',
+                        desc: 'Usage commercial',
+                        color: 'text-purple-400 border-purple-500/30 bg-purple-500/5',
+                      },
+                      {
+                        value: 'EXCLUSIVE',
+                        label: 'Exclusive',
+                        desc: 'Droits exclusifs',
+                        color: 'text-amber-400 border-amber-500/30 bg-amber-500/5',
+                      },
+                    ].map((l) => (
+                      <button
+                        key={l.value}
+                        type="button"
+                        onClick={() => setLicenseType(l.value)}
+                        className={`p-3 rounded-xl border text-left transition ${
+                          licenseType === l.value
+                            ? l.color
+                            : 'border-[#1e1e2e] text-gray-400 hover:border-[#2e2e3e]'
+                        }`}
+                      >
+                        <p className="text-sm font-bold">{l.label}</p>
+                        <p className="text-[11px] opacity-70 mt-0.5">{l.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Error */}
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
@@ -572,7 +748,9 @@ export default function UploadBeatPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={uploading || !audioFile || !title || !genre || !bpm}
+            disabled={
+              uploading || !audioFile || !title || !genre || !bpm || (enableAuction && !startPrice)
+            }
             className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
           >
@@ -583,7 +761,8 @@ export default function UploadBeatPage() {
               </>
             ) : (
               <>
-                <Upload size={20} /> Publier le beat
+                {enableAuction ? <Gavel size={20} /> : <Upload size={20} />}
+                {enableAuction ? "Publier et lancer l'enchere" : 'Publier le beat'}
               </>
             )}
           </button>
