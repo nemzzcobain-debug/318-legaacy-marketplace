@@ -188,36 +188,9 @@ export default function UploadBeatPage() {
       // 3. Upload cover si fournie (fichier local ou URL IA)
       let coverUrl: string | null = null
       if (aiCoverUrl) {
-        // Cover générée par IA — télécharger et uploader vers Supabase
-        setUploadProgress('Transfert de la cover IA...')
-        try {
-          const aiRes = await fetch(aiCoverUrl)
-          const aiBlob = await aiRes.blob()
-          const aiCoverFileName = `${timestamp}-cover-ai.png`
-          const aiSignedRes = await fetch('/api/beats/signed-url', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              audioFileName: null,
-              audioContentType: null,
-              coverFileName: aiCoverFileName,
-              coverContentType: 'image/png',
-            }),
-          })
-          const aiSignedData = await aiSignedRes.json()
-          if (aiSignedRes.ok && aiSignedData.cover) {
-            const aiUploadRes = await fetch(aiSignedData.cover.signedUrl, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'image/png' },
-              body: aiBlob,
-            })
-            if (aiUploadRes.ok) {
-              coverUrl = aiSignedData.cover.publicUrl
-            }
-          }
-        } catch (err) {
-          console.error('AI cover upload error:', err)
-        }
+        // Cover générée par IA — déjà uploadée vers Supabase par l'API generate-cover
+        // L'URL reçue est directement l'URL Supabase permanente
+        coverUrl = aiCoverUrl
       } else if (coverFile && coverFile.size > 0 && signedData.cover) {
         setUploadProgress('Upload de la cover...')
         const coverUploadRes = await fetch(signedData.cover.signedUrl, {

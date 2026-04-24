@@ -25,6 +25,7 @@ export default function CoverGenerator({ onSelect, onCancel }: CoverGeneratorPro
   const [style, setStyle] = useState<string>('abstract')
   const [generating, setGenerating] = useState(false)
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null)
+  const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   const handleGenerate = async () => {
@@ -36,6 +37,7 @@ export default function CoverGenerator({ onSelect, onCancel }: CoverGeneratorPro
     setGenerating(true)
     setError('')
     setGeneratedUrl(null)
+    setSupabaseUrl(null)
 
     try {
       const res = await fetch('/api/ai/generate-cover', {
@@ -52,6 +54,10 @@ export default function CoverGenerator({ onSelect, onCancel }: CoverGeneratorPro
       }
 
       setGeneratedUrl(data.imageUrl)
+      // Utiliser l'URL Supabase (permanente) si disponible, sinon fallback sur l'URL DALL-E
+      if (data.supabaseUrl) {
+        setSupabaseUrl(data.supabaseUrl)
+      }
     } catch {
       setError('Erreur de connexion')
     } finally {
@@ -60,8 +66,10 @@ export default function CoverGenerator({ onSelect, onCancel }: CoverGeneratorPro
   }
 
   const handleUse = () => {
-    if (generatedUrl) {
-      onSelect(generatedUrl)
+    // Priorité à l'URL Supabase (permanente), fallback sur l'URL DALL-E
+    const urlToUse = supabaseUrl || generatedUrl
+    if (urlToUse) {
+      onSelect(urlToUse)
     }
   }
 

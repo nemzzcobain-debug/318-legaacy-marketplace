@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 
 const openai = new OpenAI({
@@ -65,7 +67,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Erreur lors de la génération' }, { status: 500 })
     }
 
-    return NextResponse.json({ imageUrl })
+    // Télécharger l'image DALL-E côté serveur et l'uploader vers Supabase
+    // (les URLs DALL-E sont temporaires et bloquées par CORS côté client)
+    let supabaseUrl: string | null = null
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email: session.user?.email || '' },
+      })
+
+      if (user) {
+        const imgRes = await fetch(imageUrl)
+        const imgBuffer = Buffer.from(await imgRes.arrayBuffer())
+
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        )
+
+        const fileName = `${user.id}/${Date.now()}-cover-ai.png`
+        const { error: uploadError } = await supabase.storage
+          .from('covers')
+          .upload(fileName, imgBuffer, {
+            contentType: 'image/png',
+            upsert: false,
+          })
+
+        if (!uploadError) {
+          const { data: publicData } = supabase.storage.from('covers').getPublicUrl(fileName)
+          supabaseUrl = publicData.publicUrl
+        }
+      }
+    } catch (e) {
+      console.error('Supabase cover upload error:', e)
+    }
+
+    return NextResponse.json({
+      imageUrl,
+      supabaseUrl,
+    })
   } catch (error: unknown) {
     console.error('AI cover generation error:', error)
 
