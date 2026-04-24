@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useParams, useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import Image from 'next/image'
 import Header from '@/components/layout/Header'
 import AudioPlayer from '@/components/audio/AudioPlayer'
 import CountdownTimer from '@/components/ui/CountdownTimer'
@@ -389,33 +390,44 @@ export default function AuctionClient() {
           <div className="lg:col-span-3 space-y-6">
             {/* Beat Header */}
             <div className="bg-[#111] border border-[#222] rounded-2xl overflow-hidden">
-              {/* Cover gradient */}
-              <div className="h-48 bg-gradient-to-br from-[#1a0000] to-[#330011] flex items-center justify-center relative">
-                <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-md rounded-full px-3 py-1 text-xs font-semibold text-white">
+              {/* Cover */}
+              <div className="h-48 bg-gradient-to-br from-[#1a0000] to-[#330011] flex items-center justify-center relative overflow-hidden">
+                {/* Cover Image */}
+                {beat.coverImage ? (
+                  <Image
+                    src={beat.coverImage}
+                    alt={beat.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 60vw"
+                    priority
+                  />
+                ) : (
+                  <Music size={48} className="text-red-500/20 absolute" />
+                )}
+
+                <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-md rounded-full px-3 py-1 text-xs font-semibold text-white z-10">
                   {beat.genre}
                 </div>
                 {isEndingSoon && (
-                  <div className="absolute top-3 right-3 bg-red-600 rounded-full px-3 py-1 text-xs font-bold text-white flex items-center gap-1 animate-pulse">
+                  <div className="absolute top-3 right-3 bg-red-600 rounded-full px-3 py-1 text-xs font-bold text-white flex items-center gap-1 animate-pulse z-10">
                     <AlertTriangle size={12} /> ENDING SOON
                   </div>
                 )}
-                <div className="text-center">
-                  <Music size={48} className="text-red-500/50 mx-auto mb-2" />
-                  <div className="flex gap-2 justify-center">
-                    <span className="bg-black/60 rounded-md px-2 py-0.5 text-xs text-gray-300">
-                      {beat.bpm} BPM
+                <div className="absolute bottom-3 left-3 flex gap-2 z-10">
+                  <span className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5 text-xs text-gray-300">
+                    {beat.bpm} BPM
+                  </span>
+                  {beat.key && (
+                    <span className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5 text-xs text-gray-300">
+                      {beat.key}
                     </span>
-                    {beat.key && (
-                      <span className="bg-black/60 rounded-md px-2 py-0.5 text-xs text-gray-300">
-                        {beat.key}
-                      </span>
-                    )}
-                    {beat.mood && (
-                      <span className="bg-black/60 rounded-md px-2 py-0.5 text-xs text-gray-300">
-                        {beat.mood}
-                      </span>
-                    )}
-                  </div>
+                  )}
+                  {beat.mood && (
+                    <span className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5 text-xs text-gray-300">
+                      {beat.mood}
+                    </span>
+                  )}
                 </div>
               </div>
 

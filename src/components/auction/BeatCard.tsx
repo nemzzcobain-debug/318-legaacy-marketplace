@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Play, Pause, Flame, Shield, Gavel, TrendingUp, Clock, Heart } from 'lucide-react'
+import Image from 'next/image'
+import { Play, Pause, Flame, Shield, Gavel, TrendingUp, Clock, Heart, Music } from 'lucide-react'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 import AudioPlayer from '@/components/audio/AudioPlayer'
 import LikeButton from '@/components/ui/LikeButton'
@@ -34,7 +35,9 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
 
   const gradient = genreGradients[beat.genre] || 'from-[#0a0a1e] to-[#1a1a2e]'
   const isEndingSoon = auction.status === 'ENDING_SOON'
-  const priceIncrease = Math.round(((auction.currentBid - auction.startPrice) / auction.startPrice) * 100)
+  const priceIncrease = Math.round(
+    ((auction.currentBid - auction.startPrice) / auction.startPrice) * 100
+  )
 
   return (
     <Link href={`/auction/${auction.id}`}>
@@ -49,7 +52,22 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
         `}
       >
         {/* Cover Area */}
-        <div className={`h-44 bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
+        <div
+          className={`h-44 bg-gradient-to-br ${gradient} flex items-center justify-center relative overflow-hidden`}
+        >
+          {/* Cover Image */}
+          {beat.coverImage ? (
+            <Image
+              src={beat.coverImage}
+              alt={beat.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 33vw"
+            />
+          ) : (
+            <Music size={32} className="text-white/20 absolute" />
+          )}
+
           {/* Hot Badge */}
           {auction.totalBids > 10 && (
             <div
@@ -114,7 +132,9 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
         <div className="p-3.5">
           {/* Title & Producer */}
           <div className="mb-2.5">
-            <h3 className="text-[15px] font-bold text-white leading-tight truncate">{beat.title}</h3>
+            <h3 className="text-[15px] font-bold text-white leading-tight truncate">
+              {beat.title}
+            </h3>
             <div className="flex items-center gap-1.5 mt-1">
               <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-[9px] font-bold text-white">
                 {producer.name[0]}
@@ -128,7 +148,13 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
 
           {/* Audio Waveform Player */}
           {beat.audioUrl && (
-            <div className="mb-2.5" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+            <div
+              className="mb-2.5"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+            >
               <AudioPlayer
                 src={beat.audioUrl}
                 compact
@@ -150,7 +176,9 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
           <div className="bg-[#e11d4808] border border-[#e11d4820] rounded-xl p-2.5 flex items-center justify-between">
             <div>
               <div className="text-[10px] text-gray-400 mb-0.5">Enchere actuelle</div>
-              <div className="text-lg font-extrabold text-[#e11d48]">{auction.currentBid}&euro;</div>
+              <div className="text-lg font-extrabold text-[#e11d48]">
+                {auction.currentBid}&euro;
+              </div>
             </div>
             <div className="text-right">
               <div className="text-[10px] text-gray-400 mb-1">{auction.totalBids} encheres</div>
