@@ -37,6 +37,8 @@ import {
   Download,
   FileAudio,
   Headphones,
+  Trash2,
+  X,
 } from 'lucide-react'
 
 // ─── Types ───
@@ -1089,88 +1091,12 @@ function ProducerDashboard({ session }: { session: any }) {
 
         {/* ═══ BEATS TAB ═══ */}
         {activeTab === 'beats' && (
-          <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
-            {(data?.beats?.length || 0) === 0 ? (
-              <div className="text-center py-12">
-                <Music size={48} className="mx-auto mb-4 text-gray-600" />
-                <h3 className="text-lg font-bold text-white mb-2">Tes beats apparaitront ici</h3>
-                <p className="text-sm text-gray-400 mb-5">
-                  Upload ton premier beat pour commencer a le vendre aux encheres
-                </p>
-                <Link
-                  href="/producers/upload"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
-                  style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
-                >
-                  <Plus size={16} /> Ajouter un beat
-                </Link>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-lg font-bold text-white">Mes Beats ({data!.beats.length})</h2>
-                  <Link
-                    href="/producers/upload"
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs text-black"
-                    style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
-                  >
-                    <Plus size={14} /> Ajouter
-                  </Link>
-                </div>
-                <div className="space-y-3">
-                  {data!.beats.map((beat: any) => (
-                    <div
-                      key={beat.id}
-                      className="flex items-center justify-between p-3.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => togglePlay(beat.id, beat.audioUrl)}
-                          className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
-                        >
-                          {playingId === beat.id ? (
-                            <Pause size={14} className="text-white" />
-                          ) : (
-                            <Play size={14} className="text-white ml-0.5" />
-                          )}
-                        </button>
-                        <div>
-                          <div className="text-sm font-bold text-white">{beat.title}</div>
-                          <div className="text-xs text-gray-500">
-                            {beat.genre} &middot; {beat.bpm} BPM
-                            {beat.key ? ` &middot; ${beat.key}` : ''}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right hidden sm:block">
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Eye size={11} /> {beat.plays}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Gavel size={11} /> {beat._count.auctions}
-                            </span>
-                          </div>
-                        </div>
-                        <span
-                          className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${beat.status === 'ACTIVE' ? 'bg-[#2ed57320] text-[#2ed573]' : beat.status === 'SOLD' ? 'bg-[#e11d4820] text-[#e11d48]' : 'bg-[#ffffff10] text-gray-500'}`}
-                        >
-                          {beat.status === 'ACTIVE'
-                            ? 'Actif'
-                            : beat.status === 'SOLD'
-                              ? 'Vendu'
-                              : beat.status === 'DRAFT'
-                                ? 'Brouillon'
-                                : beat.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+          <ProducerBeatsTab
+            beats={data?.beats || []}
+            togglePlay={togglePlay}
+            playingId={playingId}
+            onBeatDeleted={fetchData}
+          />
         )}
 
         {/* ═══ VENTES TAB ═══ */}
@@ -1303,6 +1229,209 @@ function ProducerDashboard({ session }: { session: any }) {
         {activeTab === 'settings' && <ProducerSettingsTab userName={userName} />}
       </main>
     </div>
+  )
+}
+
+// ─── Producer Beats Tab with Delete ───
+function ProducerBeatsTab({
+  beats,
+  togglePlay,
+  playingId,
+  onBeatDeleted,
+}: {
+  beats: any[]
+  togglePlay: (id: string, url: string) => void
+  playingId: string | null
+  onBeatDeleted: () => void
+}) {
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setDeleteError('')
+
+    try {
+      const res = await fetch(`/api/beats/${deleteTarget.id}`, { method: 'DELETE' })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setDeleteError(data.error || 'Erreur lors de la suppression')
+        setDeleting(false)
+        return
+      }
+
+      setDeleteTarget(null)
+      onBeatDeleted()
+    } catch {
+      setDeleteError('Erreur de connexion')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
+        {beats.length === 0 ? (
+          <div className="text-center py-12">
+            <Music size={48} className="mx-auto mb-4 text-gray-600" />
+            <h3 className="text-lg font-bold text-white mb-2">Tes beats apparaitront ici</h3>
+            <p className="text-sm text-gray-400 mb-5">
+              Upload ton premier beat pour commencer a le vendre aux encheres
+            </p>
+            <Link
+              href="/producers/upload"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
+              style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+            >
+              <Plus size={16} /> Ajouter un beat
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-white">Mes Beats ({beats.length})</h2>
+              <Link
+                href="/producers/upload"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs text-black"
+                style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
+              >
+                <Plus size={14} /> Ajouter
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {beats.map((beat: any) => (
+                <div
+                  key={beat.id}
+                  className="flex items-center justify-between p-3.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => togglePlay(beat.id, beat.audioUrl)}
+                      className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
+                    >
+                      {playingId === beat.id ? (
+                        <Pause size={14} className="text-white" />
+                      ) : (
+                        <Play size={14} className="text-white ml-0.5" />
+                      )}
+                    </button>
+                    <div>
+                      <div className="text-sm font-bold text-white">{beat.title}</div>
+                      <div className="text-xs text-gray-500">
+                        {beat.genre} &middot; {beat.bpm} BPM
+                        {beat.key ? ` \u00B7 ${beat.key}` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right hidden sm:block">
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Eye size={11} /> {beat.plays}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Gavel size={11} /> {beat._count.auctions}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${beat.status === 'ACTIVE' ? 'bg-[#2ed57320] text-[#2ed573]' : beat.status === 'SOLD' ? 'bg-[#e11d4820] text-[#e11d48]' : 'bg-[#ffffff10] text-gray-500'}`}
+                    >
+                      {beat.status === 'ACTIVE'
+                        ? 'Actif'
+                        : beat.status === 'SOLD'
+                          ? 'Vendu'
+                          : beat.status === 'DRAFT'
+                            ? 'Brouillon'
+                            : beat.status}
+                    </span>
+                    {beat.status !== 'SOLD' && (
+                      <button
+                        onClick={() => setDeleteTarget({ id: beat.id, title: beat.title })}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                        title="Supprimer ce beat"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Modal de confirmation de suppression */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => !deleting && setDeleteTarget(null)}
+          />
+          <div className="relative bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <button
+              onClick={() => !deleting && setDeleteTarget(null)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-white transition"
+              disabled={deleting}
+            >
+              <X size={18} />
+            </button>
+
+            <div className="w-12 h-12 rounded-xl bg-red-500/15 flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={24} className="text-red-500" />
+            </div>
+
+            <h3 className="text-lg font-bold text-white text-center mb-2">Supprimer ce beat ?</h3>
+            <p className="text-sm text-gray-400 text-center mb-1">
+              Tu es sur le point de supprimer :
+            </p>
+            <p className="text-sm font-bold text-white text-center mb-4">
+              &laquo; {deleteTarget.title} &raquo;
+            </p>
+            <p className="text-xs text-gray-500 text-center mb-6">
+              Cette action est irreversible. Le beat, sa cover et tous les fichiers audio seront
+              definitivement supprimes.
+            </p>
+
+            {deleteError && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4 text-red-400 text-xs text-center">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="flex-1 py-3 rounded-xl font-bold text-sm text-gray-300 bg-white/5 border border-[#1e1e2e] hover:bg-white/10 transition disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 py-3 rounded-xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} /> Supprimer
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
