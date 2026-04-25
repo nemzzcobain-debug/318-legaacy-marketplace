@@ -21,7 +21,11 @@ export async function POST(request: Request) {
       )
     }
 
-    const { name, email, password, role } = validated.data
+    const { name, email, password, role: requestedRole } = validated.data
+
+    // SECURITY FIX C1: Ne jamais accepter ADMIN du client
+    // Seuls ARTIST et PRODUCER sont autorises a l'inscription
+    const safeRole = requestedRole === 'PRODUCER' ? 'PRODUCER' : 'ARTIST'
 
     // Verifier si l'email existe deja
     const existingUser = await prisma.user.findUnique({
@@ -43,8 +47,8 @@ export async function POST(request: Request) {
         name,
         email,
         passwordHash,
-        role,
-        producerStatus: role === 'PRODUCER' ? 'PENDING' : null,
+        role: safeRole,
+        producerStatus: safeRole === 'PRODUCER' ? 'PENDING' : null,
       },
       select: {
         id: true,
@@ -73,7 +77,7 @@ export async function POST(request: Request) {
     sendVerificationEmail({ to: email, name, token: verificationToken }).catch(() => {})
 
     // Si producteur, creer une notification pour les admins
-    if (role === 'PRODUCER') {
+    if (safeRole === 'PRODUCER') {
       // Notifier les admins
       const admins = await prisma.user.findMany({
         where: { role: 'ADMIN' },

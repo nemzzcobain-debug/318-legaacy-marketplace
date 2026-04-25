@@ -1,6 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
@@ -8,6 +10,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // SECURITY FIX C3: Verifier l'authentification
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Connexion requise' }, { status: 401 });
+    }
+
     const auction = await prisma.auction.findUnique({
       where: { id: params.id },
       include: {
