@@ -9,6 +9,33 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
+// SECURITY FIX H7: Quota par utilisateur pour la generation AI
+// Max 5 generations par jour par utilisateur
+const AI_DAILY_LIMIT = 5
+const aiUsageMap = new Map<string, { count: number; resetAt: number }>()
+
+function checkAiQuota(userId: string): { allowed: boolean; remaining: number } {
+  const now = Date.now()
+  const entry = aiUsageMap.get(userId)
+  if (!entry || now > entry.resetAt) {
+    aiUsageMap.set(userId, { count: 1, resetAt: now + 24 * 60 * 60 * 1000 })
+    return { allowed: true, remaining: AI_DAILY_LIMIT - 1 }
+  }
+  if (entry.count >= AI_DAILY_LIMIT) {
+    return { allowed: false, remaining: 0 }
+  }
+  entry.count++
+  return { allowed: true, remaining: AI_DAILY_LIMIT - entry.count }
+}
+
+// Nettoyage periodique
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, val] of aiUsageMap) {
+    if (now > val.resetAt) aiUsageMap.delete(key)
+  }
+}, 60_000)
+
 // Styles visuels prédéfinis pour les covers de beats
 const STYLE_PROMPTS: Record<string, string> = {
   abstract:
@@ -31,6 +58,15 @@ export async function POST(request: Request) {
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'Service de génération non configuré' }, { status: 503 })
+    }
+
+    // SECURITY FIX H7: Verifier le quota AI
+    const quota = checkAiQuota(session.user.id!)
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { error: `Limite de ${AI_DAILY_LIMIT} generations par jour atteinte. Reessayez demain.` },
+        { status: 429 }
+      )
     }
 
     const { prompt, style } = await request.json()
@@ -105,6 +141,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       imageUrl,
       supabaseUrl,
+      remainingGenerations: quota.remaining,
     })
   } catch (error: unknown) {
     console.error('AI cover generation error:', error)

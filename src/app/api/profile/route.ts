@@ -40,7 +40,7 @@ export async function GET() {
                         totalPurchases: true,
                         rating: true,
                         createdAt: true,
-                        passwordHash: true,
+                        // SECURITY FIX H1: Ne plus selectionner passwordHash
                         _count: {
                                     select: {
                                                   beats: true,
@@ -64,12 +64,15 @@ export async function GET() {
                   followCounts = { followers: frs, following: fng }
           } catch {}
 
-      // Don't send the actual hash to the client, just whether they have one
-      const { passwordHash, ...userData } = user
+      // SECURITY FIX H1: Verifier l'existence du mot de passe sans jamais selectionner le hash
+      const hasPassword = await prisma.user.count({
+        where: { id: userId, passwordHash: { not: null } },
+      }) > 0
+
           return NextResponse.json({
-                  ...userData,
-                  hasPassword: !!passwordHash,
-                  _count: { ...userData._count, ...followCounts },
+                  ...user,
+                  hasPassword,
+                  _count: { ...user._count, ...followCounts },
           })
     } catch (error) {
           console.error('Profile GET error:', error)
@@ -108,11 +111,17 @@ export async function PUT(request: Request) {
                     }
             }
 
-      // Validate URLs
+      // Validate URLs - SECURITY FIX H3: Bloquer javascript: data: vbscript: avant parsing
       const urlFields = ['website', 'instagram', 'twitter', 'youtube', 'soundcloud', 'spotify', 'portfolio']
+      const BLOCKED_PROTOCOLS = ['javascript:', 'data:', 'vbscript:', 'blob:', 'file:']
           for (const field of urlFields) {
                   if (updateData[field] && typeof updateData[field] === 'string' && (updateData[field] as string).trim() !== '') {
                             let url = (updateData[field] as string).trim()
+                            // SECURITY FIX H3: Rejet immediat des protocoles dangereux
+                            const lowerUrl = url.toLowerCase().replace(/\s/g, '')
+                            if (BLOCKED_PROTOCOLS.some(p => lowerUrl.startsWith(p))) {
+                                        return NextResponse.json({ error: `Protocole interdit pour ${field}` }, { status: 400 })
+                            }
                             if (!url.startsWith('http://') && !url.startsWith('https://')) {
                                         url = 'https://' + url
                             }

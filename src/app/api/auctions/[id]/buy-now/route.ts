@@ -40,6 +40,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: "Cette enchere n'est plus active" }, { status: 400 })
     }
 
+    // SECURITY FIX H4: Verifier que l'enchere n'est pas expiree (meme si le cron n'a pas encore mis a jour le statut)
+    if (auction.endTime && new Date(auction.endTime) < new Date()) {
+      return NextResponse.json({ error: "Cette enchere est terminee" }, { status: 400 })
+    }
+
     // Verifier qu'un buyNowPrice existe
     if (!auction.buyNowPrice) {
       return NextResponse.json(

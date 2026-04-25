@@ -1,13 +1,48 @@
 export const dynamic = 'force-dynamic'
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createHash, randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { forgotPasswordSchema } from '@/lib/validations'
 import { sendPasswordResetEmail } from '@/lib/emails/resend'
 
-export async function POST(request: Request) {
+// SECURITY FIX H2: Rate limiting en memoire pour forgot-password
+// Max 3 demandes par IP par fenetre de 15 minutes
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT_MAX = 3
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 min
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
+    return true
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false
+  entry.count++
+  return true
+}
+
+// Nettoyage periodique (eviter fuite memoire)
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, val] of rateLimitMap) {
+    if (now > val.resetAt) rateLimitMap.delete(key)
+  }
+}, 60_000)
+
+export async function POST(request: NextRequest) {
   try {
+    // SECURITY FIX H2: Verifier le rate limit par IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Trop de demandes. Reessayez dans 15 minutes.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
 
     // Validation

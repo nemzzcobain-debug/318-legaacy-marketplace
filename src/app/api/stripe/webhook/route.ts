@@ -22,6 +22,21 @@ export const runtime = 'nodejs'
 
 const isDev = process.env.NODE_ENV === 'development'
 
+// SECURITY FIX H6: Idempotence - eviter le double-traitement d'un meme evenement Stripe
+const processedEvents = new Set<string>()
+const PROCESSED_EVENTS_MAX = 1000
+
+function markEventProcessed(eventId: string): boolean {
+  if (processedEvents.has(eventId)) return false // deja traite
+  processedEvents.add(eventId)
+  // Eviter fuite memoire: garder seulement les N derniers
+  if (processedEvents.size > PROCESSED_EVENTS_MAX) {
+    const first = processedEvents.values().next().value
+    if (first) processedEvents.delete(first)
+  }
+  return true
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
@@ -42,6 +57,12 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     logger.error('[WEBHOOK] Erreur de vérification:', { error: err.message })
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 400 })
+  }
+
+  // SECURITY FIX H6: Verifier l'idempotence
+  if (!markEventProcessed(event.id)) {
+    if (isDev) logger.debug(`[WEBHOOK] Evenement deja traite: ${event.id}`)
+    return NextResponse.json({ received: true, duplicate: true })
   }
 
   if (isDev) logger.debug(`[WEBHOOK] ${event.type}`)
