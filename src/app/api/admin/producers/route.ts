@@ -70,12 +70,13 @@ export async function PATCH(req: NextRequest) {
       select: { id: true, name: true, email: true, role: true, producerStatus: true },
     })
 
-    const notifMessages: Record<string, { title: string; message: string; type: string }> = {
+    const notifMessages: Record<string, { title: string; message: string; type: string; link?: string }> = {
       APPROVED: {
         title: 'Compte approuve!',
         message:
           'Votre compte producteur a ete approuve. Vous pouvez maintenant mettre vos beats aux encheres!',
         type: 'PRODUCER_APPROVED',
+        link: '/dashboard',
       },
       REJECTED: {
         title: 'Compte refuse',
@@ -90,6 +91,7 @@ export async function PATCH(req: NextRequest) {
       },
     }
 
+    // Notification au producteur
     if (notifMessages[status]) {
       await prisma.notification.create({
         data: {
@@ -98,6 +100,23 @@ export async function PATCH(req: NextRequest) {
         },
       })
     }
+
+    // Notification de confirmation a l'admin
+    const adminStatusLabels: Record<string, string> = {
+      APPROVED: 'approuve',
+      REJECTED: 'refuse',
+      SUSPENDED: 'suspendu',
+      PENDING: 'remis en attente',
+    }
+    await prisma.notification.create({
+      data: {
+        userId: session.user.id,
+        type: 'SYSTEM',
+        title: `Producteur ${adminStatusLabels[status] || status}`,
+        message: `Vous avez ${adminStatusLabels[status]} le producteur ${producer.name || producer.email}`,
+        link: '/admin',
+      },
+    })
 
     // Envoyer email de notification au producteur
     if (producer.email) {
