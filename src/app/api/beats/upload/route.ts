@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
           type: 'NEW_BEAT',
           title: `Nouveau beat uploadé`,
           message: `${producerName} a uploadé "${title}" (${genre}, ${bpm} BPM)`,
-          link: `/beats/${beat.id}`,
+          link: `/producer/${user.id}`,
           userId: a.id,
         })),
       ]
