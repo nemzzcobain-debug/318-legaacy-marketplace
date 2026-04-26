@@ -7,6 +7,7 @@ export const registerSchema = z.object({
   password: z
     .string()
     .min(8, 'Minimum 8 caracteres')
+    .max(128, 'Maximum 128 caracteres')
     .regex(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre'

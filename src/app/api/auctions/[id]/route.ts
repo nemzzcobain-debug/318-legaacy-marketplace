@@ -45,7 +45,7 @@ export async function GET(
 
     return NextResponse.json(auction);
   } catch (error) {
-    console.error('Auction detail error:', error);
+    console.error('Auction detail error:', String(error));
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

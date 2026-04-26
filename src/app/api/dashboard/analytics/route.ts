@@ -152,7 +152,9 @@ export async function GET(req: NextRequest) {
       followerCount = await prisma.follow.count({
         where: { followingId: userId, createdAt: { lt: startDate } },
       })
-    } catch {}
+    } catch (err) {
+      console.warn('[ANALYTICS] Erreur comptage followers:', String(err))
+    }
     const followersByDay: Record<string, number> = {}
     followers.forEach(f => {
       const day = f.createdAt.toISOString().split('T')[0]

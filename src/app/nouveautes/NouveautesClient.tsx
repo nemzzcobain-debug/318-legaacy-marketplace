@@ -250,9 +250,10 @@ export default function NouveautesClient() {
         return
       }
 
-      // Rediriger vers la page de paiement Stripe
+      // SECURITY FIX: Stocker le clientSecret en sessionStorage (pas dans l'URL)
+      sessionStorage.setItem(`checkout_cs_${beatId}`, data.clientSecret)
       router.push(
-        `/checkout/beat/${beatId}?pi=${data.paymentIntentId}&cs=${data.clientSecret}&license=${selectedLicense}&price=${data.finalPrice}&title=${encodeURIComponent(data.beatTitle)}`
+        `/checkout/beat/${beatId}?pi=${data.paymentIntentId}&license=${selectedLicense}&price=${data.finalPrice}&title=${encodeURIComponent(data.beatTitle)}`
       )
     } catch {
       setPurchaseError('Erreur de connexion')

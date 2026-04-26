@@ -96,8 +96,8 @@ export async function POST(request: NextRequest) {
       to: email,
       name: user.name,
       token: plainToken,
-    }).catch((error) => {
-      console.error('Failed to send password reset email:', error)
+    }).catch((err) => {
+      console.error('Failed to send password reset email:', String(err))
     })
 
     return NextResponse.json(
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Erreur forgot-password:', error)
+    console.error('Erreur forgot-password:', String(error))
     return NextResponse.json(
       { error: 'Erreur serveur' },
       { status: 500 }

@@ -115,10 +115,19 @@ export default function BeatCheckoutPage() {
   const searchParams = useSearchParams()
 
   const beatId = params.id as string
-  const clientSecretParam = searchParams.get('cs')
+  // SECURITY FIX: Lire le clientSecret depuis sessionStorage (pas l'URL)
+  const [clientSecretParam, setClientSecretParam] = useState<string | null>(null)
   const licenseType = searchParams.get('license') || 'BASIC'
   const price = parseFloat(searchParams.get('price') || '0')
   const beatTitle = decodeURIComponent(searchParams.get('title') || '')
+
+  useEffect(() => {
+    const cs = sessionStorage.getItem(`checkout_cs_${beatId}`)
+    if (cs) {
+      setClientSecretParam(cs)
+      sessionStorage.removeItem(`checkout_cs_${beatId}`) // Nettoyer apres lecture
+    }
+  }, [beatId])
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)

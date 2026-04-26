@@ -189,7 +189,9 @@ export async function POST(request: Request) {
           })),
         })
       }
-    } catch {}
+    } catch (notifErr) {
+      console.warn('[AUCTION] Erreur notification followers:', String(notifErr))
+    }
 
     return NextResponse.json({ auction }, { status: 201 })
   } catch (error) {

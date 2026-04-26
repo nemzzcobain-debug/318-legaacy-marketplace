@@ -91,14 +91,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           })),
         })
       }
-    } catch {}
+    } catch (notifErr) {
+      console.warn('[BUY-NOW] Erreur notification bidders:', String(notifErr))
+    }
 
     return NextResponse.json({
       success: true,
       message: `Achat confirme pour ${auction.buyNowPrice} EUR`,
     })
   } catch (error) {
-    console.error('Erreur buy-now confirm:', error)
+    console.error('Erreur buy-now confirm:', String(error))
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
