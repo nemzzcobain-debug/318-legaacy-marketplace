@@ -15,14 +15,13 @@ export async function GET(req: NextRequest) {
 
     const userId = session.user.id
 
-    // Encheres gagnees et payees
-    const purchases = await prisma.auction.findMany({
+    // TASK48: Utiliser la table Purchase pour TOUS les achats (directs + enchères)
+    const allPurchases = await prisma.purchase.findMany({
       where: {
-        winnerId: userId,
+        buyerId: userId,
         status: 'COMPLETED',
-        paidAt: { not: null },
       },
-      orderBy: { paidAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
       include: {
         beat: {
           select: {
@@ -31,10 +30,10 @@ export async function GET(req: NextRequest) {
             genre: true,
             bpm: true,
             key: true,
-            audioUrl: true,
-            audioWav: true,
-            stemsUrl: true,
+            // TASK49: Ne plus exposer les URLs directes — utiliser /api/beats/[id]/download
             coverImage: true,
+            audioWav: true,   // Juste pour savoir si WAV est dispo (bool)
+            stemsUrl: true,   // Juste pour savoir si stems sont dispo (bool)
             producer: {
               select: {
                 id: true,
@@ -48,7 +47,7 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    // Encheres gagnees mais pas encore payees
+    // Encheres gagnees mais pas encore payees (toujours via Auction)
     const pendingPayments = await prisma.auction.findMany({
       where: {
         winnerId: userId,
@@ -74,14 +73,27 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    // TASK49: Transformer les URLs en booleen (hasWav, hasStems) + ajouter downloadUrl
+    const safePurchases = allPurchases.map((p) => ({
+      ...p,
+      beat: {
+        ...p.beat,
+        hasWav: !!p.beat.audioWav,
+        hasStems: !!p.beat.stemsUrl,
+        audioWav: undefined,
+        stemsUrl: undefined,
+        downloadUrl: `/api/beats/${p.beat.id}/download`,
+      },
+    }))
+
     // Stats
-    const totalSpent = purchases.reduce((sum, p) => sum + (p.finalPrice || p.currentBid), 0)
+    const totalSpent = allPurchases.reduce((sum, p) => sum + p.amount, 0)
 
     return NextResponse.json({
-      purchases,
+      purchases: safePurchases,
       pendingPayments,
       stats: {
-        totalPurchases: purchases.length,
+        totalPurchases: allPurchases.length,
         totalSpent: Math.round(totalSpent * 100) / 100,
         pendingCount: pendingPayments.length,
       },

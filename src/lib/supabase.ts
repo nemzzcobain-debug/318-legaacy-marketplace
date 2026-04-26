@@ -66,6 +66,50 @@ export function getPublicUrl(bucket: string, filePath: string): string {
 }
 
 /**
+ * Generer une signed URL temporaire pour un fichier (download protege)
+ * @param bucket - Nom du bucket
+ * @param filePath - Chemin dans le bucket
+ * @param expiresIn - Duree en secondes (defaut: 1h)
+ */
+export async function getSignedUrl(
+  bucket: string,
+  filePath: string,
+  expiresIn: number = 3600
+): Promise<string | null> {
+  try {
+    const client = getClient()
+    const { data, error } = await client.storage
+      .from(bucket)
+      .createSignedUrl(filePath, expiresIn)
+
+    if (error) {
+      console.error(`Erreur signed URL (${bucket}/${filePath}):`, error.message)
+      return null
+    }
+    return data.signedUrl
+  } catch (err) {
+    console.error('Erreur generation signed URL:', err)
+    return null
+  }
+}
+
+/**
+ * Extraire le bucket et le path d'une URL publique Supabase
+ * Ex: https://xxx.supabase.co/storage/v1/object/public/beats/file.mp3
+ *   → { bucket: 'beats', path: 'file.mp3' }
+ */
+export function parseSupabaseUrl(url: string): { bucket: string; path: string } | null {
+  try {
+    // Format: /storage/v1/object/public/{bucket}/{path}
+    const match = url.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/)
+    if (match) return { bucket: match[1], path: decodeURIComponent(match[2]) }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Supprimer un fichier de Supabase Storage
  */
 export async function deleteFile(bucket: string, filePath: string): Promise<void> {

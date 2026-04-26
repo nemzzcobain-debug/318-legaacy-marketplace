@@ -75,7 +75,90 @@ async function handleFinalize(req: NextRequest) {
       withWinner: 0,
       noWinner: 0,
       addedToNouveautes: 0,
+      expiredPayments: 0,
       errors: 0,
+    }
+
+    // TASK50: Verifier les encheres ENDED avec paymentDeadline depassee (gagnant n'a pas paye)
+    const expiredDeadlines = await prisma.auction.findMany({
+      where: {
+        status: 'ENDED',
+        winnerId: { not: null },
+        paidAt: null,
+        paymentDeadline: { lte: now },
+      },
+      include: {
+        beat: { select: { id: true, title: true, producerId: true } },
+      },
+    })
+
+    for (const expired of expiredDeadlines) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          // Annuler le gagnant et remettre en Nouveautes
+          await tx.auction.update({
+            where: { id: expired.id },
+            data: {
+              status: 'ENDED',
+              winnerId: null,
+              winningLicense: null,
+              finalPrice: null,
+              commissionAmount: null,
+              producerPayout: null,
+              paymentDeadline: null,
+            },
+          })
+
+          // Notifier l'ancien gagnant
+          if (expired.winnerId) {
+            await tx.notification.create({
+              data: {
+                type: 'SYSTEM',
+                title: 'Delai de paiement expire',
+                message: `Votre delai de paiement pour "${expired.beat.title}" a expire. L'achat a ete annule.`,
+                link: '/dashboard?tab=purchases',
+                userId: expired.winnerId,
+              },
+            })
+          }
+
+          // Notifier le producteur
+          await tx.notification.create({
+            data: {
+              type: 'AUCTION_ENDED',
+              title: 'Paiement non recu',
+              message: `Le gagnant n'a pas paye pour "${expired.beat.title}". Le beat est remis en vente dans Nouveautes.`,
+              link: '/dashboard',
+              userId: expired.beat.producerId,
+            },
+          })
+
+          // Ajouter a Nouveautes
+          if (nouveautesPlaylist) {
+            const alreadyIn = await tx.playlistBeat.findFirst({
+              where: { playlistId: nouveautesPlaylist.id, beatId: expired.beat.id },
+            })
+            if (!alreadyIn) {
+              const maxPos = await tx.playlistBeat.aggregate({
+                where: { playlistId: nouveautesPlaylist.id },
+                _max: { position: true },
+              })
+              await tx.playlistBeat.create({
+                data: {
+                  playlistId: nouveautesPlaylist.id,
+                  beatId: expired.beat.id,
+                  position: (maxPos._max.position ?? -1) + 1,
+                },
+              })
+            }
+          }
+        })
+
+        results.expiredPayments++
+      } catch (err) {
+        console.error(`Erreur expiration deadline ${expired.id}:`, String(err))
+        results.errors++
+      }
     }
 
     // Récupérer ou créer la playlist système "Nouveautés"
@@ -118,7 +201,8 @@ async function handleFinalize(req: NextRequest) {
             const reserveMet = !auction.reservePrice || topBid.amount >= auction.reservePrice
 
             if (reserveMet) {
-              // Enchere gagnee — en attente de paiement
+              // Enchere gagnee — en attente de paiement (48h deadline)
+              const PAYMENT_DEADLINE_HOURS = 48
               await tx.auction.update({
                 where: { id: auction.id },
                 data: {
@@ -131,6 +215,7 @@ async function handleFinalize(req: NextRequest) {
                   producerPayout:
                     Math.round(topBid.finalAmount * (1 - auction.commissionPercent / 100) * 100) /
                     100,
+                  paymentDeadline: new Date(now.getTime() + PAYMENT_DEADLINE_HOURS * 60 * 60 * 1000),
                 },
               })
 

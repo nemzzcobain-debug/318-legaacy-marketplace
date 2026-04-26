@@ -22,19 +22,20 @@ export const runtime = 'nodejs'
 
 const isDev = process.env.NODE_ENV === 'development'
 
-// SECURITY FIX H6: Idempotence - eviter le double-traitement d'un meme evenement Stripe
-const processedEvents = new Set<string>()
-const PROCESSED_EVENTS_MAX = 1000
-
-function markEventProcessed(eventId: string): boolean {
-  if (processedEvents.has(eventId)) return false // deja traite
-  processedEvents.add(eventId)
-  // Eviter fuite memoire: garder seulement les N derniers
-  if (processedEvents.size > PROCESSED_EVENTS_MAX) {
-    const first = processedEvents.values().next().value
-    if (first) processedEvents.delete(first)
+// SECURITY FIX H6 + TASK51: Idempotence via table DB (resiste aux cold starts Vercel)
+async function markEventProcessed(eventId: string, eventType: string): Promise<boolean> {
+  try {
+    await prisma.stripeEvent.create({
+      data: { id: eventId, type: eventType },
+    })
+    return true // Nouveau, on peut traiter
+  } catch (err: any) {
+    // P2002 = unique constraint violation = deja traite
+    if (err?.code === 'P2002') return false
+    // Autre erreur DB → on traite quand meme (mieux que de perdre un evenement)
+    logger.error('[WEBHOOK] Erreur idempotence DB:', { error: err?.message })
+    return true
   }
-  return true
 }
 
 export async function POST(req: NextRequest) {
@@ -59,8 +60,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 400 })
   }
 
-  // SECURITY FIX H6: Verifier l'idempotence
-  if (!markEventProcessed(event.id)) {
+  // SECURITY FIX H6 + TASK51: Verifier l'idempotence via DB
+  const isNew = await markEventProcessed(event.id, event.type)
+  if (!isNew) {
     if (isDev) logger.debug(`[WEBHOOK] Evenement deja traite: ${event.id}`)
     return NextResponse.json({ received: true, duplicate: true })
   }
@@ -155,6 +157,29 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       data: { status: 'SOLD' },
     })
 
+    // TASK48: Creer un enregistrement Purchase pour l'achat via enchere
+    const buyerId = userId || auction.winnerId
+    const purchaseAmount = auction.finalPrice || auction.currentBid
+    const commissionAmt = commission ? parseFloat(commission) : auction.commissionAmount || 0
+    const payoutAmt = producerPayout ? parseFloat(producerPayout) : auction.producerPayout || 0
+
+    if (buyerId) {
+      await prisma.purchase.create({
+        data: {
+          buyerId,
+          beatId: auction.beatId,
+          type: 'AUCTION',
+          licenseType: auction.winningLicense || auction.licenseType,
+          amount: purchaseAmount,
+          commission: commissionAmt,
+          producerPayout: payoutAmt,
+          stripePaymentId: session.payment_intent as string,
+          status: 'COMPLETED',
+          auctionId,
+        },
+      })
+    }
+
     // Incrémenter les ventes du producteur
     if (producerId) {
       await prisma.user.update({
@@ -164,9 +189,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     }
 
     // Incrémenter les achats de l'acheteur
-    if (userId) {
+    if (buyerId) {
       await prisma.user.update({
-        where: { id: userId },
+        where: { id: buyerId },
         data: { totalPurchases: { increment: 1 } },
       })
     }
@@ -183,14 +208,14 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     })
 
     // Notifier l'acheteur
-    if (userId || auction.winnerId) {
+    if (buyerId) {
       await prisma.notification.create({
         data: {
           type: 'AUCTION_WON',
           title: 'Achat confirmé !',
           message: `Votre beat "${auction.beat.title}" est prêt à être téléchargé.`,
           link: `/dashboard?tab=purchases`,
-          userId: userId || auction.winnerId || '',
+          userId: buyerId,
         },
       })
     }
@@ -362,6 +387,10 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
 
     // Trouver l'acheteur via l'email du PaymentIntent
     const buyerEmail = paymentIntent.receipt_email
+    const finalPriceAmount = paymentIntent.amount / 100
+    const commissionAmt = commission ? parseFloat(commission) : 0
+    const payoutAmt = producerPayout ? parseFloat(producerPayout) : 0
+
     if (buyerEmail) {
       const buyer = await prisma.user.findFirst({
         where: { email: buyerEmail },
@@ -370,6 +399,21 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
         await prisma.user.update({
           where: { id: buyer.id },
           data: { totalPurchases: { increment: 1 } },
+        })
+
+        // TASK48: Creer un enregistrement Purchase pour l'achat direct
+        await prisma.purchase.create({
+          data: {
+            buyerId: buyer.id,
+            beatId,
+            type: 'DIRECT',
+            licenseType,
+            amount: finalPriceAmount,
+            commission: commissionAmt,
+            producerPayout: payoutAmt,
+            stripePaymentId: paymentIntent.id,
+            status: 'COMPLETED',
+          },
         })
 
         // Notifier l'acheteur
