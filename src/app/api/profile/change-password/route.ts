@@ -21,6 +21,14 @@ export async function POST(request: Request) {
                           )
                 }
 
+          // SECURITY FIX L7: Limiter la longueur du mot de passe (DoS via bcrypt)
+          if (newPassword.length > 128) {
+                  return NextResponse.json(
+                            { error: 'Le mot de passe ne doit pas depasser 128 caracteres' },
+                            { status: 400 }
+                          )
+                }
+
           // Validate password strength
           if (!/[A-Z]/.test(newPassword)) {
                   return NextResponse.json(
@@ -71,7 +79,8 @@ export async function POST(request: Request) {
 
           return NextResponse.json({ success: true, message: 'Mot de passe mis à jour' })
         } catch (error) {
-          console.error('Erreur changement mot de passe:', error)
+          // SECURITY FIX L2: Ne pas logger l'objet erreur complet
+          console.error('Erreur changement mot de passe:', String(error))
           return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
         }
   }

@@ -5,6 +5,31 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+// SECURITY FIX M3: Rate limiting sur l'envoi de messages (30/min par user)
+const msgRateMap = new Map<string, { count: number; resetAt: number }>()
+const MSG_RATE_LIMIT = 30
+const MSG_RATE_WINDOW = 60_000 // 1 min
+
+function checkMsgRate(userId: string): boolean {
+  const now = Date.now()
+  const entry = msgRateMap.get(userId)
+  if (!entry || now > entry.resetAt) {
+    msgRateMap.set(userId, { count: 1, resetAt: now + MSG_RATE_WINDOW })
+    return true
+  }
+  if (entry.count >= MSG_RATE_LIMIT) return false
+  entry.count++
+  return true
+}
+
+// Nettoyage periodique
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, val] of msgRateMap) {
+    if (now > val.resetAt) msgRateMap.delete(key)
+  }
+}, 60_000)
+
 // GET — Messages d'une conversation
 export async function GET(
   req: NextRequest,
@@ -74,7 +99,7 @@ export async function GET(
       nextCursor: hasMore ? messages[0]?.id : null,
     })
   } catch (error: any) {
-    console.error('Erreur messages:', error)
+    console.error('Erreur messages:', String(error))
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
@@ -91,6 +116,15 @@ export async function POST(
     }
 
     const userId = session.user.id
+
+    // SECURITY FIX M3: Rate limit par utilisateur
+    if (!checkMsgRate(userId)) {
+      return NextResponse.json(
+        { error: 'Trop de messages. Attendez un moment.' },
+        { status: 429 }
+      )
+    }
+
     const conversationId = params.id
     const { content } = await req.json()
 
@@ -163,7 +197,7 @@ export async function POST(
 
     return NextResponse.json({ message })
   } catch (error: any) {
-    console.error('Erreur envoi message:', error)
+    console.error('Erreur envoi message:', String(error))
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

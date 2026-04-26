@@ -132,29 +132,32 @@ export async function POST(request: Request) {
         },
       })
 
-      // Send outbid email (non-blocking, outside transaction)
+      // SECURITY FIX M7: Collecter les infos pour email hors transaction
+      let outbidEmailData: { email: string; name: string } | null = null
       if (previousBidder && previousBidder.userId !== userId) {
         const prevUser = await tx.user.findUnique({
           where: { id: previousBidder.userId },
           select: { email: true, name: true, displayName: true },
         })
         if (prevUser?.email) {
-          // Fire and forget - will be sent after transaction
-          setTimeout(() => {
-            sendOutbidEmail({
-              to: prevUser.email,
-              userName: prevUser.displayName || prevUser.name,
-              beatTitle: auction.beat.title,
-              yourBid: auction.currentBid,
-              newBid: amount,
-              auctionId,
-            }).catch(() => {})
-          }, 0)
+          outbidEmailData = { email: prevUser.email, name: prevUser.displayName || prevUser.name || '' }
         }
       }
 
-      return { bid, auction: updatedAuction }
+      return { bid, auction: updatedAuction, outbidEmailData }
     })
+
+    // SECURITY FIX M7: Envoyer l'email HORS de la transaction avec logging
+    if (result.outbidEmailData) {
+      sendOutbidEmail({
+        to: result.outbidEmailData.email,
+        userName: result.outbidEmailData.name,
+        beatTitle: auction.beat.title,
+        yourBid: auction.currentBid,
+        newBid: amount,
+        auctionId,
+      }).catch((err) => console.warn('[BID] Erreur envoi email outbid:', String(err)))
+    }
 
     return NextResponse.json({
       message: 'Enchere placee avec succes',
@@ -166,7 +169,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Erreur placement enchere:', error)
+    console.error('Erreur placement enchere:', String(error))
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

@@ -42,8 +42,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Le fichier ne doit pas dépasser 5 Mo' }, { status: 400 })
     }
 
-    // Generate unique filename
-    const ext = file.name.split('.').pop() || 'jpg'
+    // SECURITY FIX L6: Deriver l'extension du MIME type, pas du nom de fichier
+    const extMap: Record<string, string> = {
+      'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif'
+    }
+    const ext = extMap[file.type] || 'jpg'
     const filename = `avatars/${userId}-${Date.now()}.${ext}`
 
     // Upload to Supabase Storage
@@ -74,7 +77,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: publicUrl })
   } catch (error) {
-    console.error('Avatar upload error:', error)
+    // SECURITY FIX L2: Ne pas logger l'objet erreur complet
+    console.error('Avatar upload error:', String(error))
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

@@ -289,6 +289,9 @@ model Like {
   createdAt DateTime @default(now())
 
   @@unique([userId, beatId])
+  // SECURITY FIX M8: Index individuels pour les requetes par beatId ou userId seul
+  @@index([beatId])
+  @@index([userId])
 }
 
 // ─── REVIEWS ───
@@ -299,12 +302,13 @@ model Review {
   comment     String?
 
   // Author (buyer who won an auction)
-  authorId    String
-  author      User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  // SECURITY FIX M5: SetNull au lieu de Cascade pour preserver l'historique des reviews
+  authorId    String?
+  author      User?    @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 
   // Producer being reviewed
-  producerId  String
-  producer    User     @relation("ReviewProducer", fields: [producerId], references: [id], onDelete: Cascade)
+  producerId  String?
+  producer    User?    @relation("ReviewProducer", fields: [producerId], references: [id], onDelete: SetNull)
 
   // Linked auction (proof of purchase)
   auctionId   String   @unique
@@ -424,6 +428,10 @@ model Report {
 
   @@index([reporterId])
   @@index([status])
+  // SECURITY FIX L5: Index sur les cibles pour les requetes admin
+  @@index([targetUserId])
+  @@index([targetAuctionId])
+  @@index([targetBeatId])
 }
 
 // ─── WATCHLIST (FAVORIS ENCHERES) ───

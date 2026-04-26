@@ -69,6 +69,23 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // SECURITY FIX M2: Valider que audioUrl est un URL Supabase valide
+    const SUPABASE_DOMAIN = process.env.NEXT_PUBLIC_SUPABASE_URL || 'onfwowxfflnijuvpspkq.supabase.co'
+    if (typeof audioUrl !== 'string' || !audioUrl.includes('supabase.co/storage/')) {
+      return NextResponse.json(
+        { error: 'audioUrl doit etre un lien Supabase Storage valide' },
+        { status: 400 }
+      )
+    }
+
+    // SECURITY FIX M2: Valider la taille du fichier audio (max 50 MB)
+    if (audioSize && (typeof audioSize !== 'number' || audioSize > 50 * 1024 * 1024)) {
+      return NextResponse.json(
+        { error: 'Fichier audio trop volumineux (max 50 MB)' },
+        { status: 400 }
+      )
+    }
+
     // Validate BPM range (40-300)
     const bpmNum = typeof bpm === 'number' ? bpm : parseInt(String(bpm))
     if (isNaN(bpmNum) || bpmNum < 40 || bpmNum > 300) {
@@ -104,6 +121,13 @@ export async function POST(req: NextRequest) {
     // ─── Création de l'enchère si demandée ───
     let auction = null
     if (enableAuction && startPrice) {
+      // SECURITY FIX M6: Valider que les prix sont positifs
+      if (typeof startPrice !== 'number' || startPrice < 1) {
+        return NextResponse.json({ error: 'Le prix de depart doit etre >= 1€' }, { status: 400 })
+      }
+      if (buyNowPrice && (typeof buyNowPrice !== 'number' || buyNowPrice <= startPrice)) {
+        return NextResponse.json({ error: 'Le prix buy-now doit etre superieur au prix de depart' }, { status: 400 })
+      }
       const now = new Date()
       const durationHours = auctionDuration || 24
       const endTime = new Date(now.getTime() + durationHours * 60 * 60 * 1000)
@@ -169,7 +193,10 @@ export async function POST(req: NextRequest) {
       if (notifications.length > 0) {
         await prisma.notification.createMany({ data: notifications })
       }
-    } catch {}
+    } catch (notifErr) {
+      // SECURITY FIX M1: Logger les erreurs de notification au lieu de les ignorer
+      console.warn('[UPLOAD] Erreur notification fan-out:', String(notifErr))
+    }
 
     return NextResponse.json(
       {

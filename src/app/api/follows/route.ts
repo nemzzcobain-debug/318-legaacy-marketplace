@@ -60,24 +60,42 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ followed: false, count })
     } else {
-      // Follow + create notification
-      await prisma.$transaction([
+      // Follow + create notification (with dedup check)
+      // SECURITY FIX M4: Eviter le spam de notifications follow/unfollow
+      const recentNotif = await prisma.notification.findFirst({
+        where: {
+          userId: producerId,
+          type: 'NEW_FOLLOWER',
+          link: `/producer/${session.user.id}`,
+          createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) }, // 1h
+        },
+      })
+
+      const txOps = [
         prisma.follow.create({
           data: {
             followerId: session.user.id,
             followingId: producerId
           }
         }),
-        prisma.notification.create({
-          data: {
-            type: 'NEW_FOLLOWER',
-            title: 'Nouveau follower',
-            message: `${session.user.name || 'Utilisateur'} vous suit maintenant !`,
-            link: `/producer/${session.user.id}`,
-            userId: producerId
-          }
-        })
-      ])
+      ]
+
+      // Ne creer la notification que si pas de doublon recent
+      if (!recentNotif) {
+        txOps.push(
+          prisma.notification.create({
+            data: {
+              type: 'NEW_FOLLOWER',
+              title: 'Nouveau follower',
+              message: `${session.user.name || 'Utilisateur'} vous suit maintenant !`,
+              link: `/producer/${session.user.id}`,
+              userId: producerId
+            }
+          })
+        )
+      }
+
+      await prisma.$transaction(txOps)
 
       const count = await prisma.follow.count({
         where: { followingId: producerId }
@@ -94,13 +112,13 @@ export async function POST(req: NextRequest) {
           producerName: producerData.displayName || producerData.name,
           followerName: session.user.name || 'Un utilisateur',
           totalFollowers: count,
-        }).catch(() => {})
+        }).catch((err) => console.warn('[FOLLOW] Erreur envoi email:', String(err)))
       }
 
       return NextResponse.json({ followed: true, count })
     }
   } catch (error) {
-    console.error('Follow error:', error)
+    console.error('Follow error:', String(error))
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
@@ -237,7 +255,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ error: 'Paramètre requis: producerId, producerIds, followers ou following' }, { status: 400 })
   } catch (error) {
-    console.error('Follow GET error:', error)
+    console.error('Follow GET error:', String(error))
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

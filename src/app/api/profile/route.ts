@@ -62,7 +62,10 @@ export async function GET() {
                             prisma.follow.count({ where: { followerId: userId } }),
                           ])
                   followCounts = { followers: frs, following: fng }
-          } catch {}
+          } catch (err) {
+            // SECURITY FIX L1: Logger les erreurs au lieu de les ignorer
+            console.warn('[PROFILE] Erreur comptage followers:', String(err))
+          }
 
       // SECURITY FIX H1: Verifier l'existence du mot de passe sans jamais selectionner le hash
       const hasPassword = await prisma.user.count({
