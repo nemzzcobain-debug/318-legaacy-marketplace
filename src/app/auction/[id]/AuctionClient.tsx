@@ -238,6 +238,8 @@ export default function AuctionClient() {
         if (!bidAmount) {
           setBidAmount(String(data.currentBid + data.bidIncrement))
         }
+      } else if (res.status === 404) {
+        setAuction(null)
       }
     } catch (e) {
       console.error(e)
@@ -273,7 +275,8 @@ export default function AuctionClient() {
     setBidSuccess('')
 
     try {
-      const res = await fetch(`/api/auctions/${id}/bid`, {
+      // BUG FIX 6: Utiliser la route transactionnelle au lieu de la legacy
+      const res = await fetch(`/api/auctions/bid?auctionId=${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -115,19 +115,30 @@ export default function BeatCheckoutPage() {
   const searchParams = useSearchParams()
 
   const beatId = params.id as string
-  // SECURITY FIX: Lire le clientSecret depuis sessionStorage (pas l'URL)
+  // BUG FIX 1: Lire le clientSecret depuis sessionStorage OU Stripe return URL
   const [clientSecretParam, setClientSecretParam] = useState<string | null>(null)
+  const [loading2, setLoading2] = useState(true)
   const licenseType = searchParams.get('license') || 'BASIC'
   const price = parseFloat(searchParams.get('price') || '0')
   const beatTitle = decodeURIComponent(searchParams.get('title') || '')
 
   useEffect(() => {
+    // 1. Stripe return URL contient payment_intent_client_secret
+    const stripeCs = searchParams.get('payment_intent_client_secret')
+    if (stripeCs) {
+      setClientSecretParam(stripeCs)
+      setLoading2(false)
+      return
+    }
+    // 2. sessionStorage (set par NouveautesClient avant redirect)
     const cs = sessionStorage.getItem(`checkout_cs_${beatId}`)
     if (cs) {
       setClientSecretParam(cs)
-      sessionStorage.removeItem(`checkout_cs_${beatId}`) // Nettoyer apres lecture
+      // Ne pas supprimer tout de suite — garder pour les refreshes
+      // Le secret expire cote Stripe de toute facon
     }
-  }, [beatId])
+    setLoading2(false)
+  }, [beatId, searchParams])
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -141,7 +152,7 @@ export default function BeatCheckoutPage() {
     }
   }, [status, router])
 
-  if (status === 'loading') {
+  if (status === 'loading' || loading2) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin text-red-500" size={40} />

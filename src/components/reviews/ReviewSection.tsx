@@ -343,7 +343,10 @@ export default function ReviewSection({ producerId, producerName }: Props) {
       {reviews.length > 0 ? (
         <div className="space-y-3">
           {reviews.map(review => {
-            const authorName = review.author.displayName || review.author.name
+            // BUG FIX 2: Null guard — l'auteur peut etre supprime (SetNull)
+            const authorName = review.author
+              ? (review.author.displayName || review.author.name || 'Utilisateur')
+              : 'Utilisateur supprime'
             return (
               <div key={review.id} className="bg-[#111111] border border-[#222222] rounded-xl p-4">
                 <div className="flex items-start justify-between mb-2">

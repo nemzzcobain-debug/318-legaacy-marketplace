@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { stripe } from '@/lib/stripe'
 
 // POST /api/auctions/[id]/buy-now/confirm — Finaliser apres paiement reussi
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -38,7 +39,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Pas de prix achat immediat' }, { status: 400 })
     }
 
-    // Finaliser l'enchere : declarer le gagnant
+    // BUG FIX 4: Verifier le paiement Stripe AVANT de finaliser
+    if (!auction.stripePaymentId) {
+      return NextResponse.json({ error: 'Aucun paiement Stripe associe' }, { status: 400 })
+    }
+
+    try {
+      const paymentIntent = await stripe.paymentIntents.retrieve(auction.stripePaymentId)
+      if (paymentIntent.status !== 'succeeded') {
+        return NextResponse.json(
+          { error: `Paiement non confirme (statut: ${paymentIntent.status})` },
+          { status: 402 }
+        )
+      }
+    } catch (stripeErr) {
+      console.error('Erreur verification Stripe:', String(stripeErr))
+      return NextResponse.json({ error: 'Impossible de verifier le paiement' }, { status: 500 })
+    }
+
+    // Finaliser l'enchere : declarer le gagnant (paiement verifie)
     await prisma.auction.update({
       where: { id: auctionId },
       data: {

@@ -76,8 +76,24 @@ export async function POST(request: Request) {
     // Calculer le prix final avec le multiplicateur de licence
     const finalAmount = calculateFinalPrice(amount, licenseType)
 
-    // Creer l'enchere dans une transaction
+    // Creer l'enchere dans une transaction avec re-validation
     const result = await prisma.$transaction(async (tx) => {
+      // BUG FIX 6: Re-lire l'enchere dans la transaction pour eviter la race condition
+      const freshAuction = await tx.auction.findUnique({
+        where: { id: auctionId },
+        select: { currentBid: true, bidIncrement: true, status: true, endTime: true },
+      })
+      if (!freshAuction) throw new Error('Enchere introuvable')
+      if (freshAuction.status !== 'ACTIVE' && freshAuction.status !== 'ENDING_SOON') {
+        throw new Error("Cette enchere n'est plus active")
+      }
+      if (freshAuction.endTime < new Date()) {
+        throw new Error('Cette enchere est terminee')
+      }
+      if (amount < freshAuction.currentBid + freshAuction.bidIncrement) {
+        throw new Error(`L'enchere minimum est de ${freshAuction.currentBid + freshAuction.bidIncrement}EUR`)
+      }
+
       // Creer le bid
       const bid = await tx.bid.create({
         data: {
@@ -169,7 +185,12 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Erreur placement enchere:', String(error))
+    const msg = String(error)
+    // BUG FIX 6: Retourner 400 pour les erreurs de validation de la transaction
+    if (msg.includes('enchere minimum') || msg.includes('plus active') || msg.includes('terminee')) {
+      return NextResponse.json({ error: msg.replace('Error: ', '') }, { status: 400 })
+    }
+    console.error('Erreur placement enchere:', msg)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

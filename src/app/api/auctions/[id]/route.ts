@@ -10,11 +10,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // SECURITY FIX C3: Verifier l'authentification
+    // BUG FIX 3: Rendre l'enchere publique (donnees de base) mais proteger les details sensibles
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Connexion requise' }, { status: 401 });
-    }
+    const isAuthenticated = !!session?.user;
 
     const auction = await prisma.auction.findUnique({
       where: { id: params.id },
@@ -26,16 +24,25 @@ export async function GET(
             }
           }
         },
-        bids: {
-          include: {
-            user: { select: { id: true, name: true, displayName: true, avatar: true } }
+        // Bids et winner seulement pour les utilisateurs connectes
+        ...(isAuthenticated ? {
+          bids: {
+            include: {
+              user: { select: { id: true, name: true, displayName: true, avatar: true } }
+            },
+            orderBy: { createdAt: 'desc' as const },
+            take: 20
           },
-          orderBy: { createdAt: 'desc' },
-          take: 20
-        },
-        winner: {
-          select: { name: true, displayName: true }
-        }
+          winner: {
+            select: { name: true, displayName: true }
+          }
+        } : {
+          bids: {
+            select: { id: true, amount: true, createdAt: true },
+            orderBy: { createdAt: 'desc' as const },
+            take: 5
+          }
+        }),
       }
     });
 
