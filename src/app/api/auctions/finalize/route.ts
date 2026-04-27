@@ -79,6 +79,36 @@ async function handleFinalize(req: NextRequest) {
       errors: 0,
     }
 
+    // Récupérer ou créer la playlist système "Nouveautés"
+    // On utilise le premier admin comme propriétaire
+    let nouveautesPlaylist: { id: string } | null = null
+    try {
+      nouveautesPlaylist = await prisma.playlist.findFirst({
+        where: { name: 'Nouveautés', visibility: 'PUBLIC' },
+        select: { id: true },
+      })
+
+      if (!nouveautesPlaylist) {
+        const admin = await prisma.user.findFirst({
+          where: { role: 'ADMIN' },
+          select: { id: true },
+        })
+        if (admin) {
+          nouveautesPlaylist = await prisma.playlist.create({
+            data: {
+              name: 'Nouveautés',
+              description: 'Les derniers beats disponibles sur la plateforme',
+              visibility: 'PUBLIC',
+              userId: admin.id,
+            },
+            select: { id: true },
+          })
+        }
+      }
+    } catch (err) {
+      console.error('[CRON] Erreur playlist Nouveautés:', err)
+    }
+
     // TASK50: Verifier les encheres ENDED avec paymentDeadline depassee (gagnant n'a pas paye)
     const expiredDeadlines = await prisma.auction.findMany({
       where: {
@@ -159,36 +189,6 @@ async function handleFinalize(req: NextRequest) {
         console.error(`Erreur expiration deadline ${expired.id}:`, String(err))
         results.errors++
       }
-    }
-
-    // Récupérer ou créer la playlist système "Nouveautés"
-    // On utilise le premier admin comme propriétaire
-    let nouveautesPlaylist: { id: string } | null = null
-    try {
-      nouveautesPlaylist = await prisma.playlist.findFirst({
-        where: { name: 'Nouveautés', visibility: 'PUBLIC' },
-        select: { id: true },
-      })
-
-      if (!nouveautesPlaylist) {
-        const admin = await prisma.user.findFirst({
-          where: { role: 'ADMIN' },
-          select: { id: true },
-        })
-        if (admin) {
-          nouveautesPlaylist = await prisma.playlist.create({
-            data: {
-              name: 'Nouveautés',
-              description: 'Les derniers beats disponibles sur la plateforme',
-              visibility: 'PUBLIC',
-              userId: admin.id,
-            },
-            select: { id: true },
-          })
-        }
-      }
-    } catch (err) {
-      console.error('[CRON] Erreur playlist Nouveautés:', err)
     }
 
     for (const auction of expiredAuctions) {
