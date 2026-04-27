@@ -116,6 +116,7 @@ function generateCsrfToken(): string {
 }
 
 export async function middleware(request: NextRequest) {
+  try {
   const { pathname } = request.nextUrl
 
   // Nettoyage périodique du fallback in-memory (1 chance sur 100)
@@ -268,6 +269,11 @@ export async function middleware(request: NextRequest) {
   }
 
   return NextResponse.next()
+  } catch (error) {
+    // Fail open: if middleware crashes, let the request through
+    console.error('[Middleware] Unexpected error, failing open:', error)
+    return NextResponse.next()
+  }
 }
 
 export const config = {

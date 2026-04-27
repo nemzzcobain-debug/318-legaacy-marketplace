@@ -30,12 +30,11 @@ const nextConfig = {
                 headers: [
                     {
                         key: 'Content-Security-Policy',
-                        // F16 FIX: CSP renforcée
-                        // - strict-dynamic + unsafe-inline pour compatibilité Next.js (les navigateurs modernes ignorent unsafe-inline quand strict-dynamic est présent)
-                        // - report-uri prêt pour monitoring futur
-                        // NOTE: Pour une implémentation nonce complète, il faut refactorer vers un middleware custom qui injecte le nonce dans chaque réponse HTML
-                        // SECURITY FIX H5: Ajout strict-dynamic pour que les navigateurs modernes ignorent unsafe-inline sur les scripts
-                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'strict-dynamic' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://onfwowxfflnijuvpspkq.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://oaidalleapiprodscus.blob.core.windows.net; font-src 'self'; connect-src 'self' blob: https://onfwowxfflnijuvpspkq.supabase.co wss://onfwowxfflnijuvpspkq.supabase.co https://api.stripe.com https://oaidalleapiprodscus.blob.core.windows.net; frame-src https://js.stripe.com https://hooks.stripe.com; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests",
+                        // CSP: strict-dynamic removed — it requires nonce-based scripts which Next.js
+                        // does not generate by default. Without nonces, strict-dynamic blocks ALL
+                        // parser-inserted <script> tags, breaking the entire app.
+                        // TODO: Re-enable strict-dynamic once nonce-based CSP middleware is implemented
+                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://onfwowxfflnijuvpspkq.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://oaidalleapiprodscus.blob.core.windows.net; font-src 'self'; connect-src 'self' blob: https://onfwowxfflnijuvpspkq.supabase.co wss://onfwowxfflnijuvpspkq.supabase.co https://api.stripe.com https://oaidalleapiprodscus.blob.core.windows.net; frame-src https://js.stripe.com https://hooks.stripe.com; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests",
                     },
                     {
                         key: 'X-Frame-Options',
