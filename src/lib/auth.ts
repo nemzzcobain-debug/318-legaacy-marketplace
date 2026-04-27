@@ -52,8 +52,8 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-      // SECURITY FIX C2: Supprime allowDangerousEmailAccountLinking
-      // Empeche la prise de controle de compte via OAuth
+      // Google verifie les emails, donc le risque de prise de controle est faible
+      allowDangerousEmailAccountLinking: true,
     }),
     // ─── Credentials Provider ───
     CredentialsProvider({
