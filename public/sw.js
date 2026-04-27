@@ -1,7 +1,7 @@
 // 318 LEGAACY Marketplace - Service Worker
-const CACHE_NAME = '318-legaacy-v1'
-const STATIC_CACHE = '318-legaacy-static-v1'
-const DYNAMIC_CACHE = '318-legaacy-dynamic-v1'
+const CACHE_NAME = '318-legaacy-v2'
+const STATIC_CACHE = '318-legaacy-static-v2'
+const DYNAMIC_CACHE = '318-legaacy-dynamic-v2'
 
 // Assets to pre-cache on install
 const PRECACHE_ASSETS = [
@@ -76,23 +76,25 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Static assets (JS, CSS) - Stale While Revalidate
+  // Static assets (JS, CSS) - Network First with cache fallback
+  // Avoids serving stale/broken cached responses when deploy changes chunk hashes
   if (
     request.destination === 'script' ||
     request.destination === 'style' ||
     url.pathname.startsWith('/_next/')
   ) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        const fetchPromise = fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
           if (response.ok) {
             const clone = response.clone()
             caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone))
           }
           return response
         })
-        return cached || fetchPromise
-      })
+        .catch(() => {
+          return caches.match(request).then((cached) => cached || new Response('', { status: 408 }))
+        })
     )
     return
   }

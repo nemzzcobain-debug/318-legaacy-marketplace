@@ -197,11 +197,9 @@ export default function Home() {
     }
     return audioCtxRef.current
   }, [])
-  const [heroVisible, setHeroVisible] = useState(false)
   const { t } = useTranslation()
 
   useEffect(() => {
-    setHeroVisible(true)
     Promise.all([
       fetch('/api/auctions?status=active&limit=6&sort=most_bids').then((r) => r.json()),
       fetch('/api/homepage').then((r) => r.json()),
@@ -352,7 +350,7 @@ export default function Home() {
           </div>
 
           <div
-            className={`max-w-5xl mx-auto text-center relative z-10 transition-all duration-1000 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+            className="max-w-5xl mx-auto text-center relative z-10 hero-fade-in"
           >
             {/* Logo */}
             <div className="mb-8">
@@ -381,23 +379,23 @@ export default function Home() {
             {/* Main title with staggered animation */}
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-[0.9] tracking-tight">
               <span
-                className={`inline-block text-white transition-all duration-700 delay-100 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                className="inline-block text-white hero-fade-in-delay-1"
               >
                 {t('hero.title1')}
               </span>{' '}
               <span
-                className={`inline-block bg-gradient-to-r from-red-500 via-red-400 to-red-600 bg-clip-text text-transparent transition-all duration-700 delay-300 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                className="inline-block bg-gradient-to-r from-red-500 via-red-400 to-red-600 bg-clip-text text-transparent hero-fade-in-delay-2"
               >
                 {t('hero.title2')}
               </span>
               <br />
               <span
-                className={`inline-block text-white transition-all duration-700 delay-500 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                className="inline-block text-white hero-fade-in-delay-3"
               >
                 {t('hero.title3')}
               </span>{' '}
               <span
-                className={`inline-block relative transition-all duration-700 delay-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                className="inline-block relative hero-fade-in-delay-4"
               >
                 <span className="bg-gradient-to-r from-red-500 via-purple-500 to-red-500 bg-clip-text text-transparent bg-[length:200%] animate-gradient-x">
                   {t('hero.title4')}
@@ -410,14 +408,14 @@ export default function Home() {
             </h1>
 
             <p
-              className={`text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed transition-all duration-700 delay-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+              className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed hero-fade-in-delay-4"
             >
               {t('hero.subtitle')}
             </p>
 
             {/* CTA Buttons */}
             <div
-              className={`flex gap-4 flex-wrap justify-center transition-all duration-700 delay-[900ms] ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+              className="flex gap-4 flex-wrap justify-center hero-fade-in-delay-4"
             >
               <Link
                 href="/marketplace"
@@ -448,7 +446,7 @@ export default function Home() {
             {/* Mini live stats */}
             {homepage && (
               <div
-                className={`flex items-center justify-center gap-6 md:gap-10 mt-16 transition-all duration-700 delay-[1100ms] ${heroVisible ? 'opacity-100' : 'opacity-0'}`}
+                className="flex items-center justify-center gap-6 md:gap-10 mt-16 hero-fade-in-delay-4"
               >
                 <div className="flex items-center gap-2 text-sm">
                   <div className="relative flex h-2.5 w-2.5">

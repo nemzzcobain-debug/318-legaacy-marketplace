@@ -71,6 +71,31 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
 ::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 3px; }
 
+/* ─── Hero Fade-In (CSS-only, no JS required) ─── */
+@keyframes heroFadeInUp {
+  from { opacity: 0; transform: translateY(2rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroFadeInUpShort {
+  from { opacity: 0; transform: translateY(1rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-fade-in {
+  animation: heroFadeInUp 1s ease-out 0.2s both;
+}
+.hero-fade-in-delay-1 {
+  animation: heroFadeInUpShort 0.7s ease-out 0.3s both;
+}
+.hero-fade-in-delay-2 {
+  animation: heroFadeInUpShort 0.7s ease-out 0.5s both;
+}
+.hero-fade-in-delay-3 {
+  animation: heroFadeInUpShort 0.7s ease-out 0.7s both;
+}
+.hero-fade-in-delay-4 {
+  animation: heroFadeInUpShort 0.7s ease-out 0.9s both;
+}
+
 /* ─── Glass Effect ─── */
 .glass {
   background: var(--glass-bg);
