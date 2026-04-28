@@ -35,7 +35,7 @@ interface Beat {
   mood: string | null
   duration: number | null
   coverImage: string | null
-  audioUrl: string
+  audioUrl: string | null
   plays: number
   producer: {
     id: string
@@ -182,21 +182,37 @@ export default function NouveautesClient() {
     }
   }
 
-  // Audio player functions
-  function playTrack(index: number) {
+  // Audio player functions — uses index in the beats[] array
+  function playTrack(beatIndex: number) {
     if (!audioRef.current) return
-    const beat = beats[index]
+    const beat = beats[beatIndex]
     if (!beat) return
+    if (!beat.audioUrl) {
+      console.warn('Pas d\'audio disponible pour ce beat:', beat.title)
+      return
+    }
 
-    if (currentTrack === index && isPlaying) {
+    if (currentTrack === beatIndex && isPlaying) {
       audioRef.current.pause()
       setIsPlaying(false)
       return
     }
 
+    // Stop current playback first
+    audioRef.current.pause()
+    audioRef.current.currentTime = 0
+
     audioRef.current.src = beat.audioUrl
-    audioRef.current.play().catch(() => {})
-    setCurrentTrack(index)
+    audioRef.current.load()
+
+    const playPromise = audioRef.current.play()
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.error('Erreur lecture audio:', err.message, 'URL:', beat.audioUrl?.substring(0, 100))
+        setIsPlaying(false)
+      })
+    }
+    setCurrentTrack(beatIndex)
     setIsPlaying(true)
   }
 
@@ -283,7 +299,7 @@ export default function NouveautesClient() {
 
   return (
     <div className="min-h-screen pb-32">
-      <audio ref={audioRef} />
+      <audio ref={audioRef} preload="none" />
 
       {/* Hero Header */}
       <div className="relative overflow-hidden">

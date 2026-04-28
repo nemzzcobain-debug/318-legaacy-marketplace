@@ -193,20 +193,30 @@ export async function GET() {
         name: g.genre,
         count: g._count,
       })),
-      featuredBeats: featuredBeats.map(b => ({
-        id: b.id,
-        title: b.title,
-        genre: b.genre,
-        bpm: b.bpm,
-        key: b.key,
-        coverImage: b.coverImage,
-        audioUrl: b.audioUrl,
-        producer: {
-          id: b.producer.id,
-          name: b.producer.displayName || b.producer.name,
-          avatar: b.producer.avatar,
-        },
-        auction: b.auctions[0] || null,
+      featuredBeats: await Promise.all(featuredBeats.map(async (b) => {
+        let streamUrl = b.audioUrl
+        if (streamUrl) {
+          const parsed = parseSupabaseUrl(streamUrl)
+          if (parsed) {
+            const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
+            if (signed) streamUrl = signed
+          }
+        }
+        return {
+          id: b.id,
+          title: b.title,
+          genre: b.genre,
+          bpm: b.bpm,
+          key: b.key,
+          coverImage: b.coverImage,
+          audioUrl: streamUrl,
+          producer: {
+            id: b.producer.id,
+            name: b.producer.displayName || b.producer.name,
+            avatar: b.producer.avatar,
+          },
+          auction: b.auctions[0] || null,
+        }
       })),
       nouveautesBeats: await getNouveautesPreview(),
     })

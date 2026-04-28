@@ -324,8 +324,16 @@ export async function GET() {
           const parsed = parseSupabaseUrl(streamUrl)
           if (parsed) {
             const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
-            if (signed) streamUrl = signed
+            if (signed) {
+              streamUrl = signed
+            } else {
+              console.error(`[Nouveautes] Failed to generate signed URL for beat "${pb.beat.title}" - bucket: ${parsed.bucket}, path: ${parsed.path}`)
+            }
+          } else {
+            console.error(`[Nouveautes] Could not parse Supabase URL for beat "${pb.beat.title}": ${streamUrl.substring(0, 100)}`)
           }
+        } else {
+          console.warn(`[Nouveautes] Beat "${pb.beat.title}" has no audioUrl`)
         }
 
         return {
