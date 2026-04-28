@@ -252,7 +252,7 @@ export default function AdminPage() {
       const params = new URLSearchParams({ page: String(page), limit: '20' })
       if (search) params.set('search', search)
       if (beatsFilter) params.set('genre', beatsFilter)
-      const res = await fetch(`/api/beats?${params}`)
+      const res = await fetch(`/api/admin/beats?${params}`)
       if (res.ok) {
         const data = await res.json()
         setAllBeats(data.beats || [])
