@@ -90,8 +90,8 @@ const LICENSES = [
     bg: 'bg-gray-500/10',
     text: 'text-gray-400',
     multiplier: 1,
-    rights: 'MP3 - 5000 streams - Non-commercial',
-    features: ['Format MP3', '5 000 streams max', 'Usage non-commercial', 'Credit obligatoire'],
+    rights: 'WAV + MP3 - 5000 streams - Non-commercial',
+    features: ['Format WAV + MP3', '5 000 streams max', 'Usage non-commercial', 'Credit obligatoire'],
   },
   {
     id: 'PREMIUM',
