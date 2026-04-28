@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
+import { parseSupabaseUrl, getSignedUrl } from '@/lib/supabase'
 import { authOptions } from '@/lib/auth'
 import { createBeatSchema } from '@/lib/validations'
 
@@ -73,8 +74,22 @@ export async function GET(request: Request) {
       prisma.beat.count({ where }),
     ])
 
+    // Generate signed URLs for audio streaming
+    const beatsWithSignedUrls = await Promise.all(
+      beats.map(async (beat) => {
+        if (beat.audioUrl) {
+          const parsed = parseSupabaseUrl(beat.audioUrl)
+          if (parsed) {
+            const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
+            if (signed) return { ...beat, audioUrl: signed }
+          }
+        }
+        return beat
+      })
+    )
+
     return NextResponse.json({
-      beats,
+      beats: beatsWithSignedUrls,
       pagination: {
         page,
         limit,

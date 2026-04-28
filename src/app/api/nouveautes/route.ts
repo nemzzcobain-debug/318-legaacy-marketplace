@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { parseSupabaseUrl, getSignedUrl } from '@/lib/supabase'
 
 /**
  * Lazy finalization: auto-finalize expired auctions that the daily cron
@@ -317,6 +318,16 @@ export async function GET() {
           select: { startPrice: true, buyNowPrice: true },
         })
 
+        // Generate signed URL for audio streaming if stored in Supabase
+        let streamUrl = pb.beat.audioUrl
+        if (streamUrl) {
+          const parsed = parseSupabaseUrl(streamUrl)
+          if (parsed) {
+            const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
+            if (signed) streamUrl = signed
+          }
+        }
+
         return {
           id: pb.beat.id,
           title: pb.beat.title,
@@ -326,7 +337,7 @@ export async function GET() {
           mood: (pb.beat as any).mood || null,
           duration: (pb.beat as any).duration || null,
           coverImage: (pb.beat as any).coverImage || null,
-          audioUrl: pb.beat.audioUrl,
+          audioUrl: streamUrl,
           plays: (pb.beat as any).plays || 0,
           producer: pb.beat.producer,
           basePrice: lastAuction?.buyNowPrice || lastAuction?.startPrice || 20,
