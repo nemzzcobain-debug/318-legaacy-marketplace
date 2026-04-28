@@ -135,6 +135,22 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [previousTab, setPreviousTab] = useState<string | null>(null)
+
+  // Navigation depuis les cartes stats avec historique
+  const navigateToTab = (tab: string, filter?: string) => {
+    setPreviousTab(activeTab)
+    setActiveTab(tab)
+    if (filter) setFilterStatus(filter)
+  }
+
+  const goBack = () => {
+    if (previousTab) {
+      setActiveTab(previousTab)
+      setPreviousTab(null)
+      setFilterStatus('')
+    }
+  }
 
   const fetchStats = useCallback(async () => {
     try {
@@ -439,6 +455,7 @@ export default function AdminPage() {
                 setActiveTab(tab.id)
                 setSearch('')
                 setFilterStatus('')
+                setPreviousTab(null)
               }}
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab.id
@@ -459,22 +476,33 @@ export default function AdminPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Back button */}
+        {previousTab && activeTab !== 'dashboard' && (
+          <button
+            onClick={goBack}
+            className="mb-4 flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg border border-white/10"
+          >
+            <span>←</span>
+            <span>Retour au tableau de bord</span>
+          </button>
+        )}
+
         {/* DASHBOARD TAB */}
         {activeTab === 'dashboard' && stats && (
           <div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-              <StatCard label="Utilisateurs" value={stats.totalUsers} color="blue" onClick={() => setActiveTab('users')} />
-              <StatCard label="Producteurs" value={stats.totalProducers} color="purple" onClick={() => setActiveTab('producers')} />
-              <StatCard label="En attente" value={stats.pendingProducers} color="yellow" onClick={() => { setActiveTab('producers'); setFilterStatus('PENDING') }} />
-              <StatCard label="Encheres actives" value={stats.activeAuctions} color="green" onClick={() => { setActiveTab('auctions'); setFilterStatus('ACTIVE') }} />
-              <StatCard label="Total encheres" value={stats.totalAuctions} color="orange" onClick={() => setActiveTab('auctions')} />
-              <StatCard label="Beats" value={stats.totalBeats} color="blue" onClick={() => setActiveTab('featured')} />
-              <StatCard label="Total bids" value={stats.totalBids} color="purple" onClick={() => setActiveTab('auctions')} />
+              <StatCard label="Utilisateurs" value={stats.totalUsers} color="blue" onClick={() => navigateToTab('users')} />
+              <StatCard label="Producteurs" value={stats.totalProducers} color="purple" onClick={() => navigateToTab('producers')} />
+              <StatCard label="En attente" value={stats.pendingProducers} color="yellow" onClick={() => navigateToTab('producers', 'PENDING')} />
+              <StatCard label="Encheres actives" value={stats.activeAuctions} color="green" onClick={() => navigateToTab('auctions', 'ACTIVE')} />
+              <StatCard label="Total encheres" value={stats.totalAuctions} color="orange" onClick={() => navigateToTab('auctions')} />
+              <StatCard label="Beats" value={stats.totalBeats} color="blue" onClick={() => navigateToTab('featured')} />
+              <StatCard label="Total bids" value={stats.totalBids} color="purple" onClick={() => navigateToTab('auctions')} />
               <StatCard
                 label="Ventes completees"
                 value={stats.completedAuctionsCount}
                 color="green"
-                onClick={() => { setActiveTab('auctions'); setFilterStatus('COMPLETED') }}
+                onClick={() => navigateToTab('auctions', 'COMPLETED')}
               />
               <StatCard
                 label="Revenue plateforme"
