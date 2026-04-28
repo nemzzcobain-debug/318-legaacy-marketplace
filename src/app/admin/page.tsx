@@ -81,10 +81,12 @@ function StatCard({
   label,
   value,
   color = 'purple',
+  onClick,
 }: {
   label: string
   value: string | number
   color?: string
+  onClick?: () => void
 }) {
   const colors: Record<string, string> = {
     purple: 'from-purple-600 to-purple-800',
@@ -97,10 +99,12 @@ function StatCard({
 
   return (
     <div
-      className={`bg-gradient-to-br ${colors[color] || colors.purple} rounded-xl p-5 text-white shadow-lg`}
+      onClick={onClick}
+      className={`bg-gradient-to-br ${colors[color] || colors.purple} rounded-xl p-5 text-white shadow-lg ${onClick ? 'cursor-pointer hover:scale-105 hover:shadow-xl transition-all duration-200' : ''}`}
     >
       <p className="text-sm opacity-80 mb-1">{label}</p>
       <p className="text-2xl font-bold">{value}</p>
+      {onClick && <p className="text-[10px] mt-2 opacity-60 uppercase tracking-wider">Cliquer pour voir →</p>}
     </div>
   )
 }
@@ -459,17 +463,18 @@ export default function AdminPage() {
         {activeTab === 'dashboard' && stats && (
           <div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-              <StatCard label="Utilisateurs" value={stats.totalUsers} color="blue" />
-              <StatCard label="Producteurs" value={stats.totalProducers} color="purple" />
-              <StatCard label="En attente" value={stats.pendingProducers} color="yellow" />
-              <StatCard label="Encheres actives" value={stats.activeAuctions} color="green" />
-              <StatCard label="Total encheres" value={stats.totalAuctions} color="orange" />
-              <StatCard label="Beats" value={stats.totalBeats} color="blue" />
-              <StatCard label="Total bids" value={stats.totalBids} color="purple" />
+              <StatCard label="Utilisateurs" value={stats.totalUsers} color="blue" onClick={() => setActiveTab('users')} />
+              <StatCard label="Producteurs" value={stats.totalProducers} color="purple" onClick={() => setActiveTab('producers')} />
+              <StatCard label="En attente" value={stats.pendingProducers} color="yellow" onClick={() => { setActiveTab('producers'); setFilterStatus('PENDING') }} />
+              <StatCard label="Encheres actives" value={stats.activeAuctions} color="green" onClick={() => { setActiveTab('auctions'); setFilterStatus('ACTIVE') }} />
+              <StatCard label="Total encheres" value={stats.totalAuctions} color="orange" onClick={() => setActiveTab('auctions')} />
+              <StatCard label="Beats" value={stats.totalBeats} color="blue" onClick={() => setActiveTab('featured')} />
+              <StatCard label="Total bids" value={stats.totalBids} color="purple" onClick={() => setActiveTab('auctions')} />
               <StatCard
                 label="Ventes completees"
                 value={stats.completedAuctionsCount}
                 color="green"
+                onClick={() => { setActiveTab('auctions'); setFilterStatus('COMPLETED') }}
               />
               <StatCard
                 label="Revenue plateforme"
