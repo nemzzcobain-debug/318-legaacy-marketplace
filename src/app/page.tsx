@@ -106,6 +106,16 @@ interface HomepageData {
   }[]
   topGenres: { name: string; count: number }[]
   featuredBeats: FeaturedBeat[]
+  nouveautesBeats: {
+    id: string
+    title: string
+    genre: string
+    bpm: number
+    coverImage: string | null
+    audioUrl: string
+    producer: string
+    price: number
+  }[]
 }
 
 // ─── Animated Counter ───
@@ -1074,35 +1084,58 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Fake beat rows */}
+                    {/* Real beat rows from Nouveautés */}
                     <div className="space-y-2.5">
-                      {[1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02]"
-                        >
-                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center shrink-0">
-                            <Play size={10} className="text-white ml-0.5" />
+                      {(homepage?.nouveautesBeats || []).length > 0 ? (
+                        homepage!.nouveautesBeats.slice(0, 4).map((beat) => (
+                          <Link
+                            key={beat.id}
+                            href="/nouveautes"
+                            className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] transition-colors group"
+                          >
+                            <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 relative">
+                              {beat.coverImage ? (
+                                <Image src={beat.coverImage} alt={beat.title} fill className="object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center">
+                                  <Music size={10} className="text-gray-500" />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Play size={10} className="text-white ml-0.5" />
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-white truncate">{beat.title}</div>
+                              <div className="text-[10px] text-gray-500 truncate">{beat.producer} &middot; {beat.genre}</div>
+                            </div>
+                            <div className="text-xs font-bold text-[#e11d48] shrink-0">
+                              {beat.price}€
+                            </div>
+                          </Link>
+                        ))
+                      ) : (
+                        [1, 2, 3].map((i) => (
+                          <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02]">
+                            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center shrink-0">
+                              <Play size={10} className="text-white ml-0.5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`h-2.5 rounded-full bg-white/10 ${i === 1 ? 'w-3/4' : i === 2 ? 'w-1/2' : 'w-2/3'}`} />
+                              <div className="h-2 rounded-full bg-white/5 w-1/3 mt-1.5" />
+                            </div>
+                            <div className="text-xs font-bold text-[#e11d48]">{i === 1 ? '25€' : i === 2 ? '40€' : '30€'}</div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div
-                              className={`h-2.5 rounded-full bg-white/10 ${i === 1 ? 'w-3/4' : i === 2 ? 'w-1/2' : 'w-2/3'}`}
-                            />
-                            <div className="h-2 rounded-full bg-white/5 w-1/3 mt-1.5" />
-                          </div>
-                          <div className="text-xs font-bold text-[#e11d48]">
-                            {i === 1 ? '25€' : i === 2 ? '40€' : '30€'}
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between">
+                    <Link href="/nouveautes" className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between hover:opacity-80 transition-opacity">
                       <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
-                        Beats disponibles
+                        {(homepage?.nouveautesBeats || []).length} beat{(homepage?.nouveautesBeats || []).length !== 1 ? 's' : ''} disponible{(homepage?.nouveautesBeats || []).length !== 1 ? 's' : ''}
                       </span>
                       <span className="text-xs font-bold text-[#e11d48]">Voir tout →</span>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
