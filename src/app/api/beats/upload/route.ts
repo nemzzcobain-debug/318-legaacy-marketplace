@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendBeatUploadConfirmationEmail } from '@/lib/emails/resend'
 
 /**
  * Endpoint d'upload de beats (v2 - metadata only)
@@ -196,6 +197,20 @@ export async function POST(req: NextRequest) {
     } catch (notifErr) {
       // SECURITY FIX M1: Logger les erreurs de notification au lieu de les ignorer
       console.warn('[UPLOAD] Erreur notification fan-out:', String(notifErr))
+    }
+
+    // Envoyer email de confirmation d'upload au producteur
+    if (user.email) {
+      sendBeatUploadConfirmationEmail({
+        to: user.email,
+        producerName: user.displayName || user.name || 'Producteur',
+        beatTitle: title,
+        genre,
+        bpm: bpmNum,
+        hasAuction: !!auction,
+        auctionStartPrice: startPrice,
+        auctionDuration: auctionDuration,
+      }).catch((err) => console.warn('[UPLOAD] Email confirmation echoue:', String(err)))
     }
 
     return NextResponse.json(

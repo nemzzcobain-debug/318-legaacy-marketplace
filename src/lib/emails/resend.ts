@@ -449,6 +449,62 @@ export async function sendAdminNewApplicationEmail(params: {
   return sendEmail(adminEmail, `🔔 Nouvelle candidature producteur — ${applicantName}`, html)
 }
 
+// ─── Beat Upload Confirmation Email ───
+
+export async function sendBeatUploadConfirmationEmail(params: {
+  to: string
+  producerName: string
+  beatTitle: string
+  genre: string
+  bpm: number
+  hasAuction: boolean
+  auctionStartPrice?: number
+  auctionDuration?: number
+}) {
+  const { to, producerName, beatTitle, genre, bpm, hasAuction, auctionStartPrice, auctionDuration } = params
+
+  const auctionSection = hasAuction
+    ? `<tr>
+        <td style="color:#666;font-size:12px;padding:6px 0;border-top:1px solid #1e1e2e;">Enchere</td>
+        <td style="color:#2ed573;font-size:12px;padding:6px 0;text-align:right;font-weight:600;border-top:1px solid #1e1e2e;">Active — ${auctionStartPrice} EUR (${auctionDuration || 24}h)</td>
+      </tr>`
+    : `<tr>
+        <td style="color:#666;font-size:12px;padding:6px 0;border-top:1px solid #1e1e2e;">Mode</td>
+        <td style="color:#e11d48;font-size:12px;padding:6px 0;text-align:right;font-weight:600;border-top:1px solid #1e1e2e;">Achat direct</td>
+      </tr>`
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Beat en ligne ! 🎶</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      Bien joue <strong style="color:#fff;">${producerName}</strong>, ton beat a ete publie avec succes sur 318 LEGAACY !
+    </p>
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Titre</td>
+          <td style="color:#fff;font-size:14px;padding:6px 0;text-align:right;font-weight:700;">${beatTitle}</td>
+        </tr>
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Genre</td>
+          <td style="color:#fff;font-size:12px;padding:6px 0;text-align:right;">${genre}</td>
+        </tr>
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">BPM</td>
+          <td style="color:#e11d48;font-size:12px;padding:6px 0;text-align:right;font-weight:600;">${bpm}</td>
+        </tr>
+        ${auctionSection}
+      </table>
+    </div>
+
+    <p style="color:#999;font-size:13px;margin:0 0 4px;text-align:center;">Ton beat est maintenant visible par toute la communaute.</p>
+    <p style="color:#666;font-size:12px;margin:0 0 16px;text-align:center;">Partage-le pour maximiser ta visibilite !</p>
+    ${button('Voir mon dashboard', `${PLATFORM_URL}/dashboard`)}
+  `)
+
+  return sendEmail(to, `🎶 "${beatTitle}" est en ligne sur 318 LEGAACY !`, html)
+}
+
 // ─── Core Send Function ───
 async function sendEmail(to: string, subject: string, html: string) {
   // F19 FIX: Vérifier que toutes les config sont présentes
