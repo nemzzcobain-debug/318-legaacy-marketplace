@@ -18,6 +18,7 @@ export async function GET() {
       totalRevenue,
       featuredProducers,
       topGenres,
+      featuredBeats,
     ] = await Promise.all([
       // Total beats
       prisma.beat.count(),
@@ -76,6 +77,39 @@ export async function GET() {
         orderBy: { _count: { genre: 'desc' } },
         take: 8,
       }),
+
+      // Featured beats (admin-selected)
+      prisma.beat.findMany({
+        where: { isFeatured: true, status: 'ACTIVE' },
+        orderBy: { featuredOrder: 'asc' },
+        select: {
+          id: true,
+          title: true,
+          genre: true,
+          bpm: true,
+          key: true,
+          coverImage: true,
+          audioUrl: true,
+          producer: {
+            select: { id: true, name: true, displayName: true, avatar: true },
+          },
+          auctions: {
+            where: { status: { in: ['ACTIVE', 'ENDING_SOON'] } },
+            select: {
+              id: true,
+              currentBid: true,
+              startPrice: true,
+              buyNowPrice: true,
+              status: true,
+              endTime: true,
+              totalBids: true,
+              licenseType: true,
+            },
+            take: 1,
+          },
+        },
+        take: 10,
+      }),
     ])
 
     return NextResponse.json({
@@ -99,6 +133,21 @@ export async function GET() {
       topGenres: topGenres.map(g => ({
         name: g.genre,
         count: g._count,
+      })),
+      featuredBeats: featuredBeats.map(b => ({
+        id: b.id,
+        title: b.title,
+        genre: b.genre,
+        bpm: b.bpm,
+        key: b.key,
+        coverImage: b.coverImage,
+        audioUrl: b.audioUrl,
+        producer: {
+          id: b.producer.id,
+          name: b.producer.displayName || b.producer.name,
+          avatar: b.producer.avatar,
+        },
+        auction: b.auctions[0] || null,
       })),
     })
   } catch (error) {

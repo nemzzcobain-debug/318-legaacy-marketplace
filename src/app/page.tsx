@@ -61,6 +61,31 @@ interface LiveAuction {
   }
 }
 
+interface FeaturedBeat {
+  id: string
+  title: string
+  genre: string
+  bpm: number
+  key: string | null
+  coverImage: string | null
+  audioUrl: string
+  producer: {
+    id: string
+    name: string
+    avatar: string | null
+  }
+  auction: {
+    id: string
+    currentBid: number
+    startPrice: number
+    buyNowPrice: number | null
+    status: string
+    endTime: string
+    totalBids: number
+    licenseType: string
+  } | null
+}
+
 interface HomepageData {
   stats: {
     totalBeats: number
@@ -80,6 +105,7 @@ interface HomepageData {
     totalFollowers: number
   }[]
   topGenres: { name: string; count: number }[]
+  featuredBeats: FeaturedBeat[]
 }
 
 // ─── Animated Counter ───
@@ -181,6 +207,7 @@ export default function Home() {
   const [homepage, setHomepage] = useState<HomepageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [playingId, setPlayingId] = useState<string | null>(null)
+  const [featuredIndex, setFeaturedIndex] = useState(0)
   // Web Audio API refs — meme approche que AudioPlayer.tsx pour les WAV DAW
   const audioCtxRef = useRef<AudioContext | null>(null)
   const bufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map())
@@ -220,6 +247,7 @@ export default function Home() {
             },
             featuredProducers: [],
             topGenres: [],
+            featuredBeats: [],
           })
         }
       })
@@ -657,7 +685,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══════════ SELECTION DE LA SEMAINE ═══════════ */}
+        {/* ═══════════ SELECTION EN VEDETTE ═══════════ */}
         <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-hidden">
           {/* Background glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-[#E50914]/15 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
@@ -677,12 +705,11 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Weekly Beat Card */}
+            {/* Featured Beats — admin-selected */}
             {(() => {
-              // Find the weekly auction (longest running, or first active)
-              const weeklyAuction = auctions.length > 0 ? auctions[0] : null
+              const featured = homepage?.featuredBeats || []
 
-              if (!weeklyAuction) {
+              if (featured.length === 0) {
                 return (
                   <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl border border-[#E50914]/20 overflow-hidden">
                     <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5" />
@@ -707,164 +734,277 @@ export default function Home() {
                 )
               }
 
+              const currentBeat = featured[featuredIndex] || featured[0]
+              const hasAuction = !!currentBeat.auction
+
               return (
-                <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl border border-[#E50914]/20 overflow-hidden group">
-                  {/* Animated border glow */}
-                  <div className="absolute -inset-[1px] bg-gradient-to-r from-[#E50914]/30 via-[#B20710]/30 to-[#E50914]/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-sm" />
+                <div>
+                  {/* Main featured card */}
+                  <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl border border-[#E50914]/20 overflow-hidden group">
+                    {/* Animated border glow */}
+                    <div className="absolute -inset-[1px] bg-gradient-to-r from-[#E50914]/30 via-[#B20710]/30 to-[#E50914]/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-sm" />
 
-                  <div className="relative z-10 bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl">
-                    <div className="grid md:grid-cols-2 gap-0">
-                      {/* Left: Cover & Audio */}
-                      <div className="relative min-h-[320px] md:min-h-[400px] overflow-hidden rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none">
-                        {weeklyAuction.beat.coverImage ? (
-                          <Image
-                            src={weeklyAuction.beat.coverImage}
-                            alt={weeklyAuction.beat.title}
-                            fill
-                            className="object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-700"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-[#E50914]/40 via-[#B20710]/20 to-[#111]" />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#111] hidden md:block" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent md:hidden" />
-
-                        {/* Badge "Selection" */}
-                        <div className="absolute top-5 left-5 flex items-center gap-2">
-                          <span className="bg-gradient-to-r from-[#E50914] to-[#B20710] text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-[#E50914]/40">
-                            {t('weeklySelection.badge')}
-                          </span>
-                        </div>
-
-                        {/* License badge */}
-                        <div className="absolute top-5 right-5">
-                          <span
-                            className={`text-[11px] font-bold px-3 py-1.5 rounded-full border backdrop-blur-sm ${licenseColors[weeklyAuction.licenseType] || licenseColors.BASIC}`}
-                          >
-                            {weeklyAuction.licenseType}
-                          </span>
-                        </div>
-
-                        {/* Play button center */}
-                        <button
-                          onClick={() => togglePlay(weeklyAuction.id, weeklyAuction.beat.audioUrl)}
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-[#E50914]/50 hover:scale-110 transition-transform z-10 border-2 border-white/10 backdrop-blur-sm"
-                          style={{
-                            background: 'linear-gradient(135deg, #E50914 0%, #B20710 100%)',
-                          }}
-                        >
-                          {playingId === weeklyAuction.id ? (
-                            <Pause size={28} className="text-white" fill="white" />
+                    <div className="relative z-10 bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl">
+                      <div className="grid md:grid-cols-2 gap-0">
+                        {/* Left: Cover & Audio */}
+                        <div className="relative min-h-[320px] md:min-h-[400px] overflow-hidden rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none">
+                          {currentBeat.coverImage ? (
+                            <Image
+                              src={currentBeat.coverImage}
+                              alt={currentBeat.title}
+                              fill
+                              className="object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-700"
+                            />
                           ) : (
-                            <Play size={28} className="text-white ml-1" fill="white" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#E50914]/40 via-[#B20710]/20 to-[#111]" />
                           )}
-                        </button>
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#111] hidden md:block" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent md:hidden" />
 
-                        {/* Waveform bottom */}
-                        <div className="absolute bottom-5 left-5 right-5 flex items-center gap-3">
-                          <WaveformVisual active={playingId === weeklyAuction.id} />
-                          <div className="h-[2px] flex-1 bg-gradient-to-r from-[#E50914]/40 via-[#E50914]/20 to-transparent rounded-full" />
-                        </div>
-                      </div>
-
-                      {/* Right: Info */}
-                      <div className="p-8 md:p-10 flex flex-col justify-center">
-                        {/* Genre tags */}
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="text-[10px] font-bold text-[#E50914] bg-[#E50914]/10 rounded-full px-3 py-1 border border-[#E50914]/20">
-                            {weeklyAuction.beat.genre}
-                          </span>
-                          <span className="text-[10px] font-bold text-gray-500 bg-white/5 rounded-full px-3 py-1">
-                            {weeklyAuction.beat.bpm} BPM
-                          </span>
-                          {weeklyAuction.beat.key && (
-                            <span className="text-[10px] font-bold text-gray-500 bg-white/5 rounded-full px-3 py-1">
-                              {weeklyAuction.beat.key}
+                          {/* Badge "Selection" */}
+                          <div className="absolute top-5 left-5 flex items-center gap-2">
+                            <span className="bg-gradient-to-r from-[#E50914] to-[#B20710] text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-[#E50914]/40">
+                              {t('weeklySelection.badge')}
                             </span>
-                          )}
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="text-2xl md:text-3xl font-black text-white mb-2 group-hover:text-[#ff4d4d] transition-colors">
-                          {weeklyAuction.beat.title}
-                        </h3>
-
-                        {/* Producer */}
-                        <div className="flex items-center gap-2 mb-6">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#E50914] to-[#B20710] flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
-                            {weeklyAuction.beat.producer.avatar ? (
-                              <Image
-                                src={weeklyAuction.beat.producer.avatar}
-                                alt={weeklyAuction.beat.producer.name}
-                                width={24}
-                                height={24}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              weeklyAuction.beat.producer.name[0].toUpperCase()
+                            {featured.length > 1 && (
+                              <span className="bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/10">
+                                {featuredIndex + 1}/{featured.length}
+                              </span>
                             )}
                           </div>
-                          <span className="text-sm text-gray-400 font-semibold">
-                            {weeklyAuction.beat.producer.displayName ||
-                              weeklyAuction.beat.producer.name}
-                          </span>
-                          <BadgeCheck size={14} className="text-[#E50914]" />
+
+                          {/* License badge */}
+                          {hasAuction && currentBeat.auction && (
+                            <div className="absolute top-5 right-5">
+                              <span
+                                className={`text-[11px] font-bold px-3 py-1.5 rounded-full border backdrop-blur-sm ${licenseColors[currentBeat.auction.licenseType] || licenseColors.BASIC}`}
+                              >
+                                {currentBeat.auction.licenseType}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Play button center */}
+                          <button
+                            onClick={() => togglePlay(currentBeat.id, currentBeat.audioUrl)}
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-[#E50914]/50 hover:scale-110 transition-transform z-10 border-2 border-white/10 backdrop-blur-sm"
+                            style={{
+                              background: 'linear-gradient(135deg, #E50914 0%, #B20710 100%)',
+                            }}
+                          >
+                            {playingId === currentBeat.id ? (
+                              <Pause size={28} className="text-white" fill="white" />
+                            ) : (
+                              <Play size={28} className="text-white ml-1" fill="white" />
+                            )}
+                          </button>
+
+                          {/* Waveform bottom */}
+                          <div className="absolute bottom-5 left-5 right-5 flex items-center gap-3">
+                            <WaveformVisual active={playingId === currentBeat.id} />
+                            <div className="h-[2px] flex-1 bg-gradient-to-r from-[#E50914]/40 via-[#E50914]/20 to-transparent rounded-full" />
+                          </div>
                         </div>
 
-                        {/* Timer */}
-                        <div className="bg-black/40 rounded-2xl border border-[#E50914]/10 p-5 mb-6">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Timer size={14} className="text-[#E50914]" />
-                            <span className="text-xs font-bold text-[#E50914] uppercase tracking-wider">
-                              {t('weeklySelection.timeRemaining')}
+                        {/* Right: Info */}
+                        <div className="p-8 md:p-10 flex flex-col justify-center">
+                          {/* Genre tags */}
+                          <div className="flex items-center gap-2 mb-4">
+                            <span className="text-[10px] font-bold text-[#E50914] bg-[#E50914]/10 rounded-full px-3 py-1 border border-[#E50914]/20">
+                              {currentBeat.genre}
                             </span>
-                          </div>
-                          <div className="text-2xl font-black text-white">
-                            <CountdownTimer
-                              endTime={weeklyAuction.endTime}
-                              size="lg"
-                              showIcon={false}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Price & Bids */}
-                        <div className="flex items-end justify-between mb-6 pb-5 border-b border-[#222]">
-                          <div>
-                            <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold block mb-1">
-                              {t('weeklySelection.currentBid')}
+                            <span className="text-[10px] font-bold text-gray-500 bg-white/5 rounded-full px-3 py-1">
+                              {currentBeat.bpm} BPM
                             </span>
-                            <div className="text-3xl md:text-4xl font-black text-white">
-                              {weeklyAuction.currentBid}&euro;
-                            </div>
+                            {currentBeat.key && (
+                              <span className="text-[10px] font-bold text-gray-500 bg-white/5 rounded-full px-3 py-1">
+                                {currentBeat.key}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-1">
-                              <Gavel size={14} /> {weeklyAuction.totalBids}{' '}
-                              {weeklyAuction.totalBids > 1
-                                ? t('liveAuctions.bids')
-                                : t('liveAuctions.bid')}
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              {t('weeklySelection.startPrice')} : {weeklyAuction.startPrice}&euro;
-                            </div>
-                          </div>
-                        </div>
 
-                        {/* CTA */}
-                        <Link
-                          href={`/auction/${weeklyAuction.id}`}
-                          className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl opacity-0 group-hover/btn:opacity-100 transition-opacity" />
-                          <span className="relative z-10 flex items-center justify-center gap-2">
-                            {t('weeklySelection.placeBid')} <ArrowRight size={18} />
-                          </span>
-                        </Link>
+                          {/* Title */}
+                          <h3 className="text-2xl md:text-3xl font-black text-white mb-2 group-hover:text-[#ff4d4d] transition-colors">
+                            {currentBeat.title}
+                          </h3>
+
+                          {/* Producer */}
+                          <div className="flex items-center gap-2 mb-6">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#E50914] to-[#B20710] flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
+                              {currentBeat.producer.avatar ? (
+                                <Image
+                                  src={currentBeat.producer.avatar}
+                                  alt={currentBeat.producer.name}
+                                  width={24}
+                                  height={24}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                currentBeat.producer.name[0].toUpperCase()
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-400 font-semibold">
+                              {currentBeat.producer.name}
+                            </span>
+                            <BadgeCheck size={14} className="text-[#E50914]" />
+                          </div>
+
+                          {/* Timer + Price — only if auction exists */}
+                          {hasAuction && currentBeat.auction ? (
+                            <>
+                              <div className="bg-black/40 rounded-2xl border border-[#E50914]/10 p-5 mb-6">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <Timer size={14} className="text-[#E50914]" />
+                                  <span className="text-xs font-bold text-[#E50914] uppercase tracking-wider">
+                                    {t('weeklySelection.timeRemaining')}
+                                  </span>
+                                </div>
+                                <div className="text-2xl font-black text-white">
+                                  <CountdownTimer
+                                    endTime={currentBeat.auction.endTime}
+                                    size="lg"
+                                    showIcon={false}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex items-end justify-between mb-6 pb-5 border-b border-[#222]">
+                                <div>
+                                  <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold block mb-1">
+                                    {t('weeklySelection.currentBid')}
+                                  </span>
+                                  <div className="text-3xl md:text-4xl font-black text-white">
+                                    {currentBeat.auction.currentBid}&euro;
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-1">
+                                    <Gavel size={14} /> {currentBeat.auction.totalBids}{' '}
+                                    {currentBeat.auction.totalBids > 1
+                                      ? t('liveAuctions.bids')
+                                      : t('liveAuctions.bid')}
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    {t('weeklySelection.startPrice')} : {currentBeat.auction.startPrice}&euro;
+                                  </div>
+                                </div>
+                              </div>
+
+                              <Link
+                                href={`/auction/${currentBeat.auction.id}`}
+                                className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                  {t('weeklySelection.placeBid')} <ArrowRight size={18} />
+                                </span>
+                              </Link>
+                            </>
+                          ) : (
+                            <>
+                              <div className="bg-black/40 rounded-2xl border border-[#E50914]/10 p-5 mb-6">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Music size={14} className="text-[#E50914]" />
+                                  <span className="text-xs font-bold text-[#E50914] uppercase tracking-wider">
+                                    Beat en vedette
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-400">
+                                  Ce beat a été sélectionné par l&apos;équipe 318 LEGAACY
+                                </p>
+                              </div>
+
+                              <Link
+                                href={`/beat/${currentBeat.id}`}
+                                className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                  Découvrir ce beat <ArrowRight size={18} />
+                                </span>
+                              </Link>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  {/* Carousel dots + thumbnails for multiple featured beats */}
+                  {featured.length > 1 && (
+                    <div className="mt-6">
+                      {/* Thumbnails row */}
+                      <div className="flex items-center justify-center gap-3 overflow-x-auto pb-2">
+                        {featured.map((beat, idx) => (
+                          <button
+                            key={beat.id}
+                            onClick={() => {
+                              stopCurrentSource()
+                              setPlayingId(null)
+                              setFeaturedIndex(idx)
+                            }}
+                            className={`relative flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                              idx === featuredIndex
+                                ? 'border-[#E50914] scale-105 shadow-lg shadow-[#E50914]/30'
+                                : 'border-white/10 opacity-60 hover:opacity-90 hover:border-white/30'
+                            }`}
+                          >
+                            {beat.coverImage ? (
+                              <Image
+                                src={beat.coverImage}
+                                alt={beat.title}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 bg-gradient-to-br from-[#E50914]/40 to-[#111] flex items-center justify-center">
+                                <Music size={16} className="text-white/60" />
+                              </div>
+                            )}
+                            {idx === featuredIndex && (
+                              <div className="absolute inset-0 bg-[#E50914]/10 border-2 border-[#E50914] rounded-xl" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Navigation arrows */}
+                      <div className="flex items-center justify-center gap-4 mt-4">
+                        <button
+                          onClick={() => {
+                            stopCurrentSource()
+                            setPlayingId(null)
+                            setFeaturedIndex((prev) => (prev === 0 ? featured.length - 1 : prev - 1))
+                          }}
+                          className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                        >
+                          <ChevronRight size={18} className="rotate-180" />
+                        </button>
+                        <div className="flex items-center gap-1.5">
+                          {featured.map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={`rounded-full transition-all duration-300 ${
+                                idx === featuredIndex
+                                  ? 'w-6 h-2 bg-[#E50914]'
+                                  : 'w-2 h-2 bg-white/20'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => {
+                            stopCurrentSource()
+                            setPlayingId(null)
+                            setFeaturedIndex((prev) => (prev === featured.length - 1 ? 0 : prev + 1))
+                          }}
+                          className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })()}

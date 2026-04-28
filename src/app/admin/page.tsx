@@ -116,6 +116,10 @@ export default function AdminPage() {
   const [reports, setReports] = useState<ReportItem[]>([])
   const [reportsPagination, setReportsPagination] = useState({ page: 1, total: 0, totalPages: 0 })
   const [promos, setPromos] = useState<any[]>([])
+  const [featuredBeats, setFeaturedBeats] = useState<any[]>([])
+  const [beatSearch, setBeatSearch] = useState('')
+  const [beatResults, setBeatResults] = useState<any[]>([])
+  const [searchingBeats, setSearchingBeats] = useState(false)
   const [newPromo, setNewPromo] = useState({
     code: '',
     type: 'PERCENTAGE',
@@ -199,6 +203,58 @@ export default function AdminPage() {
     }
   }, [])
 
+  const fetchFeatured = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/featured')
+      if (res.ok) {
+        const data = await res.json()
+        setFeaturedBeats(data.featuredBeats || [])
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }, [])
+
+  const searchBeats = async () => {
+    if (!beatSearch.trim()) return
+    setSearchingBeats(true)
+    try {
+      const res = await fetch(`/api/beats?search=${encodeURIComponent(beatSearch)}&limit=10`)
+      if (res.ok) {
+        const data = await res.json()
+        setBeatResults(data.beats || data || [])
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSearchingBeats(false)
+    }
+  }
+
+  const toggleFeatured = async (beatId: string, isCurrentlyFeatured: boolean) => {
+    try {
+      const res = await fetch('/api/admin/featured', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          beatId,
+          action: isCurrentlyFeatured ? 'remove' : 'add',
+        }),
+      })
+      if (res.ok) {
+        fetchFeatured()
+        // Update search results too
+        setBeatResults((prev) =>
+          prev.map((b) =>
+            b.id === beatId ? { ...b, isFeatured: !isCurrentlyFeatured } : b
+          )
+        )
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
     if (status === 'authenticated') {
@@ -217,8 +273,9 @@ export default function AdminPage() {
       if (activeTab === 'users') fetchUsers()
       if (activeTab === 'reports') fetchReports()
       if (activeTab === 'promos') fetchPromos()
+      if (activeTab === 'featured') fetchFeatured()
     }
-  }, [activeTab, loading, fetchProducers, fetchAuctions, fetchUsers, fetchReports, fetchPromos])
+  }, [activeTab, loading, fetchProducers, fetchAuctions, fetchUsers, fetchReports, fetchPromos, fetchFeatured])
 
   const updateProducerStatus = async (producerId: string, newStatus: string) => {
     try {
@@ -315,6 +372,7 @@ export default function AdminPage() {
     { id: 'producers', label: 'Producteurs' },
     { id: 'auctions', label: 'Encheres' },
     { id: 'users', label: 'Utilisateurs' },
+    { id: 'featured', label: 'En vedette' },
     { id: 'reports', label: 'Signalements' },
     { id: 'promos', label: 'Codes Promo' },
   ]
@@ -786,6 +844,150 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* FEATURED TAB */}
+        {activeTab === 'featured' && (
+          <div>
+            {/* Recherche de beats */}
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-bold text-white mb-4">Ajouter un beat en vedette</h3>
+              <div className="flex gap-3 mb-4">
+                <input
+                  type="text"
+                  placeholder="Rechercher par titre, genre ou producteur..."
+                  value={beatSearch}
+                  onChange={(e) => setBeatSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && searchBeats()}
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:outline-none"
+                />
+                <button
+                  onClick={searchBeats}
+                  disabled={searchingBeats || !beatSearch.trim()}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition disabled:opacity-40"
+                >
+                  {searchingBeats ? 'Recherche...' : 'Rechercher'}
+                </button>
+              </div>
+
+              {/* Resultats de recherche */}
+              {beatResults.length > 0 && (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {beatResults.map((beat: any) => {
+                    const isAlreadyFeatured = featuredBeats.some((fb) => fb.id === beat.id) || beat.isFeatured
+                    return (
+                      <div
+                        key={beat.id}
+                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                          isAlreadyFeatured
+                            ? 'bg-red-900/20 border-red-800/40'
+                            : 'bg-gray-800 border-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {beat.coverImage ? (
+                            <img
+                              src={beat.coverImage}
+                              alt={beat.title}
+                              className="w-10 h-10 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center text-gray-400 text-xs">
+                              &#9835;
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-bold text-white">{beat.title}</p>
+                            <p className="text-xs text-gray-400">
+                              {beat.producer?.displayName || beat.producer?.name || 'Inconnu'} &middot; {beat.genre} &middot; {beat.bpm} BPM
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => toggleFeatured(beat.id, isAlreadyFeatured)}
+                          className={`px-4 py-1.5 text-xs font-bold rounded-lg transition ${
+                            isAlreadyFeatured
+                              ? 'bg-gray-600 hover:bg-gray-500 text-white'
+                              : 'bg-red-600 hover:bg-red-700 text-white'
+                          }`}
+                        >
+                          {isAlreadyFeatured ? 'Retirer' : 'Mettre en vedette'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Liste des beats en vedette actuels */}
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white">
+                  Beats en vedette ({featuredBeats.length}/10)
+                </h3>
+                <span className="text-xs text-gray-500">
+                  Affiches sur la page d&apos;accueil dans cet ordre
+                </span>
+              </div>
+
+              {featuredBeats.length > 0 ? (
+                <div className="space-y-2">
+                  {featuredBeats.map((beat: any, index: number) => (
+                    <div
+                      key={beat.id}
+                      className="flex items-center justify-between p-4 bg-gray-800 border border-gray-700 rounded-lg"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-2xl font-black text-red-500 w-8 text-center">
+                          {index + 1}
+                        </span>
+                        {beat.coverImage ? (
+                          <img
+                            src={beat.coverImage}
+                            alt={beat.title}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-gray-400">
+                            &#9835;
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-bold text-white">{beat.title}</p>
+                          <p className="text-xs text-gray-400">
+                            {beat.producer?.displayName || beat.producer?.name} &middot; {beat.genre} &middot; {beat.bpm} BPM
+                          </p>
+                          {beat.auctions?.[0] && (
+                            <p className="text-xs text-green-400 mt-0.5">
+                              Enchere active &middot; {beat.auctions[0].currentBid} EUR
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">
+                          {beat.featuredAt
+                            ? new Date(beat.featuredAt).toLocaleDateString('fr-FR')
+                            : ''}
+                        </span>
+                        <button
+                          onClick={() => toggleFeatured(beat.id, true)}
+                          className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs font-bold rounded-lg transition border border-red-600/30"
+                        >
+                          Retirer
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">
+                  Aucun beat en vedette. Recherche un beat ci-dessus pour l&apos;ajouter.
+                </p>
+              )}
+            </div>
           </div>
         )}
 
