@@ -191,6 +191,7 @@ function ArtistDashboard({ session }: { session: any }) {
       sub: `${aStats?.active || 0} en cours`,
       icon: Gavel,
       color: '#e11d48',
+      tab: 'my-auctions' as ArtistTab,
     },
     {
       label: 'Encheres gagnees',
@@ -200,6 +201,7 @@ function ArtistDashboard({ session }: { session: any }) {
         : '0%',
       icon: Trophy,
       color: '#2ed573',
+      tab: 'my-auctions' as ArtistTab,
     },
     {
       label: 'Beats achetes',
@@ -207,6 +209,7 @@ function ArtistDashboard({ session }: { session: any }) {
       sub: `${pStats?.pendingCount || 0} en attente`,
       icon: ShoppingBag,
       color: '#667eea',
+      tab: 'purchases' as ArtistTab,
     },
     {
       label: 'Total depense',
@@ -214,6 +217,7 @@ function ArtistDashboard({ session }: { session: any }) {
       sub: 'sur la plateforme',
       icon: DollarSign,
       color: '#ff0033',
+      tab: 'purchases' as ArtistTab,
     },
   ]
 
@@ -289,8 +293,12 @@ function ArtistDashboard({ session }: { session: any }) {
         {activeTab === 'overview' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {statCards.map(({ label, value, sub, icon: Icon, color }) => (
-                <div key={label} className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
+              {statCards.map(({ label, value, sub, icon: Icon, color, tab }) => (
+                <button
+                  key={label}
+                  onClick={() => tab && setActiveTab(tab)}
+                  className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5 text-left hover:border-[#e11d4850] hover:bg-white/[0.02] transition-all cursor-pointer group"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -298,10 +306,11 @@ function ArtistDashboard({ session }: { session: any }) {
                     >
                       <Icon size={18} style={{ color }} />
                     </div>
+                    <ChevronRight size={14} className="text-gray-700 group-hover:text-[#e11d48] transition-colors" />
                   </div>
                   <div className="text-2xl font-extrabold text-white">{value}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{sub}</div>
-                </div>
+                </button>
               ))}
             </div>
 
@@ -904,6 +913,7 @@ function ProducerDashboard({ session }: { session: any }) {
       sub: `${stats?.totalSales || 0} vente${(stats?.totalSales || 0) > 1 ? 's' : ''}`,
       icon: DollarSign,
       color: '#e11d48',
+      tab: 'analytics' as ProducerTab,
     },
     {
       label: 'Beats uploades',
@@ -911,6 +921,7 @@ function ProducerDashboard({ session }: { session: any }) {
       sub: 'sur la plateforme',
       icon: Music,
       color: '#667eea',
+      tab: 'beats' as ProducerTab,
     },
     {
       label: 'Encheres actives',
@@ -918,6 +929,7 @@ function ProducerDashboard({ session }: { session: any }) {
       sub: 'en cours',
       icon: Gavel,
       color: '#ff0033',
+      tab: 'auctions' as ProducerTab,
     },
     {
       label: 'Total encheres recues',
@@ -925,6 +937,7 @@ function ProducerDashboard({ session }: { session: any }) {
       sub: 'sur tes beats',
       icon: TrendingUp,
       color: '#2ed573',
+      tab: 'auctions' as ProducerTab,
     },
   ]
 
@@ -970,8 +983,12 @@ function ProducerDashboard({ session }: { session: any }) {
         {activeTab === 'overview' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {statCards.map(({ label, value, sub, icon: Icon, color }) => (
-                <div key={label} className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
+              {statCards.map(({ label, value, sub, icon: Icon, color, tab }) => (
+                <button
+                  key={label}
+                  onClick={() => tab && setActiveTab(tab)}
+                  className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5 text-left hover:border-[#e11d4850] hover:bg-white/[0.02] transition-all cursor-pointer group"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -979,10 +996,11 @@ function ProducerDashboard({ session }: { session: any }) {
                     >
                       <Icon size={18} style={{ color }} />
                     </div>
+                    <ChevronRight size={14} className="text-gray-700 group-hover:text-[#e11d48] transition-colors" />
                   </div>
                   <div className="text-2xl font-extrabold text-white">{value}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{sub}</div>
-                </div>
+                </button>
               ))}
             </div>
 
