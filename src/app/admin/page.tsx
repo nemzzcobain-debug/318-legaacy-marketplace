@@ -124,6 +124,8 @@ export default function AdminPage() {
   const [allBeats, setAllBeats] = useState<any[]>([])
   const [beatsPagination, setBeatsPagination] = useState({ page: 1, total: 0, totalPages: 0 })
   const [beatsFilter, setBeatsFilter] = useState('')
+  const [playingBeatId, setPlayingBeatId] = useState<string | null>(null)
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null)
   const [beatSearch, setBeatSearch] = useState('')
   const [beatResults, setBeatResults] = useState<any[]>([])
   const [searchingBeats, setSearchingBeats] = useState(false)
@@ -139,6 +141,25 @@ export default function AdminPage() {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [previousTab, setPreviousTab] = useState<string | null>(null)
+
+  // Lecture audio des beats
+  const togglePlay = (beatId: string, audioUrl: string) => {
+    if (playingBeatId === beatId) {
+      // Pause
+      audioRef?.pause()
+      setPlayingBeatId(null)
+    } else {
+      // Play new beat
+      if (audioRef) {
+        audioRef.pause()
+      }
+      const audio = new Audio(audioUrl)
+      audio.onended = () => setPlayingBeatId(null)
+      audio.play()
+      setAudioRef(audio)
+      setPlayingBeatId(beatId)
+    }
+  }
 
   // Navigation depuis les cartes stats avec historique
   const navigateToTab = (tab: string, filter?: string) => {
@@ -933,46 +954,71 @@ export default function AdminPage() {
 
             <p className="text-sm text-gray-400 mb-4">{beatsPagination.total} beat(s) au total</p>
 
-            <div className="space-y-2">
-              {allBeats.map((beat: any) => (
-                <div
-                  key={beat.id}
-                  className="flex items-center justify-between p-4 bg-gray-900 border border-gray-800 rounded-lg hover:border-gray-700 transition"
-                >
-                  <div className="flex items-center gap-4">
-                    {beat.coverImage ? (
-                      <img src={beat.coverImage} alt={beat.title} className="w-12 h-12 rounded-lg object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-gray-400">&#9835;</div>
-                    )}
-                    <div>
-                      <p className="text-sm font-bold text-white">{beat.title}</p>
-                      <p className="text-xs text-gray-400">
-                        {beat.producer?.displayName || beat.producer?.name || 'Inconnu'} &middot; {beat.genre || 'N/A'} &middot; {beat.bpm || '?'} BPM &middot; {beat.key || '?'}
-                      </p>
+            <div className="space-y-3">
+              {allBeats.map((beat: any) => {
+                const isPlaying = playingBeatId === beat.id
+                return (
+                  <div
+                    key={beat.id}
+                    className={`p-4 bg-gray-900 border rounded-lg transition ${isPlaying ? 'border-orange-500/50 bg-orange-950/10' : 'border-gray-800 hover:border-gray-700'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {/* Cover + bouton play */}
+                        <button
+                          onClick={() => beat.audioUrl && togglePlay(beat.id, beat.audioUrl)}
+                          className="relative w-14 h-14 rounded-lg overflow-hidden group flex-shrink-0"
+                          disabled={!beat.audioUrl}
+                        >
+                          {beat.coverImage ? (
+                            <img src={beat.coverImage} alt={beat.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400">&#9835;</div>
+                          )}
+                          {beat.audioUrl && (
+                            <div className={`absolute inset-0 flex items-center justify-center bg-black/40 ${isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                              <span className="text-white text-xl">{isPlaying ? '⏸' : '▶'}</span>
+                            </div>
+                          )}
+                          {isPlaying && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500 animate-pulse" />
+                          )}
+                        </button>
+
+                        <div>
+                          <p className="text-sm font-bold text-white">{beat.title}</p>
+                          <p className="text-xs text-gray-400">
+                            {beat.producer?.displayName || beat.producer?.name || 'Inconnu'} &middot; {beat.genre || 'N/A'} &middot; {beat.bpm || '?'} BPM &middot; {beat.key || '?'}
+                          </p>
+                          {!beat.audioUrl && (
+                            <p className="text-xs text-red-400 mt-0.5">Pas de fichier audio</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-1 text-xs font-bold rounded ${
+                          beat.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
+                          beat.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
+                          beat.status === 'SOLD' ? 'bg-blue-500/20 text-blue-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {beat.status}
+                        </span>
+                        {beat.isFeatured && (
+                          <span className="px-2 py-1 text-xs font-bold rounded bg-red-500/20 text-red-400">★ Vedette</span>
+                        )}
+                        <span className="text-xs text-gray-500">
+                          {beat._count?.likes || 0} ♥
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {beat.price ? `${beat.price} EUR` : 'Gratuit'}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2 py-1 text-xs font-bold rounded ${
-                      beat.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
-                      beat.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
-                      beat.status === 'SOLD' ? 'bg-blue-500/20 text-blue-400' :
-                      'bg-gray-500/20 text-gray-400'
-                    }`}>
-                      {beat.status}
-                    </span>
-                    {beat.isFeatured && (
-                      <span className="px-2 py-1 text-xs font-bold rounded bg-red-500/20 text-red-400">★ Vedette</span>
-                    )}
-                    <span className="text-xs text-gray-500">
-                      {beat._count?.likes || 0} ♥
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {beat.price ? `${beat.price} EUR` : 'Gratuit'}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {beatsPagination.totalPages > 1 && (
