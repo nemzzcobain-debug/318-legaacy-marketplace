@@ -309,6 +309,12 @@ export default function AdminPage() {
             b.id === beatId ? { ...b, isFeatured: !isCurrentlyFeatured } : b
           )
         )
+        // Update beats list too
+        setAllBeats((prev) =>
+          prev.map((b) =>
+            b.id === beatId ? { ...b, isFeatured: !isCurrentlyFeatured } : b
+          )
+        )
       }
     } catch (e) {
       console.error(e)
@@ -1005,9 +1011,16 @@ export default function AdminPage() {
                         }`}>
                           {beat.status}
                         </span>
-                        {beat.isFeatured && (
-                          <span className="px-2 py-1 text-xs font-bold rounded bg-red-500/20 text-red-400">★ Vedette</span>
-                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleFeatured(beat.id, beat.isFeatured) }}
+                          className={`px-3 py-1 text-xs font-bold rounded transition ${
+                            beat.isFeatured
+                              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/40'
+                              : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/40'
+                          }`}
+                        >
+                          {beat.isFeatured ? '★ Retirer vedette' : '☆ Mettre en vedette'}
+                        </button>
                         <span className="text-xs text-gray-500">
                           {beat._count?.likes || 0} ♥
                         </span>
