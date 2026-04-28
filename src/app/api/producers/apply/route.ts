@@ -22,6 +22,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
     }
 
+    if (user.role === 'ADMIN') {
+      return NextResponse.json({ error: 'Les admins ont deja les droits producteur' }, { status: 400 })
+    }
+
     if (user.role === 'PRODUCER' && user.producerStatus === 'APPROVED') {
       return NextResponse.json({ error: 'Tu es deja producteur approuve' }, { status: 400 })
     }

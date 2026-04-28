@@ -98,10 +98,11 @@ export default function UploadBeatPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (
-      !['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/x-wav', 'audio/wave'].includes(file.type)
-    ) {
-      setError('Format non supporte. Utilise MP3 ou WAV.')
+    const allowedMimeTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/x-wav', 'audio/wave', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/x-m4a', 'audio/x-flac', 'audio/webm', 'application/octet-stream', '']
+    const allowedExtensions = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', '.webm']
+    const fileExt = '.' + (file.name.split('.').pop()?.toLowerCase() || '')
+    if (!allowedMimeTypes.includes(file.type) && !allowedExtensions.includes(fileExt)) {
+      setError('Format non supporte. Utilise MP3, WAV, FLAC, M4A ou OGG.')
       return
     }
     if (file.size > 50 * 1024 * 1024) {
