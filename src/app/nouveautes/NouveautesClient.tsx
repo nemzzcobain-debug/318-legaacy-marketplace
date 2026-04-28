@@ -23,6 +23,7 @@ import {
   SlidersHorizontal,
   X,
   ChevronDown,
+  ArrowLeft,
 } from 'lucide-react'
 
 interface Beat {
@@ -289,6 +290,13 @@ export default function NouveautesClient() {
         <div className="absolute inset-0 bg-gradient-to-b from-red-900/30 via-[#0a0a0f]/80 to-[#0a0a0f]" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
         <div className="relative max-w-6xl mx-auto px-4 pt-12 pb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-6 group"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            Retour a l&apos;accueil
+          </Link>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center">
               <Sparkles size={24} className="text-white" />
