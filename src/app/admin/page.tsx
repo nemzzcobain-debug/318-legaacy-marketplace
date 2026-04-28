@@ -121,6 +121,9 @@ export default function AdminPage() {
   const [reportsPagination, setReportsPagination] = useState({ page: 1, total: 0, totalPages: 0 })
   const [promos, setPromos] = useState<any[]>([])
   const [featuredBeats, setFeaturedBeats] = useState<any[]>([])
+  const [allBeats, setAllBeats] = useState<any[]>([])
+  const [beatsPagination, setBeatsPagination] = useState({ page: 1, total: 0, totalPages: 0 })
+  const [beatsFilter, setBeatsFilter] = useState('')
   const [beatSearch, setBeatSearch] = useState('')
   const [beatResults, setBeatResults] = useState<any[]>([])
   const [searchingBeats, setSearchingBeats] = useState(false)
@@ -223,6 +226,22 @@ export default function AdminPage() {
     }
   }, [])
 
+  const fetchAllBeats = useCallback(async (page = 1) => {
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: '20' })
+      if (search) params.set('search', search)
+      if (beatsFilter) params.set('genre', beatsFilter)
+      const res = await fetch(`/api/beats?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setAllBeats(data.beats || [])
+        setBeatsPagination({ page: data.pagination.page, total: data.pagination.total, totalPages: data.pagination.totalPages })
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }, [search, beatsFilter])
+
   const fetchFeatured = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/featured')
@@ -293,9 +312,10 @@ export default function AdminPage() {
       if (activeTab === 'users') fetchUsers()
       if (activeTab === 'reports') fetchReports()
       if (activeTab === 'promos') fetchPromos()
+      if (activeTab === 'beats') fetchAllBeats()
       if (activeTab === 'featured') fetchFeatured()
     }
-  }, [activeTab, loading, fetchProducers, fetchAuctions, fetchUsers, fetchReports, fetchPromos, fetchFeatured])
+  }, [activeTab, loading, fetchProducers, fetchAuctions, fetchUsers, fetchReports, fetchPromos, fetchAllBeats, fetchFeatured])
 
   const updateProducerStatus = async (producerId: string, newStatus: string) => {
     try {
@@ -392,6 +412,7 @@ export default function AdminPage() {
     { id: 'producers', label: 'Producteurs' },
     { id: 'auctions', label: 'Encheres' },
     { id: 'users', label: 'Utilisateurs' },
+    { id: 'beats', label: 'Beats' },
     { id: 'featured', label: 'En vedette' },
     { id: 'reports', label: 'Signalements' },
     { id: 'promos', label: 'Codes Promo' },
@@ -496,7 +517,7 @@ export default function AdminPage() {
               <StatCard label="En attente" value={stats.pendingProducers} color="yellow" onClick={() => navigateToTab('producers', 'PENDING')} />
               <StatCard label="Encheres actives" value={stats.activeAuctions} color="green" onClick={() => navigateToTab('auctions', 'ACTIVE')} />
               <StatCard label="Total encheres" value={stats.totalAuctions} color="orange" onClick={() => navigateToTab('auctions')} />
-              <StatCard label="Beats" value={stats.totalBeats} color="blue" onClick={() => navigateToTab('featured')} />
+              <StatCard label="Beats" value={stats.totalBeats} color="blue" onClick={() => navigateToTab('beats')} />
               <StatCard label="Total bids" value={stats.totalBids} color="purple" onClick={() => navigateToTab('auctions')} />
               <StatCard
                 label="Ventes completees"
@@ -869,6 +890,100 @@ export default function AdminPage() {
                     className={`px-3 py-1.5 rounded-lg text-sm transition ${
                       p === reportsPagination.page
                         ? 'bg-orange-500 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* BEATS TAB */}
+        {activeTab === 'beats' && (
+          <div>
+            <div className="flex flex-wrap gap-3 mb-6">
+              <input
+                type="text"
+                placeholder="Rechercher un beat..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchAllBeats(1)}
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+              />
+              <select
+                value={beatsFilter}
+                onChange={(e) => { setBeatsFilter(e.target.value); fetchAllBeats(1) }}
+                className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+              >
+                <option value="">Tous les genres</option>
+                {['Hip-Hop', 'Trap', 'R&B', 'Pop', 'Drill', 'Afrobeat', 'Reggaeton', 'Cloud Rap', 'Boom Bap', 'Lo-Fi'].map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => fetchAllBeats(1)}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-lg transition"
+              >
+                Filtrer
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-400 mb-4">{beatsPagination.total} beat(s) au total</p>
+
+            <div className="space-y-2">
+              {allBeats.map((beat: any) => (
+                <div
+                  key={beat.id}
+                  className="flex items-center justify-between p-4 bg-gray-900 border border-gray-800 rounded-lg hover:border-gray-700 transition"
+                >
+                  <div className="flex items-center gap-4">
+                    {beat.coverImage ? (
+                      <img src={beat.coverImage} alt={beat.title} className="w-12 h-12 rounded-lg object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-gray-400">&#9835;</div>
+                    )}
+                    <div>
+                      <p className="text-sm font-bold text-white">{beat.title}</p>
+                      <p className="text-xs text-gray-400">
+                        {beat.producer?.displayName || beat.producer?.name || 'Inconnu'} &middot; {beat.genre || 'N/A'} &middot; {beat.bpm || '?'} BPM &middot; {beat.key || '?'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-1 text-xs font-bold rounded ${
+                      beat.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
+                      beat.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
+                      beat.status === 'SOLD' ? 'bg-blue-500/20 text-blue-400' :
+                      'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {beat.status}
+                    </span>
+                    {beat.isFeatured && (
+                      <span className="px-2 py-1 text-xs font-bold rounded bg-red-500/20 text-red-400">★ Vedette</span>
+                    )}
+                    <span className="text-xs text-gray-500">
+                      {beat._count?.likes || 0} ♥
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {beat.price ? `${beat.price} EUR` : 'Gratuit'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {beatsPagination.totalPages > 1 && (
+              <div className="flex gap-2 mt-6 justify-center">
+                {Array.from({ length: beatsPagination.totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => fetchAllBeats(p)}
+                    className={`px-3 py-1 rounded text-sm ${
+                      p === beatsPagination.page
+                        ? 'bg-orange-600 text-white'
                         : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                     }`}
                   >
