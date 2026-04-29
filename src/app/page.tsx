@@ -486,30 +486,30 @@ export default function Home() {
               <div
                 className="flex items-center justify-center gap-6 md:gap-10 mt-16 hero-fade-in-delay-4"
               >
-                <div className="flex items-center gap-2 text-sm">
+                <Link href="/marketplace" className="flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
                   <div className="relative flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                   </div>
-                  <span className="text-gray-500">
+                  <span className="text-gray-500 group-hover:text-gray-300 transition-colors">
                     <strong className="text-white">{homepage.stats.totalAuctions}</strong>{' '}
                     {t('hero.liveAuctions')}
                   </span>
-                </div>
-                <div className="hidden sm:flex items-center gap-2 text-sm">
+                </Link>
+                <Link href="/producers" className="hidden sm:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
                   <BadgeCheck size={16} className="text-red-500" />
-                  <span className="text-gray-500">
+                  <span className="text-gray-500 group-hover:text-gray-300 transition-colors">
                     <strong className="text-white">{homepage.stats.totalProducers}</strong>{' '}
                     {t('hero.producers')}
                   </span>
-                </div>
-                <div className="hidden md:flex items-center gap-2 text-sm">
+                </Link>
+                <Link href="/marketplace" className="hidden md:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
                   <Gavel size={14} className="text-red-500" />
-                  <span className="text-gray-500">
+                  <span className="text-gray-500 group-hover:text-gray-300 transition-colors">
                     <strong className="text-white">{homepage.stats.totalBids}</strong>{' '}
                     {t('hero.bidsPlaced')}
                   </span>
-                </div>
+                </Link>
               </div>
             )}
           </div>
@@ -1043,15 +1043,15 @@ export default function Home() {
                   quelques clics.
                 </p>
                 <div className="flex flex-wrap gap-3 mb-8">
-                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                  <Link href="/nouveautes" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Star size={12} className="text-gray-400" /> Licence Basic
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                  </Link>
+                  <Link href="/nouveautes" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Crown size={12} className="text-[#e11d48]" /> Licence Premium
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                  </Link>
+                  <Link href="/nouveautes" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Sparkles size={12} className="text-amber-400" /> Licence Exclusive
-                  </div>
+                  </Link>
                 </div>
                 <Link
                   href="/nouveautes"
@@ -1073,13 +1073,13 @@ export default function Home() {
                   {/* Background card 2 */}
                   <div className="absolute top-4 left-4 right-2 h-48 bg-[#15151f] rounded-2xl border border-[#1e1e2e] transform rotate-1.5 opacity-50" />
                   {/* Main card */}
-                  <div className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-colors">
+                  <Link href="/nouveautes" className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-all group/ncard block cursor-pointer">
                     <div className="flex items-center gap-3 mb-5">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center group-hover/ncard:scale-110 transition-transform">
                         <Music size={24} className="text-white" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-white">Achat immediat</div>
+                        <div className="text-sm font-bold text-white group-hover/ncard:text-[#e11d48] transition-colors">Achat immediat</div>
                         <div className="text-xs text-gray-500">Prix fixes &middot; 3 licences</div>
                       </div>
                     </div>
@@ -1088,9 +1088,8 @@ export default function Home() {
                     <div className="space-y-2.5">
                       {(homepage?.nouveautesBeats || []).length > 0 ? (
                         homepage!.nouveautesBeats.slice(0, 4).map((beat) => (
-                          <Link
+                          <div
                             key={beat.id}
-                            href="/nouveautes"
                             className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] transition-colors group"
                           >
                             <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 relative">
@@ -1112,7 +1111,7 @@ export default function Home() {
                             <div className="text-xs font-bold text-[#e11d48] shrink-0">
                               {beat.price}€
                             </div>
-                          </Link>
+                          </div>
                         ))
                       ) : (
                         [1, 2, 3].map((i) => (
@@ -1130,13 +1129,13 @@ export default function Home() {
                       )}
                     </div>
 
-                    <Link href="/nouveautes" className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between hover:opacity-80 transition-opacity">
+                    <div className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between">
                       <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
                         {(homepage?.nouveautesBeats || []).length} beat{(homepage?.nouveautesBeats || []).length !== 1 ? 's' : ''} disponible{(homepage?.nouveautesBeats || []).length !== 1 ? 's' : ''}
                       </span>
-                      <span className="text-xs font-bold text-[#e11d48]">Voir tout →</span>
-                    </Link>
-                  </div>
+                      <span className="text-xs font-bold text-[#e11d48] group-hover/ncard:translate-x-1 transition-transform">Voir tout →</span>
+                    </div>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -1160,13 +1159,13 @@ export default function Home() {
                   {/* Background card 2 */}
                   <div className="absolute top-4 left-2 right-4 h-48 bg-[#15151f] rounded-2xl border border-[#1e1e2e] transform -rotate-1.5 opacity-50" />
                   {/* Main card */}
-                  <div className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-colors">
+                  <Link href="/producers" className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-all group/card block cursor-pointer">
                     <div className="flex items-center gap-3 mb-5">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center group-hover/card:scale-110 transition-transform">
                         <Headphones size={24} className="text-white" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-white">Dashboard Producteur</div>
+                        <div className="text-sm font-bold text-white group-hover/card:text-[#e11d48] transition-colors">Dashboard Producteur</div>
                         <div className="text-xs text-gray-500">
                           Upload &middot; Encheres &middot; Revenus
                         </div>
@@ -1182,7 +1181,7 @@ export default function Home() {
                       ].map((stat) => (
                         <div
                           key={stat.label}
-                          className="bg-white/[0.03] rounded-xl p-3 text-center"
+                          className="bg-white/[0.03] rounded-xl p-3 text-center group-hover/card:bg-white/[0.06] transition-colors"
                         >
                           <div className="text-sm font-extrabold text-white">{stat.value}</div>
                           <div className="text-[10px] text-gray-600 mt-0.5">{stat.label}</div>
@@ -1191,16 +1190,15 @@ export default function Home() {
                     </div>
 
                     {/* Upload CTA */}
-                    <Link
-                      href="/producers"
-                      className="block border-2 border-dashed border-[#1e1e2e] rounded-xl p-4 text-center hover:border-[#e11d48]/30 hover:bg-[#e11d48]/5 transition-all"
+                    <div
+                      className="border-2 border-dashed border-[#1e1e2e] rounded-xl p-4 text-center group-hover/card:border-[#e11d48]/30 group-hover/card:bg-[#e11d48]/5 transition-all"
                     >
                       <Music size={20} className="mx-auto mb-2 text-gray-600" />
                       <div className="text-xs text-gray-500 font-semibold">Drop ton beat ici</div>
                       <div className="text-[10px] text-gray-700 mt-1">
                         WAV, MP3 &middot; Max 50MB
                       </div>
-                    </Link>
+                    </div>
 
                     <div className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between">
                       <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
@@ -1208,7 +1206,7 @@ export default function Home() {
                       </span>
                       <span className="text-[10px] font-bold text-[#2ed573]">● Actif</span>
                     </div>
-                  </div>
+                  </Link>
                 </div>
               </div>
 
@@ -1227,15 +1225,15 @@ export default function Home() {
                   des encheres et recois 85% de chaque vente directement sur ton compte via Stripe.
                 </p>
                 <div className="flex flex-wrap gap-3 mb-8">
-                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                  <Link href="/producers" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <TrendingUp size={12} className="text-[#2ed573]" /> 85% des revenus
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                  </Link>
+                  <Link href="/marketplace" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Gavel size={12} className="text-[#e11d48]" /> Systeme d&apos;encheres
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                  </Link>
+                  <Link href="/producers" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Zap size={12} className="text-amber-400" /> Paiements auto
-                  </div>
+                  </Link>
                 </div>
                 <Link
                   href="/producers"
@@ -1353,6 +1351,7 @@ export default function Home() {
                     gradient: 'from-red-500/20 to-red-900/5',
                     border: 'border-red-500/15',
                     iconColor: 'text-red-500',
+                    href: '/marketplace',
                   },
                   {
                     label: t('stats.verifiedProducers'),
@@ -1361,6 +1360,7 @@ export default function Home() {
                     gradient: 'from-purple-500/20 to-purple-900/5',
                     border: 'border-purple-500/15',
                     iconColor: 'text-purple-400',
+                    href: '/producers',
                   },
                   {
                     label: t('stats.bidsPlaced'),
@@ -1369,6 +1369,7 @@ export default function Home() {
                     gradient: 'from-blue-500/20 to-blue-900/5',
                     border: 'border-blue-500/15',
                     iconColor: 'text-blue-400',
+                    href: '/marketplace',
                   },
                   {
                     label: t('stats.salesCompleted'),
@@ -1377,20 +1378,23 @@ export default function Home() {
                     gradient: 'from-green-500/20 to-green-900/5',
                     border: 'border-green-500/15',
                     iconColor: 'text-green-400',
+                    href: '/marketplace',
                   },
-                ].map(({ label, value, icon: Icon, gradient, border, iconColor }) => (
-                  <div
+                ].map(({ label, value, icon: Icon, gradient, border, iconColor, href }) => (
+                  <Link
                     key={label}
-                    className={`bg-gradient-to-br ${gradient} rounded-2xl border ${border} p-6 text-center hover:scale-105 transition-transform duration-300`}
+                    href={href}
+                    className={`bg-gradient-to-br ${gradient} rounded-2xl border ${border} p-6 text-center hover:scale-105 transition-all duration-300 group cursor-pointer`}
                   >
                     <div
-                      className={`w-12 h-12 rounded-xl bg-black/30 flex items-center justify-center ${iconColor} mx-auto mb-3`}
+                      className={`w-12 h-12 rounded-xl bg-black/30 flex items-center justify-center ${iconColor} mx-auto mb-3 group-hover:scale-110 transition-transform`}
                     >
                       <Icon size={24} />
                     </div>
                     <AnimatedCounter target={value} />
-                    <div className="text-xs text-gray-400 mt-1 font-semibold">{label}</div>
-                  </div>
+                    <div className="text-xs text-gray-400 mt-1 font-semibold group-hover:text-white transition-colors">{label}</div>
+                    <ChevronRight size={14} className="mx-auto mt-2 text-gray-700 group-hover:text-red-500 transition-colors" />
+                  </Link>
                 ))}
               </div>
             </div>
@@ -1414,23 +1418,27 @@ export default function Home() {
                   icon: <UserPlus size={24} />,
                   title: t('howItWorks.step1Title'),
                   desc: t('howItWorks.step1Desc'),
+                  href: '/register',
                 },
                 {
                   step: '02',
                   icon: <Gavel size={24} />,
                   title: t('howItWorks.step2Title'),
                   desc: t('howItWorks.step2Desc'),
+                  href: '/marketplace',
                 },
                 {
                   step: '03',
                   icon: <Music size={24} />,
                   title: t('howItWorks.step3Title'),
                   desc: t('howItWorks.step3Desc'),
+                  href: '/nouveautes',
                 },
               ].map((item) => (
-                <div
+                <Link
                   key={item.step}
-                  className="relative group bg-[#111] rounded-2xl border border-[#222] p-7 hover:border-red-500/20 transition-all hover:-translate-y-1 duration-300"
+                  href={item.href}
+                  className="relative group bg-[#111] rounded-2xl border border-[#222] p-7 hover:border-red-500/20 transition-all hover:-translate-y-1 duration-300 cursor-pointer block"
                 >
                   <span className="text-6xl font-black text-red-500/[0.07] absolute top-4 right-5 select-none">
                     {item.step}
@@ -1438,9 +1446,12 @@ export default function Home() {
                   <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 mb-5 group-hover:scale-110 transition-transform">
                     {item.icon}
                   </div>
-                  <h3 className="text-lg font-extrabold text-white mb-2">{item.title}</h3>
+                  <h3 className="text-lg font-extrabold text-white mb-2 group-hover:text-red-400 transition-colors">{item.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
-                </div>
+                  <div className="mt-4 flex items-center gap-1 text-xs font-bold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                    En savoir plus <ArrowRight size={12} />
+                  </div>
+                </Link>
               ))}
             </div>
 
@@ -1477,52 +1488,60 @@ export default function Home() {
                   title: t('why318.verifiedProducers'),
                   desc: t('why318.verifiedProducersDesc'),
                   color: 'bg-blue-500/10 text-blue-400',
+                  href: '/producers',
                 },
                 {
                   icon: <Timer size={22} />,
                   title: t('why318.antiSnipe'),
                   desc: t('why318.antiSnipeDesc'),
                   color: 'bg-orange-500/10 text-orange-400',
+                  href: '/marketplace',
                 },
                 {
                   icon: <Zap size={22} />,
                   title: t('why318.realtime'),
                   desc: t('why318.realtimeDesc'),
                   color: 'bg-purple-500/10 text-purple-400',
+                  href: '/marketplace',
                 },
                 {
                   icon: <CircleDollarSign size={22} />,
                   title: t('why318.securePayment'),
                   desc: t('why318.securePaymentDesc'),
                   color: 'bg-green-500/10 text-green-400',
+                  href: '/register',
                 },
                 {
                   icon: <Smartphone size={22} />,
                   title: t('why318.mobileApp'),
                   desc: t('why318.mobileAppDesc'),
                   color: 'bg-cyan-500/10 text-cyan-400',
+                  href: '/register',
                 },
                 {
                   icon: <ListMusic size={22} />,
                   title: t('why318.playlists'),
                   desc: t('why318.playlistsDesc'),
                   color: 'bg-pink-500/10 text-pink-400',
+                  href: '/playlists',
                 },
               ].map((item, i) => (
-                <div
+                <Link
                   key={i}
-                  className="flex gap-4 bg-[#111] rounded-2xl border border-[#222] p-5 hover:border-red-500/20 transition-all hover:-translate-y-0.5 duration-300"
+                  href={item.href}
+                  className="flex gap-4 bg-[#111] rounded-2xl border border-[#222] p-5 hover:border-red-500/20 transition-all hover:-translate-y-0.5 duration-300 group cursor-pointer"
                 >
                   <div
-                    className={`w-11 h-11 rounded-xl ${item.color} flex items-center justify-center shrink-0`}
+                    className={`w-11 h-11 rounded-xl ${item.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}
                   >
                     {item.icon}
                   </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-white mb-1">{item.title}</h3>
+                  <div className="flex-1">
+                    <h3 className="text-base font-extrabold text-white mb-1 group-hover:text-red-400 transition-colors">{item.title}</h3>
                     <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
                   </div>
-                </div>
+                  <ChevronRight size={16} className="text-gray-700 group-hover:text-red-500 transition-colors shrink-0 self-center" />
+                </Link>
               ))}
             </div>
           </div>
