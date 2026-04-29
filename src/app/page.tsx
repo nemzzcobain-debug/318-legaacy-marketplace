@@ -486,7 +486,7 @@ export default function Home() {
               <div
                 className="flex items-center justify-center gap-6 md:gap-10 mt-16 hero-fade-in-delay-4"
               >
-                <Link href="/marketplace" className="flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
+                <div onClick={() => router.push('/marketplace')} className="flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
                   <div className="relative flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
@@ -495,21 +495,21 @@ export default function Home() {
                     <strong className="text-white">{homepage.stats.totalAuctions}</strong>{' '}
                     {t('hero.liveAuctions')}
                   </span>
-                </Link>
-                <Link href="/producers" className="hidden sm:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
+                </div>
+                <div onClick={() => router.push('/producers')} className="hidden sm:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
                   <BadgeCheck size={16} className="text-red-500" />
                   <span className="text-gray-500 group-hover:text-gray-300 transition-colors">
                     <strong className="text-white">{homepage.stats.totalProducers}</strong>{' '}
                     {t('hero.producers')}
                   </span>
-                </Link>
-                <Link href="/marketplace" className="hidden md:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
+                </div>
+                <div onClick={() => router.push('/marketplace')} className="hidden md:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
                   <Gavel size={14} className="text-red-500" />
                   <span className="text-gray-500 group-hover:text-gray-300 transition-colors">
                     <strong className="text-white">{homepage.stats.totalBids}</strong>{' '}
                     {t('hero.bidsPlaced')}
                   </span>
-                </Link>
+                </div>
               </div>
             )}
           </div>
@@ -1043,15 +1043,15 @@ export default function Home() {
                   quelques clics.
                 </p>
                 <div className="flex flex-wrap gap-3 mb-8">
-                  <Link href="/nouveautes" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                  <div onClick={() => router.push('/nouveautes')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Star size={12} className="text-gray-400" /> Licence Basic
-                  </Link>
-                  <Link href="/nouveautes" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                  </div>
+                  <div onClick={() => router.push('/nouveautes')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Crown size={12} className="text-[#e11d48]" /> Licence Premium
-                  </Link>
-                  <Link href="/nouveautes" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                  </div>
+                  <div onClick={() => router.push('/nouveautes')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Sparkles size={12} className="text-amber-400" /> Licence Exclusive
-                  </Link>
+                  </div>
                 </div>
                 <Link
                   href="/nouveautes"
@@ -1073,7 +1073,7 @@ export default function Home() {
                   {/* Background card 2 */}
                   <div className="absolute top-4 left-4 right-2 h-48 bg-[#15151f] rounded-2xl border border-[#1e1e2e] transform rotate-1.5 opacity-50" />
                   {/* Main card */}
-                  <Link href="/nouveautes" className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-all group/ncard block cursor-pointer">
+                  <div onClick={() => router.push('/nouveautes')} className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-all group/ncard cursor-pointer">
                     <div className="flex items-center gap-3 mb-5">
                       <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center group-hover/ncard:scale-110 transition-transform">
                         <Music size={24} className="text-white" />
@@ -1135,7 +1135,7 @@ export default function Home() {
                       </span>
                       <span className="text-xs font-bold text-[#e11d48] group-hover/ncard:translate-x-1 transition-transform">Voir tout →</span>
                     </div>
-                  </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1159,7 +1159,7 @@ export default function Home() {
                   {/* Background card 2 */}
                   <div className="absolute top-4 left-2 right-4 h-48 bg-[#15151f] rounded-2xl border border-[#1e1e2e] transform -rotate-1.5 opacity-50" />
                   {/* Main card */}
-                  <Link href="/producers" className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-all group/card block cursor-pointer">
+                  <div onClick={() => router.push('/producers')} className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-all group/card cursor-pointer">
                     <div className="flex items-center gap-3 mb-5">
                       <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center group-hover/card:scale-110 transition-transform">
                         <Headphones size={24} className="text-white" />
@@ -1206,7 +1206,7 @@ export default function Home() {
                       </span>
                       <span className="text-[10px] font-bold text-[#2ed573]">● Actif</span>
                     </div>
-                  </Link>
+                  </div>
                 </div>
               </div>
 
@@ -1225,15 +1225,15 @@ export default function Home() {
                   des encheres et recois 85% de chaque vente directement sur ton compte via Stripe.
                 </p>
                 <div className="flex flex-wrap gap-3 mb-8">
-                  <Link href="/producers" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                  <div onClick={() => router.push('/producers')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <TrendingUp size={12} className="text-[#2ed573]" /> 85% des revenus
-                  </Link>
-                  <Link href="/marketplace" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                  </div>
+                  <div onClick={() => router.push('/marketplace')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Gavel size={12} className="text-[#e11d48]" /> Systeme d&apos;encheres
-                  </Link>
-                  <Link href="/producers" className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                  </div>
+                  <div onClick={() => router.push('/producers')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Zap size={12} className="text-amber-400" /> Paiements auto
-                  </Link>
+                  </div>
                 </div>
                 <Link
                   href="/producers"
@@ -1381,9 +1381,9 @@ export default function Home() {
                     href: '/marketplace',
                   },
                 ].map(({ label, value, icon: Icon, gradient, border, iconColor, href }) => (
-                  <Link
+                  <div
                     key={label}
-                    href={href}
+                    onClick={() => router.push(href)}
                     className={`bg-gradient-to-br ${gradient} rounded-2xl border ${border} p-6 text-center hover:scale-105 transition-all duration-300 group cursor-pointer`}
                   >
                     <div
@@ -1394,7 +1394,7 @@ export default function Home() {
                     <AnimatedCounter target={value} />
                     <div className="text-xs text-gray-400 mt-1 font-semibold group-hover:text-white transition-colors">{label}</div>
                     <ChevronRight size={14} className="mx-auto mt-2 text-gray-700 group-hover:text-red-500 transition-colors" />
-                  </Link>
+                  </div>
                 ))}
               </div>
             </div>
@@ -1435,10 +1435,10 @@ export default function Home() {
                   href: '/nouveautes',
                 },
               ].map((item) => (
-                <Link
+                <div
                   key={item.step}
-                  href={item.href}
-                  className="relative group bg-[#111] rounded-2xl border border-[#222] p-7 hover:border-red-500/20 transition-all hover:-translate-y-1 duration-300 cursor-pointer block"
+                  onClick={() => router.push(item.href)}
+                  className="relative group bg-[#111] rounded-2xl border border-[#222] p-7 hover:border-red-500/20 transition-all hover:-translate-y-1 duration-300 cursor-pointer"
                 >
                   <span className="text-6xl font-black text-red-500/[0.07] absolute top-4 right-5 select-none">
                     {item.step}
@@ -1451,7 +1451,7 @@ export default function Home() {
                   <div className="mt-4 flex items-center gap-1 text-xs font-bold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                     En savoir plus <ArrowRight size={12} />
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
 
@@ -1526,9 +1526,9 @@ export default function Home() {
                   href: '/playlists',
                 },
               ].map((item, i) => (
-                <Link
+                <div
                   key={i}
-                  href={item.href}
+                  onClick={() => router.push(item.href)}
                   className="flex gap-4 bg-[#111] rounded-2xl border border-[#222] p-5 hover:border-red-500/20 transition-all hover:-translate-y-0.5 duration-300 group cursor-pointer"
                 >
                   <div
@@ -1541,7 +1541,7 @@ export default function Home() {
                     <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
                   </div>
                   <ChevronRight size={16} className="text-gray-700 group-hover:text-red-500 transition-colors shrink-0 self-center" />
-                </Link>
+                </div>
               ))}
             </div>
           </div>
