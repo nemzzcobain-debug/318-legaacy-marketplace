@@ -27,12 +27,21 @@ export default function LoginPage() {
       setSuccess('Email confirmé ! Tu peux te connecter.')
     } else if (resetSuccess === 'true') {
       setSuccess('Mot de passe reinitialise ! Tu peux te connecter.')
-    } else if (errorParam === 'invalid-token') {
-      setError('Le lien de confirmation est invalide ou a expire.')
-    } else if (errorParam === 'token-expired') {
-      setError('Le lien de confirmation a expire. Tu peux demander un nouveau lien.')
-    } else if (errorParam === 'server-error') {
-      setError('Une erreur est survenue. Veuillez reessayer plus tard.')
+    } else if (errorParam) {
+      // Gerer toutes les erreurs NextAuth OAuth + verification
+      const errorMessages: Record<string, string> = {
+        'invalid-token': 'Le lien de confirmation est invalide ou a expire.',
+        'token-expired': 'Le lien de confirmation a expire. Tu peux demander un nouveau lien.',
+        'server-error': 'Une erreur est survenue. Veuillez reessayer plus tard.',
+        'OAuthSignin': 'Erreur lors de la connexion Google. Verifie que ton compte Google est valide.',
+        'OAuthCallback': 'Erreur de retour Google. Reessaie la connexion.',
+        'OAuthCreateAccount': 'Impossible de creer ton compte via Google. Essaie de t\'inscrire par email.',
+        'OAuthAccountNotLinked': 'Cet email est deja utilise avec un autre mode de connexion. Connecte-toi avec ton mot de passe.',
+        'Callback': 'Erreur lors de la connexion. Reessaie.',
+        'AccessDenied': 'Acces refuse. Verifie tes permissions.',
+        'Configuration': 'Erreur de configuration du serveur. Contacte l\'administrateur.',
+      }
+      setError(errorMessages[errorParam] || `Erreur de connexion (${errorParam}). Reessaie ou utilise un autre mode de connexion.`)
     }
   }, [searchParams])
 

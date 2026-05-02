@@ -102,22 +102,36 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      // For OAuth providers, auto-verify email
-      if (account?.provider && account.provider !== 'credentials') {
-        // Check if user exists already with this email
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email ?? '' },
-        })
+      try {
+        // For OAuth providers, auto-verify email
+        if (account?.provider && account.provider !== 'credentials') {
+          if (!user.email) {
+            console.error(`[Auth] OAuth signIn: no email from ${account.provider}`)
+            return true // Allow sign-in anyway, email might come later
+          }
 
-        if (existingUser && !existingUser.emailVerified) {
-          // Auto-verify email for OAuth users
-          await prisma.user.update({
-            where: { id: existingUser.id },
-            data: { emailVerified: new Date() },
+          // Check if user exists already with this email
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
           })
+
+          if (existingUser && !existingUser.emailVerified) {
+            // Auto-verify email for OAuth users
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: { emailVerified: new Date() },
+            })
+          }
+
+          console.log(`[Auth] OAuth signIn success: ${account.provider} — ${user.email}`)
         }
+        return true
+      } catch (error) {
+        console.error('[Auth] signIn callback error:', error)
+        // Return true to allow sign-in even if our custom logic fails
+        // The PrismaAdapter handles the core account creation
+        return true
       }
-      return true
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
