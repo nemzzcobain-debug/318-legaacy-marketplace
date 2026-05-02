@@ -17,25 +17,16 @@ export default function VerifyEmailPage() {
   const [resendLoading, setResendLoading] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
 
-  // Si le token est dans l'URL, le verifier automatiquement
+  // Si le token est dans l'URL, rediriger vers l'API qui gere la verification
+  // et redirige ensuite vers /login?verified=true
   useEffect(() => {
     if (token) {
-      verifyToken()
+      setStatus('loading')
+      // Naviguer directement vers l'API — le serveur verifie le token
+      // et redirige le navigateur vers /login?verified=true ou /login?error=...
+      window.location.href = `/api/auth/verify-email?token=${token}`
     }
   }, [token])
-
-  const verifyToken = async () => {
-    setStatus('loading')
-    try {
-      // Le token est verifie via le GET redirect a /api/auth/verify-email
-      // Cette fonction n'est utilisee que si on arrive avec le token en query
-      const response = await fetch(`/api/auth/verify-email?token=${token}`)
-      // La redirection est geree par le serveur
-    } catch (error) {
-      setStatus('error')
-      setMessage('Une erreur est survenue lors de la verification.')
-    }
-  }
 
   const handleResendEmail = async () => {
     if (!email || resendCooldown > 0) return
