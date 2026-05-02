@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { parseSupabaseUrl, getSignedUrl } from '@/lib/supabase'
+import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
 
 async function getNouveautesPreview() {
   try {
@@ -193,13 +193,12 @@ export async function GET() {
         name: g.genre,
         count: g._count,
       })),
-      featuredBeats: await Promise.all(featuredBeats.map(async (b) => {
+      featuredBeats: featuredBeats.map((b) => {
         let streamUrl = b.audioUrl
         if (streamUrl) {
           const parsed = parseSupabaseUrl(streamUrl)
           if (parsed) {
-            const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
-            if (signed) streamUrl = signed
+            streamUrl = getStreamUrl(parsed.bucket, parsed.path)
           }
         }
         return {
@@ -217,7 +216,7 @@ export async function GET() {
           },
           auction: b.auctions[0] || null,
         }
-      })),
+      }),
       nouveautesBeats: await getNouveautesPreview(),
     })
   } catch (error) {
