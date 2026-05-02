@@ -23,6 +23,15 @@ const nextConfig = {
     // Disable ESLint and TypeScript checks during build to allow faster deployment
     eslint: { ignoreDuringBuilds: true },
     typescript: { ignoreBuildErrors: true },
+    async redirects() {
+        return [
+            {
+                source: '/admin/producers',
+                destination: '/admin',
+                permanent: true,
+            },
+        ]
+    },
     async headers() {
         return [
             {
