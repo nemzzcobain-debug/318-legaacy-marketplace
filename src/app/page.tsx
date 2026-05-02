@@ -925,12 +925,12 @@ export default function Home() {
                               </div>
 
                               <Link
-                                href={`/beat/${currentBeat.id}`}
+                                href="/nouveautes"
                                 className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
                               >
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
                                 <span className="relative z-10 flex items-center justify-center gap-2">
-                                  Découvrir ce beat <ArrowRight size={18} />
+                                  Acheter ce beat <ArrowRight size={18} />
                                 </span>
                               </Link>
                             </>
