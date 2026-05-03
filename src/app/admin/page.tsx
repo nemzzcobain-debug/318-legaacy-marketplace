@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface Stats {
   totalUsers: number
@@ -112,7 +112,12 @@ function StatCard({
 export default function AdminPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const searchParams = useSearchParams()
+  const validTabs = ['dashboard', 'producers', 'auctions', 'users', 'beats', 'featured', 'reports', 'promos']
+  const initialTab = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(
+    initialTab && validTabs.includes(initialTab) ? initialTab : 'dashboard'
+  )
   const [stats, setStats] = useState<Stats | null>(null)
   const [producers, setProducers] = useState<Producer[]>([])
   const [auctions, setAuctions] = useState<AuctionItem[]>([])
@@ -160,6 +165,12 @@ export default function AdminPage() {
       setPlayingBeatId(beatId)
     }
   }
+
+  // Synchroniser l'URL avec l'onglet actif
+  useEffect(() => {
+    const url = activeTab === 'dashboard' ? '/admin' : `/admin?tab=${activeTab}`
+    window.history.replaceState(null, '', url)
+  }, [activeTab])
 
   // Navigation depuis les cartes stats avec historique
   const navigateToTab = (tab: string, filter?: string) => {
