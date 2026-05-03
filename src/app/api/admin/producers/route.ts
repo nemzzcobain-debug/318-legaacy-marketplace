@@ -114,7 +114,7 @@ export async function PATCH(req: NextRequest) {
         type: 'SYSTEM',
         title: `Producteur ${adminStatusLabels[status] || status}`,
         message: `Vous avez ${adminStatusLabels[status]} le producteur ${producer.name || producer.email}`,
-        link: '/admin',
+        link: `/producer/${producerId}`,
       },
     })
 

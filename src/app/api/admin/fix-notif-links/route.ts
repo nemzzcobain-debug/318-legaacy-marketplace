@@ -25,7 +25,7 @@ export async function POST() {
       return NextResponse.json({ error: 'Admin requis' }, { status: 403 })
     }
 
-    const results = { producerApproved: 0, auctionEnded: 0 }
+    const results = { producerApproved: 0, auctionEnded: 0, adminNotifs: 0 }
 
     // 1. Fix PRODUCER_APPROVED notifications: /dashboard → /producer/{userId}
     const approvedNotifs = await prisma.notification.findMany({
@@ -45,7 +45,6 @@ export async function POST() {
     }
 
     // 2. Fix AUCTION_ENDED notifications: /dashboard → /auction/{auctionId}
-    // On cherche les enchères du producteur pour matcher
     const auctionNotifs = await prisma.notification.findMany({
       where: {
         type: 'AUCTION_ENDED',
@@ -55,13 +54,12 @@ export async function POST() {
     })
 
     for (const notif of auctionNotifs) {
-      // Trouver l'enchère la plus récente du producteur avant la date de notification
       const auction = await prisma.auction.findFirst({
         where: {
           beat: { producerId: notif.userId },
           updatedAt: {
-            gte: new Date(notif.createdAt.getTime() - 60000), // 1 min avant
-            lte: new Date(notif.createdAt.getTime() + 60000), // 1 min après
+            gte: new Date(notif.createdAt.getTime() - 60000),
+            lte: new Date(notif.createdAt.getTime() + 60000),
           },
         },
         select: { id: true },
@@ -74,7 +72,6 @@ export async function POST() {
           data: { link: `/auction/${auction.id}` },
         })
       } else {
-        // Pas d'enchère matchée, on redirige vers le profil producteur
         await prisma.notification.update({
           where: { id: notif.id },
           data: { link: `/producer/${notif.userId}` },
@@ -83,8 +80,69 @@ export async function POST() {
       results.auctionEnded++
     }
 
+    // 3. Fix admin SYSTEM notifications: /admin → /producer/{sujet}
+    // Ces notifications concernent les candidatures/approbations de producteurs
+    const adminNotifs = await prisma.notification.findMany({
+      where: {
+        link: '/admin',
+        type: 'SYSTEM',
+        OR: [
+          { title: { contains: 'Producteur' } },
+          { title: { contains: 'producteur' } },
+          { title: { contains: 'candidature' } },
+        ],
+      },
+      select: { id: true, message: true, createdAt: true },
+    })
+
+    for (const notif of adminNotifs) {
+      // Extraire le nom du producteur du message pour trouver son profil
+      // Messages types: "Vous avez approuve le producteur X" ou "X souhaite devenir producteur"
+      let producer = null
+
+      // Essayer de matcher "le producteur X" (notification admin après action)
+      const matchAdmin = notif.message.match(/le producteur (.+)$/)
+      if (matchAdmin) {
+        const nameOrEmail = matchAdmin[1]
+        producer = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { name: nameOrEmail },
+              { email: nameOrEmail },
+            ],
+          },
+          select: { id: true },
+        })
+      }
+
+      // Essayer de matcher "X souhaite devenir" (notification candidature)
+      if (!producer) {
+        const matchApply = notif.message.match(/^(.+?) souhaite devenir/)
+        if (matchApply) {
+          const nameOrEmail = matchApply[1]
+          producer = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { name: nameOrEmail },
+                { email: nameOrEmail },
+              ],
+            },
+            select: { id: true },
+          })
+        }
+      }
+
+      if (producer) {
+        await prisma.notification.update({
+          where: { id: notif.id },
+          data: { link: `/producer/${producer.id}` },
+        })
+      }
+      results.adminNotifs++
+    }
+
     return NextResponse.json({
-      message: `Corrigé: ${results.producerApproved} PRODUCER_APPROVED, ${results.auctionEnded} AUCTION_ENDED`,
+      message: `Corrigé: ${results.producerApproved} PRODUCER_APPROVED, ${results.auctionEnded} AUCTION_ENDED, ${results.adminNotifs} admin SYSTEM`,
       results,
     })
   } catch (error) {

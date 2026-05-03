@@ -74,7 +74,7 @@ export async function POST(request: Request) {
           type: 'SYSTEM' as const,
           title: 'Nouvelle candidature producteur',
           message: `${user.name} souhaite devenir producteur`,
-          link: '/admin',
+          link: `/producer/${userId}`,
         })),
       })
 

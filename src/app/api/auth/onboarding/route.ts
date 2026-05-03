@@ -47,7 +47,7 @@ export async function POST(req: Request) {
             type: 'SYSTEM',
             title: 'Nouveau producteur',
             message: `${user.name ?? user.email} souhaite devenir beatmaker (via connexion sociale).`,
-            link: '/admin',
+            link: `/producer/${session.user.id}`,
             userId: admin.id,
           })),
         })
