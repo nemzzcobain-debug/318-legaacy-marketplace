@@ -34,31 +34,28 @@ async function getNouveautesPreview() {
       },
     })
 
-    const results = await Promise.all(
-      playlistBeats
-        .filter(pb => pb.beat.status !== 'SOLD')
-        .map(async (pb) => {
-          let streamUrl = pb.beat.audioUrl
-          if (streamUrl) {
-            const parsed = parseSupabaseUrl(streamUrl)
-            if (parsed) {
-              const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
-              if (signed) streamUrl = signed
-            }
+    const results = playlistBeats
+      .filter(pb => pb.beat.status !== 'SOLD')
+      .map((pb) => {
+        let streamUrl = pb.beat.audioUrl
+        if (streamUrl) {
+          const parsed = parseSupabaseUrl(streamUrl)
+          if (parsed) {
+            streamUrl = getStreamUrl(parsed.bucket, parsed.path)
           }
-          const lastAuction = pb.beat.auctions[0]
-          return {
-            id: pb.beat.id,
-            title: pb.beat.title,
-            genre: (pb.beat as any).genre || 'Trap',
-            bpm: (pb.beat as any).bpm || 140,
-            coverImage: (pb.beat as any).coverImage || null,
-            audioUrl: streamUrl,
-            producer: pb.beat.producer.displayName || pb.beat.producer.name,
-            price: lastAuction?.buyNowPrice || lastAuction?.startPrice || 20,
-          }
-        })
-    )
+        }
+        const lastAuction = pb.beat.auctions[0]
+        return {
+          id: pb.beat.id,
+          title: pb.beat.title,
+          genre: (pb.beat as any).genre || 'Trap',
+          bpm: (pb.beat as any).bpm || 140,
+          coverImage: (pb.beat as any).coverImage || null,
+          audioUrl: streamUrl,
+          producer: pb.beat.producer.displayName || pb.beat.producer.name,
+          price: lastAuction?.buyNowPrice || lastAuction?.startPrice || 20,
+        }
+      })
     return results
   } catch {
     return []

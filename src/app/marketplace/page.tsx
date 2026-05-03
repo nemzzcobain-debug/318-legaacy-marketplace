@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import BeatCard from '@/components/auction/BeatCard'
 import { Search, Flame, Gavel, TrendingUp, DollarSign, Users, Music } from 'lucide-react'
@@ -15,23 +14,11 @@ const FILTERS = [
 ]
 
 export default function MarketplacePage() {
-  const searchParams = useSearchParams()
-  const genreFromUrl = searchParams.get('genre')
-  const initialFilter = genreFromUrl && GENRES.includes(genreFromUrl) ? genreFromUrl : 'all'
-
   const [auctions, setAuctions] = useState<Auction[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeFilter, setActiveFilter] = useState(initialFilter)
+  const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [playingId, setPlayingId] = useState<string | null>(null)
-
-  // Sync filter when URL params change (e.g. navigating from homepage genre links)
-  useEffect(() => {
-    const genre = searchParams.get('genre')
-    if (genre && GENRES.includes(genre)) {
-      setActiveFilter(genre)
-    }
-  }, [searchParams])
 
   // Fetch auctions
   useEffect(() => {
