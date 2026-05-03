@@ -85,6 +85,7 @@ export async function POST(request: Request) {
             adminEmail: admin.email,
             applicantName: user.name || 'Inconnu',
             applicantEmail: user.email || '',
+            applicantId: userId,
             bio: validated.data.producerBio,
             portfolio: validated.data.portfolio,
           }).catch((err) => console.error('Email admin notification échoué:', err))

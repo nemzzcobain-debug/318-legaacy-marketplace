@@ -407,10 +407,11 @@ export async function sendAdminNewApplicationEmail(params: {
   adminEmail: string
   applicantName: string
   applicantEmail: string
+  applicantId: string
   bio: string
   portfolio?: string
 }) {
-  const { adminEmail, applicantName, applicantEmail, bio, portfolio } = params
+  const { adminEmail, applicantName, applicantEmail, applicantId, bio, portfolio } = params
 
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouvelle candidature producteur 🔔</h1>
@@ -443,7 +444,7 @@ export async function sendAdminNewApplicationEmail(params: {
       </div>
     </div>
 
-    ${button('Examiner la candidature', `${PLATFORM_URL}/admin`)}
+    ${button('Examiner la candidature', `${PLATFORM_URL}/producer/${applicantId}`)}
   `)
 
   return sendEmail(adminEmail, `🔔 Nouvelle candidature producteur — ${applicantName}`, html)
