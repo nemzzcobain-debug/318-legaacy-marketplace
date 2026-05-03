@@ -179,14 +179,14 @@ export async function POST(req: NextRequest) {
           type: 'NEW_BEAT',
           title: `Nouveau beat de ${producerName}`,
           message: `${producerName} a publié "${title}" (${genre}, ${bpm} BPM)`,
-          link: `/producer/${user.id}`,
+          link: `/beats/${beat.id}`,
           userId: f.followerId,
         })),
         ...admins.map((a) => ({
           type: 'NEW_BEAT',
           title: `Nouveau beat uploadé`,
           message: `${producerName} a uploadé "${title}" (${genre}, ${bpm} BPM)`,
-          link: `/producer/${user.id}`,
+          link: `/dashboard?tab=beats&highlight=${beat.id}`,
           userId: a.id,
         })),
       ]

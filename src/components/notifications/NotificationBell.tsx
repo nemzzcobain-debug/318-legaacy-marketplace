@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
   Bell, Check, CheckCheck, Gavel, TrendingUp, CreditCard,
-  Shield, AlertCircle, X, Trash2, ChevronRight, Volume2
+  Shield, AlertCircle, X, Trash2, ChevronRight, Volume2, Music
 } from 'lucide-react'
 
 interface Notification {
@@ -27,6 +27,7 @@ const NOTIFICATION_ICONS: Record<string, any> = {
   PAYMENT_RECEIVED: CreditCard,
   PRODUCER_APPROVED: Shield,
   PRODUCER_REJECTED: X,
+  NEW_BEAT: Music,
   SYSTEM: Bell,
 }
 
@@ -39,6 +40,7 @@ const NOTIFICATION_COLORS: Record<string, string> = {
   PAYMENT_RECEIVED: 'text-green-400 bg-green-500/10',
   PRODUCER_APPROVED: 'text-green-400 bg-green-500/10',
   PRODUCER_REJECTED: 'text-red-400 bg-red-500/10',
+  NEW_BEAT: 'text-[#e11d48] bg-[#e11d48]/10',
   SYSTEM: 'text-gray-400 bg-gray-500/10',
 }
 

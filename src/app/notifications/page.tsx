@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import {
   Bell, Check, CheckCheck, Gavel, TrendingUp, CreditCard,
-  Shield, AlertCircle, X, Trash2, Loader2, Filter
+  Shield, AlertCircle, X, Trash2, Loader2, Filter, Music
 } from 'lucide-react'
 
 interface Notification {
@@ -28,6 +28,7 @@ const NOTIFICATION_ICONS: Record<string, any> = {
   PAYMENT_RECEIVED: CreditCard,
   PRODUCER_APPROVED: Shield,
   PRODUCER_REJECTED: X,
+  NEW_BEAT: Music,
   SYSTEM: Bell,
 }
 
@@ -40,6 +41,7 @@ const NOTIFICATION_COLORS: Record<string, string> = {
   PAYMENT_RECEIVED: 'text-green-400 bg-green-500/10',
   PRODUCER_APPROVED: 'text-green-400 bg-green-500/10',
   PRODUCER_REJECTED: 'text-red-400 bg-red-500/10',
+  NEW_BEAT: 'text-[#e11d48] bg-[#e11d48]/10',
   SYSTEM: 'text-gray-400 bg-gray-500/10',
 }
 
@@ -52,6 +54,7 @@ const TYPE_LABELS: Record<string, string> = {
   PAYMENT_RECEIVED: 'Paiement reçu',
   PRODUCER_APPROVED: 'Producteur approuvé',
   PRODUCER_REJECTED: 'Producteur refusé',
+  NEW_BEAT: 'Nouveau beat',
   SYSTEM: 'Système',
 }
 

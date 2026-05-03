@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import CreateAuctionForm from '@/components/dashboard/CreateAuctionForm'
@@ -39,6 +39,7 @@ import {
   Headphones,
   Trash2,
   X,
+  Sparkles,
 } from 'lucide-react'
 
 // ─── Types ───
@@ -845,12 +846,23 @@ function ArtistSettingsTab({ userName }: { userName: string }) {
 
 function ProducerDashboard({ session }: { session: any }) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<ProducerTab>('overview')
+  const searchParams = useSearchParams()
+  const tabFromUrl = searchParams.get('tab') as ProducerTab | null
+  const highlightBeatId = searchParams.get('highlight')
+  const [activeTab, setActiveTab] = useState<ProducerTab>(tabFromUrl || 'overview')
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [playingId, setPlayingId] = useState<string | null>(null)
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+
+  // Sync tab when URL params change (e.g. from notification click)
+  useEffect(() => {
+    const tab = searchParams.get('tab') as ProducerTab | null
+    if (tab && ['overview', 'beats', 'auctions', 'analytics', 'badges', 'settings'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   const fetchData = useCallback(async () => {
     try {
@@ -1114,6 +1126,7 @@ function ProducerDashboard({ session }: { session: any }) {
             togglePlay={togglePlay}
             playingId={playingId}
             onBeatDeleted={fetchData}
+            highlightBeatId={highlightBeatId}
           />
         )}
 
@@ -1256,15 +1269,24 @@ function ProducerBeatsTab({
   togglePlay,
   playingId,
   onBeatDeleted,
+  highlightBeatId,
 }: {
   beats: any[]
   togglePlay: (id: string, url: string) => void
   playingId: string | null
   onBeatDeleted: () => void
+  highlightBeatId?: string | null
 }) {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+
+  // Helper: check if a beat was created less than 48h ago
+  const isNewBeat = (createdAt: string) => {
+    const created = new Date(createdAt).getTime()
+    const now = Date.now()
+    return now - created < 48 * 60 * 60 * 1000
+  }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -1321,10 +1343,15 @@ function ProducerBeatsTab({
               </Link>
             </div>
             <div className="space-y-3">
-              {beats.map((beat: any) => (
+              {beats.map((beat: any) => {
+                const isHighlighted = highlightBeatId === beat.id
+                const isNew = beat.createdAt && isNewBeat(beat.createdAt)
+                const showNewBadge = isHighlighted || isNew
+
+                return (
                 <div
                   key={beat.id}
-                  className="flex items-center justify-between p-3.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                  className={`flex items-center justify-between p-3.5 rounded-lg transition-colors ${isHighlighted ? 'bg-[#e11d48]/10 border border-[#e11d48]/30 ring-1 ring-[#e11d48]/20' : 'bg-white/[0.02] hover:bg-white/[0.04]'}`}
                 >
                   <div className="flex items-center gap-3">
                     <button
@@ -1338,7 +1365,14 @@ function ProducerBeatsTab({
                       )}
                     </button>
                     <div>
-                      <div className="text-sm font-bold text-white">{beat.title}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-white">{beat.title}</span>
+                        {showNewBadge && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#e11d48]/15 text-[#e11d48] text-[10px] font-bold uppercase animate-pulse">
+                            <Sparkles size={10} /> Nouveau
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500">
                         {beat.genre} &middot; {beat.bpm} BPM
                         {beat.key ? ` \u00B7 ${beat.key}` : ''}
@@ -1378,7 +1412,8 @@ function ProducerBeatsTab({
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </>
         )}
