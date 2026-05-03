@@ -76,7 +76,7 @@ export async function PATCH(req: NextRequest) {
         message:
           'Votre compte producteur a ete approuve. Vous pouvez maintenant mettre vos beats aux encheres!',
         type: 'PRODUCER_APPROVED',
-        link: '/dashboard',
+        link: `/producer/${producerId}`,
       },
       REJECTED: {
         title: 'Compte refuse',
