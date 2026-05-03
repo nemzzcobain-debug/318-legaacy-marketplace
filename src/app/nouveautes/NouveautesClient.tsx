@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -122,7 +122,10 @@ const LICENSES = [
 export default function NouveautesClient() {
   const { data: session } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectedBeatId = searchParams.get('beat')
   const audioRef = useRef<HTMLAudioElement>(null)
+  const beatRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const [beats, setBeats] = useState<Beat[]>([])
   const [loading, setLoading] = useState(true)
@@ -167,6 +170,23 @@ export default function NouveautesClient() {
   useEffect(() => {
     fetchNouveautes()
   }, [])
+
+  // Pre-select beat from URL param ?beat=ID
+  useEffect(() => {
+    if (preselectedBeatId && beats.length > 0) {
+      const exists = beats.find((b) => b.id === preselectedBeatId)
+      if (exists) {
+        setSelectedBeat(preselectedBeatId)
+        // Scroll to the beat after a short delay for DOM render
+        setTimeout(() => {
+          const el = beatRefs.current[preselectedBeatId]
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 300)
+      }
+    }
+  }, [preselectedBeatId, beats])
 
   async function fetchNouveautes() {
     try {
@@ -482,6 +502,7 @@ export default function NouveautesClient() {
                 return (
                   <div
                     key={beat.id}
+                    ref={(el) => { beatRefs.current[beat.id] = el }}
                     className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                       selectedBeat === beat.id
                         ? 'border-[#e11d48] bg-[#e11d48]/5'

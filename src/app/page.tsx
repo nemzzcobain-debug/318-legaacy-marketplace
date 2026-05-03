@@ -903,7 +903,7 @@ export default function Home() {
                               </div>
 
                               <Link
-                                href={currentBeat.auction ? `/auction/${currentBeat.auction.id}` : `/nouveautes`}
+                                href={currentBeat.auction?.id ? `/auction/${currentBeat.auction.id}` : `/nouveautes?beat=${currentBeat.id}`}
                                 className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
                               >
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
