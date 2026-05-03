@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
+import { parseSupabaseUrl, getSignedUrl } from '@/lib/supabase'
 
 /**
  * Lazy finalization: auto-finalize expired auctions that the daily cron
@@ -318,13 +318,22 @@ export async function GET() {
           select: { startPrice: true, buyNowPrice: true },
         })
 
-        // Generate public stream URL for audio streaming
+        // Generate signed URL for audio streaming if stored in Supabase
         let streamUrl = pb.beat.audioUrl
         if (streamUrl) {
           const parsed = parseSupabaseUrl(streamUrl)
           if (parsed) {
-            streamUrl = getStreamUrl(parsed.bucket, parsed.path)
+            const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
+            if (signed) {
+              streamUrl = signed
+            } else {
+              console.error(`[Nouveautes] Failed to generate signed URL for beat "${pb.beat.title}" - bucket: ${parsed.bucket}, path: ${parsed.path}`)
+            }
+          } else {
+            console.error(`[Nouveautes] Could not parse Supabase URL for beat "${pb.beat.title}": ${streamUrl.substring(0, 100)}`)
           }
+        } else {
+          console.warn(`[Nouveautes] Beat "${pb.beat.title}" has no audioUrl`)
         }
 
         return {

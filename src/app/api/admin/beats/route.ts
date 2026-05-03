@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
+import { parseSupabaseUrl, getSignedUrl } from '@/lib/supabase'
 
 export async function GET(request: Request) {
   try {
@@ -56,16 +56,19 @@ export async function GET(request: Request) {
       prisma.beat.count({ where }),
     ])
 
-    // Generate public stream URLs for audio
-    const beatsWithSignedUrls = beats.map((beat) => {
-      if (beat.audioUrl) {
-        const parsed = parseSupabaseUrl(beat.audioUrl)
-        if (parsed) {
-          return { ...beat, audioUrl: getStreamUrl(parsed.bucket, parsed.path) }
+    // Generate signed URLs for audio streaming
+    const beatsWithSignedUrls = await Promise.all(
+      beats.map(async (beat) => {
+        if (beat.audioUrl) {
+          const parsed = parseSupabaseUrl(beat.audioUrl)
+          if (parsed) {
+            const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
+            if (signed) return { ...beat, audioUrl: signed }
+          }
         }
-      }
-      return beat
-    })
+        return beat
+      })
+    )
 
     return NextResponse.json({
       beats: beatsWithSignedUrls,

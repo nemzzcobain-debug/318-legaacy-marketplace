@@ -94,15 +94,6 @@ export async function getSignedUrl(
 }
 
 /**
- * Obtenir l'URL de streaming pour un fichier audio
- * Utilise l'URL publique directement (les buckets audio sont publics)
- * Plus fiable que les signed URLs qui peuvent expirer avec des clés perimees
- */
-export function getStreamUrl(bucket: string, filePath: string): string {
-  return getPublicUrl(bucket, filePath)
-}
-
-/**
  * Extraire le bucket et le path d'une URL publique Supabase
  * Ex: https://xxx.supabase.co/storage/v1/object/public/beats/file.mp3
  *   → { bucket: 'beats', path: 'file.mp3' }
