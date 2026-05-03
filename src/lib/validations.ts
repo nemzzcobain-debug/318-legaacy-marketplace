@@ -113,12 +113,13 @@ export const updateProfileSchema = z.object({
 
 // ─── Producer Application ───
 const optionalUrl = z
-  .string()
+  .union([z.string(), z.undefined(), z.null()])
   .transform((val) => {
+    if (!val) return undefined
     const trimmed = val.trim()
     if (trimmed === '') return undefined
     // Auto-ajouter https:// si pas de protocole
-    if (trimmed && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
       return `https://${trimmed}`
     }
     return trimmed
