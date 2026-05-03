@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     if (user.role === 'ADMIN') {
-      return NextResponse.json({ error: 'Les admins ont deja les droits producteur' }, { status: 400 })
+      return NextResponse.json({ error: 'Les admins ont déjà les droits producteur' }, { status: 400 })
     }
 
     if (user.role === 'PRODUCER' && user.producerStatus === 'APPROVED') {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
     if (user.producerStatus === 'PENDING') {
       return NextResponse.json(
-        { error: "Ta candidature est deja en cours d'examen" },
+        { error: "Ta candidature est déjà en cours d'examen" },
         { status: 400 }
       )
     }
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
           type: 'SYSTEM' as const,
           title: 'Nouvelle candidature producteur',
           message: `${user.name} souhaite devenir producteur`,
-          link: `/producer/${userId}`,
+          link: `/admin?tab=producers`,
         })),
       })
 
