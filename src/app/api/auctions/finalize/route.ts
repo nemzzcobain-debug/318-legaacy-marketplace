@@ -158,7 +158,7 @@ async function handleFinalize(req: NextRequest) {
               type: 'AUCTION_ENDED',
               title: 'Paiement non recu',
               message: `Le gagnant n'a pas paye pour "${expired.beat.title}". Le beat est remis en vente dans Nouveautes.`,
-              link: '/dashboard',
+              link: `/nouveautes?beat=${expired.beat.id}`,
               userId: expired.beat.producerId,
             },
           })
@@ -236,7 +236,7 @@ async function handleFinalize(req: NextRequest) {
                   type: 'AUCTION_ENDED',
                   title: 'Enchere terminee !',
                   message: `Votre beat "${auction.beat.title}" a ete vendu pour ${topBid.finalAmount}\u20AC. Paiement en attente.`,
-                  link: `/dashboard`,
+                  link: `/auction/${auction.id}`,
                   userId: auction.beat.producerId,
                 },
               })
@@ -255,7 +255,7 @@ async function handleFinalize(req: NextRequest) {
                   type: 'AUCTION_ENDED',
                   title: 'Enchere terminee sans vente',
                   message: `Le prix de reserve n'a pas ete atteint pour "${auction.beat.title}". Enchere max: ${topBid.finalAmount}\u20AC.`,
-                  link: `/dashboard`,
+                  link: `/auction/${auction.id}`,
                   userId: auction.beat.producerId,
                 },
               })
@@ -295,7 +295,7 @@ async function handleFinalize(req: NextRequest) {
                 type: 'AUCTION_ENDED',
                 title: 'Enchere terminee sans enchere',
                 message: `Aucune enchere placee sur "${auction.beat.title}".`,
-                link: `/dashboard`,
+                link: `/auction/${auction.id}`,
                 userId: auction.beat.producerId,
               },
             })
