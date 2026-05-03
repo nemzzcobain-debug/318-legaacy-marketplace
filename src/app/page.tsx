@@ -218,7 +218,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [playingId, setPlayingId] = useState<string | null>(null)
   const [featuredIndex, setFeaturedIndex] = useState(0)
-  // Web Audio API refs — meme approche que AudioPlayer.tsx pour les WAV DAW
+  // Web Audio API refs — même approche que AudioPlayer.tsx pour les WAV DAW
   const audioCtxRef = useRef<AudioContext | null>(null)
   const bufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map())
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null)
@@ -278,14 +278,14 @@ export default function Home() {
 
   const togglePlay = useCallback(
     async (auctionId: string, audioUrl: string) => {
-      // Si on reclique sur le meme beat → stop
+      // Si on reclique sur le même beat → stop
       if (playingId === auctionId) {
         stopCurrentSource()
         setPlayingId(null)
         return
       }
 
-      // Stop le beat precedent
+      // Stop le beat précédent
       stopCurrentSource()
       setPlayingId(auctionId)
 
@@ -293,7 +293,7 @@ export default function Home() {
         const ctx = getAudioContext()
         if (ctx.state === 'suspended') await ctx.resume()
 
-        // Cache le buffer pour eviter de re-telecharger
+        // Cache le buffer pour éviter de re-télécharger
         let buffer = bufferCacheRef.current.get(audioUrl)
         if (!buffer) {
           let arrayBuf: ArrayBuffer
@@ -358,7 +358,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
-      {/* Audio via Web Audio API — pas d'element <audio> necessaire */}
+      {/* Audio via Web Audio API — pas d'element <audio> nécessaire */}
 
       <main id="main-content">
         {/* ═══════════ HERO ═══════════ */}
@@ -1016,8 +1016,8 @@ export default function Home() {
                   <span className="text-[#e11d48]">direct</span>
                 </h2>
                 <p className="text-gray-400 text-sm leading-relaxed mb-6 max-w-md">
-                  Des beats qui n&apos;ont pas trouve preneur aux encheres sont maintenant
-                  disponibles a l&apos;achat immediat. Choisis ta licence et telecharge ton beat en
+                  Des beats qui n&apos;ont pas trouvé preneur aux enchères sont maintenant
+                  disponibles a l&apos;achat immédiat. Choisis ta licence et telecharge ton beat en
                   quelques clics.
                 </p>
                 <div className="flex flex-wrap gap-3 mb-8">
@@ -1057,7 +1057,7 @@ export default function Home() {
                         <Music size={24} className="text-white" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-white group-hover/ncard:text-[#e11d48] transition-colors">Achat immediat</div>
+                        <div className="text-sm font-bold text-white group-hover/ncard:text-[#e11d48] transition-colors">Achat immédiat</div>
                         <div className="text-xs text-gray-500">Prix fixes &middot; 3 licences</div>
                       </div>
                     </div>
@@ -1146,7 +1146,7 @@ export default function Home() {
                       <div>
                         <div className="text-sm font-bold text-white group-hover/card:text-[#e11d48] transition-colors">Dashboard Producteur</div>
                         <div className="text-xs text-gray-500">
-                          Upload &middot; Encheres &middot; Revenus
+                          Upload &middot; Enchères &middot; Revenus
                         </div>
                       </div>
                     </div>
@@ -1168,14 +1168,15 @@ export default function Home() {
                       ))}
                     </div>
 
-                    {/* Upload CTA */}
+                    {/* Upload CTA — redirige vers la page d'upload */}
                     <div
-                      className="border-2 border-dashed border-[#1e1e2e] rounded-xl p-4 text-center group-hover/card:border-[#e11d48]/30 group-hover/card:bg-[#e11d48]/5 transition-all"
+                      onClick={(e) => { e.stopPropagation(); router.push('/producers/upload') }}
+                      className="border-2 border-dashed border-[#1e1e2e] rounded-xl p-4 text-center group-hover/card:border-[#e11d48]/30 group-hover/card:bg-[#e11d48]/5 transition-all hover:border-[#e11d48]/50 hover:bg-[#e11d48]/10 cursor-pointer"
                     >
                       <Music size={20} className="mx-auto mb-2 text-gray-600" />
-                      <div className="text-xs text-gray-500 font-semibold">Drop ton beat ici</div>
+                      <div className="text-xs text-gray-500 font-semibold">Upload ton beat</div>
                       <div className="text-[10px] text-gray-700 mt-1">
-                        WAV, MP3 &middot; Max 50MB
+                        MP3, WAV &amp; Stems
                       </div>
                     </div>
 
@@ -1197,18 +1198,18 @@ export default function Home() {
                 <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
                   Vends tes beats
                   <br />
-                  <span className="text-[#e11d48]">aux encheres</span>
+                  <span className="text-[#e11d48]">aux enchères</span>
                 </h2>
                 <p className="text-gray-400 text-sm leading-relaxed mb-6 max-w-md">
-                  Rejoins la communaute 318 LEGAACY en tant que producteur. Upload tes beats, lance
-                  des encheres et recois 85% de chaque vente directement sur ton compte via Stripe.
+                  Rejoins la communauté 318 LEGAACY en tant que producteur. Upload tes beats, lance
+                  des enchères et reçois 85% de chaque vente directement sur ton compte via Stripe.
                 </p>
                 <div className="flex flex-wrap gap-3 mb-8">
                   <div onClick={() => router.push('/producers')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <TrendingUp size={12} className="text-[#2ed573]" /> 85% des revenus
                   </div>
                   <div onClick={() => router.push('/marketplace')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
-                    <Gavel size={12} className="text-[#e11d48]" /> Systeme d&apos;encheres
+                    <Gavel size={12} className="text-[#e11d48]" /> Système d&apos;enchères
                   </div>
                   <div onClick={() => router.push('/producers')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
                     <Zap size={12} className="text-amber-400" /> Paiements auto
