@@ -515,29 +515,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══════════ GENRES SCROLL ═══════════ */}
-        {homepage && homepage.topGenres.length > 0 && (
-          <section className="px-4 pb-16 -mt-4">
-            <div className="max-w-6xl mx-auto">
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                {homepage.topGenres.map((genre, i) => (
-                  <Link
-                    key={genre.name}
-                    href={`/marketplace?genre=${encodeURIComponent(genre.name)}`}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#111] border border-[#222] text-sm font-bold text-gray-300 whitespace-nowrap hover:border-red-500/30 hover:text-white hover:bg-red-500/5 transition-all shrink-0"
-                    style={{ animationDelay: `${i * 100}ms` }}
-                  >
-                    <Music size={13} className="text-red-500" />
-                    {genre.name}
-                    <span className="text-[10px] text-gray-600 bg-white/5 px-2 py-0.5 rounded-full">
-                      {genre.count}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
+        {/* Genres scroll supprimé */}
 
         {/* ═══════════ LIVE AUCTIONS ═══════════ */}
         <section className="px-4 pb-24">
