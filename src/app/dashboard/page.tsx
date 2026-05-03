@@ -176,10 +176,10 @@ function ArtistDashboard({ session }: { session: any }) {
 
   const tabs: { id: ArtistTab; label: string; icon: any }[] = [
     { id: 'overview', label: "Vue d'ensemble", icon: BarChart3 },
-    { id: 'my-auctions', label: 'Mes Encheres', icon: Gavel },
+    { id: 'my-auctions', label: 'Mes Enchères', icon: Gavel },
     { id: 'purchases', label: 'Mes Achats', icon: ShoppingBag },
     { id: 'badges', label: 'Badges', icon: Award },
-    { id: 'settings', label: 'Parametres', icon: Settings },
+    { id: 'settings', label: 'Paramètres', icon: Settings },
   ]
 
   const aStats = auctionData?.stats
@@ -187,7 +187,7 @@ function ArtistDashboard({ session }: { session: any }) {
 
   const statCards = [
     {
-      label: 'Encheres participees',
+      label: 'Enchères participées',
       value: String(aStats?.total || 0),
       sub: `${aStats?.active || 0} en cours`,
       icon: Gavel,
@@ -195,17 +195,17 @@ function ArtistDashboard({ session }: { session: any }) {
       tab: 'my-auctions' as ArtistTab,
     },
     {
-      label: 'Encheres gagnees',
+      label: 'Enchères gagnées',
       value: String(aStats?.won || 0),
       sub: aStats?.total
-        ? `${Math.round(((aStats?.won || 0) / aStats.total) * 100)}% de reussite`
+        ? `${Math.round(((aStats?.won || 0) / aStats.total) * 100)}% de réussite`
         : '0%',
       icon: Trophy,
       color: '#2ed573',
       tab: 'my-auctions' as ArtistTab,
     },
     {
-      label: 'Beats achetes',
+      label: 'Beats achetés',
       value: String(pStats?.totalPurchases || 0),
       sub: `${pStats?.pendingCount || 0} en attente`,
       icon: ShoppingBag,
@@ -213,7 +213,7 @@ function ArtistDashboard({ session }: { session: any }) {
       tab: 'purchases' as ArtistTab,
     },
     {
-      label: 'Total depense',
+      label: 'Total dépensé',
       value: `${(pStats?.totalSpent || 0).toLocaleString('fr-FR')}\u20AC`,
       sub: 'sur la plateforme',
       icon: DollarSign,
@@ -248,7 +248,7 @@ function ArtistDashboard({ session }: { session: any }) {
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-black"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
           >
-            <Gavel size={16} /> Explorer les encheres
+            <Gavel size={16} /> Explorer les enchères
           </Link>
         </div>
 
@@ -261,7 +261,7 @@ function ArtistDashboard({ session }: { session: any }) {
                 {aStats!.pendingPayment} paiement{aStats!.pendingPayment > 1 ? 's' : ''} en attente
               </p>
               <p className="text-xs text-amber-400/70">
-                Tu as gagne des encheres ! Finalise le paiement pour recevoir tes beats.
+                Tu as gagné des enchères ! Finalise le paiement pour recevoir tes beats.
               </p>
             </div>
             <button
@@ -320,7 +320,7 @@ function ArtistDashboard({ session }: { session: any }) {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <h2 className="text-lg font-bold text-white">Mes encheres en cours</h2>
+                  <h2 className="text-lg font-bold text-white">Mes enchères en cours</h2>
                 </div>
                 <button
                   onClick={() => setActiveTab('my-auctions')}
@@ -333,9 +333,9 @@ function ArtistDashboard({ session }: { session: any }) {
               {(auctionData?.active?.length || 0) === 0 ? (
                 <div className="text-center py-8">
                   <Gavel size={36} className="mx-auto mb-3 text-gray-600" />
-                  <p className="text-gray-400 text-sm font-bold">Aucune enchere active</p>
+                  <p className="text-gray-400 text-sm font-bold">Aucune enchère active</p>
                   <p className="text-gray-600 text-xs mt-1">
-                    Decouvre les beats disponibles sur le marketplace
+                    Découvre les beats disponibles sur le marketplace
                   </p>
                 </div>
               ) : (
@@ -366,7 +366,7 @@ function ArtistDashboard({ session }: { session: any }) {
                           {auction.isLeader ? (
                             <span className="text-[10px] font-bold text-[#2ed573]">Leader</span>
                           ) : (
-                            <span className="text-[10px] font-bold text-[#e11d48]">Depasse</span>
+                            <span className="text-[10px] font-bold text-[#e11d48]">Dépassé</span>
                           )}
                           <span className="text-xs text-gray-500 flex items-center gap-1">
                             <Clock size={10} />{' '}
@@ -423,8 +423,8 @@ function ArtistDashboard({ session }: { session: any }) {
                 <Headphones size={48} className="mx-auto mb-4 text-gray-600" />
                 <h3 className="text-lg font-bold text-white mb-2">Bienvenue sur 318 LEGAACY !</h3>
                 <p className="text-sm text-gray-400 mb-6 max-w-md mx-auto">
-                  Decouvre les meilleurs beats de nos producteurs. Encheris sur tes favoris ou
-                  achete directement dans les Nouveautes.
+                  Découvre les meilleurs beats de nos producteurs. Enchéris sur tes favoris ou
+                  achète directement dans les Nouveautés.
                 </p>
                 <div className="flex gap-3 justify-center">
                   <Link
@@ -441,7 +441,7 @@ function ArtistDashboard({ session }: { session: any }) {
                     className="px-6 py-3 rounded-xl font-bold text-sm text-gray-300 border border-[#1e1e2e] hover:border-[#e11d48] transition"
                   >
                     <span className="flex items-center gap-2">
-                      <ShoppingBag size={16} /> Nouveautes
+                      <ShoppingBag size={16} /> Nouveautés
                     </span>
                   </Link>
                 </div>
@@ -497,7 +497,7 @@ function ArtistAuctionsTab({
     },
     {
       id: 'won' as const,
-      label: 'Gagnees',
+      label: 'Gagnées',
       count: data?.won?.length || 0,
       color: 'text-[#2ed573]',
     },
@@ -541,7 +541,7 @@ function ArtistAuctionsTab({
         {(items?.length || 0) === 0 ? (
           <div className="text-center py-10">
             <Gavel size={40} className="mx-auto mb-3 text-gray-600" />
-            <p className="text-gray-400 text-sm font-bold">Aucune enchere dans cette categorie</p>
+            <p className="text-gray-400 text-sm font-bold">Aucune enchère dans cette catégorie</p>
             <Link
               href="/marketplace"
               className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-xl font-bold text-sm text-black"
@@ -591,7 +591,7 @@ function ArtistAuctionsTab({
                       {auction.isLeader ? (
                         <span className="text-[10px] font-bold text-[#2ed573]">Leader</span>
                       ) : (
-                        <span className="text-[10px] font-bold text-[#e11d48]">Depasse</span>
+                        <span className="text-[10px] font-bold text-[#e11d48]">Dépassé</span>
                       )}
                     </div>
                   )}
@@ -599,7 +599,7 @@ function ArtistAuctionsTab({
                     <span className="text-[10px] font-bold text-amber-400">Paiement requis</span>
                   )}
                   {subTab === 'won' && (
-                    <span className="text-[10px] font-bold text-[#2ed573]">Gagne</span>
+                    <span className="text-[10px] font-bold text-[#2ed573]">Gagné</span>
                   )}
                   {subTab === 'lost' && (
                     <span className="text-[10px] font-bold text-gray-500">
@@ -629,7 +629,7 @@ function ArtistPurchasesTab({
   const LICENSE_RIGHTS: Record<string, string> = {
     BASIC: 'MP3 - 5000 streams - Non-commercial',
     PREMIUM: 'WAV + MP3 - 50K streams - Commercial',
-    EXCLUSIVE: 'WAV + Stems - Illimite - Droits complets',
+    EXCLUSIVE: 'WAV + Stems - Illimité - Droits complets',
   }
 
   return (
@@ -643,7 +643,7 @@ function ArtistPurchasesTab({
           </div>
         </div>
         <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
-          <div className="text-xs text-gray-500 mb-1">Total depense</div>
+          <div className="text-xs text-gray-500 mb-1">Total dépensé</div>
           <div className="text-2xl font-extrabold text-[#e11d48]">
             {(data?.stats?.totalSpent || 0).toLocaleString('fr-FR')}&euro;
           </div>
@@ -681,7 +681,7 @@ function ArtistPurchasesTab({
 
       {/* Completed Purchases */}
       <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
-        <h2 className="text-lg font-bold text-white mb-5">Mes beats achetes</h2>
+        <h2 className="text-lg font-bold text-white mb-5">Mes beats achetés</h2>
         {(data?.purchases?.length || 0) === 0 ? (
           <div className="text-center py-10">
             <ShoppingBag size={40} className="mx-auto mb-3 text-gray-600" />
@@ -698,7 +698,7 @@ function ArtistPurchasesTab({
                 href="/nouveautes"
                 className="px-5 py-2.5 rounded-xl font-bold text-sm text-gray-400 border border-[#1e1e2e] hover:text-white transition"
               >
-                Nouveautes
+                Nouveautés
               </Link>
             </div>
           </div>
@@ -824,7 +824,7 @@ function ArtistSettingsTab({ userName }: { userName: string }) {
           <div className="flex-1">
             <h3 className="text-base font-bold text-white mb-1">Tu fais de la musique ?</h3>
             <p className="text-xs text-gray-400">
-              Deviens producteur sur 318 LEGAACY et vends tes beats aux encheres ou en direct.
+              Deviens producteur sur 318 LEGAACY et vends tes beats aux enchères ou en direct.
             </p>
           </div>
           <Link
@@ -874,7 +874,7 @@ function ProducerDashboard({ session }: { session: any }) {
       const json = await res.json()
       setData(json)
     } catch {
-      setError('Impossible de charger les donnees')
+      setError('Impossible de charger les données')
     } finally {
       setLoading(false)
     }
@@ -904,7 +904,7 @@ function ProducerDashboard({ session }: { session: any }) {
     { id: 'auctions', label: 'Mes Ventes', icon: DollarSign },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     { id: 'badges', label: 'Badges', icon: Award },
-    { id: 'settings', label: 'Parametres', icon: Settings },
+    { id: 'settings', label: 'Paramètres', icon: Settings },
   ]
 
   const userName = session?.user?.name || 'Producteur'
@@ -931,7 +931,7 @@ function ProducerDashboard({ session }: { session: any }) {
       tab: 'analytics' as ProducerTab,
     },
     {
-      label: 'Beats uploades',
+      label: 'Beats uploadés',
       value: String(stats?.totalBeats || 0),
       sub: 'sur la plateforme',
       icon: Music,
@@ -939,7 +939,7 @@ function ProducerDashboard({ session }: { session: any }) {
       tab: 'beats' as ProducerTab,
     },
     {
-      label: 'Encheres actives',
+      label: 'Enchères actives',
       value: String(stats?.activeAuctionsCount || 0),
       sub: 'en cours',
       icon: Gavel,
@@ -947,7 +947,7 @@ function ProducerDashboard({ session }: { session: any }) {
       tab: 'auctions' as ProducerTab,
     },
     {
-      label: 'Total encheres recues',
+      label: 'Total enchères reçues',
       value: String(stats?.totalBidsReceived || 0),
       sub: 'sur tes beats',
       icon: TrendingUp,
@@ -1024,7 +1024,7 @@ function ProducerDashboard({ session }: { session: any }) {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <h2 className="text-lg font-bold text-white">Encheres en cours</h2>
+                  <h2 className="text-lg font-bold text-white">Enchères en cours</h2>
                 </div>
                 <button
                   onClick={() => setActiveTab('auctions')}
@@ -1036,9 +1036,9 @@ function ProducerDashboard({ session }: { session: any }) {
               {(data?.activeAuctions?.length || 0) === 0 ? (
                 <div className="text-center py-8">
                   <Gavel size={36} className="mx-auto mb-3 text-gray-600" />
-                  <p className="text-gray-400 text-sm font-bold">Aucune enchere active</p>
+                  <p className="text-gray-400 text-sm font-bold">Aucune enchère active</p>
                   <p className="text-gray-600 text-xs mt-1">
-                    Cree une enchere depuis l&apos;onglet Mes Encheres
+                    Crée une enchère depuis l&apos;onglet Mes Enchères
                   </p>
                 </div>
               ) : (
@@ -1056,7 +1056,7 @@ function ProducerDashboard({ session }: { session: any }) {
                         <div>
                           <div className="text-sm font-bold text-white">{auction.beat.title}</div>
                           <div className="text-xs text-gray-500">
-                            {auction._count.bids} enchere{auction._count.bids > 1 ? 's' : ''}{' '}
+                            {auction._count.bids} enchère{auction._count.bids > 1 ? 's' : ''}{' '}
                             &middot; {auction.beat.genre}
                           </div>
                         </div>
@@ -1079,7 +1079,7 @@ function ProducerDashboard({ session }: { session: any }) {
             {/* Recent Activity */}
             {(data?.recentBids?.length || 0) > 0 && (
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
-                <h2 className="text-lg font-bold text-white mb-5">Activite recente</h2>
+                <h2 className="text-lg font-bold text-white mb-5">Activité récente</h2>
                 <div className="space-y-3">
                   {data!.recentBids.map((bid: any) => (
                     <div
@@ -1094,7 +1094,7 @@ function ProducerDashboard({ session }: { session: any }) {
                           <span className="text-sm text-white font-semibold">
                             {bid.user.displayName || bid.user.name}
                           </span>
-                          <span className="text-sm text-gray-500"> a encherit sur </span>
+                          <span className="text-sm text-gray-500"> a enchéri sur</span>
                           <Link
                             href={`/auction/${bid.auction.id}`}
                             className="text-sm text-[#e11d48] font-semibold hover:underline"
@@ -1145,7 +1145,7 @@ function ProducerDashboard({ session }: { session: any }) {
                 </div>
               </div>
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5">
-                <div className="text-xs text-gray-500 mb-1">Total verse</div>
+                <div className="text-xs text-gray-500 mb-1">Total versé</div>
                 <div className="text-2xl font-extrabold text-[#2ed573]">
                   {(stats?.paidRevenue || 0).toLocaleString('fr-FR')}&euro;
                 </div>
@@ -1162,7 +1162,7 @@ function ProducerDashboard({ session }: { session: any }) {
             {(data?.activeAuctions?.length || 0) > 0 && (
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
                 <h2 className="text-lg font-bold text-white mb-5">
-                  Encheres actives ({data!.activeAuctions.length})
+                  Enchères actives ({data!.activeAuctions.length})
                 </h2>
                 <div className="space-y-3">
                   {data!.activeAuctions.map((auction: any) => (
@@ -1174,8 +1174,8 @@ function ProducerDashboard({ session }: { session: any }) {
                       <div>
                         <div className="text-sm font-bold text-white">{auction.beat.title}</div>
                         <div className="text-xs text-gray-500">
-                          {auction._count.bids} enchere{auction._count.bids > 1 ? 's' : ''} &middot;
-                          Depart: {auction.startPrice}&euro; &middot; {auction.licenseType}
+                          {auction._count.bids} enchère{auction._count.bids > 1 ? 's' : ''} &middot;
+                          Départ: {auction.startPrice}&euro; &middot; {auction.licenseType}
                         </div>
                       </div>
                       <div className="text-right">
@@ -1195,7 +1195,7 @@ function ProducerDashboard({ session }: { session: any }) {
             {(data?.completedAuctions?.length || 0) > 0 && (
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
                 <h2 className="text-lg font-bold text-white mb-5">
-                  Ventes terminees ({data!.completedAuctions.length})
+                  Ventes terminées ({data!.completedAuctions.length})
                 </h2>
                 <div className="space-y-3">
                   {data!.completedAuctions.map((auction: any) => (
@@ -1217,7 +1217,7 @@ function ProducerDashboard({ session }: { session: any }) {
                         </div>
                         <div className="text-[10px] text-gray-600">
                           Payout : {auction.producerPayout}&euro;
-                          {auction.paidAt ? ' &middot; Paye' : ' &middot; En attente'}
+                          {auction.paidAt ? ' &middot; Payé' : ' &middot; En attente'}
                         </div>
                       </div>
                     </div>
@@ -1239,11 +1239,11 @@ function ProducerDashboard({ session }: { session: any }) {
                       <div>
                         <div className="text-sm font-bold text-white">{auction.beat.title}</div>
                         <div className="text-xs text-gray-500">
-                          Depart : {auction.startPrice}&euro; &middot; 0 enchere
+                          Départ : {auction.startPrice}&euro; &middot; 0 enchère
                         </div>
                       </div>
                       <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#ffffff10] text-gray-500">
-                        Expire
+                        Expiré
                       </span>
                     </div>
                   ))}
@@ -1323,7 +1323,7 @@ function ProducerBeatsTab({
             <Music size={48} className="mx-auto mb-4 text-gray-600" />
             <h3 className="text-lg font-bold text-white mb-2">Tes beats apparaitront ici</h3>
             <p className="text-sm text-gray-400 mb-5">
-              Upload ton premier beat pour commencer a le vendre aux encheres
+              Upload ton premier beat pour commencer à le vendre aux enchères
             </p>
             <Link
               href="/producers/upload"
@@ -1450,8 +1450,8 @@ function ProducerBeatsTab({
               &laquo; {deleteTarget.title} &raquo;
             </p>
             <p className="text-xs text-gray-500 text-center mb-6">
-              Cette action est irreversible. Le beat, sa cover et tous les fichiers audio seront
-              definitivement supprimes.
+              Cette action est irréversible. Le beat, sa cover et tous les fichiers audio seront
+              définitivement supprimés.
             </p>
 
             {deleteError && (
@@ -1539,14 +1539,14 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
           <div>
             <h2 className="text-lg font-bold text-white">Paiements Stripe</h2>
             <p className="text-xs text-gray-500">
-              Recois 85% de chaque vente directement sur ton compte
+              Reçois 85% de chaque vente directement sur ton compte
             </p>
           </div>
         </div>
 
         {stripeStatus === 'loading' ? (
           <div className="flex items-center gap-2 text-gray-400 text-sm">
-            <Loader2 size={16} className="animate-spin" /> Verification...
+            <Loader2 size={16} className="animate-spin" /> Vérification...
           </div>
         ) : stripeStatus === 'active' ? (
           <div className="space-y-3">
@@ -1555,7 +1555,7 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
               <span className="text-sm font-semibold text-[#2ed573]">Compte Stripe actif</span>
             </div>
             <p className="text-xs text-gray-500">
-              Ton compte est configure. Les paiements sont transferes automatiquement chaque
+              Ton compte est configuré. Les paiements sont transférés automatiquement chaque
               semaine.
             </p>
             {stripeDashboard && (
@@ -1565,7 +1565,7 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#635BFF15] text-[#635BFF] text-xs font-semibold hover:bg-[#635BFF25] transition"
               >
-                <ExternalLink size={14} /> Acceder au dashboard Stripe
+                <ExternalLink size={14} /> Accéder au dashboard Stripe
               </a>
             )}
           </div>
@@ -1576,7 +1576,7 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
               <span className="text-sm font-semibold text-yellow-400">Configuration en cours</span>
             </div>
             <p className="text-xs text-gray-500">
-              Tu dois completer ton inscription Stripe pour recevoir des paiements.
+              Tu dois compléter ton inscription Stripe pour recevoir des paiements.
             </p>
             <button
               onClick={connectStripe}
@@ -1590,7 +1590,7 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
                 </>
               ) : (
                 <>
-                  <CreditCard size={14} /> Completer l&apos;inscription Stripe
+                  <CreditCard size={14} /> Compléter l&apos;inscription Stripe
                 </>
               )}
             </button>
@@ -1598,7 +1598,7 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
         ) : (
           <div className="space-y-3">
             <p className="text-sm text-gray-400">
-              Connecte ton compte Stripe pour commencer a recevoir tes paiements quand tes beats
+              Connecte ton compte Stripe pour commencer à recevoir tes paiements quand tes beats
               sont vendus.
             </p>
             <button
@@ -1618,7 +1618,7 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
               )}
             </button>
             <p className="text-[11px] text-gray-600">
-              Stripe est notre partenaire de paiement securise. Tu seras redirige vers Stripe pour
+              Stripe est notre partenaire de paiement sécurisé. Tu seras redirigé vers Stripe pour
               configurer ton compte.
             </p>
           </div>
@@ -1687,7 +1687,7 @@ function DeleteAccountSection() {
       }
       await signOut({ callbackUrl: '/' })
     } catch {
-      setError('Erreur serveur, reessayez plus tard')
+      setError('Erreur serveur, réessayez plus tard')
       setDeleting(false)
     }
   }
@@ -1701,11 +1701,11 @@ function DeleteAccountSection() {
           </div>
           <div>
             <h2 className="text-lg font-bold text-white">Supprimer mon compte</h2>
-            <p className="text-xs text-gray-500">Cette action est irreversible</p>
+            <p className="text-xs text-gray-500">Cette action est irréversible</p>
           </div>
         </div>
         <p className="text-sm text-gray-400 mb-4">
-          Votre compte sera desactive et vos donnees personnelles anonymisees. Vos encheres et transactions seront conservees pour l&apos;historique.
+          Votre compte sera désactivé et vos données personnelles anonymisées. Vos enchères et transactions seront conservées pour l&apos;historique.
         </p>
         <button
           onClick={() => setShowModal(true)}
@@ -1724,16 +1724,16 @@ function DeleteAccountSection() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">Confirmer la suppression</h3>
-                <p className="text-xs text-gray-400">Cette action ne peut pas etre annulee</p>
+                <p className="text-xs text-gray-400">Cette action ne peut pas être annulée</p>
               </div>
             </div>
 
             <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-4">
               <p className="text-sm text-gray-300 mb-2">En supprimant votre compte :</p>
               <ul className="text-xs text-gray-400 space-y-1">
-                <li>• Vos donnees personnelles seront anonymisees</li>
-                <li>• Vos sessions et connexions OAuth seront supprimees</li>
-                <li>• Vos likes, follows et playlists seront supprimes</li>
+                <li>• Vos données personnelles seront anonymisées</li>
+                <li>• Vos sessions et connexions OAuth seront supprimées</li>
+                <li>• Vos likes, follows et playlists seront supprimés</li>
                 <li>• Vos beats et transactions resteront pour l&apos;historique</li>
               </ul>
             </div>

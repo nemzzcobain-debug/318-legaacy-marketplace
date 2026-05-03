@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     // Vérification de l'authentification
     const session = await getServerSession(authOptions)
     if (!session) {
-      return NextResponse.json({ error: 'Non connecte' }, { status: 401 })
+      return NextResponse.json({ error: 'Non connecté' }, { status: 401 })
     }
 
     // Récupération et vérification du rôle utilisateur
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     if (user.role === 'PRODUCER' && user.producerStatus !== 'APPROVED') {
       return NextResponse.json(
-        { error: 'Votre compte producteur doit etre approuve' },
+        { error: 'Votre compte producteur doit être approuvé' },
         { status: 403 }
       )
     }
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     // Validate BPM range (40-300)
     const bpmNum = typeof bpm === 'number' ? bpm : parseInt(String(bpm))
     if (isNaN(bpmNum) || bpmNum < 40 || bpmNum > 300) {
-      return NextResponse.json({ error: 'Le BPM doit etre entre 40 et 300' }, { status: 400 })
+      return NextResponse.json({ error: 'Le BPM doit être entre 40 et 300' }, { status: 400 })
     }
 
     // Calcul approximatif de la durée basé sur la taille du fichier
@@ -124,10 +124,10 @@ export async function POST(req: NextRequest) {
     if (enableAuction && startPrice) {
       // SECURITY FIX M6: Valider que les prix sont positifs
       if (typeof startPrice !== 'number' || startPrice < 1) {
-        return NextResponse.json({ error: 'Le prix de depart doit etre >= 1€' }, { status: 400 })
+        return NextResponse.json({ error: 'Le prix de départ doit être >= 1€' }, { status: 400 })
       }
       if (buyNowPrice && (typeof buyNowPrice !== 'number' || buyNowPrice <= startPrice)) {
-        return NextResponse.json({ error: 'Le prix buy-now doit etre superieur au prix de depart' }, { status: 400 })
+        return NextResponse.json({ error: 'Le prix buy-now doit être supérieur au prix de départ' }, { status: 400 })
       }
       const now = new Date()
       const durationHours = auctionDuration || 24
@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
         success: true,
         beat,
         auction,
-        message: enableAuction ? 'Beat uploade et enchere lancee !' : 'Beat uploade avec succes!',
+        message: enableAuction ? 'Beat uploadé et enchère lancée !' : 'Beat uploadé avec succès!',
       },
       { status: 201 }
     )

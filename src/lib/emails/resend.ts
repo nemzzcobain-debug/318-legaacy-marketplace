@@ -12,7 +12,7 @@ const PLATFORM_NAME = '318 LEGAACY Marketplace'
 const PLATFORM_URL = process.env.NEXTAUTH_URL
 
 /**
- * Genere l'URL de desabonnement pour un utilisateur
+ * Génère l'URL de désabonnement pour un utilisateur
  */
 export function getUnsubscribeUrl(unsubscribeToken: string | null | undefined): string | undefined {
   if (!unsubscribeToken || !PLATFORM_URL) return undefined
@@ -20,7 +20,7 @@ export function getUnsubscribeUrl(unsubscribeToken: string | null | undefined): 
 }
 
 /**
- * Genere un token d'unsubscribe unique
+ * Génère un token d'unsubscribe unique
  */
 export function generateUnsubscribeToken(): string {
   return randomBytes(32).toString('hex')
@@ -37,7 +37,7 @@ if (!PLATFORM_URL && process.env.NODE_ENV === 'production') {
 function emailLayout(content: string, unsubscribeUrl?: string): string {
   const unsubscribeLink = unsubscribeUrl
     ? `<p style="color:#444;font-size:10px;margin:8px 0 0;">
-        <a href="${unsubscribeUrl}" style="color:#666;text-decoration:underline;">Se desabonner des emails</a>
+        <a href="${unsubscribeUrl}" style="color:#666;text-decoration:underline;">Se désabonner des emails</a>
       </p>`
     : ''
 
@@ -66,7 +66,7 @@ function emailLayout(content: string, unsubscribeUrl?: string): string {
     <!-- Footer -->
     <div style="border-top:1px solid #1e1e2e;padding:24px 0;text-align:center;">
       <p style="color:#555;font-size:11px;margin:0;">
-        ${PLATFORM_NAME} — Premiere plateforme d'encheres de beats en France
+        ${PLATFORM_NAME} — Première plateforme d'enchères de beats en France
       </p>
       <p style="color:#444;font-size:10px;margin:8px 0 0;">
         <a href="${PLATFORM_URL}" style="color:#e11d48;text-decoration:none;">318marketplace.com</a>
@@ -98,8 +98,8 @@ export async function sendAuctionWonEmail(params: {
   const { to, winnerName, beatTitle, producerName, finalPrice, license, auctionId } = params
 
   const html = emailLayout(`
-    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Felicitations ${winnerName} ! 🏆</h1>
-    <p style="color:#999;font-size:14px;margin:0 0 24px;">Tu as remporte l'enchere sur <strong style="color:#fff;">${beatTitle}</strong></p>
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Félicitations ${winnerName} ! 🏆</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">Tu as remporté l'enchère sur <strong style="color:#fff;">${beatTitle}</strong></p>
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
       <table style="width:100%;border-collapse:collapse;">
@@ -122,12 +122,12 @@ export async function sendAuctionWonEmail(params: {
       </table>
     </div>
 
-    <p style="color:#999;font-size:13px;margin:0 0 8px;">Finalise ton achat pour telecharger les fichiers :</p>
+    <p style="color:#999;font-size:13px;margin:0 0 8px;">Finalise ton achat pour télécharger les fichiers :</p>
     ${button('Payer maintenant', `${PLATFORM_URL}/auction/${auctionId}`)}
-    <p style="color:#555;font-size:11px;text-align:center;margin:0;">Le paiement est securise via Stripe</p>
+    <p style="color:#555;font-size:11px;text-align:center;margin:0;">Le paiement est sécurisé via Stripe</p>
   `)
 
-  return sendEmail(to, `🏆 Tu as gagne l'enchere sur "${beatTitle}" !`, html)
+  return sendEmail(to, `🏆 Tu as gagné l'enchère sur "${beatTitle}" !`, html)
 }
 
 export async function sendPaymentReceivedEmail(params: {
@@ -152,8 +152,8 @@ export async function sendPaymentReceivedEmail(params: {
   } = params
 
   const html = emailLayout(`
-    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Vente realisee ! 💰</h1>
-    <p style="color:#999;font-size:14px;margin:0 0 24px;">Ton beat <strong style="color:#fff;">${beatTitle}</strong> a ete vendu</p>
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Vente réalisée ! 💰</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">Ton beat <strong style="color:#fff;">${beatTitle}</strong> a été vendu</p>
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
       <table style="width:100%;border-collapse:collapse;">
@@ -185,7 +185,7 @@ export async function sendPaymentReceivedEmail(params: {
     </div>
 
     ${button('Voir mon dashboard', `${PLATFORM_URL}/dashboard`)}
-    <p style="color:#555;font-size:11px;text-align:center;margin:0;">Le virement sera effectue sur ton compte Stripe sous 7 jours</p>
+    <p style="color:#555;font-size:11px;text-align:center;margin:0;">Le virement sera effectué sur ton compte Stripe sous 7 jours</p>
   `)
 
   return sendEmail(to, `💰 Vente de "${beatTitle}" — ${payout} EUR`, html)
@@ -203,7 +203,7 @@ export async function sendNewFollowerEmail(params: {
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouveau follower ! 👥</h1>
     <p style="color:#999;font-size:14px;margin:0 0 24px;">
-      <strong style="color:#fff;">${followerName}</strong> te suit desormais sur 318 LEGAACY
+      <strong style="color:#fff;">${followerName}</strong> te suit désormais sur 318 LEGAACY
     </p>
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
@@ -211,7 +211,7 @@ export async function sendNewFollowerEmail(params: {
       <div style="font-size:12px;color:#666;margin-top:4px;">followers au total</div>
     </div>
 
-    <p style="color:#999;font-size:13px;margin:0 0 8px;text-align:center;">Continue a publier des beats pour developper ta communaute</p>
+    <p style="color:#999;font-size:13px;margin:0 0 8px;text-align:center;">Continue a publier des beats pour développer ta communauté</p>
     ${button('Voir mon profil', `${PLATFORM_URL}/dashboard`)}
   `)
 
@@ -229,29 +229,29 @@ export async function sendOutbidEmail(params: {
   const { to, userName: _userName, beatTitle, yourBid, newBid, auctionId } = params
 
   const html = emailLayout(`
-    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Tu as ete surencherit ! ⚡</h1>
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Tu as été surenchéri ! ⚡</h1>
     <p style="color:#999;font-size:14px;margin:0 0 24px;">
-      Quelqu'un a place une enchere plus elevee sur <strong style="color:#fff;">${beatTitle}</strong>
+      Quelqu'un a placé une enchère plus élevée sur <strong style="color:#fff;">${beatTitle}</strong>
     </p>
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
       <table style="width:100%;border-collapse:collapse;">
         <tr>
-          <td style="color:#666;font-size:12px;padding:6px 0;">Ton enchere</td>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Ton enchère</td>
           <td style="color:#e11d48;font-size:14px;padding:6px 0;text-align:right;text-decoration:line-through;">${yourBid} EUR</td>
         </tr>
         <tr>
-          <td style="color:#666;font-size:12px;padding:6px 0;">Enchere actuelle</td>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Enchère actuelle</td>
           <td style="color:#2ed573;font-size:18px;padding:6px 0;text-align:right;font-weight:800;">${newBid} EUR</td>
         </tr>
       </table>
     </div>
 
     <p style="color:#999;font-size:13px;margin:0 0 8px;text-align:center;">Ne laisse pas passer ce beat !</p>
-    ${button('Surencherir maintenant', `${PLATFORM_URL}/auction/${auctionId}`)}
+    ${button('Surenchérir maintenant', `${PLATFORM_URL}/auction/${auctionId}`)}
   `)
 
-  return sendEmail(to, `⚡ Surenchere sur "${beatTitle}" — Ton offre a ete depassee`, html)
+  return sendEmail(to, `⚡ Surenchère sur "${beatTitle}" — Ton offre a été dépassée`, html)
 }
 
 export async function sendAuctionEndingSoonEmail(params: {
@@ -265,17 +265,17 @@ export async function sendAuctionEndingSoonEmail(params: {
   const { to, userName: _userName, beatTitle, currentBid, auctionId, minutesLeft } = params
 
   const html = emailLayout(`
-    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Enchere bientot terminee ! ⏰</h1>
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Enchère bientôt terminée ! ⏰</h1>
     <p style="color:#999;font-size:14px;margin:0 0 24px;">
-      L'enchere sur <strong style="color:#fff;">${beatTitle}</strong> se termine dans <strong style="color:#e11d48;">${minutesLeft} minutes</strong>
+      L'enchère sur <strong style="color:#fff;">${beatTitle}</strong> se termine dans <strong style="color:#e11d48;">${minutesLeft} minutes</strong>
     </p>
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
-      <div style="font-size:12px;color:#666;margin-bottom:4px;">Enchere actuelle</div>
+      <div style="font-size:12px;color:#666;margin-bottom:4px;">Enchère actuelle</div>
       <div style="font-size:28px;font-weight:900;color:#e11d48;">${currentBid} EUR</div>
     </div>
 
-    ${button("Voir l'enchere", `${PLATFORM_URL}/auction/${auctionId}`)}
+    ${button("Voir l'enchère", `${PLATFORM_URL}/auction/${auctionId}`)}
   `)
 
   return sendEmail(to, `⏰ "${beatTitle}" — Plus que ${minutesLeft} min !`, html)
@@ -287,13 +287,13 @@ export async function sendWelcomeEmail(params: { to: string; name: string }) {
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Bienvenue ${name} ! 🎵</h1>
     <p style="color:#999;font-size:14px;margin:0 0 24px;">
-      Ton compte sur 318 LEGAACY Marketplace est cree. Tu es pret a decouvrir les meilleurs beats aux encheres.
+      Ton compte sur 318 LEGAACY Marketplace est créé. Tu es prêt a découvrir les meilleurs beats aux enchères.
     </p>
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
       <h3 style="color:#fff;font-size:14px;margin:0 0 12px;">Par ou commencer ?</h3>
-      <p style="color:#999;font-size:12px;margin:0 0 8px;">🎧 <strong style="color:#fff;">Explore</strong> — Decouvre des beats par genre, BPM et mood</p>
-      <p style="color:#999;font-size:12px;margin:0 0 8px;">🔨 <strong style="color:#fff;">Encheris</strong> — Place tes encheres sur tes beats preferes</p>
+      <p style="color:#999;font-size:12px;margin:0 0 8px;">🎧 <strong style="color:#fff;">Explore</strong> — Découvre des beats par genre, BPM et mood</p>
+      <p style="color:#999;font-size:12px;margin:0 0 8px;">🔨 <strong style="color:#fff;">Enchéris</strong> — Place tes enchères sur tes beats preferes</p>
       <p style="color:#999;font-size:12px;margin:0;">🎤 <strong style="color:#fff;">Produis</strong> — Deviens producteur et vends tes beats</p>
     </div>
 
@@ -316,7 +316,7 @@ export async function sendVerificationEmail(params: { to: string; name: string; 
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
       <p style="color:#999;font-size:13px;margin:0;">
-        Si tu n'as pas cree ce compte, ignores cet email.
+        Si tu n'as pas créé ce compte, ignores cet email.
       </p>
     </div>
 
@@ -333,20 +333,20 @@ export async function sendPasswordResetEmail(params: { to: string; name: string;
   const resetUrl = `${PLATFORM_URL}/reset-password?token=${token}`
 
   const html = emailLayout(`
-    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Reinitialise ton mot de passe 🔐</h1>
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Réinitialise ton mot de passe 🔐</h1>
     <p style="color:#999;font-size:14px;margin:0 0 24px;">
-      Tu as demande a reinitialiser ton mot de passe. Clique sur le bouton ci-dessous pour continuer.
+      Tu as demandé a réinitialiser ton mot de passe. Clique sur le bouton ci-dessous pour continuer.
     </p>
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
       <p style="color:#999;font-size:12px;margin:0 0 12px;">Ce lien expire dans <strong style="color:#e11d48;">1 heure</strong>.</p>
-      <p style="color:#666;font-size:11px;margin:0;">Si tu n'as pas demande une reinitialisation, ignore ce message.</p>
+      <p style="color:#666;font-size:11px;margin:0;">Si tu n'as pas demandé une réinitialisation, ignore ce message.</p>
     </div>
 
-    ${button('Reinitialiser mon mot de passe', resetUrl)}
+    ${button('Réinitialiser mon mot de passe', resetUrl)}
   `)
 
-  return sendEmail(to, `🔐 Reinitialise ton mot de passe — 318 LEGAACY`, html)
+  return sendEmail(to, `🔐 Réinitialise ton mot de passe — 318 LEGAACY`, html)
 }
 
 // ─── Producer Application Emails ───
@@ -489,7 +489,7 @@ export async function sendBeatUploadConfirmationEmail(params: {
 
   const auctionSection = hasAuction
     ? `<tr>
-        <td style="color:#666;font-size:12px;padding:6px 0;border-top:1px solid #1e1e2e;">Enchere</td>
+        <td style="color:#666;font-size:12px;padding:6px 0;border-top:1px solid #1e1e2e;">Enchère</td>
         <td style="color:#2ed573;font-size:12px;padding:6px 0;text-align:right;font-weight:600;border-top:1px solid #1e1e2e;">Active — ${auctionStartPrice} EUR (${auctionDuration || 24}h)</td>
       </tr>`
     : `<tr>
@@ -500,7 +500,7 @@ export async function sendBeatUploadConfirmationEmail(params: {
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Beat en ligne ! 🎶</h1>
     <p style="color:#999;font-size:14px;margin:0 0 24px;">
-      Bien joue <strong style="color:#fff;">${producerName}</strong>, ton beat a ete publie avec succes sur 318 LEGAACY !
+      Bien joué <strong style="color:#fff;">${producerName}</strong>, ton beat a été publié avec succès sur 318 LEGAACY !
     </p>
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
@@ -521,8 +521,8 @@ export async function sendBeatUploadConfirmationEmail(params: {
       </table>
     </div>
 
-    <p style="color:#999;font-size:13px;margin:0 0 4px;text-align:center;">Ton beat est maintenant visible par toute la communaute.</p>
-    <p style="color:#666;font-size:12px;margin:0 0 16px;text-align:center;">Partage-le pour maximiser ta visibilite !</p>
+    <p style="color:#999;font-size:13px;margin:0 0 4px;text-align:center;">Ton beat est maintenant visible par toute la communauté.</p>
+    <p style="color:#666;font-size:12px;margin:0 0 16px;text-align:center;">Partage-le pour maximiser ta visibilité !</p>
     ${button('Voir mon dashboard', `${PLATFORM_URL}/dashboard`)}
   `)
 
@@ -572,11 +572,11 @@ async function sendEmail(to: string, subject: string, html: string) {
     console.warn('[Email] Could not fetch unsubscribe token:', String(err))
   }
 
-  // Injecter le lien de desabonnement dans le footer si token present
+  // Injecter le lien de désabonnement dans le footer si token present
   let finalHtml = html
   if (unsubscribeToken) {
     const unsubUrl = `${PLATFORM_URL}/api/unsubscribe?token=${unsubscribeToken}`
-    const unsubLink = `<p style="color:#444;font-size:10px;margin:8px 0 0;text-align:center;"><a href="${unsubUrl}" style="color:#666;text-decoration:underline;">Se desabonner des emails</a></p>`
+    const unsubLink = `<p style="color:#444;font-size:10px;margin:8px 0 0;text-align:center;"><a href="${unsubUrl}" style="color:#666;text-decoration:underline;">Se désabonner des emails</a></p>`
     // Insert before closing </body> tag
     finalHtml = html.replace('</body>', `${unsubLink}</body>`)
   }

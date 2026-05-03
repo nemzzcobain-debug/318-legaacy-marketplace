@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)
@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
     const { producerId, status } = await req.json()
@@ -72,21 +72,21 @@ export async function PATCH(req: NextRequest) {
 
     const notifMessages: Record<string, { title: string; message: string; type: string; link?: string }> = {
       APPROVED: {
-        title: 'Compte approuve!',
+        title: 'Compte approuvé!',
         message:
-          'Votre compte producteur a ete approuve. Vous pouvez maintenant mettre vos beats aux encheres!',
+          'Votre compte producteur a été approuvé. Vous pouvez maintenant mettre vos beats aux enchères!',
         type: 'PRODUCER_APPROVED',
         link: `/producer/${producerId}`,
       },
       REJECTED: {
-        title: 'Compte refuse',
+        title: 'Compte refusé',
         message:
-          "Votre demande de compte producteur a ete refusee. Contactez-nous pour plus d'informations.",
+          "Votre demande de compte producteur a été refusée. Contactez-nous pour plus d'informations.",
         type: 'PRODUCER_REJECTED',
       },
       SUSPENDED: {
         title: 'Compte suspendu',
-        message: "Votre compte producteur a ete suspendu. Contactez-nous pour plus d'informations.",
+        message: "Votre compte producteur a été suspendu. Contactez-nous pour plus d'informations.",
         type: 'SYSTEM',
       },
     }
@@ -103,8 +103,8 @@ export async function PATCH(req: NextRequest) {
 
     // Notification de confirmation a l'admin
     const adminStatusLabels: Record<string, string> = {
-      APPROVED: 'approuve',
-      REJECTED: 'refuse',
+      APPROVED: 'approuvé',
+      REJECTED: 'refusé',
       SUSPENDED: 'suspendu',
       PENDING: 'remis en attente',
     }

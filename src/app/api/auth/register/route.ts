@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { message: 'Compte cree avec succes', user },
+      { message: 'Compte créé avec succès', user },
       { status: 201 }
     )
   } catch (error) {

@@ -921,7 +921,7 @@ function DeleteAccountSection() {
       }
       await signOut({ callbackUrl: '/' })
     } catch {
-      setError('Erreur serveur, reessayez plus tard')
+      setError('Erreur serveur, réessayez plus tard')
       setDeleting(false)
     }
   }
@@ -935,11 +935,11 @@ function DeleteAccountSection() {
           </div>
           <div>
             <h4 className="text-sm font-semibold text-white">Supprimer mon compte</h4>
-            <p className="text-[11px] text-gray-500">Action irreversible</p>
+            <p className="text-[11px] text-gray-500">Action irréversible</p>
           </div>
         </div>
         <p className="text-xs text-gray-400 mb-3">
-          Votre compte sera desactive et vos donnees personnelles anonymisees. Vos encheres et transactions restent pour l&apos;historique.
+          Votre compte sera désactivé et vos données personnelles anonymisées. Vos enchères et transactions restent pour l&apos;historique.
         </p>
         <button
           onClick={() => setShowModal(true)}
@@ -958,16 +958,16 @@ function DeleteAccountSection() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">Confirmer la suppression</h3>
-                <p className="text-xs text-gray-400">Cette action ne peut pas etre annulee</p>
+                <p className="text-xs text-gray-400">Cette action ne peut pas être annulée</p>
               </div>
             </div>
 
             <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-4">
               <p className="text-sm text-gray-300 mb-2">En supprimant votre compte :</p>
               <ul className="text-xs text-gray-400 space-y-1">
-                <li>• Vos donnees personnelles seront anonymisees</li>
-                <li>• Vos sessions et connexions OAuth seront supprimees</li>
-                <li>• Vos likes, follows et playlists seront supprimes</li>
+                <li>• Vos données personnelles seront anonymisées</li>
+                <li>• Vos sessions et connexions OAuth seront supprimées</li>
+                <li>• Vos likes, follows et playlists seront supprimés</li>
                 <li>• Vos beats et transactions resteront pour l&apos;historique</li>
               </ul>
             </div>

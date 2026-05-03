@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 /**
- * GET /api/unsubscribe?token=xxx — Desabonne l'utilisateur des emails
- * Le token est unique par utilisateur, genere automatiquement.
- * Desactive uniquement les notifications email (le compte reste actif).
+ * GET /api/unsubscribe?token=xxx — Désabonne l'utilisateur des emails
+ * Le token est unique par utilisateur, généré automatiquement.
+ * Désactive uniquement les notifications email (le compte reste actif).
  */
 export async function GET(req: NextRequest) {
   try {
@@ -25,13 +25,13 @@ export async function GET(req: NextRequest) {
     })
 
     if (!user) {
-      return new NextResponse(unsubscribePage('Lien invalide ou expire', false), {
+      return new NextResponse(unsubscribePage('Lien invalide ou expiré', false), {
         status: 404,
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       })
     }
 
-    // Desactiver toutes les notifications email
+    // Désactiver toutes les notifications email
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    return new NextResponse(unsubscribePage('Desabonnement confirme', true), {
+    return new NextResponse(unsubscribePage('Désabonnement confirmé', true), {
       status: 200,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
@@ -72,7 +72,7 @@ function unsubscribePage(message: string, success: boolean): string {
     </div>
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 12px;">${message}</h1>
     <p style="color:#888;font-size:14px;margin:0 0 24px;">
-      ${success ? 'Vous ne recevrez plus d\'emails de 318 LEGAACY Marketplace. Vous pouvez reactiver les notifications dans les parametres de votre profil.' : 'Ce lien de desabonnement n\'est pas valide. Connectez-vous a votre compte pour gerer vos preferences email.'}
+      ${success ? 'Vous ne recevrez plus d\'emails de 318 LEGAACY Marketplace. Vous pouvez réactiver les notifications dans les paramètres de votre profil.' : 'Ce lien de désabonnement n\'est pas valide. Connectez-vous à votre compte pour gérer vos préférences email.'}
     </p>
     <a href="${process.env.NEXTAUTH_URL || 'https://www.318marketplace.com'}" style="display:inline-block;background:linear-gradient(135deg,#e11d48,#ff0033);color:#000;font-weight:700;font-size:14px;padding:12px 32px;border-radius:12px;text-decoration:none;">
       Retour au site

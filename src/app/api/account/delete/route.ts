@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const userId = (session.user as any).id
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (user.deletedAt) {
-      return NextResponse.json({ error: 'Ce compte est deja supprime' }, { status: 400 })
+      return NextResponse.json({ error: 'Ce compte est déjà supprimé' }, { status: 400 })
     }
 
     // Un admin ne peut pas supprimer son propre compte
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     // Anonymiser le compte
     const anonymizedEmail = `deleted_${createHash('sha256').update(user.email).digest('hex').slice(0, 12)}@deleted.local`
-    const anonymizedName = 'Utilisateur supprime'
+    const anonymizedName = 'Utilisateur supprimé'
 
     await prisma.$transaction(async (tx) => {
       // 1. Anonymiser les données utilisateur
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({
-      message: 'Votre compte a ete supprime et vos donnees anonymisees.',
+      message: 'Votre compte a été supprimé et vos données anonymisées.',
     })
   } catch (error) {
     console.error('Erreur suppression compte:', error)

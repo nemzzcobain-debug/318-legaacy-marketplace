@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const userId = (session.user as any).id
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     if (user.role === 'PRODUCER' && user.producerStatus === 'APPROVED') {
-      return NextResponse.json({ error: 'Tu es deja producteur approuve' }, { status: 400 })
+      return NextResponse.json({ error: 'Tu es déjà producteur approuvé' }, { status: 400 })
     }
 
     if (user.producerStatus === 'PENDING') {
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
-      message: 'Candidature soumise ! Notre equipe va examiner ton profil.',
+      message: 'Candidature soumise ! Notre équipe va examiner ton profil.',
       user: updatedUser,
     })
   } catch (error) {
