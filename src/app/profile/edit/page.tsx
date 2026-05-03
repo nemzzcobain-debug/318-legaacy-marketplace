@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -28,6 +28,7 @@ import {
   Eye,
   EyeOff,
   KeyRound,
+  Trash2,
 } from 'lucide-react'
 
 interface ProfileData {
@@ -871,6 +872,9 @@ export default function ProfileEditPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Delete Account */}
+              <DeleteAccountSection />
             </div>
           )}
         </div>
@@ -889,5 +893,121 @@ export default function ProfileEditPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// ─── Delete Account Section ───
+function DeleteAccountSection() {
+  const [showModal, setShowModal] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleDelete = async () => {
+    if (confirmText !== 'SUPPRIMER') return
+    setDeleting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'SUPPRIMER' }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Erreur lors de la suppression')
+        setDeleting(false)
+        return
+      }
+      await signOut({ callbackUrl: '/' })
+    } catch {
+      setError('Erreur serveur, reessayez plus tard')
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="pt-5 border-t border-red-500/20 mt-5">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center">
+            <Trash2 size={18} className="text-red-400" />
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-white">Supprimer mon compte</h4>
+            <p className="text-[11px] text-gray-500">Action irreversible</p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mb-3">
+          Votre compte sera desactive et vos donnees personnelles anonymisees. Vos encheres et transactions restent pour l&apos;historique.
+        </p>
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-4 py-2 rounded-xl font-semibold text-xs text-red-400 border border-red-500/30 hover:bg-red-500/10 transition"
+        >
+          Supprimer mon compte
+        </button>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                <AlertCircle size={24} className="text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Confirmer la suppression</h3>
+                <p className="text-xs text-gray-400">Cette action ne peut pas etre annulee</p>
+              </div>
+            </div>
+
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-4">
+              <p className="text-sm text-gray-300 mb-2">En supprimant votre compte :</p>
+              <ul className="text-xs text-gray-400 space-y-1">
+                <li>• Vos donnees personnelles seront anonymisees</li>
+                <li>• Vos sessions et connexions OAuth seront supprimees</li>
+                <li>• Vos likes, follows et playlists seront supprimes</li>
+                <li>• Vos beats et transactions resteront pour l&apos;historique</li>
+              </ul>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm text-gray-400 mb-2">
+                Tapez <strong className="text-red-400">SUPPRIMER</strong> pour confirmer
+              </label>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="SUPPRIMER"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white text-sm outline-none focus:border-red-500/50"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-400 mb-3">{error}</p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowModal(false); setConfirmText(''); setError('') }}
+                className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm text-gray-300 bg-white/5 hover:bg-white/10 transition"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={confirmText !== 'SUPPRIMER' || deleting}
+                className="flex-1 px-4 py-3 rounded-xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+              >
+                {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                {deleting ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

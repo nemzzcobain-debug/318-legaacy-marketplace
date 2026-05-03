@@ -41,6 +41,10 @@ model User {
   notifBid       Boolean   @default(true)
   notifMessage   Boolean   @default(true)
 
+  // Account deletion (soft delete)
+  deletedAt        DateTime?
+  unsubscribeToken String?   @unique
+
   // Producer specific
   producerStatus String?
   producerBio    String?

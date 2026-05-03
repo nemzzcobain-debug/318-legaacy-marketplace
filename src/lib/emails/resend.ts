@@ -1,5 +1,6 @@
 // @ts-expect-error - resend is optional
 import { Resend } from 'resend'
+import { randomBytes } from 'crypto'
 
 // Initialize Resend client (conditionnel — ne crashe pas si la clé est absente)
 // Set RESEND_API_KEY in your .env
@@ -10,6 +11,21 @@ const FROM_EMAIL = process.env.EMAIL_FROM
 const PLATFORM_NAME = '318 LEGAACY Marketplace'
 const PLATFORM_URL = process.env.NEXTAUTH_URL
 
+/**
+ * Genere l'URL de desabonnement pour un utilisateur
+ */
+export function getUnsubscribeUrl(unsubscribeToken: string | null | undefined): string | undefined {
+  if (!unsubscribeToken || !PLATFORM_URL) return undefined
+  return `${PLATFORM_URL}/api/unsubscribe?token=${unsubscribeToken}`
+}
+
+/**
+ * Genere un token d'unsubscribe unique
+ */
+export function generateUnsubscribeToken(): string {
+  return randomBytes(32).toString('hex')
+}
+
 if (!FROM_EMAIL && process.env.NODE_ENV === 'production') {
   console.error('[Email] CRITICAL: EMAIL_FROM non défini en production')
 }
@@ -18,7 +34,13 @@ if (!PLATFORM_URL && process.env.NODE_ENV === 'production') {
 }
 
 // ─── Email Wrapper ───
-function emailLayout(content: string): string {
+function emailLayout(content: string, unsubscribeUrl?: string): string {
+  const unsubscribeLink = unsubscribeUrl
+    ? `<p style="color:#444;font-size:10px;margin:8px 0 0;">
+        <a href="${unsubscribeUrl}" style="color:#666;text-decoration:underline;">Se desabonner des emails</a>
+      </p>`
+    : ''
+
   return `
 <!DOCTYPE html>
 <html>
@@ -49,6 +71,7 @@ function emailLayout(content: string): string {
       <p style="color:#444;font-size:10px;margin:8px 0 0;">
         <a href="${PLATFORM_URL}" style="color:#e11d48;text-decoration:none;">318marketplace.com</a>
       </p>
+      ${unsubscribeLink}
     </div>
   </div>
 </body>
@@ -507,6 +530,7 @@ export async function sendBeatUploadConfirmationEmail(params: {
 }
 
 // ─── Core Send Function ───
+// Auto-fetches unsubscribe token from DB based on recipient email
 async function sendEmail(to: string, subject: string, html: string) {
   // F19 FIX: Vérifier que toutes les config sont présentes
   if (!FROM_EMAIL || !PLATFORM_URL) {
@@ -522,12 +546,54 @@ async function sendEmail(to: string, subject: string, html: string) {
     return { success: false, reason: 'no_api_key' }
   }
 
+  // Auto-fetch unsubscribe token for the recipient
+  let unsubscribeToken: string | null = null
   try {
+    const { prisma: db } = await import('@/lib/prisma')
+    const user = await db.user.findUnique({
+      where: { email: to },
+      select: { id: true, unsubscribeToken: true },
+    })
+    if (user) {
+      if (!user.unsubscribeToken) {
+        // Generate token on first email send
+        const token = randomBytes(32).toString('hex')
+        await db.user.update({
+          where: { id: user.id },
+          data: { unsubscribeToken: token },
+        })
+        unsubscribeToken = token
+      } else {
+        unsubscribeToken = user.unsubscribeToken
+      }
+    }
+  } catch (err) {
+    // Non-blocking: continue without unsubscribe link
+    console.warn('[Email] Could not fetch unsubscribe token:', String(err))
+  }
+
+  // Injecter le lien de desabonnement dans le footer si token present
+  let finalHtml = html
+  if (unsubscribeToken) {
+    const unsubUrl = `${PLATFORM_URL}/api/unsubscribe?token=${unsubscribeToken}`
+    const unsubLink = `<p style="color:#444;font-size:10px;margin:8px 0 0;text-align:center;"><a href="${unsubUrl}" style="color:#666;text-decoration:underline;">Se desabonner des emails</a></p>`
+    // Insert before closing </body> tag
+    finalHtml = html.replace('</body>', `${unsubLink}</body>`)
+  }
+
+  try {
+    const headers: Record<string, string> = {}
+    if (unsubscribeToken) {
+      headers['List-Unsubscribe'] = `<${PLATFORM_URL}/api/unsubscribe?token=${unsubscribeToken}>`
+      headers['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
+    }
+
     const { data, error } = await resend.emails.send({
       from: `318 LEGAACY <${FROM_EMAIL}>`,
       to,
       subject,
-      html,
+      html: finalHtml,
+      headers: unsubscribeToken ? headers : undefined,
     })
 
     if (error) {
