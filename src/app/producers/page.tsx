@@ -97,8 +97,8 @@ export default function ProducersPage() {
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!producerBio || producerBio.length < 20) {
-      setFormError('Ta bio doit faire au moins 20 caractères')
+    if (!producerBio || producerBio.length < 6) {
+      setFormError('Ta bio doit faire au moins 6 caractères')
       return
     }
     if (genres.length === 0) {
@@ -377,7 +377,7 @@ export default function ProducersPage() {
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[#1e1e2e] text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4850] resize-none"
                     maxLength={1000}
                   />
-                  <p className="text-xs text-gray-600 mt-1">{producerBio.length}/1000 (min. 20)</p>
+                  <p className="text-xs text-gray-600 mt-1">{producerBio.length}/1000 (min. 6)</p>
                 </div>
 
                 {/* Liens optionnels */}

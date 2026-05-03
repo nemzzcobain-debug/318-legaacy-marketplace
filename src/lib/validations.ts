@@ -126,7 +126,7 @@ const optionalUrl = z
   .pipe(z.string().url('URL invalide').optional())
 
 export const producerApplicationSchema = z.object({
-  producerBio: z.string().min(20, 'Bio trop courte, minimum 20 caracteres').max(1000),
+  producerBio: z.string().min(6, 'Bio trop courte, minimum 6 caracteres').max(1000),
   portfolio: optionalUrl,
   youtube: optionalUrl,
   genres: z.array(z.string()).min(1, 'Selectionne au moins un genre'),
