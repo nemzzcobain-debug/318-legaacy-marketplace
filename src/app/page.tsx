@@ -1068,7 +1068,8 @@ export default function Home() {
                         homepage!.nouveautesBeats.slice(0, 4).map((beat) => (
                           <div
                             key={beat.id}
-                            className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] transition-colors group"
+                            onClick={(e) => { e.stopPropagation(); router.push(`/nouveautes?beat=${beat.id}`) }}
+                            className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#e11d48]/20 border border-transparent transition-all group cursor-pointer"
                           >
                             <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 relative">
                               {beat.coverImage ? (
