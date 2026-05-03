@@ -51,6 +51,13 @@ export async function POST(req: NextRequest) {
       audioUrl,
       coverUrl,
       audioSize,
+      // Fichiers haute qualité
+      wavUrl,
+      stemsFiles, // [{name, url, size}]
+      // Prix licences
+      priceMp3,
+      priceWav,
+      priceStems,
       // Auction fields
       enableAuction,
       startPrice,
@@ -96,12 +103,37 @@ export async function POST(req: NextRequest) {
     // Calcul approximatif de la durée basé sur la taille du fichier
     const estimatedDuration = audioSize ? Math.round(audioSize / 16000) : 0
 
+    // Validation des stems (si fournis)
+    let parsedStems: Array<{name: string; url: string; size: number}> | null = null
+    if (stemsFiles && Array.isArray(stemsFiles) && stemsFiles.length > 0) {
+      // Valider que chaque stem a un URL Supabase valide
+      for (const stem of stemsFiles) {
+        if (!stem.url || !stem.url.includes('supabase.co/storage/')) {
+          return NextResponse.json(
+            { error: `URL stem invalide pour "${stem.name}"` },
+            { status: 400 }
+          )
+        }
+      }
+      parsedStems = stemsFiles
+    }
+
+    // Validation WAV URL si fourni
+    if (wavUrl && !wavUrl.includes('supabase.co/storage/')) {
+      return NextResponse.json(
+        { error: 'wavUrl doit être un lien Supabase Storage valide' },
+        { status: 400 }
+      )
+    }
+
     // Création de l'entrée beat dans la base de données
     const beat = await prisma.beat.create({
       data: {
         title,
         description: description || null,
         audioUrl,
+        audioWav: wavUrl || null,
+        stemsFiles: parsedStems ? JSON.stringify(parsedStems) : null,
         genre,
         bpm: typeof bpm === 'number' ? bpm : parseInt(bpm),
         key: key || null,
@@ -109,6 +141,9 @@ export async function POST(req: NextRequest) {
         tags: Array.isArray(tags) ? JSON.stringify(tags) : tags || '[]',
         coverImage: coverUrl || null,
         duration: estimatedDuration,
+        priceMp3: priceMp3 ? parseFloat(priceMp3) : null,
+        priceWav: priceWav ? parseFloat(priceWav) : null,
+        priceStems: priceStems ? parseFloat(priceStems) : null,
         status: 'ACTIVE',
         producerId: user.id,
       },
@@ -210,7 +245,7 @@ export async function POST(req: NextRequest) {
         hasAuction: !!auction,
         auctionStartPrice: startPrice,
         auctionDuration: auctionDuration,
-      }).catch((err) => console.warn('[UPLOAD] Email confirmation echoue:', String(err)))
+      }).catch((err) => console.warn('[UPLOAD] Email confirmation échoué:', String(err)))
     }
 
     return NextResponse.json(

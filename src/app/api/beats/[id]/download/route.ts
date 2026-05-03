@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const userId = session.user.id
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Type de fichier invalide' }, { status: 400 })
     }
 
-    // Verifier que l'utilisateur a un achat COMPLETED pour ce beat
+    // Vérifier que l'utilisateur a un achat COMPLETED pour ce beat
     const purchase = await prisma.purchase.findFirst({
       where: {
         buyerId: userId,
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       select: { licenseType: true },
     })
 
-    // Fallback: verifier aussi les anciennes encheres (avant migration Purchase)
+    // Fallback: vérifiér aussi les anciennes enchères (avant migration Purchase)
     let licenseType = purchase?.licenseType
     if (!licenseType) {
       const wonAuction = await prisma.auction.findFirst({
@@ -55,24 +55,29 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       )
     }
 
-    // Verifier les droits selon la licence
-    if (fileType === 'wav' && licenseType === 'BASIC') {
+    // Vérifier les droits selon la licence achetée
+    // Hiérarchie: STEMS > WAV/PREMIUM > MP3/BASIC
+    // EXCLUSIVE et STEMS donnent accès à tout
+    const hasWavAccess = ['WAV', 'STEMS', 'PREMIUM', 'EXCLUSIVE'].includes(licenseType)
+    const hasStemsAccess = ['STEMS', 'EXCLUSIVE'].includes(licenseType)
+
+    if (fileType === 'wav' && !hasWavAccess) {
       return NextResponse.json(
-        { error: 'La licence BASIC ne donne pas acces au fichier WAV' },
+        { error: 'Votre licence ne donne pas accès au fichier WAV. Passez à la licence WAV ou Stems.' },
         { status: 403 }
       )
     }
-    if (fileType === 'stems' && licenseType !== 'EXCLUSIVE') {
+    if (fileType === 'stems' && !hasStemsAccess) {
       return NextResponse.json(
-        { error: 'Seule la licence EXCLUSIVE donne acces aux stems' },
+        { error: 'Votre licence ne donne pas accès aux stems. Passez à la licence Stems.' },
         { status: 403 }
       )
     }
 
-    // Recuperer le beat et l'URL du fichier demande
+    // Récupérer le beat et l'URL du fichier demandé
     const beat = await prisma.beat.findUnique({
       where: { id: beatId },
-      select: { audioUrl: true, audioWav: true, stemsUrl: true, title: true },
+      select: { audioUrl: true, audioWav: true, stemsUrl: true, stemsFiles: true, title: true },
     })
 
     if (!beat) {
@@ -84,6 +89,30 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     else if (fileType === 'wav') fileUrl = beat.audioWav || null
     else if (fileType === 'stems') fileUrl = beat.stemsUrl || null
 
+    // Pour les stems: si pas de ZIP mais des fichiers individuels, générer les signed URLs
+    if (fileType === 'stems' && !fileUrl && beat.stemsFiles) {
+      try {
+        const stems = JSON.parse(beat.stemsFiles) as Array<{name: string; url: string; size: number}>
+        if (stems.length > 0) {
+          const signedStems = await Promise.all(
+            stems.map(async (stem) => {
+              const parsed = parseSupabaseUrl(stem.url)
+              if (!parsed) return { name: stem.name, url: stem.url, size: stem.size }
+              const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
+              return { name: stem.name, url: signed || stem.url, size: stem.size }
+            })
+          )
+          return NextResponse.json({
+            stems: signedStems,
+            expiresIn: 3600,
+            fileName: `${beat.title}_stems`,
+          })
+        }
+      } catch {
+        // stemsFiles JSON parse error — fallback
+      }
+    }
+
     if (!fileUrl) {
       return NextResponse.json(
         { error: `Fichier ${fileType.toUpperCase()} non disponible pour ce beat` },
@@ -91,23 +120,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       )
     }
 
-    // Parser l'URL Supabase et generer une signed URL (1h)
+    // Parser l'URL Supabase et générer une signed URL (1h)
     const parsed = parseSupabaseUrl(fileUrl)
     if (!parsed) {
-      // Si l'URL n'est pas une URL Supabase standard, renvoyer telle quelle
-      // (cas de migration ou URL externe)
       return NextResponse.json({ url: fileUrl, expiresIn: null })
     }
 
     const signedUrl = await getSignedUrl(parsed.bucket, parsed.path, 3600)
     if (!signedUrl) {
-      return NextResponse.json({ error: 'Impossible de generer le lien de telechargement' }, { status: 500 })
+      return NextResponse.json({ error: 'Impossible de générer le lien de téléchargement' }, { status: 500 })
     }
 
     return NextResponse.json({
       url: signedUrl,
       expiresIn: 3600,
-      fileName: `${beat.title}.${fileType}`,
+      fileName: `${beat.title}.${fileType === 'stems' ? 'zip' : fileType}`,
     })
   } catch (error) {
     console.error('Erreur download beat:', String(error))

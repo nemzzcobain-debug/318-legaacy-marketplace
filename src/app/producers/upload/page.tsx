@@ -18,10 +18,14 @@ import {
   Clock,
   DollarSign,
   Tag,
+  FileAudio,
+  Layers,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import { GENRES, MOODS } from '@/types'
 import CoverGenerator from '@/components/ai/CoverGenerator'
-// Upload utilise des signed URLs generees par l'API (contourne RLS + limite 4.5MB Vercel)
+// Upload utilise des signed URLs générées par l'API (contourne RLS + limite 4.5MB Vercel)
 
 const KEYS = [
   'C Major',
@@ -56,8 +60,15 @@ export default function UploadBeatPage() {
 
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [audioPreview, setAudioPreview] = useState<string | null>(null)
+  const [wavFile, setWavFile] = useState<File | null>(null)
+  const [stemFiles, setStemFiles] = useState<File[]>([])
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
+
+  // Prix licences
+  const [priceMp3, setPriceMp3] = useState('')
+  const [priceWav, setPriceWav] = useState('')
+  const [priceStems, setPriceStems] = useState('')
 
   const [title, setTitle] = useState('')
   const [genre, setGenre] = useState('')
@@ -87,6 +98,8 @@ export default function UploadBeatPage() {
   const [showAiGenerator, setShowAiGenerator] = useState(false)
   const [aiCoverUrl, setAiCoverUrl] = useState<string | null>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
+  const wavInputRef = useRef<HTMLInputElement>(null)
+  const stemsInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
   if (status === 'unauthenticated') {
@@ -106,7 +119,7 @@ export default function UploadBeatPage() {
       return
     }
     if (file.size > 50 * 1024 * 1024) {
-      setError('Le fichier ne doit pas depasser 50 MB.')
+      setError('Le fichier ne doit pas dépasser 50 MB.')
       return
     }
 
@@ -126,6 +139,46 @@ export default function UploadBeatPage() {
     if (!file) return
     setCoverFile(file)
     setCoverPreview(URL.createObjectURL(file))
+  }
+
+  const handleWavSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (ext !== 'wav') {
+      setError('Le fichier doit être au format WAV')
+      return
+    }
+    if (file.size > 200 * 1024 * 1024) {
+      setError('Le fichier WAV ne doit pas dépasser 200 MB')
+      return
+    }
+    setWavFile(file)
+    setError('')
+  }
+
+  const handleStemsSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+    const invalidFiles = files.filter(f => {
+      const ext = f.name.split('.').pop()?.toLowerCase()
+      return ext !== 'wav'
+    })
+    if (invalidFiles.length > 0) {
+      setError('Tous les stems doivent être au format WAV')
+      return
+    }
+    const totalSize = files.reduce((sum, f) => sum + f.size, 0)
+    if (totalSize > 500 * 1024 * 1024) {
+      setError('La taille totale des stems ne doit pas dépasser 500 MB')
+      return
+    }
+    setStemFiles(prev => [...prev, ...files])
+    setError('')
+  }
+
+  const removeStem = (index: number) => {
+    setStemFiles(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,47 +203,90 @@ export default function UploadBeatPage() {
         coverFileName = `${timestamp}-cover.${coverExt}`
       }
 
+      const wavFileName = wavFile ? `${timestamp}-${slug}.wav` : null
+
+      // Préparer les stems pour signed URLs
+      const stemsForSigning = stemFiles.map(f => ({ name: f.name, contentType: 'audio/wav' }))
+
       // 1. Obtenir les signed URLs depuis l'API
-      setUploadProgress("Preparation de l'upload...")
+      setUploadProgress("Préparation de l'upload...")
       const signedRes = await fetch('/api/beats/signed-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           audioFileName,
-          audioContentType: audioFile.type,
+          audioContentType: audioFile.type || 'audio/mpeg',
           coverFileName,
           coverContentType: coverFile?.type || null,
+          wavFileName,
+          wavContentType: wavFile ? 'audio/wav' : null,
+          stems: stemsForSigning.length > 0 ? stemsForSigning : null,
         }),
       })
 
       const signedData = await signedRes.json()
       if (!signedRes.ok) {
-        setError(signedData.error || 'Erreur preparation upload')
+        setError(signedData.error || 'Erreur préparation upload')
         setUploading(false)
         return
       }
 
-      // 2. Upload audio directement vers Supabase avec le signed URL
-      setUploadProgress('Upload du fichier audio...')
+      // 2. Upload audio MP3
+      setUploadProgress('Upload du MP3...')
       const audioUploadRes = await fetch(signedData.audio.signedUrl, {
         method: 'PUT',
-        headers: { 'Content-Type': audioFile.type },
+        headers: { 'Content-Type': audioFile.type || 'audio/mpeg' },
         body: audioFile,
       })
 
       if (!audioUploadRes.ok) {
-        setError("Erreur lors de l'upload du fichier audio")
+        setError("Erreur lors de l'upload du fichier MP3")
         setUploading(false)
         return
       }
 
       const audioUrl = signedData.audio.publicUrl
 
-      // 3. Upload cover si fournie (fichier local ou URL IA)
+      // 3. Upload WAV si fourni
+      let wavUrl: string | null = null
+      if (wavFile && signedData.wav) {
+        setUploadProgress('Upload du WAV...')
+        const wavUploadRes = await fetch(signedData.wav.signedUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'audio/wav' },
+          body: wavFile,
+        })
+        if (wavUploadRes.ok) {
+          wavUrl = signedData.wav.publicUrl
+        }
+      }
+
+      // 4. Upload stems individuels
+      let uploadedStems: Array<{name: string; url: string; size: number}> = []
+      if (stemFiles.length > 0 && signedData.stems) {
+        for (let i = 0; i < stemFiles.length; i++) {
+          const stemFile = stemFiles[i]
+          const stemData = signedData.stems[i]
+          if (!stemData) continue
+          setUploadProgress(`Upload stem ${i + 1}/${stemFiles.length} (${stemFile.name})...`)
+          const stemUploadRes = await fetch(stemData.signedUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'audio/wav' },
+            body: stemFile,
+          })
+          if (stemUploadRes.ok) {
+            uploadedStems.push({
+              name: stemFile.name,
+              url: stemData.publicUrl,
+              size: stemFile.size,
+            })
+          }
+        }
+      }
+
+      // 5. Upload cover si fournie
       let coverUrl: string | null = null
       if (aiCoverUrl) {
-        // Cover générée par IA — déjà uploadée vers Supabase par l'API generate-cover
-        // L'URL reçue est directement l'URL Supabase permanente
         coverUrl = aiCoverUrl
       } else if (coverFile && coverFile.size > 0 && signedData.cover) {
         setUploadProgress('Upload de la cover...')
@@ -204,7 +300,7 @@ export default function UploadBeatPage() {
         }
       }
 
-      // 4. Envoyer les metadonnees a l'API
+      // 6. Envoyer les métadonnées à l'API
       setUploadProgress('Enregistrement du beat...')
       const res = await fetch('/api/beats/upload', {
         method: 'POST',
@@ -224,6 +320,11 @@ export default function UploadBeatPage() {
             : [],
           audioUrl,
           coverUrl,
+          wavUrl,
+          stemsFiles: uploadedStems.length > 0 ? uploadedStems : null,
+          priceMp3: priceMp3 || null,
+          priceWav: priceWav || null,
+          priceStems: priceStems || null,
           audioFileName: audioFile.name,
           audioSize: audioFile.size,
           // Auction data
@@ -301,7 +402,7 @@ export default function UploadBeatPage() {
           <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
             <Check size={40} className="text-green-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Beat uploade !</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">Beat uploadé !</h2>
           <p className="text-gray-400">Redirection vers le dashboard...</p>
         </div>
       </div>
@@ -315,7 +416,7 @@ export default function UploadBeatPage() {
       <main className="max-w-3xl mx-auto px-4 py-10">
         <div className="mb-8">
           <h1 className="text-3xl font-black text-white mb-2">Upload un beat</h1>
-          <p className="text-gray-400">Partage ton instrumentale et mets-la aux encheres</p>
+          <p className="text-gray-400">Partage ton instrumentale et mets-la aux enchères</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -458,6 +559,171 @@ export default function UploadBeatPage() {
             />
           </div>
 
+          {/* WAV Upload */}
+          <div>
+            <label className="text-sm font-semibold text-white mb-2 block">
+              Fichier WAV <span className="text-gray-500 text-xs font-normal">(haute qualité — accessible à l&apos;achat)</span>
+            </label>
+            {!wavFile ? (
+              <div
+                onClick={() => wavInputRef.current?.click()}
+                className="border-2 border-dashed border-[#1e1e2e] rounded-2xl p-6 text-center cursor-pointer hover:border-blue-500/40 transition group"
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition">
+                    <FileAudio size={20} className="text-blue-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white text-sm font-semibold">Ajouter le fichier WAV</p>
+                    <p className="text-gray-500 text-xs">Format WAV uniquement, max 200 MB</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#13131a] border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <FileAudio size={18} className="text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-white font-medium truncate max-w-[250px]">{wavFile.name}</p>
+                    <p className="text-xs text-gray-500">{(wavFile.size / 1024 / 1024).toFixed(1)} MB</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setWavFile(null); if (wavInputRef.current) wavInputRef.current.value = '' }}
+                  className="text-gray-500 hover:text-red-400 transition"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            )}
+            <input
+              ref={wavInputRef}
+              type="file"
+              accept=".wav,audio/wav,audio/x-wav"
+              onChange={handleWavSelect}
+              className="hidden"
+            />
+          </div>
+
+          {/* Stems Upload */}
+          <div>
+            <label className="text-sm font-semibold text-white mb-2 block">
+              Stems <span className="text-gray-500 text-xs font-normal">(pistes séparées — accessibles à l&apos;achat Stems)</span>
+            </label>
+            <div className="space-y-2">
+              {stemFiles.length > 0 && (
+                <div className="bg-[#13131a] border border-purple-500/30 rounded-2xl p-4 space-y-2">
+                  {stemFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-white/[0.02]">
+                      <div className="flex items-center gap-2">
+                        <Layers size={14} className="text-purple-400" />
+                        <span className="text-sm text-white truncate max-w-[200px]">{file.name}</span>
+                        <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeStem(index)}
+                        className="text-gray-500 hover:text-red-400 transition"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-500 pt-1">
+                    {stemFiles.length} stem{stemFiles.length > 1 ? 's' : ''} — {(stemFiles.reduce((s, f) => s + f.size, 0) / 1024 / 1024).toFixed(1)} MB total
+                  </p>
+                </div>
+              )}
+              <div
+                onClick={() => stemsInputRef.current?.click()}
+                className="border-2 border-dashed border-[#1e1e2e] rounded-2xl p-5 text-center cursor-pointer hover:border-purple-500/40 transition group"
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition">
+                    <Plus size={18} className="text-purple-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-purple-300 text-sm font-semibold">
+                      {stemFiles.length > 0 ? 'Ajouter d\'autres stems' : 'Ajouter les stems'}
+                    </p>
+                    <p className="text-gray-500 text-xs">Kick, Snare, Hi-Hat, Melody, Bass... (WAV uniquement)</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <input
+              ref={stemsInputRef}
+              type="file"
+              accept=".wav,audio/wav,audio/x-wav"
+              multiple
+              onChange={handleStemsSelect}
+              className="hidden"
+            />
+          </div>
+
+          {/* Prix par licence */}
+          <div className="border border-[#1e1e2e] rounded-2xl p-5 bg-[#0d0d14]">
+            <label className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <DollarSign size={16} className="text-green-400" />
+              Prix des licences (achat direct)
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5">
+                <p className="text-sm font-bold text-blue-400">MP3</p>
+                <p className="text-[11px] text-blue-400/70 mb-2">Fichier MP3 uniquement</p>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={priceMp3}
+                    onChange={(e) => setPriceMp3(e.target.value)}
+                    placeholder="19"
+                    min="1"
+                    className="w-full bg-[#0a0a12] border border-blue-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500/50 transition"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">€</span>
+                </div>
+              </div>
+              <div className={`p-3 rounded-xl border ${wavFile ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
+                <p className="text-sm font-bold text-emerald-400">WAV</p>
+                <p className="text-[11px] text-emerald-400/70 mb-2">Fichier WAV HD</p>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={priceWav}
+                    onChange={(e) => setPriceWav(e.target.value)}
+                    placeholder="39"
+                    min="1"
+                    disabled={!wavFile}
+                    className="w-full bg-[#0a0a12] border border-emerald-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-emerald-500/50 transition disabled:opacity-50"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">€</span>
+                </div>
+              </div>
+              <div className={`p-3 rounded-xl border ${stemFiles.length > 0 ? 'border-amber-500/30 bg-amber-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
+                <p className="text-sm font-bold text-amber-400">Stems</p>
+                <p className="text-[11px] text-amber-400/70 mb-2">WAV + MP3 + Stems</p>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={priceStems}
+                    onChange={(e) => setPriceStems(e.target.value)}
+                    placeholder="99"
+                    min="1"
+                    disabled={stemFiles.length === 0}
+                    className="w-full bg-[#0a0a12] border border-amber-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-500/50 transition disabled:opacity-50"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">€</span>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-3">
+              Les fichiers WAV et Stems ne seront accessibles qu&apos;après achat de la licence correspondante.
+            </p>
+          </div>
+
           {/* Title */}
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">
@@ -581,9 +847,9 @@ export default function UploadBeatPage() {
                   <Gavel size={20} className={enableAuction ? 'text-[#e11d48]' : 'text-gray-500'} />
                 </div>
                 <div className="text-left">
-                  <p className="text-white font-semibold text-sm">Mettre aux encheres</p>
+                  <p className="text-white font-semibold text-sm">Mettre aux enchères</p>
                   <p className="text-gray-500 text-xs">
-                    Configure les parametres de l&apos;enchere
+                    Configure les paramètres de l&apos;enchère
                   </p>
                 </div>
               </div>
@@ -598,7 +864,7 @@ export default function UploadBeatPage() {
 
             {enableAuction && (
               <div className="px-5 py-5 space-y-5 border-t border-[#1e1e2e] bg-[#0d0d14]">
-                {/* Increment + Achat immediat + Duree */}
+                {/* Increment + Achat immédiat + Duree */}
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
@@ -618,7 +884,7 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <Tag size={14} className="text-amber-400" />
-                      Achat immediat
+                      Achat immédiat
                       <span className="text-gray-500 text-xs font-normal ml-1">optionnel</span>
                     </label>
                     <input
@@ -634,7 +900,7 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <Clock size={14} className="text-blue-400" />
-                      Duree de l&apos;enchere
+                      Durée de l&apos;enchère
                     </label>
                     <select
                       value={auctionDuration}
@@ -726,7 +992,7 @@ export default function UploadBeatPage() {
             ) : (
               <>
                 {enableAuction ? <Gavel size={20} /> : <Upload size={20} />}
-                {enableAuction ? "Publier et lancer l'enchere" : 'Publier le beat'}
+                {enableAuction ? "Publier et lancer l'enchère" : 'Publier le beat'}
               </>
             )}
           </button>

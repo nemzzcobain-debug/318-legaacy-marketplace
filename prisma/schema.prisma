@@ -157,12 +157,15 @@ model Beat {
   title       String
   description String?
 
-  // Audio
-  audioUrl    String
-  audioWav    String?
-  stemsUrl    String?
+  // Audio files
+  audioUrl    String   // MP3 — fichier d'écoute/preview
+  audioWav    String?  // WAV — fichier haute qualité (téléchargeable à l'achat WAV+)
+  stemsUrl    String?  // ZIP des stems (généré automatiquement)
   duration    Int?
   waveform    String?
+
+  // Stems individuels (JSON array of {name, url, size})
+  stemsFiles  String?  // JSON: [{name: "kick.wav", url: "...", size: 1234}, ...]
 
   // Metadata
   genre       String
@@ -173,6 +176,11 @@ model Beat {
 
   // Cover art
   coverImage  String?
+
+  // Pricing par licence (EUR)
+  priceMp3    Float?   // Prix licence MP3
+  priceWav    Float?   // Prix licence WAV
+  priceStems  Float?   // Prix licence Stems (inclut WAV + MP3)
 
   // Status
   status      String   @default("DRAFT")
