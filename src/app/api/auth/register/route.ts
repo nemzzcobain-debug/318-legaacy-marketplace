@@ -90,7 +90,7 @@ export async function POST(request: Request) {
           type: 'SYSTEM',
           title: 'Nouvelle candidature producteur',
           message: `${name} souhaite devenir producteur sur la plateforme`,
-          link: `/admin/producers`,
+          link: '/admin',
         })),
       })
     }
