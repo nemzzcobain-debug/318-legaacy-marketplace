@@ -89,12 +89,12 @@ function StatCard({
   onClick?: () => void
 }) {
   const colors: Record<string, string> = {
-    purple: 'from-[#e11d48] to-[#9f1239]',
-    orange: 'from-[#b91c1c] to-[#7f1d1d]',
-    green: 'from-green-600 to-green-800',
-    blue: 'from-[#e11d48]/80 to-[#881337]',
-    red: 'from-[#e11d48] to-[#be123c]',
-    yellow: 'from-[#dc2626] to-[#991b1b]',
+    purple: 'from-purple-600 to-purple-800',
+    orange: 'from-orange-500 to-orange-700',
+    green: 'from-green-500 to-green-700',
+    blue: 'from-blue-500 to-blue-700',
+    red: 'from-red-500 to-red-700',
+    yellow: 'from-yellow-500 to-yellow-700',
   }
 
   return (
@@ -428,7 +428,7 @@ export default function AdminPage() {
 
   if (loading || status === 'loading') {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-white text-xl">Chargement...</div>
       </div>
     )
@@ -477,12 +477,12 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
-      <div className="bg-[#111] border-b border-[#1e1e2e] px-6 py-4">
+      <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-[#e11d48] to-[#ff0033] bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-purple-500 bg-clip-text text-transparent">
               318 LEGAACY Admin
             </h1>
             <p className="text-gray-400 text-sm">Panneau d&apos;administration</p>
@@ -494,7 +494,7 @@ export default function AdminPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-[#0d0d0d] border-b border-[#1e1e2e]">
+      <div className="bg-gray-900/50 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-6 flex gap-1">
           {tabs.map((tab) => (
             <button
@@ -507,7 +507,7 @@ export default function AdminPage() {
               }}
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'text-[#e11d48] border-b-2 border-[#e11d48]'
+                  ? 'text-orange-400 border-b-2 border-orange-400'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
@@ -592,12 +592,12 @@ export default function AdminPage() {
                 placeholder="Rechercher..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-[#e11d48] focus:outline-none"
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
               />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white focus:border-[#e11d48] focus:outline-none"
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
               >
                 <option value="">Tous les statuts</option>
                 <option value="PENDING">En attente</option>
@@ -609,7 +609,7 @@ export default function AdminPage() {
 
             <div className="space-y-3">
               {producers.map((p) => (
-                <div key={p.id} className="bg-[#13131a] border border-[#1e1e2e] rounded-lg p-5">
+                <div key={p.id} className="bg-gray-900 border border-gray-800 rounded-lg p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex-1 min-w-[250px]">
                       <div className="flex items-center gap-2 mb-1">
@@ -655,7 +655,7 @@ export default function AdminPage() {
                   </div>
                   {/* Détails candidature */}
                   {(p.producerBio || p.portfolio) && (
-                    <div className="mt-3 pt-3 border-t border-[#1e1e2e] space-y-2">
+                    <div className="mt-3 pt-3 border-t border-gray-800 space-y-2">
                       {p.producerBio && (
                         <div>
                           <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
@@ -673,7 +673,7 @@ export default function AdminPage() {
                             href={p.portfolio}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block text-[#e11d48] hover:text-[#ff2d5a] text-sm mt-0.5 underline truncate"
+                            className="block text-purple-400 hover:text-purple-300 text-sm mt-0.5 underline truncate"
                           >
                             {p.portfolio}
                           </a>
@@ -697,7 +697,7 @@ export default function AdminPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white focus:border-[#e11d48] focus:outline-none"
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
               >
                 <option value="">Tous les statuts</option>
                 <option value="ACTIVE">Active</option>
@@ -712,7 +712,7 @@ export default function AdminPage() {
               {auctions.map((a) => (
                 <div
                   key={a.id}
-                  className="bg-[#13131a] border border-[#1e1e2e] rounded-lg p-4 flex flex-wrap items-center justify-between gap-4"
+                  className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4"
                 >
                   <div className="flex-1 min-w-[200px]">
                     <p className="font-semibold">{a.beat.title}</p>
@@ -758,14 +758,14 @@ export default function AdminPage() {
                 placeholder="Rechercher..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-[#e11d48] focus:outline-none"
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
               />
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-gray-400 border-b border-[#1e1e2e]">
+                  <tr className="text-gray-400 border-b border-gray-800">
                     <th className="text-left py-3 px-4">Nom</th>
                     <th className="text-left py-3 px-4">Email</th>
                     <th className="text-left py-3 px-4">Role</th>
@@ -776,12 +776,12 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {users.map((u) => (
-                    <tr key={u.id} className="border-b border-[#1e1e2e]/50 hover:bg-white/[0.02]">
+                    <tr key={u.id} className="border-b border-gray-800/50 hover:bg-gray-900/50">
                       <td className="py-3 px-4">{u.displayName || u.name}</td>
                       <td className="py-3 px-4 text-gray-400">{u.email}</td>
                       <td className="py-3 px-4">
                         <span
-                          className={`text-xs px-2 py-1 rounded-full ${u.role === 'ADMIN' ? 'bg-red-500/20 text-red-400' : u.role === 'PRODUCER' ? 'bg-[#e11d48]/20 text-[#e11d48]' : 'bg-blue-500/20 text-blue-400'}`}
+                          className={`text-xs px-2 py-1 rounded-full ${u.role === 'ADMIN' ? 'bg-red-500/20 text-red-400' : u.role === 'PRODUCER' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}
                         >
                           {u.role}
                         </span>
@@ -809,7 +809,7 @@ export default function AdminPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white focus:border-[#e11d48] focus:outline-none"
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
               >
                 <option value="">Tous les statuts</option>
                 <option value="PENDING">En attente</option>
@@ -824,7 +824,7 @@ export default function AdminPage() {
 
             <div className="space-y-3">
               {reports.map((r) => (
-                <div key={r.id} className="bg-[#13131a] border border-[#1e1e2e] rounded-lg p-4">
+                <div key={r.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex-1 min-w-[250px]">
                       <div className="flex items-center gap-2 mb-2">
@@ -833,10 +833,10 @@ export default function AdminPage() {
                         >
                           {r.status}
                         </span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-[#e11d48]/20 text-[#e11d48]">
+                        <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-400">
                           {reportTypeLabels[r.type] || r.type}
                         </span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-[#e11d48]/20 text-[#e11d48]">
+                        <span className="text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400">
                           {reportReasonLabels[r.reason] || r.reason}
                         </span>
                       </div>
@@ -916,8 +916,8 @@ export default function AdminPage() {
                     onClick={() => fetchReports(p)}
                     className={`px-3 py-1.5 rounded-lg text-sm transition ${
                       p === reportsPagination.page
-                        ? 'bg-[#e11d48] text-white'
-                        : 'bg-[#1a1a2e] text-gray-400 hover:bg-[#25253d]'
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                     }`}
                   >
                     {p}
@@ -938,12 +938,12 @@ export default function AdminPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchAllBeats(1)}
-                className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-[#e11d48] focus:outline-none"
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
               />
               <select
                 value={beatsFilter}
                 onChange={(e) => { setBeatsFilter(e.target.value); fetchAllBeats(1) }}
-                className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
               >
                 <option value="">Tous les genres</option>
                 {['Hip-Hop', 'Trap', 'R&B', 'Pop', 'Drill', 'Afrobeat', 'Reggaeton', 'Cloud Rap', 'Boom Bap', 'Lo-Fi'].map(g => (
@@ -966,7 +966,7 @@ export default function AdminPage() {
                 return (
                   <div
                     key={beat.id}
-                    className={`p-4 bg-gray-900 border rounded-lg transition ${isPlaying ? 'border-[#e11d48]/50 bg-[#e11d48]/5' : 'border-[#1e1e2e] hover:border-[#e11d48]/30'}`}
+                    className={`p-4 bg-gray-900 border rounded-lg transition ${isPlaying ? 'border-orange-500/50 bg-orange-950/10' : 'border-gray-800 hover:border-gray-700'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
@@ -987,7 +987,7 @@ export default function AdminPage() {
                             </div>
                           )}
                           {isPlaying && (
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#e11d48] animate-pulse" />
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500 animate-pulse" />
                           )}
                         </button>
 
@@ -1016,7 +1016,7 @@ export default function AdminPage() {
                           className={`px-3 py-1 text-xs font-bold rounded transition ${
                             beat.isFeatured
                               ? 'bg-red-500/20 text-red-400 hover:bg-red-500/40'
-                              : 'bg-[#e11d48]/20 text-[#e11d48] hover:bg-[#e11d48]/40'
+                              : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/40'
                           }`}
                         >
                           {beat.isFeatured ? '★ Retirer vedette' : '☆ Mettre en vedette'}
@@ -1043,7 +1043,7 @@ export default function AdminPage() {
                     className={`px-3 py-1 rounded text-sm ${
                       p === beatsPagination.page
                         ? 'bg-orange-600 text-white'
-                        : 'bg-[#1a1a2e] text-gray-400 hover:bg-[#25253d]'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                     }`}
                   >
                     {p}
@@ -1058,7 +1058,7 @@ export default function AdminPage() {
         {activeTab === 'featured' && (
           <div>
             {/* Recherche de beats */}
-            <div className="bg-[#13131a] border border-[#1e1e2e] rounded-lg p-6 mb-6">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
               <h3 className="text-lg font-bold text-white mb-4">Ajouter un beat en vedette</h3>
               <div className="flex gap-3 mb-4">
                 <input
@@ -1067,7 +1067,7 @@ export default function AdminPage() {
                   value={beatSearch}
                   onChange={(e) => setBeatSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && searchBeats()}
-                  className="flex-1 bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:outline-none"
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:outline-none"
                 />
                 <button
                   onClick={searchBeats}
@@ -1089,7 +1089,7 @@ export default function AdminPage() {
                         className={`flex items-center justify-between p-3 rounded-lg border ${
                           isAlreadyFeatured
                             ? 'bg-red-900/20 border-red-800/40'
-                            : 'bg-[#13131a] border-[#1e1e2e]'
+                            : 'bg-gray-800 border-gray-700'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -1129,7 +1129,7 @@ export default function AdminPage() {
             </div>
 
             {/* Liste des beats en vedette actuels */}
-            <div className="bg-[#13131a] border border-[#1e1e2e] rounded-lg p-6">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-white">
                   Beats en vedette ({featuredBeats.length}/10)
@@ -1144,7 +1144,7 @@ export default function AdminPage() {
                   {featuredBeats.map((beat: any, index: number) => (
                     <div
                       key={beat.id}
-                      className="flex items-center justify-between p-4 bg-[#13131a] border border-[#1e1e2e] rounded-lg"
+                      className="flex items-center justify-between p-4 bg-gray-800 border border-gray-700 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
                         <span className="text-2xl font-black text-red-500 w-8 text-center">
@@ -1202,7 +1202,7 @@ export default function AdminPage() {
         {activeTab === 'promos' && (
           <div>
             {/* Créer un code promo */}
-            <div className="bg-[#13131a] border border-[#1e1e2e] rounded-lg p-6 mb-6">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
               <h3 className="text-lg font-bold text-white mb-4">Creer un code promo</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 <input
@@ -1210,12 +1210,12 @@ export default function AdminPage() {
                   placeholder="Code (ex: LEGAACY20)"
                   value={newPromo.code}
                   onChange={(e) => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
-                  className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-[#e11d48] focus:outline-none uppercase"
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none uppercase"
                 />
                 <select
                   value={newPromo.type}
                   onChange={(e) => setNewPromo({ ...newPromo, type: e.target.value })}
-                  className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white focus:border-[#e11d48] focus:outline-none"
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-orange-500 focus:outline-none"
                 >
                   <option value="PERCENTAGE">Pourcentage (%)</option>
                   <option value="FIXED">Montant fixe (EUR)</option>
@@ -1227,28 +1227,28 @@ export default function AdminPage() {
                   }
                   value={newPromo.value}
                   onChange={(e) => setNewPromo({ ...newPromo, value: e.target.value })}
-                  className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-[#e11d48] focus:outline-none"
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
                 />
                 <input
                   type="number"
                   placeholder="Prix min (optionnel)"
                   value={newPromo.minPrice}
                   onChange={(e) => setNewPromo({ ...newPromo, minPrice: e.target.value })}
-                  className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-[#e11d48] focus:outline-none"
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
                 />
                 <input
                   type="number"
                   placeholder="Max utilisations (optionnel)"
                   value={newPromo.maxUses}
                   onChange={(e) => setNewPromo({ ...newPromo, maxUses: e.target.value })}
-                  className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-[#e11d48] focus:outline-none"
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
                 />
                 <input
                   type="date"
                   placeholder="Expiration"
                   value={newPromo.expiresAt}
                   onChange={(e) => setNewPromo({ ...newPromo, expiresAt: e.target.value })}
-                  className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-[#e11d48] focus:outline-none"
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
                 />
               </div>
               <button
@@ -1265,7 +1265,7 @@ export default function AdminPage() {
               {promos.map((p: any) => (
                 <div
                   key={p.id}
-                  className="bg-[#13131a] border border-[#1e1e2e] rounded-lg p-4 flex flex-wrap items-center justify-between gap-4"
+                  className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4"
                 >
                   <div className="flex-1 min-w-[200px]">
                     <div className="flex items-center gap-2 mb-1">

@@ -126,13 +126,10 @@ export async function GET() {
         take: 6,
       }),
 
-      // Top genres from beats with active auctions only
+      // Top genres from active beats
       prisma.beat.groupBy({
         by: ['genre'],
-        where: {
-          status: 'ACTIVE',
-          auctions: { some: { status: { in: ['ACTIVE', 'ENDING_SOON'] } } },
-        },
+        where: { status: 'ACTIVE' },
         _count: true,
         orderBy: { _count: { genre: 'desc' } },
         take: 8,
