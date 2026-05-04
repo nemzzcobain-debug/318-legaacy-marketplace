@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { createBeatPurchaseIntent, isConnectAccountReady, calculateFinalPrice } from '@/lib/stripe'
+import { createBeatPurchaseIntent, isConnectAccountReady, calculateFinalPrice, calculatePaymentSplit, stripe } from '@/lib/stripe'
 import { randomBytes } from 'crypto'
 
 // POST /api/beats/[id]/purchase — Achat direct d'un beat (hors enchères)
@@ -106,20 +106,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Tu ne peux pas acheter ton propre beat' }, { status: 400 })
     }
 
-    // Vérifier que le producteur a un compte Stripe Connect actif
+    // Vérifier si le producteur a un compte Stripe Connect actif
+    let useAdminStripe = false
     if (!beat.producer.stripeAccountId) {
-      return NextResponse.json(
-        { error: "Le producteur n'a pas encore configure son compte de paiement" },
-        { status: 400 }
-      )
-    }
-
-    const isProducerReady = await isConnectAccountReady(beat.producer.stripeAccountId)
-    if (!isProducerReady) {
-      return NextResponse.json(
-        { error: 'Le compte de paiement du producteur est en cours de vérification' },
-        { status: 400 }
-      )
+      useAdminStripe = true
+    } else {
+      const isProducerReady = await isConnectAccountReady(beat.producer.stripeAccountId)
+      if (!isProducerReady) {
+        useAdminStripe = true
+      }
     }
 
     // Déterminer le prix selon la licence choisie
@@ -151,15 +146,49 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Creer le PaymentIntent
-    const { paymentIntent, clientSecret, commission, producerPayout } =
-      await createBeatPurchaseIntent({
+    let paymentIntent: any
+    let clientSecret: string
+    let commission: number
+    let producerPayout: number
+
+    if (useAdminStripe) {
+      // Pas de compte Stripe producteur → paiement direct au compte admin (318 LEGAACY)
+      const split = calculatePaymentSplit(finalPrice)
+      commission = split.commission
+      producerPayout = split.producerPayout
+
+      const amountInCents = Math.round(finalPrice * 100)
+
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: amountInCents,
+        currency: 'eur',
+        metadata: {
+          beatId: beat.id,
+          type: 'direct_purchase',
+          platform: '318_legaacy',
+          licenseType,
+          buyerEmail: userEmail,
+          adminPayout: 'true', // Flag pour le webhook: paiement allé au compte admin
+          producerId: beat.producerId,
+        },
+        receipt_email: userEmail,
+        automatic_payment_methods: { enabled: true },
+      })
+      clientSecret = paymentIntent.client_secret!
+    } else {
+      const result = await createBeatPurchaseIntent({
         amount: finalPrice,
-        producerStripeAccountId: beat.producer.stripeAccountId,
+        producerStripeAccountId: beat.producer.stripeAccountId!,
         beatId: beat.id,
         buyerEmail: userEmail,
         beatTitle: beat.title,
         licenseType,
       })
+      paymentIntent = result.paymentIntent
+      clientSecret = result.clientSecret
+      commission = result.commission
+      producerPayout = result.producerPayout
+    }
 
     // Si c'est un invité, générer un magicToken pour l'email post-achat
     let guestUserId: string | undefined
