@@ -529,6 +529,62 @@ export async function sendBeatUploadConfirmationEmail(params: {
   return sendEmail(to, `🎶 "${beatTitle}" est en ligne sur 318 LEGAACY !`, html)
 }
 
+// ─── Guest Purchase Email ───
+
+export async function sendGuestPurchaseEmail(params: {
+  to: string
+  beatTitle: string
+  producerName: string
+  licenseType: string
+  finalPrice: number
+  downloadUrl: string
+  magicLoginUrl: string
+}) {
+  const { to, beatTitle, producerName, licenseType, finalPrice, downloadUrl, magicLoginUrl } = params
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Ton beat est prêt ! 🎵</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      Ton achat de <strong style="color:#fff;">${beatTitle}</strong> a été confirmé. Tu peux le télécharger dès maintenant.
+    </p>
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Beat</td>
+          <td style="color:#fff;font-size:12px;padding:6px 0;text-align:right;font-weight:600;">${beatTitle}</td>
+        </tr>
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Producteur</td>
+          <td style="color:#fff;font-size:12px;padding:6px 0;text-align:right;">${producerName}</td>
+        </tr>
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Licence</td>
+          <td style="color:#e11d48;font-size:12px;padding:6px 0;text-align:right;font-weight:600;">${licenseType}</td>
+        </tr>
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;border-top:1px solid #1e1e2e;">Prix</td>
+          <td style="color:#2ed573;font-size:18px;padding:6px 0;text-align:right;font-weight:800;border-top:1px solid #1e1e2e;">${finalPrice} EUR</td>
+        </tr>
+      </table>
+    </div>
+
+    ${button('Télécharger mon beat', downloadUrl)}
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:16px;margin:24px 0;">
+      <p style="color:#fff;font-size:13px;font-weight:600;margin:0 0 8px;">🔑 Ton compte a été créé automatiquement</p>
+      <p style="color:#999;font-size:12px;margin:0 0 12px;">
+        Un compte 318 LEGAACY a été créé avec ton email. Tu peux y accéder à tout moment pour retrouver tes achats et téléchargements.
+      </p>
+      ${button('Accéder à mon compte', magicLoginUrl)}
+    </div>
+
+    <p style="color:#555;font-size:11px;text-align:center;margin:0;">Ce lien de connexion expire dans 24 heures. Tu pourras toujours te connecter avec ton email.</p>
+  `)
+
+  return sendEmail(to, `Ton beat est prêt ! 🎵 — "${beatTitle}"`, html)
+}
+
 // ─── Core Send Function ───
 // Auto-fetches unsubscribe token from DB based on recipient email
 async function sendEmail(to: string, subject: string, html: string) {

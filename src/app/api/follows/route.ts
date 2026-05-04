@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         }),
       ]
 
-      // Ne creer la notification que si pas de doublon recent
+      // Ne créer la notification que si pas de doublon récent
       if (!recentNotif) {
         txOps.push(
           prisma.notification.create({

@@ -9,12 +9,12 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
     const beatId = params.id
 
-    // Recuperer le beat avec ses relations
+    // Récupérer le beat avec ses relations
     const beat = await prisma.beat.findUnique({
       where: { id: beatId },
       include: {
@@ -31,41 +31,41 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Beat introuvable' }, { status: 404 })
     }
 
-    // Verifier que l'utilisateur est le proprietaire du beat
+    // Vérifier que l'utilisateur est le propriétaire du beat
     if (beat.producerId !== (session.user as any).id) {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
-    // Empecher la suppression si le beat a des encheres actives
+    // Empêcher la suppression si le beat a des enchères actives
     if (beat.auctions.length > 0) {
       return NextResponse.json(
-        { error: 'Impossible de supprimer un beat avec des encheres actives' },
+        { error: 'Impossible de supprimer un beat avec des enchères actives' },
         { status: 400 }
       )
     }
 
-    // Empecher la suppression si le beat est vendu
+    // Empêcher la suppression si le beat est vendu
     if (beat.status === 'SOLD') {
       return NextResponse.json(
-        { error: 'Impossible de supprimer un beat deja vendu' },
+        { error: 'Impossible de supprimer un beat déjà vendu' },
         { status: 400 }
       )
     }
 
-    // 1. Supprimer les relations en base (likes, playlists, encheres terminees)
+    // 1. Supprimer les relations en base (likes, playlists, enchères terminées)
     // Ordre important : d'abord les sous-relations, puis les relations directes, puis le beat
     await prisma.$transaction([
       prisma.like.deleteMany({ where: { beatId } }),
       prisma.playlistBeat.deleteMany({ where: { beatId } }),
-      // Reviews liees aux encheres du beat
+      // Reviews liées aux enchères du beat
       prisma.review.deleteMany({
         where: { auction: { beatId } },
       }),
-      // Bids des encheres liees
+      // Bids des enchères liées
       prisma.bid.deleteMany({
         where: { auction: { beatId } },
       }),
-      // Watchlists liees aux encheres (cascade existe mais on securise)
+      // Watchlists liées aux enchères (cascade existe mais on sécurisé)
       prisma.watchlist.deleteMany({
         where: { auction: { beatId } },
       }),
@@ -98,10 +98,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       if (coverPath) deletePromises.push(deleteFile('covers', coverPath))
     }
 
-    // On attend les suppressions mais on ne bloque pas si ca echoue
+    // On attend les suppressions mais on ne bloque pas si ca échoué
     await Promise.allSettled(deletePromises)
 
-    return NextResponse.json({ success: true, message: 'Beat supprime avec succes' })
+    return NextResponse.json({ success: true, message: 'Beat supprimé avec succès' })
   } catch (error) {
     console.error('Erreur suppression beat:', error)
     return NextResponse.json({ error: 'Erreur serveur lors de la suppression' }, { status: 500 })

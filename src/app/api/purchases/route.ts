@@ -5,12 +5,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// GET — Recuperer les achats de l'utilisateur connecte
+// GET — Récupérer les achats de l'utilisateur connecté
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const userId = session.user.id
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    // Encheres gagnees mais pas encore payees (toujours via Auction)
+    // Encheres gagnées mais pas encore payees (toujours via Auction)
     const pendingPayments = await prisma.auction.findMany({
       where: {
         winnerId: userId,

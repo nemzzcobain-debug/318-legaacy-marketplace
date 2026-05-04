@@ -40,7 +40,7 @@ export async function GET() {
                         totalPurchases: true,
                         rating: true,
                         createdAt: true,
-                        // SECURITY FIX H1: Ne plus selectionner passwordHash
+                        // SECURITY FIX H1: Ne plus sélectionner passwordHash
                         _count: {
                                     select: {
                                                   beats: true,
@@ -67,7 +67,7 @@ export async function GET() {
             console.warn('[PROFILE] Erreur comptage followers:', String(err))
           }
 
-      // SECURITY FIX H1: Verifier l'existence du mot de passe sans jamais selectionner le hash
+      // SECURITY FIX H1: Vérifier l'existence du mot de passe sans jamais sélectionner le hash
       const hasPassword = await prisma.user.count({
         where: { id: userId, passwordHash: { not: null } },
       }) > 0
@@ -120,7 +120,7 @@ export async function PUT(request: Request) {
           for (const field of urlFields) {
                   if (updateData[field] && typeof updateData[field] === 'string' && (updateData[field] as string).trim() !== '') {
                             let url = (updateData[field] as string).trim()
-                            // SECURITY FIX H3: Rejet immediat des protocoles dangereux
+                            // SECURITY FIX H3: Rejet immédiat des protocoles dangereux
                             const lowerUrl = url.toLowerCase().replace(/\s/g, '')
                             if (BLOCKED_PROTOCOLS.some(p => lowerUrl.startsWith(p))) {
                                         return NextResponse.json({ error: `Protocole interdit pour ${field}` }, { status: 400 })

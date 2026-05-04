@@ -178,7 +178,7 @@ export default function ConversationList({ activeConversationId, onSelectConvers
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <MessageCircle size={40} className="text-gray-700 mb-3" />
             <p className="text-sm text-gray-500 font-semibold">
-              {search ? 'Aucun resultat' : 'Aucune conversation'}
+              {search ? 'Aucun résultat' : 'Aucune conversation'}
             </p>
             <p className="text-xs text-gray-600 mt-1">
               {search ? 'Essaie un autre nom' : 'Contacte un producteur depuis son profil'}

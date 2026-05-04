@@ -89,7 +89,7 @@ export interface LicenseInfo {
 export const LICENSES: LicenseInfo[] = [
   { id: 'BASIC', name: 'Basic', color: '#8a8a9a', icon: '♪', rights: 'MP3 - 5000 streams - Non-commercial', multiplier: 1 },
   { id: 'PREMIUM', name: 'Premium', color: '#e11d48', icon: '♫', rights: 'WAV + MP3 - 50K streams - Commercial', multiplier: 2.5 },
-  { id: 'EXCLUSIVE', name: 'Exclusive', color: '#ff4757', icon: '♛', rights: 'WAV + Stems - Illimite - Droits complets', multiplier: 10 },
+  { id: 'EXCLUSIVE', name: 'Exclusive', color: '#ff4757', icon: '♛', rights: 'WAV + Stems - Illimité - Droits complets', multiplier: 10 },
 ]
 
 export const GENRES = ['Trap', 'Drill', 'Boom Bap', 'Afrobeat', 'R&B', 'Lo-Fi', 'Pop', 'Dancehall'] as const

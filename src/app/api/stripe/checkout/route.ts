@@ -10,12 +10,12 @@ import {
   isConnectAccountReady,
 } from '@/lib/stripe'
 
-// POST — Creer un PaymentIntent pour payer une enchere gagnee
+// POST — Creer un PaymentIntent pour payer une enchère gagnée
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const { auctionId } = await req.json()
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'auctionId requis' }, { status: 400 })
     }
 
-    // Recuperer l'enchere avec le beat et le producteur
+    // Récupérer l'enchère avec le beat et le producteur
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
       include: {
@@ -39,25 +39,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Enchere non trouvee' }, { status: 404 })
     }
 
-    // Verifier que l'enchere est terminee
+    // Vérifier que l'enchère est terminée
     if (auction.status !== 'ENDED' && auction.status !== 'COMPLETED') {
       return NextResponse.json(
-        { error: "Cette enchere n'est pas encore terminee" },
+        { error: "Cette enchère n'est pas encore terminée" },
         { status: 400 }
       )
     }
 
-    // Verifier que l'utilisateur est le gagnant
+    // Vérifier que l'utilisateur est le gagnant
     if (auction.winnerId !== session.user.id) {
       return NextResponse.json(
-        { error: "Vous n'etes pas le gagnant de cette enchere" },
+        { error: "Vous n'etes pas le gagnant de cette enchère" },
         { status: 403 }
       )
     }
 
-    // Verifier si deja paye
+    // Vérifier si déjà payé
     if (auction.paidAt) {
-      return NextResponse.json({ error: 'Cette enchere a deja ete payee' }, { status: 400 })
+      return NextResponse.json({ error: 'Cette enchère a déjà été payée' }, { status: 400 })
     }
 
     const producer = auction.beat.producer
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
           licenseType: auction.winningLicense || auction.licenseType,
         })
       } else {
-        // Compte pas encore verifie → marketplace encaisse
+        // Compte pas encore vérifié → marketplace encaisse
         result = await createHeldPaymentIntent({
           amount,
           auctionId: auction.id,
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Sauvegarder le PaymentIntent ID dans l'enchere
+    // Sauvegarder le PaymentIntent ID dans l'enchère
     await prisma.auction.update({
       where: { id: auction.id },
       data: {

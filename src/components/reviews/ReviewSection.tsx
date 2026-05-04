@@ -226,7 +226,7 @@ export default function ReviewSection({ producerId, producerName }: Props) {
       {submitSuccess && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 flex items-center gap-3">
           <CheckCircle size={20} className="text-green-400" />
-          <p className="text-sm font-bold text-green-400">Ton avis a ete publie ! Merci.</p>
+          <p className="text-sm font-bold text-green-400">Ton avis a été publié ! Merci.</p>
         </div>
       )}
 
@@ -343,10 +343,10 @@ export default function ReviewSection({ producerId, producerName }: Props) {
       {reviews.length > 0 ? (
         <div className="space-y-3">
           {reviews.map(review => {
-            // BUG FIX 2: Null guard — l'auteur peut etre supprime (SetNull)
+            // BUG FIX 2: Null guard — l'auteur peut être supprimé (SetNull)
             const authorName = review.author
               ? (review.author.displayName || review.author.name || 'Utilisateur')
-              : 'Utilisateur supprime'
+              : 'Utilisateur supprimé'
             return (
               <div key={review.id} className="bg-[#111111] border border-[#222222] rounded-xl p-4">
                 <div className="flex items-start justify-between mb-2">

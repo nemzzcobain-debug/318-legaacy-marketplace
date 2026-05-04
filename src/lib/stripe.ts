@@ -58,7 +58,7 @@ export function calculateFinalPrice(bidAmount: number, licenseType: string): num
 }
 
 /**
- * Cree un compte Stripe Connect pour un producteur
+ * Crée un compte Stripe Connect pour un producteur
  */
 export async function createConnectAccount(email: string, name: string) {
   const account = await stripe.accounts.create({
@@ -88,7 +88,7 @@ export async function createConnectAccount(email: string, name: string) {
 }
 
 /**
- * Cree un lien d'onboarding Stripe Connect
+ * Crée un lien d'onboarding Stripe Connect
  */
 export async function createOnboardingLink(accountId: string) {
   const accountLink = await stripe.accountLinks.create({
@@ -114,7 +114,7 @@ export async function isConnectAccountReady(accountId: string): Promise<boolean>
 }
 
 /**
- * Cree un lien de dashboard Stripe Express pour le producteur
+ * Crée un lien de dashboard Stripe Express pour le producteur
  */
 export async function createDashboardLink(accountId: string) {
   const loginLink = await stripe.accounts.createLoginLink(accountId)
@@ -122,7 +122,7 @@ export async function createDashboardLink(accountId: string) {
 }
 
 /**
- * Cree un PaymentIntent pour un achat direct de beat (hors encheres)
+ * Crée un PaymentIntent pour un achat direct de beat (hors enchères)
  */
 export async function createBeatPurchaseIntent({
   amount,
@@ -173,7 +173,7 @@ export async function createBeatPurchaseIntent({
 }
 
 /**
- * Cree un PaymentIntent avec split automatique vers le producteur
+ * Crée un PaymentIntent avec split automatique vers le producteur
  */
 export async function createAuctionPaymentIntent({
   amount,
@@ -225,7 +225,7 @@ export async function createAuctionPaymentIntent({
 }
 
 /**
- * Cree un PaymentIntent ou la marketplace encaisse directement.
+ * Crée un PaymentIntent ou la marketplace encaisse directement.
  * Utilise quand le producteur n'a pas encore de compte Stripe Connect.
  * L'argent est retenu par la plateforme et sera reverse plus tard.
  */

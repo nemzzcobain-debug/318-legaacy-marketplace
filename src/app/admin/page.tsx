@@ -554,7 +554,7 @@ export default function AdminPage() {
               <StatCard label="Producteurs" value={stats.totalProducers} color="purple" onClick={() => navigateToTab('producers')} />
               <StatCard label="En attente" value={stats.pendingProducers} color="yellow" onClick={() => navigateToTab('producers', 'PENDING')} />
               <StatCard label="Encheres actives" value={stats.activeAuctions} color="green" onClick={() => navigateToTab('auctions', 'ACTIVE')} />
-              <StatCard label="Total encheres" value={stats.totalAuctions} color="orange" onClick={() => navigateToTab('auctions')} />
+              <StatCard label="Total enchères" value={stats.totalAuctions} color="orange" onClick={() => navigateToTab('auctions')} />
               <StatCard label="Beats" value={stats.totalBeats} color="blue" onClick={() => navigateToTab('beats')} />
               <StatCard label="Total bids" value={stats.totalBids} color="purple" onClick={() => navigateToTab('auctions')} />
               <StatCard
@@ -731,7 +731,7 @@ export default function AdminPage() {
                       Par {a.beat.producer.displayName || a.beat.producer.name} • {a.beat.genre}
                     </p>
                     <p className="text-gray-500 text-xs mt-1">
-                      {a.licenseType} • {a._count.bids} encheres • {a.currentBid.toFixed(2)} EUR
+                      {a.licenseType} • {a._count.bids} enchères • {a.currentBid.toFixed(2)} EUR
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -754,7 +754,7 @@ export default function AdminPage() {
                 </div>
               ))}
               {auctions.length === 0 && (
-                <p className="text-gray-500 text-center py-8">Aucune enchere trouvee</p>
+                <p className="text-gray-500 text-center py-8">Aucune enchère trouvee</p>
               )}
             </div>
           </div>

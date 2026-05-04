@@ -45,6 +45,10 @@ model User {
   deletedAt        DateTime?
   unsubscribeToken String?   @unique
 
+  // Magic login (guest checkout)
+  magicToken       String?   @unique
+  magicTokenExpiry DateTime?
+
   // Producer specific
   producerStatus String?
   producerBio    String?

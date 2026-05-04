@@ -181,7 +181,7 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] text-gray-400 mb-1">{auction.totalBids} encheres</div>
+              <div className="text-[10px] text-gray-400 mb-1">{auction.totalBids} enchères</div>
               <span
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-black"
                 style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}

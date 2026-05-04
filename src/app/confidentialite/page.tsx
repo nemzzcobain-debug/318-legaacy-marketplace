@@ -36,15 +36,15 @@ export default function ConfidentialitePage() {
         <section className="mb-10">
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">2. Donnees collectees</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p>Nous collectons les donnees suivantes :</p>
+            <p>Nous collectons les données suivantes :</p>
             <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-3">
               <div>
                 <p className="text-white font-semibold text-xs mb-1">Donnees d&apos;inscription</p>
-                <p>Nom, prenom, adresse email, mot de passe (chiffre), photo de profil (optionnel), liens reseaux sociaux (optionnel)</p>
+                <p>Nom, prénom, adresse email, mot de passe (chiffre), photo de profil (optionnel), liens réseaux sociaux (optionnel)</p>
               </div>
               <div>
                 <p className="text-white font-semibold text-xs mb-1">Donnees de transaction</p>
-                <p>Historique des encheres, achats, montants, identifiants Stripe Connect (pour les producteurs)</p>
+                <p>Historique des enchères, achats, montants, identifiants Stripe Connect (pour les producteurs)</p>
               </div>
               <div>
                 <p className="text-white font-semibold text-xs mb-1">Donnees techniques</p>
@@ -62,15 +62,15 @@ export default function ConfidentialitePage() {
         <section className="mb-10">
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">3. Finalites du traitement</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p>Vos donnees sont traitees pour les finalites suivantes :</p>
+            <p>Vos données sont traitées pour les finalités suivantes :</p>
             <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-1.5">
               <p>— Gestion de votre compte utilisateur et authentification</p>
-              <p>— Fonctionnement du systeme d&apos;encheres et des transactions</p>
+              <p>— Fonctionnement du système d&apos;enchères et des transactions</p>
               <p>— Traitement des paiements via Stripe</p>
-              <p>— Envoi de notifications par email (encheres, ventes, bienvenue)</p>
+              <p>— Envoi de notifications par email (enchères, ventes, bienvenue)</p>
               <p>— Communication entre utilisateurs (messagerie)</p>
               <p>— Amelioration de la plateforme et statistiques d&apos;utilisation</p>
-              <p>— Prevention de la fraude et securite</p>
+              <p>— Prévention de la fraude et sécurité</p>
             </div>
           </div>
         </section>
@@ -79,31 +79,31 @@ export default function ConfidentialitePage() {
         <section className="mb-10">
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">4. Bases legales du traitement</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p><strong className="text-white">Execution du contrat</strong> : gestion du compte, encheres, paiements.</p>
-            <p><strong className="text-white">Interet legitime</strong> : securite de la plateforme, prevention de la fraude, amelioration du service.</p>
+            <p><strong className="text-white">Exécution du contrat</strong> : gestion du compte, enchères, paiements.</p>
+            <p><strong className="text-white">Intérêt légitime</strong> : sécurité de la plateforme, prévention de la fraude, amélioration du service.</p>
             <p><strong className="text-white">Consentement</strong> : envoi d&apos;emails marketing (optionnel).</p>
-            <p><strong className="text-white">Obligation legale</strong> : conservation des donnees de transaction a des fins fiscales.</p>
+            <p><strong className="text-white">Obligation legale</strong> : conservation des données de transaction a des fins fiscales.</p>
           </div>
         </section>
 
         {/* 5 */}
         <section className="mb-10">
-          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">5. Partage des donnees</h2>
+          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">5. Partage des données</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p>Vos donnees peuvent etre partagees avec les sous-traitants suivants, dans le cadre strict de leurs missions :</p>
+            <p>Vos données peuvent être partagées avec les sous-traitants suivants, dans le cadre strict de leurs missions :</p>
             <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-2">
-              <p><strong className="text-white">Supabase</strong> — Hebergement de la base de donnees et stockage (UE/US)</p>
+              <p><strong className="text-white">Supabase</strong> — Hebergement de la base de données et stockage (UE/US)</p>
               <p><strong className="text-white">Stripe</strong> — Traitement des paiements (certifie PCI-DSS)</p>
               <p><strong className="text-white">Vercel</strong> — Hebergement du site web</p>
               <p><strong className="text-white">Resend</strong> — Envoi d&apos;emails transactionnels</p>
             </div>
-            <p className="mt-3">Nous ne vendons jamais vos donnees a des tiers. Aucune donnee n&apos;est utilisee a des fins publicitaires.</p>
+            <p className="mt-3">Nous ne vendons jamais vos données a des tiers. Aucune donnee n&apos;est utilisee a des fins publicitaires.</p>
           </div>
         </section>
 
         {/* 6 */}
         <section className="mb-10">
-          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">6. Duree de conservation</h2>
+          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">6. Durée de conservation</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
             <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-2">
               <p><span className="text-gray-500">Données de compte :</span> conservées pendant la durée d&apos;utilisation du compte, puis 3 ans après suppression</p>
@@ -118,13 +118,13 @@ export default function ConfidentialitePage() {
         <section className="mb-10">
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">7. Vos droits (RGPD)</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p>Conformement au RGPD, vous disposez des droits suivants :</p>
+            <p>Conformément au RGPD, vous disposez des droits suivants :</p>
             <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-2">
-              <p><strong className="text-white">Droit d&apos;acces</strong> — Obtenir une copie de vos donnees personnelles</p>
-              <p><strong className="text-white">Droit de rectification</strong> — Corriger des donnees inexactes</p>
-              <p><strong className="text-white">Droit a l&apos;effacement</strong> — Demander la suppression de vos donnees</p>
-              <p><strong className="text-white">Droit a la portabilite</strong> — Recevoir vos donnees dans un format structure</p>
-              <p><strong className="text-white">Droit d&apos;opposition</strong> — Vous opposer au traitement de vos donnees</p>
+              <p><strong className="text-white">Droit d&apos;accès</strong> — Obtenir une copie de vos données personnelles</p>
+              <p><strong className="text-white">Droit de rectification</strong> — Corriger des données inexactes</p>
+              <p><strong className="text-white">Droit a l&apos;effacement</strong> — Demander la suppression de vos données</p>
+              <p><strong className="text-white">Droit a la portabilite</strong> — Recevoir vos données dans un format structure</p>
+              <p><strong className="text-white">Droit d&apos;opposition</strong> — Vous opposer au traitement de vos données</p>
               <p><strong className="text-white">Droit a la limitation</strong> — Restreindre le traitement dans certains cas</p>
             </div>
             <p className="mt-3">Pour exercer vos droits, contactez-nous a : <a href="mailto:contact@318marketplace.com" className="text-red-400 hover:text-red-300">contact@318marketplace.com</a></p>
@@ -134,12 +134,12 @@ export default function ConfidentialitePage() {
 
         {/* 8 */}
         <section className="mb-10">
-          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">8. Securite des donnees</h2>
+          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">8. Sécurité des données</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p>Nous mettons en oeuvre des mesures techniques et organisationnelles pour proteger vos donnees :</p>
+            <p>Nous mettons en œuvre des mesures techniques et organisationnelles pour protéger vos données :</p>
             <p>— Chiffrement des communications (HTTPS/TLS)</p>
-            <p>— Mots de passe hashes avec algorithmes securises</p>
-            <p>— Acces restreint aux donnees (principe du moindre privilege)</p>
+            <p>— Mots de passe hashés avec algorithmes sécurisés</p>
+            <p>— Accès restreint aux données (principe du moindre privilège)</p>
             <p>— Protection CSRF et rate limiting sur les API</p>
             <p>— Donnees de paiement traitees exclusivement par Stripe (jamais stockees sur nos serveurs)</p>
           </div>
@@ -149,7 +149,7 @@ export default function ConfidentialitePage() {
         <section className="mb-10">
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">9. Cookies</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p>Le site utilise des cookies strictement necessaires au fonctionnement :</p>
+            <p>Le site utilise des cookies strictement nécessaires au fonctionnement :</p>
             <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-2">
               <p><strong className="text-white">Cookie de session</strong> — Authentification de l&apos;utilisateur (NextAuth)</p>
               <p><strong className="text-white">Preference de theme</strong> — Sauvegarde du choix dark/light mode (localStorage)</p>

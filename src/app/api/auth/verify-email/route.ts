@@ -25,16 +25,16 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL('/login?error=invalid-token', request.url))
     }
 
-    // Verifier que le token n'a pas expire
+    // Vérifier que le token n'a pas expiré
     if (new Date() > verificationToken.expires) {
-      // Supprimer le token expire
+      // Supprimer le token expiré
       await prisma.verificationToken.delete({
         where: { token: hashedToken },
       })
       return NextResponse.redirect(new URL('/login?error=token-expired', request.url))
     }
 
-    // Marquer l'email comme verifie
+    // Marquer l'email comme vérifié
     const user = await prisma.user.update({
       where: { email: verificationToken.identifier },
       data: { emailVerified: new Date() },
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 
     return NextResponse.redirect(new URL('/login?verified=true', request.url))
   } catch (error) {
-    console.error('Erreur verification email:', error)
+    console.error('Erreur vérification email:', error)
     return NextResponse.redirect(new URL('/login?error=server-error', request.url))
   }
 }

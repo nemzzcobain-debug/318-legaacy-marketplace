@@ -40,8 +40,8 @@ const BADGE_RULES: BadgeRule[] = [
   {
     badge: {
       id: 'first_sale',
-      name: 'Premiere Vente',
-      description: 'A realise sa premiere vente sur la plateforme',
+      name: 'Première Vente',
+      description: 'A réalisé sa première vente sur la plateforme',
       icon: '🎯',
       color: '#2ed573',
       category: 'sales',
@@ -89,7 +89,7 @@ const BADGE_RULES: BadgeRule[] = [
     badge: {
       id: 'revenue_1000',
       name: '1K Club',
-      description: 'A genere plus de 1 000 EUR de revenus',
+      description: 'A généré plus de 1 000 EUR de revenus',
       icon: '💵',
       color: '#2ed573',
       category: 'sales',
@@ -101,7 +101,7 @@ const BADGE_RULES: BadgeRule[] = [
     badge: {
       id: 'revenue_10000',
       name: '10K Club',
-      description: 'A genere plus de 10 000 EUR de revenus',
+      description: 'A généré plus de 10 000 EUR de revenus',
       icon: '🏆',
       color: '#ffd700',
       category: 'sales',
@@ -213,7 +213,7 @@ const BADGE_RULES: BadgeRule[] = [
     badge: {
       id: 'bids_hot',
       name: 'En Demande',
-      description: 'A recu plus de 50 encheres au total',
+      description: 'A reçu plus de 50 enchères au total',
       icon: '🔔',
       color: '#ef4444',
       category: 'community',
@@ -251,7 +251,7 @@ const BADGE_RULES: BadgeRule[] = [
     badge: {
       id: 'reviews_10',
       name: 'Approuve',
-      description: 'A recu 10 avis positifs',
+      description: 'A reçu 10 avis positifs',
       icon: '✅',
       color: '#10b981',
       category: 'quality',
@@ -277,7 +277,7 @@ const BADGE_RULES: BadgeRule[] = [
     badge: {
       id: 'stripe_ready',
       name: 'Pret a Encaisser',
-      description: 'A connecte son compte Stripe',
+      description: 'A connecté son compte Stripe',
       icon: '💳',
       color: '#635bff',
       category: 'special',

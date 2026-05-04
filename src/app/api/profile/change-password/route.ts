@@ -24,7 +24,7 @@ export async function POST(request: Request) {
           // SECURITY FIX L7: Limiter la longueur du mot de passe (DoS via bcrypt)
           if (newPassword.length > 128) {
                   return NextResponse.json(
-                            { error: 'Le mot de passe ne doit pas depasser 128 caracteres' },
+                            { error: 'Le mot de passe ne doit pas dépasser 128 caractères' },
                             { status: 400 }
                           )
                 }

@@ -48,13 +48,13 @@ async function handleFinalize(req: NextRequest) {
       const session = await getServerSession(authOptions)
 
       if (!session?.user || (session.user as any).role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
       }
     }
 
     const now = new Date()
 
-    // Trouver toutes les encheres expirees mais pas encore finalisees
+    // Trouver toutes les enchères expirées mais pas encore finalisées
     const expiredAuctions = await prisma.auction.findMany({
       where: {
         endTime: { lte: now },
@@ -109,7 +109,7 @@ async function handleFinalize(req: NextRequest) {
       console.error('[CRON] Erreur playlist Nouveautés:', err)
     }
 
-    // TASK50: Verifier les encheres ENDED avec paymentDeadline depassee (gagnant n'a pas paye)
+    // TASK50: Vérifier les enchères ENDED avec paymentDeadline dépassée (gagnant n'a pas payé)
     const expiredDeadlines = await prisma.auction.findMany({
       where: {
         status: 'ENDED',
@@ -144,8 +144,8 @@ async function handleFinalize(req: NextRequest) {
             await tx.notification.create({
               data: {
                 type: 'SYSTEM',
-                title: 'Delai de paiement expire',
-                message: `Votre delai de paiement pour "${expired.beat.title}" a expire. L'achat a ete annule.`,
+                title: 'Délai de paiement expiré',
+                message: `Votre délai de paiement pour "${expired.beat.title}" a expiré. L'achat a été annulé.`,
                 link: '/dashboard?tab=purchases',
                 userId: expired.winnerId,
               },
@@ -156,8 +156,8 @@ async function handleFinalize(req: NextRequest) {
           await tx.notification.create({
             data: {
               type: 'AUCTION_ENDED',
-              title: 'Paiement non recu',
-              message: `Le gagnant n'a pas paye pour "${expired.beat.title}". Le beat est remis en vente dans Nouveautes.`,
+              title: 'Paiement non reçu',
+              message: `Le gagnant n'a pas payé pour "${expired.beat.title}". Le beat est remis en vente dans Nouveautes.`,
               link: `/nouveautes?beat=${expired.beat.id}`,
               userId: expired.beat.producerId,
             },
@@ -201,7 +201,7 @@ async function handleFinalize(req: NextRequest) {
             const reserveMet = !auction.reservePrice || topBid.amount >= auction.reservePrice
 
             if (reserveMet) {
-              // Enchere gagnee — en attente de paiement (48h deadline)
+              // Enchere gagnée — en attente de paiement (48h deadline)
               const PAYMENT_DEADLINE_HOURS = 48
               await tx.auction.update({
                 where: { id: auction.id },
@@ -223,8 +223,8 @@ async function handleFinalize(req: NextRequest) {
               await tx.notification.create({
                 data: {
                   type: 'AUCTION_WON',
-                  title: 'Felicitations ! Vous avez gagne !',
-                  message: `Vous avez remporte "${auction.beat.title}" pour ${topBid.finalAmount}\u20AC. Procedez au paiement pour obtenir votre beat.`,
+                  title: 'Félicitations ! Vous avez gagné !',
+                  message: `Vous avez remporté "${auction.beat.title}" pour ${topBid.finalAmount}\u20AC. Procedez au paiement pour obtenir votre beat.`,
                   link: `/checkout/${auction.id}`,
                   userId: topBid.userId,
                 },
@@ -234,8 +234,8 @@ async function handleFinalize(req: NextRequest) {
               await tx.notification.create({
                 data: {
                   type: 'AUCTION_ENDED',
-                  title: 'Enchere terminee !',
-                  message: `Votre beat "${auction.beat.title}" a ete vendu pour ${topBid.finalAmount}\u20AC. Paiement en attente.`,
+                  title: 'Enchere terminée !',
+                  message: `Votre beat "${auction.beat.title}" a été vendu pour ${topBid.finalAmount}\u20AC. Paiement en attente.`,
                   link: `/auction/${auction.id}`,
                   userId: auction.beat.producerId,
                 },
@@ -253,8 +253,8 @@ async function handleFinalize(req: NextRequest) {
               await tx.notification.create({
                 data: {
                   type: 'AUCTION_ENDED',
-                  title: 'Enchere terminee sans vente',
-                  message: `Le prix de reserve n'a pas ete atteint pour "${auction.beat.title}". Enchere max: ${topBid.finalAmount}\u20AC.`,
+                  title: 'Enchere terminée sans vente',
+                  message: `Le prix de réserve n'a pas été atteint pour "${auction.beat.title}". Enchère max: ${topBid.finalAmount}\u20AC.`,
                   link: `/auction/${auction.id}`,
                   userId: auction.beat.producerId,
                 },
@@ -284,7 +284,7 @@ async function handleFinalize(req: NextRequest) {
               results.noWinner++
             }
           } else {
-            // Aucune enchere
+            // Aucune enchère
             await tx.auction.update({
               where: { id: auction.id },
               data: { status: 'ENDED' },
@@ -293,8 +293,8 @@ async function handleFinalize(req: NextRequest) {
             await tx.notification.create({
               data: {
                 type: 'AUCTION_ENDED',
-                title: 'Enchere terminee sans enchere',
-                message: `Aucune enchere placee sur "${auction.beat.title}".`,
+                title: 'Enchère terminée sans enchère',
+                message: `Aucune enchère placée sur "${auction.beat.title}".`,
                 link: `/auction/${auction.id}`,
                 userId: auction.beat.producerId,
               },
@@ -327,13 +327,13 @@ async function handleFinalize(req: NextRequest) {
 
         results.processed++
       } catch (err) {
-        console.error(`Erreur finalisation enchere ${auction.id}:`, err)
+        console.error(`Erreur finalisation enchère ${auction.id}:`, err)
         results.errors++
       }
     }
 
     return NextResponse.json({
-      message: `${results.processed} encheres finalisees`,
+      message: `${results.processed} enchères finalisées`,
       ...results,
       timestamp: now.toISOString(),
     })

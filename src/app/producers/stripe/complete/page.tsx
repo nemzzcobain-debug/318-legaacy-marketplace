@@ -47,7 +47,7 @@ export default function StripeCompletePage() {
             <h1 className="text-3xl font-black text-white mb-3">Compte Stripe actif !</h1>
             <p className="text-gray-400 mb-8">
               Votre compte de paiement est configure. Vous pouvez maintenant recevoir des paiements
-              quand vos beats sont vendus aux encheres.
+              quand vos beats sont vendus aux enchères.
             </p>
             <button
               onClick={() => router.push('/dashboard')}
@@ -64,7 +64,7 @@ export default function StripeCompletePage() {
             </div>
             <h1 className="text-2xl font-bold text-white mb-3">Configuration en cours</h1>
             <p className="text-gray-400 mb-4">
-              Votre compte Stripe est en cours de verification. Cela peut prendre quelques minutes.
+              Votre compte Stripe est en cours de vérification. Cela peut prendre quelques minutes.
             </p>
             <p className="text-gray-500 text-sm mb-8">
               Vous recevrez une notification quand votre compte sera actif.

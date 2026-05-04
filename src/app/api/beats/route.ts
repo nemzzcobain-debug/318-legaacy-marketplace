@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
     const where: any = {}
 
-    // Si mine=true, recuperer les beats du producteur connecte (tout status)
+    // Si mine=true, récupérer les beats du producteur connecte (tout status)
     if (mine === 'true') {
       const session = await getServerSession(authOptions)
       if (session?.user) {
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const user = await prisma.user.findUnique({
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
 
     if (!user || user.role !== 'PRODUCER' || user.producerStatus !== 'APPROVED') {
       return NextResponse.json(
-        { error: 'Seuls les producteurs approuves peuvent ajouter des beats' },
+        { error: 'Seuls les producteurs approuvés peuvent ajouter des beats' },
         { status: 403 }
       )
     }
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ beat }, { status: 201 })
   } catch (error) {
-    console.error('Erreur creation beat:', error)
+    console.error('Erreur création beat:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

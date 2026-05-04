@@ -6,12 +6,12 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 
-// POST /api/auctions/[id]/buy-now/confirm — Finaliser apres paiement reussi
+// POST /api/auctions/[id]/buy-now/confirm — Finaliser apres paiement réussi
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const userId = session.user.id
@@ -30,16 +30,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Enchere introuvable' }, { status: 404 })
     }
 
-    // Verifier que l'enchere est encore active (pas deja finalisee)
+    // Vérifier que l'enchère est encore active (pas déjà finalisée)
     if (auction.status !== 'ACTIVE' && auction.status !== 'ENDING_SOON') {
-      return NextResponse.json({ error: "Cette enchere n'est plus active" }, { status: 400 })
+      return NextResponse.json({ error: "Cette enchère n'est plus active" }, { status: 400 })
     }
 
     if (!auction.buyNowPrice) {
-      return NextResponse.json({ error: 'Pas de prix achat immediat' }, { status: 400 })
+      return NextResponse.json({ error: 'Pas de prix achat immédiat' }, { status: 400 })
     }
 
-    // BUG FIX 4: Verifier le paiement Stripe AVANT de finaliser
+    // BUG FIX 4: Vérifier le paiement Stripe AVANT de finaliser
     if (!auction.stripePaymentId) {
       return NextResponse.json({ error: 'Aucun paiement Stripe associe' }, { status: 400 })
     }
@@ -48,16 +48,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const paymentIntent = await stripe.paymentIntents.retrieve(auction.stripePaymentId)
       if (paymentIntent.status !== 'succeeded') {
         return NextResponse.json(
-          { error: `Paiement non confirme (statut: ${paymentIntent.status})` },
+          { error: `Paiement non confirmé (statut: ${paymentIntent.status})` },
           { status: 402 }
         )
       }
     } catch (stripeErr) {
-      console.error('Erreur verification Stripe:', String(stripeErr))
-      return NextResponse.json({ error: 'Impossible de verifier le paiement' }, { status: 500 })
+      console.error('Erreur vérification Stripe:', String(stripeErr))
+      return NextResponse.json({ error: 'Impossible de vérifiér le paiement' }, { status: 500 })
     }
 
-    // Finaliser l'enchere : declarer le gagnant (paiement verifie)
+    // Finaliser l'enchère : déclarer le gagnant (paiement vérifié)
     await prisma.auction.update({
       where: { id: auctionId },
       data: {
@@ -82,14 +82,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       await prisma.notification.create({
         data: {
           type: 'AUCTION_WON',
-          title: `Achat immediat sur "${auction.beat.title}"`,
-          message: `${buyerName} a achete "${auction.beat.title}" en achat immediat pour ${auction.buyNowPrice} EUR`,
+          title: `Achat immédiat sur "${auction.beat.title}"`,
+          message: `${buyerName} a achete "${auction.beat.title}" en achat immédiat pour ${auction.buyNowPrice} EUR`,
           link: `/auction/${auctionId}`,
           userId: auction.beat.producerId,
         },
       })
 
-      // Notifier les autres encherisseurs
+      // Notifier les autres enchérisseurs
       const otherBidders = await prisma.bid.findMany({
         where: {
           auctionId,
@@ -103,8 +103,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         await prisma.notification.createMany({
           data: otherBidders.map((b) => ({
             type: 'AUCTION_ENDED',
-            title: `Enchere terminee — "${auction.beat.title}"`,
-            message: `L'enchere sur "${auction.beat.title}" s'est terminee par un achat immediat.`,
+            title: `Enchere terminée — "${auction.beat.title}"`,
+            message: `L'enchère sur "${auction.beat.title}" s'est terminée par un achat immédiat.`,
             link: `/auction/${auctionId}`,
             userId: b.userId,
           })),
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     return NextResponse.json({
       success: true,
-      message: `Achat confirme pour ${auction.buyNowPrice} EUR`,
+      message: `Achat confirmé pour ${auction.buyNowPrice} EUR`,
     })
   } catch (error) {
     console.error('Erreur buy-now confirm:', String(error))

@@ -28,7 +28,7 @@ export function formatTimeLeft(timeLeft: number): string {
 }
 
 /**
- * Déterminer si l'enchère est en phase critique (dernieres minutes)
+ * Déterminer si l'enchère est en phase critique (dernières minutes)
  * @param timeLeft - Temps restant en millisecondes
  * @returns boolean
  */

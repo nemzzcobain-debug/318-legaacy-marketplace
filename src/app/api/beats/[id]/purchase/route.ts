@@ -5,16 +5,57 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createBeatPurchaseIntent, isConnectAccountReady, calculateFinalPrice } from '@/lib/stripe'
+import { randomBytes } from 'crypto'
 
 // POST /api/beats/[id]/purchase — Achat direct d'un beat (hors enchères)
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) {
+
+    const body = await req.json()
+    const { licenseType, guestEmail } = body
+
+    // Déterminer l'utilisateur (session ou invité)
+    let userId: string
+    let userEmail: string
+    let isGuest = false
+
+    if (session?.user) {
+      userId = (session.user as any).id
+      userEmail = session.user.email!
+    } else if (guestEmail && typeof guestEmail === 'string') {
+      // Mode invité : chercher ou créer le user
+      const emailLower = guestEmail.toLowerCase().trim()
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(emailLower)) {
+        return NextResponse.json({ error: 'Email invalide' }, { status: 400 })
+      }
+
+      let guestUser = await prisma.user.findUnique({
+        where: { email: emailLower },
+        select: { id: true, email: true },
+      })
+
+      if (!guestUser) {
+        // Créer un compte automatiquement
+        const namePart = emailLower.split('@')[0]
+        guestUser = await prisma.user.create({
+          data: {
+            email: emailLower,
+            name: namePart,
+            role: 'ARTIST',
+            emailVerified: null,
+          },
+          select: { id: true, email: true },
+        })
+      }
+
+      userId = guestUser.id
+      userEmail = guestUser.email
+      isGuest = true
+    } else {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
-
-    const { licenseType } = await req.json()
 
     // Valider le type de licence (anciens + nouveaux types)
     if (!['BASIC', 'PREMIUM', 'EXCLUSIVE', 'MP3', 'WAV', 'STEMS'].includes(licenseType)) {
@@ -61,7 +102,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // L'acheteur ne peut pas etre le producteur
-    if (beat.producerId === session.user.id) {
+    if (beat.producerId === userId) {
       return NextResponse.json({ error: 'Tu ne peux pas acheter ton propre beat' }, { status: 400 })
     }
 
@@ -83,14 +124,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Déterminer le prix selon la licence choisie
     let finalPrice: number
+    let basePrice: number = 0
 
     // Nouveau système de prix par licence (défini par le producteur)
     if (licenseType === 'MP3' && beat.priceMp3) {
       finalPrice = beat.priceMp3
+      basePrice = beat.priceMp3
     } else if (licenseType === 'WAV' && beat.priceWav) {
       finalPrice = beat.priceWav
+      basePrice = beat.priceWav
     } else if (licenseType === 'STEMS' && beat.priceStems) {
       finalPrice = beat.priceStems
+      basePrice = beat.priceStems
     } else {
       // Fallback: ancien système avec multiplicateur
       const lastAuction = await prisma.auction.findFirst({
@@ -101,7 +146,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         orderBy: { endTime: 'desc' },
         select: { startPrice: true },
       })
-      const basePrice = lastAuction?.startPrice || 20
+      basePrice = lastAuction?.startPrice || 20
       finalPrice = calculateFinalPrice(basePrice, licenseType)
     }
 
@@ -111,10 +156,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         amount: finalPrice,
         producerStripeAccountId: beat.producer.stripeAccountId,
         beatId: beat.id,
-        buyerEmail: session.user.email!,
+        buyerEmail: userEmail,
         beatTitle: beat.title,
         licenseType,
       })
+
+    // Si c'est un invité, générer un magicToken pour l'email post-achat
+    let guestUserId: string | undefined
+    if (isGuest) {
+      const magicToken = randomBytes(32).toString('hex')
+      const magicTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          magicToken,
+          magicTokenExpiry,
+        } as any,
+      })
+      guestUserId = userId
+    }
 
     // Creer un enregistrement de vente directe (Purchase)
     // On utilise un modele simplifie en metadata du PaymentIntent
@@ -131,6 +192,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       commission,
       producerPayout,
       producerName: beat.producer.displayName || beat.producer.name,
+      ...(isGuest && { isGuest: true, guestUserId }),
     })
   } catch (error: any) {
     console.error('Erreur achat direct beat:', error)

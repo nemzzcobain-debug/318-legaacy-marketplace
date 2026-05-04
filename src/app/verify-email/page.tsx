@@ -17,12 +17,12 @@ export default function VerifyEmailPage() {
   const [resendLoading, setResendLoading] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
 
-  // Si le token est dans l'URL, rediriger vers l'API qui gere la verification
+  // Si le token est dans l'URL, rediriger vers l'API qui gère la vérification
   // et redirige ensuite vers /login?verified=true
   useEffect(() => {
     if (token) {
       setStatus('loading')
-      // Naviguer directement vers l'API — le serveur verifie le token
+      // Naviguer directement vers l'API — le serveur vérifié le token
       // et redirige le navigateur vers /login?verified=true ou /login?error=...
       window.location.href = `/api/auth/verify-email?token=${token}`
     }
@@ -42,7 +42,7 @@ export default function VerifyEmailPage() {
       const data = await response.json()
 
       if (response.ok) {
-        setMessage('Un nouveau lien de confirmation t\'a ete envoye. Verifie ta boite mail.')
+        setMessage('Un nouveau lien de confirmation t\'a été envoyé. Vérifie ta boîte mail.')
         setResendCooldown(60)
       } else {
         setMessage(data.error || 'Erreur lors de l\'envoi du lien')
@@ -100,7 +100,7 @@ export default function VerifyEmailPage() {
                 <CheckCircle size={48} className="text-[#2ed573]" />
               </div>
               <h1 className="text-2xl font-extrabold text-white mb-2 text-center">Email confirmé ! ✅</h1>
-              <p className="text-sm text-gray-400 text-center mb-6">Ton adresse email a ete confirmee avec succes. Tu peux maintenant te connecter.</p>
+              <p className="text-sm text-gray-400 text-center mb-6">Ton adresse email a été confirmée avec succès. Tu peux maintenant te connecter.</p>
               <Link
                 href="/login"
                 className="w-full py-3.5 rounded-xl font-extrabold text-black text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
@@ -116,7 +116,7 @@ export default function VerifyEmailPage() {
               <div className="flex justify-center mb-6">
                 <AlertCircle size={48} className="text-[#ff4757]" />
               </div>
-              <h1 className="text-2xl font-extrabold text-white mb-2 text-center">Erreur de verification</h1>
+              <h1 className="text-2xl font-extrabold text-white mb-2 text-center">Erreur de vérification</h1>
               <p className="text-sm text-gray-400 text-center mb-4">{message}</p>
               <button
                 onClick={handleResendEmail}
@@ -148,7 +148,7 @@ export default function VerifyEmailPage() {
               </div>
               <h1 className="text-2xl font-extrabold text-white mb-2 text-center">Verifie ton email</h1>
               <p className="text-sm text-gray-400 text-center mb-4">
-                Un lien de confirmation a ete envoye a <strong className="text-white">{email}</strong>
+                Un lien de confirmation a été envoyé a <strong className="text-white">{email}</strong>
               </p>
               <p className="text-sm text-gray-500 text-center mb-6">
                 Clique sur le lien dans l&apos;email pour confirmer ton adresse et activer ton compte.

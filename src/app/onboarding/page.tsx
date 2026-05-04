@@ -80,7 +80,7 @@ export default function OnboardingPage() {
             Dernière étape !
           </h1>
           <p className="text-sm text-gray-400 text-center mb-8">
-            Dis-nous qui tu es pour personnaliser ton expérience
+            Dis-nous qui tu es pour personnalisér ton expérience
           </p>
 
           {error && (

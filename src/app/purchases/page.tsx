@@ -133,7 +133,7 @@ export default function PurchasesPage() {
           <div>
             <h1 className="text-2xl font-extrabold text-white">Mes Achats</h1>
             <p className="text-sm text-gray-400 mt-1">
-              {stats.totalPurchases} beat{stats.totalPurchases > 1 ? 's' : ''} achete{stats.totalPurchases > 1 ? 's' : ''} · {stats.totalSpent.toLocaleString('fr-FR')}&euro; depense{stats.totalSpent > 1 ? 's' : ''}
+              {stats.totalPurchases} beat{stats.totalPurchases > 1 ? 's' : ''} acheté{stats.totalPurchases > 1 ? 's' : ''} · {stats.totalSpent.toLocaleString('fr-FR')}&euro; dépensé{stats.totalSpent > 1 ? 's' : ''}
             </p>
           </div>
           <Link
@@ -151,7 +151,7 @@ export default function PurchasesPage() {
             <div className="flex items-center gap-2 mb-3">
               <AlertCircle size={18} className="text-[#e11d48]" />
               <h3 className="text-sm font-bold text-white">
-                {pendingPayments.length} enchere{pendingPayments.length > 1 ? 's' : ''} gagnee{pendingPayments.length > 1 ? 's' : ''} en attente de paiement
+                {pendingPayments.length} enchère{pendingPayments.length > 1 ? 's' : ''} gagnée{pendingPayments.length > 1 ? 's' : ''} en attente de paiement
               </h3>
             </div>
             <div className="space-y-2">
@@ -295,7 +295,7 @@ export default function PurchasesPage() {
             <ShoppingBag size={48} className="text-gray-700 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-400 mb-2">Aucun achat pour le moment</h3>
             <p className="text-sm text-gray-600 mb-6">
-              Gagne des encheres pour acheter des beats et les retrouver ici
+              Gagne des enchères pour achetér des beats et les retrouver ici
             </p>
             <Link
               href="/marketplace"

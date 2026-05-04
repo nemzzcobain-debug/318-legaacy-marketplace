@@ -5,12 +5,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// GET — Liste des conversations de l'utilisateur connecte
+// GET — Liste des conversations de l'utilisateur connecté
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
     const userId = session.user.id
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     // Format conversations with unread count from _count aggregate
     const withUnread = conversations.map((conv) => {
-      // Determine l'autre participant
+      // Détermine l'autre participant
       const otherUser = conv.user1Id === userId ? conv.user2 : conv.user1
 
       return {
@@ -79,12 +79,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — Creer ou recuperer une conversation avec un utilisateur
+// POST — Creer ou récupérer une conversation avec un utilisateur
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
     const { recipientId } = await req.json()
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Impossible de discuter avec soi-meme' }, { status: 400 })
     }
 
-    // Verifier que le destinataire existe
+    // Vérifier que le destinataire existe
     const recipient = await prisma.user.findUnique({
       where: { id: recipientId },
       select: { id: true, name: true, displayName: true, avatar: true, role: true },
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ conversationId: conversation.id, otherUser: recipient })
   } catch (error: any) {
-    console.error('Erreur creation conversation:', error)
+    console.error('Erreur création conversation:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

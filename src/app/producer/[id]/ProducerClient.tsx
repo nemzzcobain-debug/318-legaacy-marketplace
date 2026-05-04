@@ -202,7 +202,7 @@ export default function ProducerClient() {
                   <MessageCircle size={16} /> Contacter
                 </Link>
                 <FollowButton producerId={producer.id} size="md" />
-                <ShareButton url={`/producer/${producer.id}`} title={`${displayName} - Producteur sur 318 LEGAACY`} description={`Decouvre les beats de ${displayName} sur 318 LEGAACY Marketplace`} />
+                <ShareButton url={`/producer/${producer.id}`} title={`${displayName} - Producteur sur 318 LEGAACY`} description={`Découvre les beats de ${displayName} sur 318 LEGAACY Marketplace`} />
                 <ReportButton type="USER" targetUserId={producer.id} />
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function ProducerClient() {
         <div className="flex gap-2 mb-6 border-b border-[#222222] pb-2">
           {[
             { id: 'beats' as const, label: 'Beats', icon: Music, count: allBeats.length },
-            { id: 'auctions' as const, label: 'Encheres actives', icon: Gavel, count: beatsWithAuctions.length },
+            { id: 'auctions' as const, label: 'Enchères actives', icon: Gavel, count: beatsWithAuctions.length },
             { id: 'reviews' as const, label: 'Avis', icon: Star },
             { id: 'about' as const, label: 'A propos', icon: Users },
           ].map(({ id, label, icon: Icon, count }) => (
@@ -313,7 +313,7 @@ export default function ProducerClient() {
                         </Link>
                       ) : (
                         <span className="text-[10px] text-gray-600 px-3 py-1.5 rounded-lg bg-white/5">
-                          Pas d'enchere
+                          Pas d'enchère
                         </span>
                       )}
                     </div>
@@ -370,7 +370,7 @@ export default function ProducerClient() {
                         <div className="text-lg font-extrabold text-red-500">{auction.currentBid}&euro;</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[10px] text-gray-500 mb-0.5">{auction.totalBids} encheres</div>
+                        <div className="text-[10px] text-gray-500 mb-0.5">{auction.totalBids} enchères</div>
                         <div className="flex items-center gap-1 text-xs text-gray-400">
                           <Clock size={11} />
                           <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
@@ -383,7 +383,7 @@ export default function ProducerClient() {
             ) : (
               <div className="col-span-2 text-center py-16">
                 <Gavel size={40} className="text-gray-700 mx-auto mb-3" />
-                <p className="text-gray-400">Aucune enchere active</p>
+                <p className="text-gray-400">Aucune enchère active</p>
               </div>
             )}
           </div>
@@ -403,7 +403,7 @@ export default function ProducerClient() {
               </p>
             ) : (
               <p className="text-sm text-gray-500 italic mb-6">
-                Ce producteur n'a pas encore ajoute de bio.
+                Ce producteur n'a pas encore ajouté de bio.
               </p>
             )}
 
@@ -412,10 +412,10 @@ export default function ProducerClient() {
                 <BarChart3 size={18} className="text-red-500 mb-2" />
                 <div className="text-sm font-bold text-white mb-0.5">Statistiques</div>
                 <div className="space-y-1.5 text-xs text-gray-400">
-                  <div className="flex justify-between"><span>Beats crees</span><span className="text-white">{producer.stats.totalBeats}</span></div>
-                  <div className="flex justify-between"><span>Encheres lancees</span><span className="text-white">{producer.stats.totalAuctions}</span></div>
-                  <div className="flex justify-between"><span>Ventes completees</span><span className="text-white">{producer.stats.completedAuctions}</span></div>
-                  <div className="flex justify-between"><span>Total ecoutes</span><span className="text-white">{producer.stats.totalPlays.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span>Beats créés</span><span className="text-white">{producer.stats.totalBeats}</span></div>
+                  <div className="flex justify-between"><span>Enchères lancées</span><span className="text-white">{producer.stats.totalAuctions}</span></div>
+                  <div className="flex justify-between"><span>Ventes complétées</span><span className="text-white">{producer.stats.completedAuctions}</span></div>
+                  <div className="flex justify-between"><span>Total écoutes</span><span className="text-white">{producer.stats.totalPlays.toLocaleString()}</span></div>
                 </div>
               </div>
 
@@ -435,7 +435,7 @@ export default function ProducerClient() {
                   <div className="flex justify-between">
                     <span>Statut</span>
                     <span className={producer.producerStatus === 'APPROVED' ? 'text-green-400' : 'text-yellow-400'}>
-                      {producer.producerStatus === 'APPROVED' ? 'Verifie' : 'En attente'}
+                      {producer.producerStatus === 'APPROVED' ? 'Vérifié' : 'En attente'}
                     </span>
                   </div>
                 </div>

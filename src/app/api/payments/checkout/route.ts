@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
  * DEPRECATED — Route de checkout legacy
  *
  * Cette route utilisait Stripe Checkout Sessions (redirection externe).
- * Elle a ete remplacee par POST /api/stripe/checkout qui utilise
+ * Elle a été remplacée par POST /api/stripe/checkout qui utilise
  * PaymentIntent avec Stripe Elements inline.
  *
  * Les clients doivent migrer vers /api/stripe/checkout.

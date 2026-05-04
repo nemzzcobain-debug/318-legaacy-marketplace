@@ -402,7 +402,7 @@ function SearchPageContent() {
                 {loading ? (
                   <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Recherche...</span>
                 ) : (
-                  <span><strong className="text-white">{total}</strong> resultat{total > 1 ? 's' : ''}</span>
+                  <span><strong className="text-white">{total}</strong> résultat{total > 1 ? 's' : ''}</span>
                 )}
               </div>
 

@@ -172,7 +172,7 @@ export default function WatchlistPage() {
           <div className="text-center py-20 bg-[#111] border border-[#222] rounded-2xl">
             <Eye size={48} className="text-gray-700 mx-auto mb-4" />
             <p className="text-gray-400 font-bold text-lg">
-              {items.length === 0 ? 'Ta watchlist est vide' : 'Aucune enchere dans ce filtre'}
+              {items.length === 0 ? 'Ta watchlist est vide' : 'Aucune enchère dans ce filtre'}
             </p>
             <p className="text-gray-600 text-sm mt-1 mb-6">
               Ajoute des enchères depuis le marketplace pour les suivre ici

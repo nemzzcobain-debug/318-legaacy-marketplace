@@ -66,7 +66,7 @@ export function getPublicUrl(bucket: string, filePath: string): string {
 }
 
 /**
- * Generer une signed URL temporaire pour un fichier (download protege)
+ * Générer une signed URL temporaire pour un fichier (download protégé)
  * @param bucket - Nom du bucket
  * @param filePath - Chemin dans le bucket
  * @param expiresIn - Duree en secondes (defaut: 1h)

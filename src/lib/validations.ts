@@ -6,8 +6,8 @@ export const registerSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z
     .string()
-    .min(8, 'Minimum 8 caracteres')
-    .max(128, 'Maximum 128 caracteres')
+    .min(8, 'Minimum 8 caractères')
+    .max(128, 'Maximum 128 caractères')
     .regex(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre'
@@ -29,7 +29,7 @@ export const resetPasswordSchema = z
     token: z.string().min(1, 'Token invalide'),
     password: z
       .string()
-      .min(8, 'Minimum 8 caracteres')
+      .min(8, 'Minimum 8 caractères')
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
         'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre'
@@ -127,7 +127,7 @@ const optionalUrl = z
   .pipe(z.string().url('URL invalide').optional())
 
 export const producerApplicationSchema = z.object({
-  producerBio: z.string().min(6, 'Bio trop courte, minimum 6 caracteres').max(1000),
+  producerBio: z.string().min(6, 'Bio trop courte, minimum 6 caractères').max(1000),
   portfolio: optionalUrl,
   youtube: optionalUrl,
   genres: z.array(z.string()).min(1, 'Selectionne au moins un genre'),

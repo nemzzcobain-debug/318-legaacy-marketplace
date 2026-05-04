@@ -172,7 +172,7 @@ export default function AnalyticsTab() {
         {/* Bid Activity */}
         <div className="bg-[#111111] border border-[#222222] rounded-xl p-5">
           <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-            <Gavel size={16} className="text-red-500" /> Activite encheres
+            <Gavel size={16} className="text-red-500" /> Activité enchères
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={charts.bids}>

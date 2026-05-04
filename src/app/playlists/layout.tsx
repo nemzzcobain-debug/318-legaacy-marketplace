@@ -4,10 +4,10 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.318marketplace.c
 
 export const metadata: Metadata = {
   title: 'Playlists — Collections de Beats',
-  description: 'Decouvre et cree des playlists de beats sur 318 LEGAACY Marketplace. Organise tes instrumentales favorites en collections et partage-les.',
+  description: 'Découvre et crée des playlists de beats sur 318 LEGAACY Marketplace. Organise tes instrumentales favorites en collections et partage-les.',
   openGraph: {
     title: 'Playlists — Collections de Beats',
-    description: 'Decouvre et cree des playlists de beats. Organise tes instrumentales favorites en collections.',
+    description: 'Découvre et crée des playlists de beats. Organise tes instrumentales favorites en collections.',
     url: `${siteUrl}/playlists`,
     siteName: '318 LEGAACY Marketplace',
     type: 'website',

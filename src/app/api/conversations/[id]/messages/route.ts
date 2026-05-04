@@ -38,13 +38,13 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
     const userId = session.user.id
     const conversationId = params.id
 
-    // Verifier que l'utilisateur fait partie de la conversation
+    // Vérifier que l'utilisateur fait partie de la conversation
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
       select: { user1Id: true, user2Id: true },
@@ -55,7 +55,7 @@ export async function GET(
     }
 
     if (conversation.user1Id !== userId && conversation.user2Id !== userId) {
-      return NextResponse.json({ error: 'Acces interdit' }, { status: 403 })
+      return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
     }
 
     // Pagination par cursor
@@ -112,7 +112,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
     const userId = session.user.id
@@ -133,10 +133,10 @@ export async function POST(
     }
 
     if (content.length > 2000) {
-      return NextResponse.json({ error: 'Message trop long (max 2000 caracteres)' }, { status: 400 })
+      return NextResponse.json({ error: 'Message trop long (max 2000 caractères)' }, { status: 400 })
     }
 
-    // Verifier que l'utilisateur fait partie de la conversation
+    // Vérifier que l'utilisateur fait partie de la conversation
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
       select: { user1Id: true, user2Id: true },
@@ -147,7 +147,7 @@ export async function POST(
     }
 
     if (conversation.user1Id !== userId && conversation.user2Id !== userId) {
-      return NextResponse.json({ error: 'Acces interdit' }, { status: 403 })
+      return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
     }
 
     // Creer le message

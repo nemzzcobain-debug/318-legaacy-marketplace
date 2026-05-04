@@ -212,7 +212,7 @@ export default function FAQPage() {
         {activeSection === 'licenses' && (
           <div className="space-y-6">
             <p className="text-sm text-gray-400">
-              Chaque enchere propose un type de licence qui determine les droits d&apos;utilisation du beat. Les multiplicateurs s&apos;appliquent au prix de base.
+              Chaque enchère propose un type de licence qui détermine les droits d&apos;utilisation du beat. Les multiplicateurs s&apos;appliquent au prix de base.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -400,7 +400,7 @@ export default function FAQPage() {
             />
             <AccordionItem
               question="Comment suivre un producteur ?"
-              answer={<p>Clique sur le bouton &quot;Suivre&quot; sur le profil d&apos;un producteur. Tu recevras une notification a chaque fois qu&apos;il uploade un nouveau beat ou lance une enchere.</p>}
+              answer={<p>Clique sur le bouton &quot;Suivre&quot; sur le profil d&apos;un producteur. Tu recevras une notification a chaque fois qu&apos;il uploade un nouveau beat ou lance une enchère.</p>}
             />
             <AccordionItem
               question="Puis-je laisser un avis sur un producteur ?"

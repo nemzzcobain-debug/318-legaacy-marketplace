@@ -409,6 +409,53 @@ export default function UploadBeatPage() {
     )
   }
 
+  // Écran hero si aucun fichier audio sélectionné
+  if (!audioFile) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <Header />
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
+          <div
+            onClick={() => audioInputRef.current?.click()}
+            onDrop={handleAudioDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={`flex flex-col items-center justify-center cursor-pointer transition-all group ${
+              dragOver ? 'scale-105' : ''
+            }`}
+          >
+            <div
+              className={`w-40 h-40 rounded-full flex items-center justify-center mb-6 transition-all group-hover:scale-110 group-hover:shadow-[0_0_60px_rgba(225,29,72,0.4)] ${
+                dragOver
+                  ? 'bg-[#e11d48] shadow-[0_0_80px_rgba(225,29,72,0.6)]'
+                  : 'bg-[#e11d48]/90 shadow-[0_0_40px_rgba(225,29,72,0.3)]'
+              }`}
+            >
+              <Upload size={48} className="text-white" />
+            </div>
+            <h1 className="text-4xl font-black text-[#e11d48] tracking-tight mb-2">UPLOAD</h1>
+            <p className="text-gray-400 text-center text-sm">
+              {dragOver ? 'Lâche ton fichier ici' : 'Clique ou glisse ton beat ici'}
+            </p>
+            <p className="text-gray-600 text-xs mt-1">MP3, WAV, FLAC · Max 50 MB</p>
+          </div>
+          <input
+            ref={audioInputRef}
+            type="file"
+            accept="audio/mpeg,audio/wav,audio/mp3,audio/x-wav,audio/wave,audio/mp4,audio/aac,audio/ogg,audio/flac,.mp3,.wav,.m4a,.aac,.ogg,.flac"
+            onChange={handleAudioSelect}
+            className="hidden"
+          />
+          {error && (
+            <div className="mt-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm max-w-sm text-center">
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />

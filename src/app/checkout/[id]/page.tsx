@@ -108,7 +108,7 @@ export default function CheckoutPage() {
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [promoCode, setPromoCode] = useState<string | null>(null)
 
-  // Charger l'enchere
+  // Charger l'enchère
   useEffect(() => {
     if (!auctionId || status === 'loading') return
     if (status === 'unauthenticated') {
@@ -141,7 +141,7 @@ export default function CheckoutPage() {
     loadAuction()
   }, [auctionId, status, router])
 
-  // Initialiser le PaymentIntent quand l'enchere est chargee
+  // Initialiser le PaymentIntent quand l'enchère est chargee
   useEffect(() => {
     if (!auction || success || clientSecret) return
 
@@ -187,7 +187,7 @@ export default function CheckoutPage() {
           </div>
           <h1 className="text-3xl font-black text-white mb-3">Paiement confirmé !</h1>
           <p className="text-gray-400 mb-2">
-            Votre achat de <span className="text-white font-semibold">{auction?.beat.title}</span> est confirme.
+            Votre achat de <span className="text-white font-semibold">{auction?.beat.title}</span> est confirmé.
           </p>
           <p className="text-gray-500 text-sm mb-8">
             Licence {auction?.winningLicense} - {auction?.finalPrice || auction?.currentBid}&euro;
@@ -415,7 +415,7 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* Securite */}
+              {/* Sécurité */}
               <div className="flex items-center justify-center gap-4 mt-4 text-[10px] text-gray-600">
                 <span className="flex items-center gap-1"><Shield size={10} /> Paiement sécurisé</span>
                 <span className="flex items-center gap-1"><Lock size={10} /> Chiffrement SSL</span>

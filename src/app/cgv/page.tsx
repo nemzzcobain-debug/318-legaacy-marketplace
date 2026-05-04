@@ -78,10 +78,10 @@ export default function CGVPage() {
 
         {/* Article 6 */}
         <section className="mb-10">
-          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">Article 6 — Droit de retractation</h2>
+          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">Article 6 — Droit de rétractation</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p>Conformement a l&apos;article L.221-28 du Code de la consommation, le droit de retractation <strong className="text-white">ne s&apos;applique pas</strong> aux contenus numeriques fournis sur un support immateriel dont l&apos;execution a commence avec l&apos;accord du consommateur.</p>
-            <p>En validant son achat et en accedant au telechargement du beat, l&apos;acheteur renonce expressement a son droit de retractation.</p>
+            <p>Conformément à l&apos;article L.221-28 du Code de la consommation, le droit de rétractation <strong className="text-white">ne s&apos;applique pas</strong> aux contenus numériques fournis sur un support immatériel dont l&apos;exécution a commencé avec l&apos;accord du consommateur.</p>
+            <p>En validant son achat et en accédant au téléchargement du beat, l&apos;acheteur renonce expressément à son droit de rétractation.</p>
           </div>
         </section>
 
@@ -92,7 +92,7 @@ export default function CGVPage() {
             <p>En publiant un beat sur la plateforme, le producteur garantit :</p>
             <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-2">
               <p>— Être l&apos;auteur original du beat ou détenir tous les droits nécessaires</p>
-              <p>— Que le beat ne contient aucun sample non autorise</p>
+              <p>— Que le beat ne contient aucun sample non autorisé</p>
               <p>— Que le contenu ne viole aucun droit de tiers</p>
               <p>— Disposer de la capacite juridique pour vendre des licences</p>
             </div>
@@ -104,7 +104,7 @@ export default function CGVPage() {
         <section className="mb-10">
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">Article 8 — Responsabilite de la plateforme</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
-            <p>318 LEGAACY Marketplace agit en tant qu&apos;intermediaire technique entre acheteurs et producteurs. La plateforme ne saurait etre tenue responsable :</p>
+            <p>318 LEGAACY Marketplace agit en tant qu&apos;intermédiaire technique entre acheteurs et producteurs. La plateforme ne saurait être tenue responsable :</p>
             <p>— Du contenu publié par les producteurs</p>
             <p>— De la qualité ou de l&apos;originalité des beats mis en vente</p>
             <p>— Des litiges entre acheteurs et producteurs relatifs aux licences</p>

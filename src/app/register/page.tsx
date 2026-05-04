@@ -50,7 +50,7 @@ export default function RegisterPage() {
         return
       }
 
-      // Rediriger vers la page de verification d'email
+      // Rediriger vers la page de vérification d'email
       router.push(`/verify-email?email=${encodeURIComponent(email)}`)
     } catch {
       setError('Erreur de connexion au serveur')

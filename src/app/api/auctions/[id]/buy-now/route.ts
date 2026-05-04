@@ -10,18 +10,18 @@ import {
   isConnectAccountReady,
 } from '@/lib/stripe'
 
-// POST /api/auctions/[id]/buy-now — Creer un PaymentIntent pour achat immediat
+// POST /api/auctions/[id]/buy-now — Creer un PaymentIntent pour achat immédiat
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const userId = session.user.id
     const auctionId = params.id
 
-    // Recuperer l'enchere
+    // Récupérer l'enchère
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
       include: {
@@ -35,25 +35,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Enchere introuvable' }, { status: 404 })
     }
 
-    // Verifier que l'enchere est active
+    // Vérifier que l'enchère est active
     if (auction.status !== 'ACTIVE' && auction.status !== 'ENDING_SOON') {
-      return NextResponse.json({ error: "Cette enchere n'est plus active" }, { status: 400 })
+      return NextResponse.json({ error: "Cette enchère n'est plus active" }, { status: 400 })
     }
 
-    // SECURITY FIX H4: Verifier que l'enchere n'est pas expiree (meme si le cron n'a pas encore mis a jour le statut)
+    // SECURITY FIX H4: Vérifier que l'enchère n'est pas expirée (même si le cron n'a pas encore mis a jour le statut)
     if (auction.endTime && new Date(auction.endTime) < new Date()) {
-      return NextResponse.json({ error: "Cette enchere est terminee" }, { status: 400 })
+      return NextResponse.json({ error: "Cette enchère est terminée" }, { status: 400 })
     }
 
-    // Verifier qu'un buyNowPrice existe
+    // Vérifier qu'un buyNowPrice existe
     if (!auction.buyNowPrice) {
       return NextResponse.json(
-        { error: "L'achat immediat n'est pas disponible pour cette enchere" },
+        { error: "L'achat immédiat n'est pas disponible pour cette enchère" },
         { status: 400 }
       )
     }
 
-    // Empecher le producteur d'acheter son propre beat
+    // Empêcher le producteur d'acheter son propre beat
     if (auction.beat.producerId === userId) {
       return NextResponse.json(
         { error: 'Vous ne pouvez pas acheter votre propre beat' },
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           licenseType: 'EXCLUSIVE',
         })
       } else {
-        // Compte pas encore verifie → marketplace encaisse
+        // Compte pas encore vérifié → marketplace encaisse
         result = await createHeldPaymentIntent({
           amount,
           auctionId: auction.id,
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       })
     }
 
-    // Sauvegarder le PaymentIntent dans l'enchere
+    // Sauvegarder le PaymentIntent dans l'enchère
     await prisma.auction.update({
       where: { id: auctionId },
       data: {

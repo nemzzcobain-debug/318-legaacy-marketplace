@@ -31,9 +31,9 @@ export default function StripeRefreshPage() {
 
       <main className="max-w-lg mx-auto px-4 py-20 text-center">
         <RefreshCw size={48} className="text-yellow-400 mx-auto mb-6" />
-        <h1 className="text-2xl font-bold text-white mb-3">Session expiree</h1>
+        <h1 className="text-2xl font-bold text-white mb-3">Session expirée</h1>
         <p className="text-gray-400 mb-8">
-          Votre session d'onboarding Stripe a expire. Cliquez ci-dessous pour reprendre la configuration.
+          Votre session d'onboarding Stripe a expiré. Cliquez ci-dessous pour reprendre la configuration.
         </p>
         <button
           onClick={retryOnboarding}

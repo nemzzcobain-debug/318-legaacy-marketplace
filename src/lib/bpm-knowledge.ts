@@ -78,7 +78,7 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     confidence: 85,
   },
   {
-    keywords: ['gagner', 'remporter', 'victoire', 'gagnant', 'winner', 'win'],
+    keywords: ['gagner', 'remportér', 'victoire', 'gagnant', 'winner', 'win'],
     question: "Comment gagner une enchère ?",
     answer: "Pour gagner, tu dois être le **plus offrant** quand le compte à rebours arrive à zéro. Conseil : surveille les enchères qui t'intéressent et place ta mise stratégiquement. Tu recevras une notification si quelqu'un surenchérit.",
     confidence: 90,
@@ -92,7 +92,7 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     confidence: 90,
   },
   {
-    keywords: ['sécurité', 'securite', 'sécurisé', 'securise', 'fiable', 'confiance', 'safe'],
+    keywords: ['sécurité', 'sécurité', 'sécurisé', 'securise', 'fiable', 'confiance', 'safe'],
     question: "Le site est-il sécurisé ?",
     answer: "Oui, 318 LEGAACY Marketplace utilise :\n• **HTTPS** (connexion cryptée)\n• **Stripe** pour les paiements (certifié PCI DSS)\n• **Authentification sécurisée** (Google OAuth + email vérifié)\n• Tous les producteurs sont **vérifiés** par notre équipe.",
     confidence: 95,
@@ -106,7 +106,7 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     confidence: 90,
   },
   {
-    keywords: ['validation', 'validé', 'attente', 'pending', 'vérifié', 'verifie', 'vérification', 'verification'],
+    keywords: ['validation', 'validé', 'attente', 'pending', 'vérifié', 'vérifié', 'vérification', 'verification'],
     question: "Pourquoi mon compte producteur est en attente ?",
     answer: "Pour garantir la qualité, chaque compte producteur est **vérifié manuellement** par notre équipe. Ça prend généralement **24 à 48h**. Tu recevras un email de confirmation une fois validé. Si ça prend plus de temps, contacte-nous !",
     confidence: 90,

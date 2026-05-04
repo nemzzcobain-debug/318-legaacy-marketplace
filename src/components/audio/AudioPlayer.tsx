@@ -34,7 +34,7 @@ export default function AudioPlayer({
 }: AudioPlayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // Web Audio refs — pas re-crees a chaque render
+  // Web Audio refs — pas re-créés à chaque render
   const audioContextRef = useRef<AudioContext | null>(null)
   const audioBufferRef = useRef<AudioBuffer | null>(null)
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null)
@@ -57,8 +57,8 @@ export default function AudioPlayer({
 
   const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalPlaying
 
-  // Cree (ou reutilise) le singleton AudioContext. iOS/Safari refusent de
-  // creer ou resume l'AudioContext hors d'un user gesture — on le cree donc
+  // Crée (ou réutilise) le singleton AudioContext. iOS/Safari refusent de
+  // créer ou resume l'AudioContext hors d'un user gesture — on le crée donc
   // de facon lazy au premier play().
   const getContext = useCallback(() => {
     if (!audioContextRef.current) {
@@ -106,7 +106,7 @@ export default function AudioPlayer({
         audioBufferRef.current = decoded
         setDuration(decoded.duration)
         setLoading(false)
-        // Calcule la waveform depuis les donnees decodees (plus efficace
+        // Calcule la waveform depuis les données decodees (plus efficace
         // que de refetch).
         const rawData = decoded.getChannelData(0)
         const samples = compact ? 60 : 100

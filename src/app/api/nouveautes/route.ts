@@ -6,7 +6,7 @@ import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
 
 /**
  * Lazy finalization: auto-finalize expired auctions that the daily cron
- * hasn't processed yet. This ensures beats appear in Nouveautés immediately
+ * hasn't processed yet. This ensures beats appear in Nouveautés immédiately
  * after their auction ends, without waiting for the midnight cron.
  */
 async function lazyFinalizeExpiredAuctions(playlistId: string) {
@@ -60,8 +60,8 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
             await tx.notification.create({
               data: {
                 type: 'AUCTION_WON',
-                title: 'Felicitations ! Vous avez gagne !',
-                message: `Vous avez remporte "${auction.beat.title}" pour ${topBid.finalAmount}€. Procedez au paiement.`,
+                title: 'Félicitations ! Vous avez gagné !',
+                message: `Vous avez remporté "${auction.beat.title}" pour ${topBid.finalAmount}€. Procedez au paiement.`,
                 link: `/checkout/${auction.id}`,
                 userId: topBid.userId,
               },
@@ -71,8 +71,8 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
             await tx.notification.create({
               data: {
                 type: 'AUCTION_ENDED',
-                title: 'Enchere terminee !',
-                message: `Votre beat "${auction.beat.title}" a ete vendu pour ${topBid.finalAmount}€. Paiement en attente.`,
+                title: 'Enchere terminée !',
+                message: `Votre beat "${auction.beat.title}" a été vendu pour ${topBid.finalAmount}€. Paiement en attente.`,
                 link: `/auction/${auction.id}`,
                 userId: auction.beat.producerId,
               },
@@ -87,8 +87,8 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
             await tx.notification.create({
               data: {
                 type: 'AUCTION_ENDED',
-                title: 'Enchere terminee sans vente',
-                message: `Le prix de reserve n'a pas ete atteint pour "${auction.beat.title}".`,
+                title: 'Enchere terminée sans vente',
+                message: `Le prix de réserve n'a pas été atteint pour "${auction.beat.title}".`,
                 link: `/auction/${auction.id}`,
                 userId: auction.beat.producerId,
               },
@@ -122,8 +122,8 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
           await tx.notification.create({
             data: {
               type: 'AUCTION_ENDED',
-              title: 'Enchere terminee sans enchere',
-              message: `Aucune enchere placee sur "${auction.beat.title}".`,
+              title: 'Enchère terminée sans enchère',
+              message: `Aucune enchère placée sur "${auction.beat.title}".`,
               link: `/auction/${auction.id}`,
               userId: auction.beat.producerId,
             },
@@ -187,8 +187,8 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
           await tx.notification.create({
             data: {
               type: 'SYSTEM',
-              title: 'Delai de paiement expire',
-              message: `Votre delai de paiement pour "${expired.beat.title}" a expire.`,
+              title: 'Délai de paiement expiré',
+              message: `Votre délai de paiement pour "${expired.beat.title}" a expiré.`,
               link: '/dashboard?tab=purchases',
               userId: expired.winnerId,
             },
@@ -198,8 +198,8 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
         await tx.notification.create({
           data: {
             type: 'AUCTION_ENDED',
-            title: 'Paiement non recu',
-            message: `Le gagnant n'a pas paye pour "${expired.beat.title}". Le beat est remis en vente.`,
+            title: 'Paiement non reçu',
+            message: `Le gagnant n'a pas payé pour "${expired.beat.title}". Le beat est remis en vente.`,
             link: `/nouveautes?beat=${expired.beat.id}`,
             userId: expired.beat.producerId,
           },
@@ -231,7 +231,7 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
   return finalized
 }
 
-// GET /api/nouveautes — Recuperer les beats de la playlist "Nouveautes"
+// GET /api/nouveautes — Récupérer les beats de la playlist "Nouveautes"
 export async function GET() {
   try {
     // Trouver ou créer la playlist "Nouveautes" publique
@@ -302,11 +302,11 @@ export async function GET() {
       return NextResponse.json({ beats: [] })
     }
 
-    // Filtrer: exclure les beats en encheres actives ou deja vendus
+    // Filtrer: exclure les beats en enchères actives ou déjà vendus
     const availableBeats = fullPlaylist.beats
       .filter((pb) => pb.beat.auctions.length === 0 && pb.beat.status !== 'SOLD')
 
-    // Recuperer les prix de base pour chaque beat (startPrice de la derniere enchere)
+    // Récupérer les prix de base pour chaque beat (startPrice de la dernière enchère)
     const beatsWithPrices = await Promise.all(
       availableBeats.map(async (pb) => {
         const lastAuction = await prisma.auction.findFirst({
@@ -351,7 +351,7 @@ export async function GET() {
       total: beatsWithPrices.length,
     })
   } catch (error) {
-    console.error('Erreur API nouveautes:', error)
+    console.error('Erreur API nouveautés:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

@@ -24,16 +24,16 @@ export async function POST(request: Request) {
     const { name, email, password, role: requestedRole } = validated.data
 
     // SECURITY FIX C1: Ne jamais accepter ADMIN du client
-    // Seuls ARTIST et PRODUCER sont autorises a l'inscription
+    // Seuls ARTIST et PRODUCER sont autorisés à l'inscription
     const safeRole = requestedRole === 'PRODUCER' ? 'PRODUCER' : 'ARTIST'
 
-    // Verifier si l'email existe deja
+    // Vérifier si l'email existe déjà
     const existingUser = await prisma.user.findUnique({
       where: { email },
     })
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Un compte existe deja avec cet email' },
+        { error: 'Un compte existe déjà avec cet email' },
         { status: 409 }
       )
     }
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       },
     })
 
-    // Generer le token de verification
+    // Générer le token de vérification
     const verificationToken = randomUUID()
     const hashedToken = createHash('sha256').update(verificationToken).digest('hex')
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h from now
@@ -73,10 +73,10 @@ export async function POST(request: Request) {
       },
     })
 
-    // Envoyer l'email de verification (non-bloquant)
+    // Envoyer l'email de vérification (non-bloquant)
     sendVerificationEmail({ to: email, name, token: verificationToken }).catch(() => {})
 
-    // Si producteur, creer une notification pour les admins
+    // Si producteur, créer une notification pour les admins
     if (safeRole === 'PRODUCER') {
       // Notifier les admins
       const admins = await prisma.user.findMany({

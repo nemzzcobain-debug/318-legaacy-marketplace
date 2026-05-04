@@ -255,7 +255,7 @@ export default function ChatWindow({ conversationId, otherUser, onBack, isOtherO
               ) : isOtherOnline ? (
                 <span className="text-green-400">En ligne</span>
               ) : isProducer ? (
-                'Producteur verifie'
+                'Producteur vérifié'
               ) : (
                 'Artiste'
               )}

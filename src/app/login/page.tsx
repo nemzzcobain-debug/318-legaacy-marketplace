@@ -26,19 +26,19 @@ export default function LoginPage() {
     if (verified === 'true') {
       setSuccess('Email confirmé ! Tu peux te connecter.')
     } else if (resetSuccess === 'true') {
-      setSuccess('Mot de passe reinitialise ! Tu peux te connecter.')
+      setSuccess('Mot de passe réinitialisé ! Tu peux te connecter.')
     } else if (errorParam) {
-      // Gerer toutes les erreurs NextAuth OAuth + verification
+      // Gérer toutes les erreurs NextAuth OAuth + verification
       const errorMessages: Record<string, string> = {
-        'invalid-token': 'Le lien de confirmation est invalide ou a expire.',
-        'token-expired': 'Le lien de confirmation a expire. Tu peux demander un nouveau lien.',
-        'server-error': 'Une erreur est survenue. Veuillez reessayer plus tard.',
+        'invalid-token': 'Le lien de confirmation est invalide ou a expiré.',
+        'token-expired': 'Le lien de confirmation a expiré. Tu peux demander un nouveau lien.',
+        'server-error': 'Une erreur est survenue. Veuillez réessayer plus tard.',
         'OAuthSignin': 'Erreur lors de la connexion Google. Verifie que ton compte Google est valide.',
         'OAuthCallback': 'Erreur de retour Google. Reessaie la connexion.',
-        'OAuthCreateAccount': 'Impossible de creer ton compte via Google. Essaie de t\'inscrire par email.',
-        'OAuthAccountNotLinked': 'Cet email est deja utilise avec un autre mode de connexion. Connecte-toi avec ton mot de passe.',
+        'OAuthCreateAccount': 'Impossible de créer ton compte via Google. Essaie de t\'inscrire par email.',
+        'OAuthAccountNotLinked': 'Cet email est déjà utilisé avec un autre mode de connexion. Connecte-toi avec ton mot de passe.',
         'Callback': 'Erreur lors de la connexion. Reessaie.',
-        'AccessDenied': 'Acces refuse. Verifie tes permissions.',
+        'AccessDenied': 'Accès refusé. Vérifie tes permissions.',
         'Configuration': 'Erreur de configuration du serveur. Contacte l\'administrateur.',
       }
       setError(errorMessages[errorParam] || `Erreur de connexion (${errorParam}). Reessaie ou utilise un autre mode de connexion.`)
@@ -59,9 +59,9 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        // Message d'erreur personnalise pour email non verifie
+        // Message d'erreur personnalisé pour email non vérifié
         if (result.error === 'EMAIL_NOT_VERIFIED') {
-          setError('Verifie ton email avant de te connecter. Un lien de confirmation t\'a ete envoye.')
+          setError('Vérifie ton email avant de te connecter. Un lien de confirmation t\'a été envoyé.')
         } else {
           setError(result.error)
         }
@@ -99,7 +99,7 @@ export default function LoginPage() {
         {/* Card */}
         <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-8">
           <h1 className="text-2xl font-extrabold text-white mb-1">Connexion</h1>
-          <p className="text-sm text-gray-400 mb-6">Accede a tes encheres</p>
+          <p className="text-sm text-gray-400 mb-6">Accède à tes enchères</p>
 
           {success && (
             <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-[#2ed57315] border border-[#2ed57330] text-[#2ed573] text-sm">

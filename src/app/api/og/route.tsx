@@ -208,7 +208,7 @@ export async function GET(req: NextRequest) {
                 display: 'flex',
               }}
             >
-              Premiere plateforme d'encheres de beats en France
+              Première plateforme d'enchères de beats en France
             </div>
             <div
               style={{

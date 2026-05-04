@@ -6,12 +6,12 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createConnectAccount, createOnboardingLink, isConnectAccountReady, createDashboardLink } from '@/lib/stripe'
 
-// POST — Creer un compte Stripe Connect et generer le lien d'onboarding
+// POST — Creer un compte Stripe Connect et générer le lien d'onboarding
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const user = await prisma.user.findUnique({
@@ -19,28 +19,28 @@ export async function POST(req: NextRequest) {
     })
 
     if (!user || (user.role !== 'PRODUCER' && user.role !== 'ADMIN')) {
-      return NextResponse.json({ error: 'Acces reserve aux producteurs' }, { status: 403 })
+      return NextResponse.json({ error: 'Accès réservé aux producteurs' }, { status: 403 })
     }
 
-    // Si le producteur a deja un compte Stripe, on essaye de reutiliser
+    // Si le producteur a déjà un compte Stripe, on essaye de réutiliser
     if (user.stripeAccountId) {
       try {
         const isReady = await isConnectAccountReady(user.stripeAccountId)
         if (isReady) {
           return NextResponse.json({
             status: 'active',
-            message: 'Votre compte Stripe est deja actif',
+            message: 'Votre compte Stripe est déjà actif',
           })
         }
-        // Sinon regenerer un lien d'onboarding
+        // Sinon regénérer un lien d'onboarding
         const accountLink = await createOnboardingLink(user.stripeAccountId)
         return NextResponse.json({
           status: 'pending',
           onboardingUrl: accountLink.url,
         })
       } catch (err: any) {
-        // Le compte Stripe sauvegarde n'existe plus / a ete supprime / appartient
-        // a un autre environnement (test vs live). On nettoie et on recree.
+        // Le compte Stripe sauvegardé n'existe plus / a été supprimé / appartient
+        // a un autre environnement (test vs live). On nettoie et on recrée.
         const msg = err?.message || ''
         const code = err?.code || err?.raw?.code || ''
         const isNotFound =
@@ -49,14 +49,14 @@ export async function POST(req: NextRequest) {
           msg.includes('does not have access')
         if (isNotFound) {
           console.warn(
-            'Compte Stripe sauvegarde invalide (' + msg + '), recreation pour user',
+            'Compte Stripe sauvegardé invalide (' + msg + '), recréation pour user',
             user.id
           )
           await prisma.user.update({
             where: { id: user.id },
             data: { stripeAccountId: null },
           })
-          // Continue vers la creation d'un nouveau compte ci-dessous
+          // Continue vers la création d'un nouveau compte ci-dessous
         } else {
           // Erreur Stripe differente : propager
           throw err
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       data: { stripeAccountId: account.id },
     })
 
-    // Generer le lien d'onboarding
+    // Générer le lien d'onboarding
     const accountLink = await createOnboardingLink(account.id)
 
     return NextResponse.json({
@@ -99,12 +99,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET — Verifier le status du compte Stripe Connect
+// GET — Vérifier le status du compte Stripe Connect
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const user = await prisma.user.findUnique({
@@ -118,14 +118,14 @@ export async function GET(req: NextRequest) {
     if (!user.stripeAccountId) {
       return NextResponse.json({
         status: 'not_connected',
-        message: 'Aucun compte Stripe connecte',
+        message: 'Aucun compte Stripe connecté',
       })
     }
 
     const isReady = await isConnectAccountReady(user.stripeAccountId)
 
     if (isReady) {
-      // Generer un lien vers le dashboard Stripe Express
+      // Générer un lien vers le dashboard Stripe Express
       try {
         const dashboardLink = await createDashboardLink(user.stripeAccountId)
         return NextResponse.json({
@@ -145,7 +145,7 @@ export async function GET(req: NextRequest) {
       message: 'Onboarding Stripe en cours. Completez votre inscription.',
     })
   } catch (error: any) {
-    console.error('Erreur verification Stripe:', error)
+    console.error('Erreur vérification Stripe:', error)
     return NextResponse.json(
       { error: 'Erreur serveur' },
       { status: 500 }

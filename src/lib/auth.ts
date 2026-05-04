@@ -52,7 +52,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-      // Google verifie les emails, donc le risque de prise de controle est faible
+      // Google vérifié les emails, donc le risque de prise de controle est faible
       allowDangerousEmailAccountLinking: true,
     }),
     // ─── Credentials Provider ───
@@ -85,7 +85,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Mot de passe incorrect')
         }
 
-        // Verifier que l'email est verifie
+        // Vérifier que l'email est vérifié
         if (!user.emailVerified) {
           throw new Error('EMAIL_NOT_VERIFIED')
         }

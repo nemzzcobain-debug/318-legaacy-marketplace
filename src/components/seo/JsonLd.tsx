@@ -20,7 +20,7 @@ export function WebsiteJsonLd({ siteUrl = 'https://www.318marketplace.com' }: We
     '@type': 'WebSite',
     name: '318 LEGAACY Marketplace',
     url: siteUrl,
-    description: 'Premiere plateforme d\'encheres de beats en France',
+    description: 'Première plateforme d\'enchères de beats en France',
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -170,7 +170,7 @@ export function ProducerJsonLd({ producer, totalBeats, totalFollowers, siteUrl =
     name,
     url: `${siteUrl}/producer/${producer.id}`,
     image: producer.avatar || `${siteUrl}/logo-318-marketplace.png`,
-    description: producer.bio || `Producteur verifie sur 318 LEGAACY Marketplace`,
+    description: producer.bio || `Producteur vérifié sur 318 LEGAACY Marketplace`,
     jobTitle: 'Beatmaker / Producteur musical',
     worksFor: {
       '@type': 'Organization',

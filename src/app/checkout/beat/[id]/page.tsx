@@ -38,7 +38,7 @@ const LICENSE_META: Record<string, { name: string; icon: any; color: string; rig
     name: 'Exclusive',
     icon: Sparkles,
     color: 'text-amber-400',
-    rights: 'WAV + Stems - Illimite',
+    rights: 'WAV + Stems - Illimité',
   },
 }
 
@@ -135,7 +135,7 @@ export default function BeatCheckoutPage() {
     if (cs) {
       setClientSecretParam(cs)
       // Ne pas supprimer tout de suite — garder pour les refreshes
-      // Le secret expire cote Stripe de toute facon
+      // Le secret expire côté Stripe de toute façon
     }
     setLoading2(false)
   }, [beatId, searchParams])
@@ -188,7 +188,7 @@ export default function BeatCheckoutPage() {
           <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
             <Check size={40} className="text-green-400" />
           </div>
-          <h2 className="text-2xl font-black text-white mb-3">Achat confirme !</h2>
+          <h2 className="text-2xl font-black text-white mb-3">Achat confirmé !</h2>
           <p className="text-gray-400 mb-2">
             Tu as achete <span className="text-white font-bold">{beatTitle}</span> avec la licence{' '}
             <span className={`font-bold ${licenseMeta.color}`}>{licenseMeta.name}</span>.
@@ -254,7 +254,7 @@ export default function BeatCheckoutPage() {
           <div className="flex items-center gap-4 text-xs text-gray-500">
             <div className="flex items-center gap-1">
               <Shield size={12} className="text-green-500" />
-              <span>Paiement securise</span>
+              <span>Paiement sécurisé</span>
             </div>
             <div className="flex items-center gap-1">
               <CreditCard size={12} />
@@ -299,8 +299,8 @@ export default function BeatCheckoutPage() {
 
         {/* Trust footer */}
         <p className="text-center text-[10px] text-gray-600 mt-6">
-          En payant, tu acceptes les conditions generales de 318 LEGAACY Marketplace. Les fichiers
-          seront disponibles immediatement apres confirmation du paiement.
+          En payant, tu acceptes les conditions générales de 318 LEGAACY Marketplace. Les fichiers
+          seront disponibles immédiatement apres confirmation du paiement.
         </p>
       </div>
     </div>

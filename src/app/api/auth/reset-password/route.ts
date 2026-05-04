@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     if (!resetToken) {
       return NextResponse.json(
-        { error: 'Lien de reinitialisation invalide ou expire' },
+        { error: 'Lien de réinitialisation invalide ou expiré' },
         { status: 400 }
       )
     }
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
         where: { token: hashedToken },
       })
       return NextResponse.json(
-        { error: 'Lien de reinitialisation expire. Demande une nouvelle reinitialisation.' },
+        { error: 'Lien de réinitialisation expiré. Demande une nouvelle réinitialisation.' },
         { status: 400 }
       )
     }
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json(
-      { message: 'Mot de passe reinitialise avec succes. Tu peux te connecter maintenant.' },
+      { message: 'Mot de passe réinitialisé avec succès. Tu peux te connecter maintenant.' },
       { status: 200 }
     )
   } catch (error) {

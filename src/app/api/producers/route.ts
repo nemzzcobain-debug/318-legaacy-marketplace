@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// GET /api/producers - Liste des producteurs approuves
+// GET /api/producers - Liste des producteurs approuvés
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)

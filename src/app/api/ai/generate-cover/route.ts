@@ -10,7 +10,7 @@ const openai = new OpenAI({
 })
 
 // SECURITY FIX H7: Quota par utilisateur pour la generation AI
-// Max 5 generations par jour par utilisateur
+// Max 5 générations par jour par utilisateur
 const AI_DAILY_LIMIT = 5
 const aiUsageMap = new Map<string, { count: number; resetAt: number }>()
 
@@ -60,11 +60,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Service de génération non configuré' }, { status: 503 })
     }
 
-    // SECURITY FIX H7: Verifier le quota AI
+    // SECURITY FIX H7: Vérifier le quota AI
     const quota = checkAiQuota(session.user.id!)
     if (!quota.allowed) {
       return NextResponse.json(
-        { error: `Limite de ${AI_DAILY_LIMIT} generations par jour atteinte. Reessayez demain.` },
+        { error: `Limite de ${AI_DAILY_LIMIT} générations par jour atteinte. Réessayez demain.` },
         { status: 429 }
       )
     }

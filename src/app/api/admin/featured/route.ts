@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user || (session.user as any).role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
     const featuredBeats = await prisma.beat.findMany({
@@ -50,7 +50,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user || (session.user as any).role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
     const { beatId, action, order } = await req.json()

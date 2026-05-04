@@ -34,11 +34,11 @@ setInterval(() => {
 
 export async function POST(request: NextRequest) {
   try {
-    // SECURITY FIX H2: Verifier le rate limit par IP
+    // SECURITY FIX H2: Vérifier le rate limit par IP
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     if (!checkRateLimit(ip)) {
       return NextResponse.json(
-        { error: 'Trop de demandes. Reessayez dans 15 minutes.' },
+        { error: 'Trop de demandes. Réessayez dans 15 minutes.' },
         { status: 429 }
       )
     }
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     // Always return 200 to prevent email enumeration
     if (!user) {
       return NextResponse.json(
-        { message: 'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.' },
+        { message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' },
         { status: 200 }
       )
     }
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(
-      { message: 'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.' },
+      { message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' },
       { status: 200 }
     )
   } catch (error) {

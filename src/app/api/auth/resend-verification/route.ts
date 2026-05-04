@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email requis' }, { status: 400 })
     }
 
-    // Verifier le rate limit
+    // Vérifier le rate limit
     if (!checkRateLimit(email)) {
       return NextResponse.json(
         { error: 'Trop de demandes. Essaie dans une heure.' },
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verifier que l'utilisateur existe et n'a pas encore verifier son email
+    // Vérifier que l'utilisateur existe et n'a pas encore vérifié son email
     const user = await prisma.user.findUnique({
       where: { email },
     })
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     }
 
     if (user.emailVerified) {
-      return NextResponse.json({ error: 'Cet email est deja verifie' }, { status: 400 })
+      return NextResponse.json({ error: 'Cet email est déjà vérifié' }, { status: 400 })
     }
 
     // Supprimer les anciens tokens pour cet email
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       where: { identifier: email },
     })
 
-    // Generer un nouveau token
+    // Générer un nouveau token
     const verificationToken = randomUUID()
     const hashedToken = createHash('sha256').update(verificationToken).digest('hex')
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h from now
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     }).catch(() => {})
 
     return NextResponse.json(
-      { message: 'Un nouveau lien de confirmation a ete envoye' },
+      { message: 'Un nouveau lien de confirmation a été envoyé' },
       { status: 200 }
     )
   } catch (error) {

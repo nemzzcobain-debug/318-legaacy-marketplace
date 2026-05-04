@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
     const { auctionId, status } = await req.json();
@@ -59,8 +59,8 @@ export async function PATCH(req: NextRequest) {
       data: {
         userId: auction.beat.producerId,
         type: 'SYSTEM',
-        title: `Enchere ${status === 'CANCELLED' ? 'annulee' : 'modifiee'}`,
-        message: `L'enchere pour "${auction.beat.title}" a ete ${status === 'CANCELLED' ? 'annulee' : 'mise a jour'} par l'administrateur.`
+        title: `Enchère ${status === 'CANCELLED' ? 'annulée' : 'modifiée'}`,
+        message: `L'enchère pour "${auction.beat.title}" a été ${status === 'CANCELLED' ? 'annulée' : 'mise à jour'} par l'administrateur.`
       }
     });
 

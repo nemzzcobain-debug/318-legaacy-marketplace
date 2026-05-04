@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const producerName = auction.beat.producer.displayName || auction.beat.producer.name
-    const title = `${auction.beat.title} — Enchere ${auction.status === 'ACTIVE' ? 'en cours' : 'terminee'}`
+    const title = `${auction.beat.title} — Enchere ${auction.status === 'ACTIVE' ? 'en cours' : 'terminée'}`
     const description = `Encheris sur "${auction.beat.title}" par ${producerName}. ${auction.beat.genre} · ${auction.beat.bpm} BPM. Enchere actuelle: ${auction.currentBid}€`
     const ogUrl = `${siteUrl}/api/og?auction=${params.id}&title=${encodeURIComponent(auction.beat.title)}&producer=${encodeURIComponent(producerName)}&bid=${auction.currentBid}&genre=${encodeURIComponent(auction.beat.genre)}&bpm=${auction.beat.bpm}`
 

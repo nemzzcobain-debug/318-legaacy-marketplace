@@ -45,9 +45,9 @@ export default function MentionsLegalesPage() {
           </div>
         </section>
 
-        {/* Activite */}
+        {/* Activité */}
         <section className="mb-10">
-          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">3. Activite de la plateforme</h2>
+          <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">3. Activité de la plateforme</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
             <p>318 LEGAACY Marketplace est une plateforme de mise en relation entre producteurs de beats (vendeurs) et acheteurs, fonctionnant sur un modèle d&apos;enchères en ligne.</p>
             <p>La plateforme agit en tant qu&apos;intermédiaire technique et perçoit une commission de <strong className="text-white">15%</strong> sur chaque transaction réalisée. Le producteur reçoit <strong className="text-white">85%</strong> du prix de vente final.</p>
@@ -70,7 +70,7 @@ export default function MentionsLegalesPage() {
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">5. Limitation de responsabilite</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
             <p>318 LEGAACY Studio s&apos;efforce de maintenir le Site accessible 24h/24 mais ne saurait etre tenu responsable en cas d&apos;interruption, pour quelque cause que ce soit.</p>
-            <p>En tant qu&apos;intermediaire, la plateforme ne garantit pas la qualite des beats mis en vente par les producteurs. Chaque producteur est responsable du contenu qu&apos;il publie et garantit detenir les droits necessaires.</p>
+            <p>En tant qu&apos;intermédiaire, la plateforme ne garantit pas la qualité des beats mis en vente par les producteurs. Chaque producteur est responsable du contenu qu&apos;il publie et garantit détenir les droits nécessaires.</p>
           </div>
         </section>
 

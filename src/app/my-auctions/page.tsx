@@ -147,7 +147,7 @@ export default function MyAuctionsPage() {
               <Gavel size={24} className="text-red-500" /> Mes Encheres
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Toutes les encheres auxquelles tu as participe
+              Toutes les enchères auxquelles tu as participé
             </p>
           </div>
           <Link
@@ -189,7 +189,7 @@ export default function MyAuctionsPage() {
                 <DollarSign size={18} className="text-yellow-400" />
               </div>
               <div className="text-xl font-extrabold text-white">{data.stats.totalSpent} EUR</div>
-              <div className="text-[11px] text-gray-500">Total depense</div>
+              <div className="text-[11px] text-gray-500">Total dépensé</div>
             </div>
           </div>
         )}
@@ -200,7 +200,7 @@ export default function MyAuctionsPage() {
             <AlertTriangle size={20} className="text-yellow-400 flex-shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-bold text-yellow-400">
-                {data.pendingPayment.length} enchere{data.pendingPayment.length > 1 ? 's' : ''} en attente de paiement
+                {data.pendingPayment.length} enchère{data.pendingPayment.length > 1 ? 's' : ''} en attente de paiement
               </p>
               <p className="text-xs text-yellow-400/60">Finalise tes achats pour recevoir les beats</p>
             </div>
@@ -317,7 +317,7 @@ export default function MyAuctionsPage() {
                             <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
                           </div>
                           <div className="text-[10px] text-gray-600 mt-0.5">
-                            Mon enchere: {auction.myLastBid} EUR
+                            Mon enchère: {auction.myLastBid} EUR
                           </div>
                         </>
                       )}
@@ -365,7 +365,7 @@ export default function MyAuctionsPage() {
                             Mon max: {auction.myLastBid} EUR
                           </div>
                           <span className="text-[10px] text-gray-600 mt-0.5 block">
-                            {auction.totalBids} encheres
+                            {auction.totalBids} enchères
                           </span>
                         </>
                       )}
@@ -388,8 +388,8 @@ export default function MyAuctionsPage() {
             {activeTab === 'active' && (
               <>
                 <Clock size={48} className="text-gray-700 mx-auto mb-4" />
-                <p className="text-gray-400 font-bold text-lg">Aucune enchere en cours</p>
-                <p className="text-gray-600 text-sm mt-1 mb-6">Tu n&apos;as pas d&apos;encheres actives en ce moment</p>
+                <p className="text-gray-400 font-bold text-lg">Aucune enchère en cours</p>
+                <p className="text-gray-600 text-sm mt-1 mb-6">Tu n&apos;as pas d&apos;enchères actives en ce moment</p>
                 <Link
                   href="/marketplace"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
@@ -409,21 +409,21 @@ export default function MyAuctionsPage() {
             {activeTab === 'won' && (
               <>
                 <Trophy size={48} className="text-gray-700 mx-auto mb-4" />
-                <p className="text-gray-400 font-bold text-lg">Aucune enchere gagnee</p>
-                <p className="text-gray-600 text-sm mt-1 mb-6">Continue a encherir pour remporter des beats</p>
+                <p className="text-gray-400 font-bold text-lg">Aucune enchère gagnée</p>
+                <p className="text-gray-600 text-sm mt-1 mb-6">Continue a encherir pour remportér des beats</p>
                 <Link
                   href="/marketplace"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
                   style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
                 >
-                  <Gavel size={16} /> Voir les encheres
+                  <Gavel size={16} /> Voir les enchères
                 </Link>
               </>
             )}
             {activeTab === 'lost' && (
               <>
                 <XCircle size={48} className="text-gray-700 mx-auto mb-4" />
-                <p className="text-gray-400 font-bold text-lg">Aucune enchere perdue</p>
+                <p className="text-gray-400 font-bold text-lg">Aucune enchère perdue</p>
                 <p className="text-gray-600 text-sm mt-1">Bonne nouvelle !</p>
               </>
             )}

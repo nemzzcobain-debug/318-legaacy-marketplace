@@ -1,0 +1,3 @@
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "magicToken" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "magicTokenExpiry" TIMESTAMP;
+CREATE INDEX IF NOT EXISTS "User_magicToken_idx" ON "User"("magicToken");

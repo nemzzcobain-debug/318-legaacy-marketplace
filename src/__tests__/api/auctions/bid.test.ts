@@ -106,7 +106,7 @@ describe('POST /api/auctions/bid', () => {
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.message).toBe('Enchere placee avec succes')
+    expect(data.message).toBe('Enchère placée avec succès')
     expect(data.bid).toBeDefined()
     expect(data.bid.amount).toBe(110)
     expect(prismaMock.bid.create).toHaveBeenCalled()
@@ -130,7 +130,7 @@ describe('POST /api/auctions/bid', () => {
     const data = await response.json()
 
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Non authentifie')
+    expect(data.error).toBe('Non authentifié')
     expect(prismaMock.auction.findUnique).not.toHaveBeenCalled()
   })
 
@@ -154,7 +154,7 @@ describe('POST /api/auctions/bid', () => {
     const data = await response.json()
 
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Non authentifie')
+    expect(data.error).toBe('Non authentifié')
   })
 
   it('should return 400 when auctionId is missing', async () => {
@@ -216,7 +216,7 @@ describe('POST /api/auctions/bid', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toContain('enchere minimum')
+    expect(data.error).toContain('enchère minimum')
   })
 
   it('should prevent bidding on own auction', async () => {
@@ -365,7 +365,7 @@ describe('POST /api/auctions/bid', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error).toContain('terminee')
+    expect(data.error).toContain('terminée')
   })
 
   it('should reject invalid bid amount', async () => {

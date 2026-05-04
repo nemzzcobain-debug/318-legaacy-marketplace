@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // BUG FIX 3: Rendre l'enchere publique (donnees de base) mais proteger les details sensibles
+    // BUG FIX 3: Rendre l'enchère publique (données de base) mais protéger les details sensibles
     const session = await getServerSession(authOptions);
     const isAuthenticated = !!session?.user;
 
@@ -24,7 +24,7 @@ export async function GET(
             }
           }
         },
-        // Bids et winner seulement pour les utilisateurs connectes
+        // Bids et winner seulement pour les utilisateurs connectés
         ...(isAuthenticated ? {
           bids: {
             include: {

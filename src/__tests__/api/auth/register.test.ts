@@ -50,7 +50,7 @@ describe('POST /api/auth/register', () => {
     const data = await response.json()
 
     expect(response.status).toBe(201)
-    expect(data.message).toBe('Compte cree avec succes')
+    expect(data.message).toBe('Compte créé avec succès')
     expect(data.user).toHaveProperty('id')
     expect(data.user.email).toBe(validUser.email)
     expect(prismaMock.user.findUnique).toHaveBeenCalled()
@@ -81,7 +81,7 @@ describe('POST /api/auth/register', () => {
     const data = await response.json()
 
     expect(response.status).toBe(409)
-    expect(data.error).toBe('Un compte existe deja avec cet email')
+    expect(data.error).toBe('Un compte existe déjà avec cet email')
     expect(prismaMock.user.create).not.toHaveBeenCalled()
   })
 

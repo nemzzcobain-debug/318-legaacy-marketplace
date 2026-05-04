@@ -5,7 +5,7 @@ import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import Stripe from 'stripe'
-import { sendAuctionWonEmail, sendPaymentReceivedEmail } from '@/lib/emails/resend'
+import { sendAuctionWonEmail, sendPaymentReceivedEmail, sendGuestPurchaseEmail } from '@/lib/emails/resend'
 
 /**
  * WEBHOOK CONSOLIDÉ STRIPE
@@ -30,9 +30,9 @@ async function markEventProcessed(eventId: string, eventType: string): Promise<b
     })
     return true // Nouveau, on peut traiter
   } catch (err: any) {
-    // P2002 = unique constraint violation = deja traite
+    // P2002 = unique constraint violation = déjà traité
     if (err?.code === 'P2002') return false
-    // Autre erreur DB → on traite quand meme (mieux que de perdre un evenement)
+    // Autre erreur DB → on traite quand même (mieux que de perdre un événement)
     logger.error('[WEBHOOK] Erreur idempotence DB:', { error: err?.message })
     return true
   }
@@ -60,10 +60,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 400 })
   }
 
-  // SECURITY FIX H6 + TASK51: Verifier l'idempotence via DB
+  // SECURITY FIX H6 + TASK51: Vérifier l'idempotence via DB
   const isNew = await markEventProcessed(event.id, event.type)
   if (!isNew) {
-    if (isDev) logger.debug(`[WEBHOOK] Evenement deja traite: ${event.id}`)
+    if (isDev) logger.debug(`[WEBHOOK] Événement déjà traité: ${event.id}`)
     return NextResponse.json({ received: true, duplicate: true })
   }
 
@@ -157,7 +157,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       data: { status: 'SOLD' },
     })
 
-    // TASK48: Creer un enregistrement Purchase pour l'achat via enchere
+    // TASK48: Creer un enregistrement Purchase pour l'achat via enchère
     const buyerId = userId || auction.winnerId
     const purchaseAmount = auction.finalPrice || auction.currentBid
     const commissionAmt = commission ? parseFloat(commission) : auction.commissionAmount || 0
@@ -261,7 +261,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   const metadata = paymentIntent.metadata || {}
 
-  // ─── Achat direct de beat (hors encheres) ───
+  // ─── Achat direct de beat (hors enchères) ───
   if (metadata.type === 'direct_purchase' && metadata.beatId) {
     await handleDirectPurchaseSucceeded(paymentIntent)
     return
@@ -456,6 +456,46 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
       }).catch((e) =>
         logger.error('[WEBHOOK] Erreur envoi email achat direct:', { error: e?.message })
       )
+    }
+
+    // Envoyer email guest si c'est un compte auto-créé (pas de passwordHash)
+    if (buyerEmail) {
+      const buyerFull = await prisma.user.findFirst({
+        where: { email: buyerEmail },
+        select: { id: true, passwordHash: true, magicToken: true },
+      }) as any
+
+      if (buyerFull && !buyerFull.passwordHash) {
+        // C'est un compte invité — générer un magic token si pas déjà fait
+        let magicToken = buyerFull.magicToken
+        if (!magicToken) {
+          const { randomBytes } = await import('crypto')
+          magicToken = randomBytes(32).toString('hex')
+          await prisma.user.update({
+            where: { id: buyerFull.id },
+            data: {
+              magicToken,
+              magicTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            } as any,
+          })
+        }
+
+        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+        const magicLoginUrl = `${baseUrl}/api/auth/magic-login?token=${magicToken}&redirect=/dashboard?tab=purchases`
+        const downloadUrl = `${baseUrl}/dashboard?tab=purchases`
+
+        sendGuestPurchaseEmail({
+          to: buyerEmail,
+          beatTitle: beat.title,
+          producerName: beat.producer?.displayName || beat.producer?.name || 'Producteur',
+          licenseType,
+          finalPrice: paymentIntent.amount / 100,
+          downloadUrl,
+          magicLoginUrl,
+        }).catch((e) =>
+          logger.error('[WEBHOOK] Erreur envoi email guest purchase:', { error: e?.message })
+        )
+      }
     }
 
     if (isDev) logger.debug(`[WEBHOOK] ✓ Achat direct beat ${beatId} (${licenseType}) complété`)

@@ -43,7 +43,7 @@ interface Beat {
     displayName: string | null
     avatar: string | null
   }
-  basePrice: number // Prix de base (startPrice de la derniere enchere)
+  basePrice: number // Prix de base (startPrice de la dernière enchère)
 }
 
 const BPM_PRESETS = [
@@ -114,7 +114,7 @@ const LICENSES = [
     bg: 'bg-amber-500/10',
     text: 'text-amber-400',
     multiplier: 10,
-    rights: 'WAV + Stems - Illimite - Droits complets',
+    rights: 'WAV + Stems - Illimité - Droits complets',
     features: ['WAV + Stems + MP3', 'Streams illimites', 'Droits complets', 'Pas de credit requis'],
   },
 ]
@@ -139,6 +139,10 @@ export default function NouveautesClient() {
   const [purchasing, setPurchasing] = useState(false)
   const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null)
   const [purchaseError, setPurchaseError] = useState<string | null>(null)
+
+  // Guest checkout state
+  const [guestEmail, setGuestEmail] = useState('')
+  const [showGuestForm, setShowGuestForm] = useState(false)
 
   // Filters
   const [bpmPreset, setBpmPreset] = useState<string | null>(null)
@@ -196,7 +200,7 @@ export default function NouveautesClient() {
         setBeats(data.beats || [])
       }
     } catch (err) {
-      console.error('Erreur chargement nouveautes:', err)
+      console.error('Erreur chargement nouveautés:', err)
     } finally {
       setLoading(false)
     }
@@ -266,18 +270,32 @@ export default function NouveautesClient() {
   // Purchase
   async function handlePurchase(beatId: string) {
     if (!session?.user) {
-      router.push('/auth/signin')
-      return
+      // Mode invité : afficher le formulaire email si pas encore affiché
+      if (!showGuestForm) {
+        setSelectedBeat(beatId)
+        setShowGuestForm(true)
+        return
+      }
+      // Vérifier que l'email est rempli
+      if (!guestEmail || !guestEmail.includes('@')) {
+        setPurchaseError('Entre un email valide pour continuer')
+        return
+      }
     }
 
     setPurchasing(true)
     setPurchaseError(null)
 
     try {
+      const bodyPayload: any = { licenseType: selectedLicense }
+      if (!session?.user && guestEmail) {
+        bodyPayload.guestEmail = guestEmail
+      }
+
       const res = await fetch(`/api/beats/${beatId}/purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ licenseType: selectedLicense }),
+        body: JSON.stringify(bodyPayload),
       })
 
       const data = await res.json()
@@ -296,6 +314,8 @@ export default function NouveautesClient() {
       setPurchaseError('Erreur de connexion')
     } finally {
       setPurchasing(false)
+      setShowGuestForm(false)
+      setGuestEmail('')
     }
   }
 
@@ -339,11 +359,11 @@ export default function NouveautesClient() {
             </div>
             <div>
               <h1 className="text-3xl font-black text-white">Nouveautes</h1>
-              <p className="text-sm text-gray-400">Beats disponibles a l&apos;achat direct</p>
+              <p className="text-sm text-gray-400">Beats disponibles à l&apos;achat direct</p>
             </div>
           </div>
           <p className="text-gray-500 text-sm max-w-2xl">
-            Ces beats n&apos;ont pas trouve preneur aux encheres et sont maintenant disponibles a
+            Ces beats n&apos;ont pas trouvé preneur aux enchères et sont maintenant disponibles à
             l&apos;achat direct avec le choix de ta licence : Basic, Premium ou Exclusive.
           </p>
         </div>
@@ -381,7 +401,7 @@ export default function NouveautesClient() {
           )}
           {selectedKey && (
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1e1e2e] text-xs font-semibold text-white">
-              Tonalite: {selectedKey}
+              Tonalité: {selectedKey}
               <button
                 onClick={() => setSelectedKey(null)}
                 className="hover:text-red-400 transition"
@@ -473,14 +493,14 @@ export default function NouveautesClient() {
               Aucun beat disponible pour le moment
             </h3>
             <p className="text-sm text-gray-500 mb-6">
-              Les beats invendus aux encheres apparaitront ici automatiquement
+              Les beats invendus aux enchères apparaîtront ici automatiquement
             </p>
             <Link
               href="/marketplace"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
               style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
             >
-              Voir les encheres
+              Voir les enchères
             </Link>
           </div>
         ) : (
@@ -721,6 +741,21 @@ export default function NouveautesClient() {
                             </div>
                           )}
 
+                          {/* Formulaire email invité */}
+                          {!session?.user && showGuestForm && selectedBeat && (
+                            <div className="mb-3 p-3 rounded-xl bg-[#1a1a2e] border border-[#2e2e4e]">
+                              <p className="text-xs text-gray-400 mb-2">Entre ton email pour acheter en tant qu&apos;invité :</p>
+                              <input
+                                type="email"
+                                value={guestEmail}
+                                onChange={(e) => setGuestEmail(e.target.value)}
+                                placeholder="ton@email.com"
+                                className="w-full px-3 py-2 rounded-lg bg-[#0a0a0f] border border-[#2e2e4e] text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#e11d48] mb-2"
+                              />
+                              <p className="text-[10px] text-gray-500">Un compte sera cree automatiquement. Tu recevras ton beat par email.</p>
+                            </div>
+                          )}
+
                           {purchaseSuccess === selectedBeat ? (
                             <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/30">
                               <Check size={16} className="text-green-400" />
@@ -740,6 +775,10 @@ export default function NouveautesClient() {
                               {purchasing ? (
                                 <>
                                   <Loader2 size={16} className="animate-spin" /> Traitement...
+                                </>
+                              ) : !session?.user && !showGuestForm ? (
+                                <>
+                                  <ShoppingCart size={16} /> Acheter en tant qu&apos;invite - {finalPrice} EUR
                                 </>
                               ) : (
                                 <>

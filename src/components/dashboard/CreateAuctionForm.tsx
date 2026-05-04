@@ -84,7 +84,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Erreur lors de la creation')
+        setError(data.error || 'Erreur lors de la création')
         return
       }
 
@@ -109,7 +109,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
             <Check size={32} className="text-green-400" />
           </div>
           <h3 className="text-lg font-bold text-white mb-2">Enchere creee !</h3>
-          <p className="text-sm text-gray-400">Ton enchere est maintenant active</p>
+          <p className="text-sm text-gray-400">Ton enchère est maintenant active</p>
         </div>
       </div>
     )
@@ -120,16 +120,16 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
       <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
         <div className="text-center py-12">
           <Gavel size={48} className="mx-auto mb-4 text-gray-600" />
-          <h3 className="text-lg font-bold text-white mb-2">Cree ta premiere enchere</h3>
+          <h3 className="text-lg font-bold text-white mb-2">Crée ta première enchère</h3>
           <p className="text-sm text-gray-400 mb-5">
-            Mets un de tes beats aux encheres et commence a vendre
+            Mets un de tes beats aux enchères et commence à vendre
           </p>
           <button
             onClick={() => setShowForm(true)}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-black"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
           >
-            <Plus size={16} /> Nouvelle enchere
+            <Plus size={16} /> Nouvelle enchère
           </button>
         </div>
       </div>
@@ -138,13 +138,13 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
 
   return (
     <div className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-6">
-      <h2 className="text-lg font-bold text-white mb-6">Nouvelle enchere</h2>
+      <h2 className="text-lg font-bold text-white mb-6">Nouvelle enchère</h2>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Beat selection */}
         <div>
           <label className="text-sm font-semibold text-white mb-2 block">
-            Selectionner un beat <span className="text-red-400">*</span>
+            Sélectionner un beat <span className="text-red-400">*</span>
           </label>
           {loading ? (
             <div className="flex items-center gap-2 text-gray-400 text-sm">
@@ -205,7 +205,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
           </div>
           <div>
             <label htmlFor="reservePrice" className="text-sm font-semibold text-white mb-2 block">
-              Prix reserve
+              Prix réserve
             </label>
             <div className="relative">
               <input
@@ -225,7 +225,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
           </div>
           <div>
             <label htmlFor="buyNowPrice" className="text-sm font-semibold text-white mb-2 block">
-              Achat immediat
+              Achat immédiat
             </label>
             <div className="relative">
               <input
@@ -254,7 +254,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
             <div>
               <div className="text-sm font-bold text-white">Licence Exclusive</div>
               <div className="text-xs text-gray-500">
-                Les encheres sont exclusivement pour les droits exclusifs (WAV + Stems - Illimite)
+                Les enchères sont exclusivement pour les droits exclusifs (WAV + Stems - Illimité)
               </div>
             </div>
           </div>
@@ -322,7 +322,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
               </>
             ) : (
               <>
-                <Gavel size={16} /> Lancer l&apos;enchere
+                <Gavel size={16} /> Lancer l&apos;enchère
               </>
             )}
           </button>

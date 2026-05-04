@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-// GET — Recuperer le profil public d'un producteur
+// GET — Récupérer le profil public d'un producteur
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }

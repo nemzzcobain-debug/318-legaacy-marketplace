@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
         <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-8">
           <h1 className="text-2xl font-extrabold text-white mb-1">Mot de passe oublie ?</h1>
           <p className="text-sm text-gray-400 mb-6">
-            Entre ton adresse email pour recevoir un lien de reinitialisation.
+            Entre ton adresse email pour recevoir un lien de réinitialisation.
           </p>
 
           {error && (
@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
           {success && (
             <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-[#2ed57315] border border-[#2ed57330] text-[#2ed573] text-sm">
               <CheckCircle size={16} />
-              Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.
+              Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.
             </div>
           )}
 
@@ -115,7 +115,7 @@ export default function ForgotPasswordPage() {
           ) : (
             <div className="text-center py-4">
               <p className="text-gray-400 text-sm mb-4">
-                Verifie ton adresse email pour le lien de reinitialisation.
+                Verifie ton adresse email pour le lien de réinitialisation.
               </p>
               <p className="text-gray-500 text-xs mb-6">
                 Le lien expire dans 1 heure.

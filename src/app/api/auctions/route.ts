@@ -14,7 +14,7 @@ import {
   buildGenreFilter,
 } from '@/lib/auction-helpers'
 
-// GET /api/auctions - Liste des encheres actives
+// GET /api/auctions - Liste des enchères actives
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -78,24 +78,24 @@ export async function GET(request: Request) {
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
   } catch (error) {
-    logger.error('Erreur listing encheres:', { error: String(error) })
+    logger.error('Erreur listing enchères:', { error: String(error) })
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
 
-// POST /api/auctions - Creer une enchere
+// POST /api/auctions - Creer une enchère
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const userId = session.user.id
     const user = await prisma.user.findUnique({ where: { id: userId } })
 
     if (!user || user.role !== 'PRODUCER' || user.producerStatus !== 'APPROVED') {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
     // F18 FIX: Limiter la taille du payload
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
 
     const { beatId, startPrice, reservePrice, buyNowPrice, licenseType, durationHours, bidIncrement } = validated.data
 
-    // Verifier que le beat appartient au producteur
+    // Vérifier que le beat appartient au producteur
     const beat = await prisma.beat.findFirst({
       where: { id: beatId, producerId: userId },
     })
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Beat introuvable' }, { status: 404 })
     }
 
-    // Verifier qu'il n'y a pas deja une enchere active sur ce beat
+    // Vérifier qu'il n'y a pas déjà une enchère active sur ce beat
     const existingAuction = await prisma.auction.findFirst({
       where: {
         beatId,
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     })
     if (existingAuction) {
       return NextResponse.json(
-        { error: 'Une enchere est deja en cours pour ce beat' },
+        { error: 'Une enchère est déjà en cours pour ce beat' },
         { status: 409 }
       )
     }
@@ -182,8 +182,8 @@ export async function POST(request: Request) {
         await prisma.notification.createMany({
           data: followers.map(f => ({
             type: 'NEW_AUCTION',
-            title: `Nouvelle enchere de ${producerName}`,
-            message: `${producerName} a lance une enchere sur "${beat.title}" a partir de ${startPrice} EUR`,
+            title: `Nouvelle enchère de ${producerName}`,
+            message: `${producerName} a lance une enchère sur "${beat.title}" a partir de ${startPrice} EUR`,
             link: `/auction/${auction.id}`,
             userId: f.followerId,
           })),
@@ -195,7 +195,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ auction }, { status: 201 })
   } catch (error) {
-    logger.error('Erreur creation enchere:', { error: String(error) })
+    logger.error('Erreur création enchère:', { error: String(error) })
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

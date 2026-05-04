@@ -107,13 +107,13 @@ const LICENSE_INFO: Record<
     name: 'Exclusive',
     color: '#ff0033',
     multiplier: 10,
-    rights: 'WAV + Stems - Illimite',
+    rights: 'WAV + Stems - Illimité',
   },
 }
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
-// Mini formulaire de paiement Stripe pour l'achat immediat
+// Mini formulaire de paiement Stripe pour l'achat immédiat
 function BuyNowPaymentForm({
   amount,
   auctionId,
@@ -148,7 +148,7 @@ function BuyNowPaymentForm({
       onError(error.message || 'Erreur lors du paiement')
       setPaying(false)
     } else {
-      // Paiement reussi → finaliser l'enchere
+      // Paiement réussi → finaliser l'enchère
       try {
         await fetch(`/api/auctions/${auctionId}/buy-now/confirm`, {
           method: 'POST',
@@ -202,12 +202,16 @@ export default function AuctionClient() {
   const [buyingNow, setBuyingNow] = useState(false)
   const [buyNowClientSecret, setBuyNowClientSecret] = useState<string | null>(null)
 
+  // Guest bid state
+  const [guestEmail, setGuestEmail] = useState('')
+  const [showGuestBidForm, setShowGuestBidForm] = useState(false)
+
   // Realtime hooks
   const realtimeState = useRealtimeAuction(id as string)
   const realtimeBids = useRealtimeBids(id as string, (newBid) => {
     // Flash animation on new bid
     setBidSuccess(
-      `Nouvelle enchere : ${newBid.amount} EUR par ${newBid.user?.displayName || 'Anonyme'}`
+      `Nouvelle enchère : ${newBid.amount} EUR par ${newBid.user?.displayName || 'Anonyme'}`
     )
     setTimeout(() => setBidSuccess(''), 4000)
   })
@@ -266,8 +270,15 @@ export default function AuctionClient() {
 
   const placeBid = async () => {
     if (!session) {
-      router.push('/login')
-      return
+      // Mode invité : afficher le formulaire email
+      if (!showGuestBidForm) {
+        setShowGuestBidForm(true)
+        return
+      }
+      if (!guestEmail || !guestEmail.includes('@')) {
+        setBidError('Entre un email valide pour enchérir')
+        return
+      }
     }
 
     setBidding(true)
@@ -275,14 +286,19 @@ export default function AuctionClient() {
     setBidSuccess('')
 
     try {
+      const bidBody: any = {
+        amount: parseFloat(bidAmount),
+        licenseType: selectedLicense,
+      }
+      if (!session && guestEmail) {
+        bidBody.guestEmail = guestEmail
+      }
+
       // BUG FIX 6: Utiliser la route transactionnelle au lieu de la legacy
       const res = await fetch(`/api/auctions/bid?auctionId=${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: parseFloat(bidAmount),
-          licenseType: selectedLicense,
-        }),
+        body: JSON.stringify(bidBody),
       })
 
       const data = await res.json()
@@ -292,7 +308,7 @@ export default function AuctionClient() {
         return
       }
 
-      setBidSuccess(`Enchere de ${bidAmount} EUR placee !`)
+      setBidSuccess(`Enchere de ${bidAmount} EUR placée !`)
       setBidAmount(String(data.auction.currentBid + (auction?.bidIncrement || 5)))
 
       if (data.auction.antiSnipeTriggered) {
@@ -385,7 +401,7 @@ export default function AuctionClient() {
           href="/marketplace"
           className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-white mb-6 transition"
         >
-          <ArrowLeft size={14} /> Retour aux encheres
+          <ArrowLeft size={14} /> Retour aux enchères
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
@@ -494,7 +510,7 @@ export default function AuctionClient() {
             {/* Bid History */}
             <div className="bg-[#111] border border-[#222] rounded-2xl p-5">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <TrendingUp size={18} className="text-red-500" /> Historique des encheres
+                <TrendingUp size={18} className="text-red-500" /> Historique des enchères
               </h3>
               {auction.bids.length > 0 ? (
                 <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -527,7 +543,7 @@ export default function AuctionClient() {
                 </div>
               ) : (
                 <p className="text-gray-500 text-sm text-center py-6">
-                  Aucune enchere pour le moment. Sois le premier !
+                  Aucune enchère pour le moment. Sois le premier !
                 </p>
               )}
             </div>
@@ -566,7 +582,7 @@ export default function AuctionClient() {
                   {auction.currentBid} <span className="text-lg">EUR</span>
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {auction.totalBids} encheres • Debut a {auction.startPrice} EUR
+                  {auction.totalBids} enchères • Début à {auction.startPrice} EUR
                 </p>
               </div>
 
@@ -581,7 +597,7 @@ export default function AuctionClient() {
 
                   {/* Bid Amount */}
                   <div className="mb-4">
-                    <p className="text-xs text-gray-400 mb-2">Ton enchere (EUR)</p>
+                    <p className="text-xs text-gray-400 mb-2">Ton enchère (EUR)</p>
                     <div className="relative">
                       <input
                         type="number"
@@ -601,7 +617,7 @@ export default function AuctionClient() {
                   <div className="bg-white/[0.02] border border-[#222] rounded-xl p-3 mb-4">
                     <p className="text-[10px] text-gray-500 flex items-center gap-1">
                       <Zap size={10} className="text-red-500" /> Anti-snipe actif : si tu enchéris
-                      dans les {auction.antiSnipeMinutes} dernieres minutes, le temps est prolonge
+                      dans les {auction.antiSnipeMinutes} dernières minutes, le temps est prolonge
                     </p>
                   </div>
 
@@ -617,6 +633,21 @@ export default function AuctionClient() {
                     </div>
                   )}
 
+                  {/* Guest email form for bidding */}
+                  {!session && showGuestBidForm && (
+                    <div className="mb-3 p-3 rounded-xl bg-[#1a1a2e] border border-[#2e2e4e]">
+                      <p className="text-xs text-gray-400 mb-2">Entre ton email pour enchérir en tant qu&apos;invité :</p>
+                      <input
+                        type="email"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        placeholder="ton@email.com"
+                        className="w-full px-3 py-2 rounded-lg bg-[#0a0a0f] border border-[#2e2e4e] text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#e11d48]"
+                      />
+                      <p className="text-[10px] text-gray-500 mt-1">Un compte sera créé automatiquement avec cet email.</p>
+                    </div>
+                  )}
+
                   {/* Bid Button */}
                   <button
                     onClick={placeBid}
@@ -624,7 +655,7 @@ export default function AuctionClient() {
                     className="w-full py-4 rounded-xl font-bold text-white text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 bg-gradient-to-r from-red-600 to-red-800"
                   >
                     <Gavel size={20} />
-                    {bidding ? 'Enchere en cours...' : `Encherir ${bidAmount} EUR`}
+                    {bidding ? 'Enchere en cours...' : !session && !showGuestBidForm ? `Enchérir en tant qu'invité` : `Encherir ${bidAmount} EUR`}
                   </button>
 
                   {/* Buy Now Button */}
@@ -652,12 +683,12 @@ export default function AuctionClient() {
                             ) : (
                               <>
                                 <ShoppingBag size={20} />
-                                {`Achat immediat — ${auction.buyNowPrice} EUR`}
+                                {`Achat immédiat — ${auction.buyNowPrice} EUR`}
                               </>
                             )}
                           </button>
                           <p className="text-[10px] text-gray-500 text-center mt-2">
-                            Achetez ce beat maintenant sans attendre la fin de l&apos;enchere
+                            Achetez ce beat maintenant sans attendre la fin de l&apos;enchère
                           </p>
                         </>
                       ) : (
@@ -665,7 +696,7 @@ export default function AuctionClient() {
                           <div className="flex items-center gap-2 mb-3">
                             <ShoppingBag size={16} className="text-amber-400" />
                             <span className="text-sm font-bold text-amber-400">
-                              Achat immediat — {auction.buyNowPrice} EUR
+                              Achat immédiat — {auction.buyNowPrice} EUR
                             </span>
                           </div>
                           <Elements
@@ -689,7 +720,7 @@ export default function AuctionClient() {
                               onSuccess={() => {
                                 setBuyNowClientSecret(null)
                                 fetchAuction()
-                                setBidSuccess('Paiement confirme ! Le beat est a vous.')
+                                setBidSuccess('Paiement confirmé ! Le beat est a vous.')
                               }}
                               onError={(msg) => setBidError(msg)}
                             />
@@ -757,7 +788,7 @@ export default function AuctionClient() {
                         {isWinner && !isPaid && (
                           <>
                             <p className="text-lg font-black text-yellow-400 mb-1">
-                              Tu as gagne cette enchere !
+                              Tu as gagné cette enchère !
                             </p>
                             <p className="text-sm text-gray-400">
                               Finalise ton achat pour recevoir le beat
@@ -767,16 +798,16 @@ export default function AuctionClient() {
                         {isWinner && isPaid && (
                           <>
                             <p className="text-lg font-black text-green-400 mb-1">
-                              Achat confirme !
+                              Achat confirmé !
                             </p>
                             <p className="text-sm text-gray-400">
-                              Tu peux telecharger ton beat depuis "Mes Achats"
+                              Tu peux télécharger ton beat depuis "Mes Achats"
                             </p>
                           </>
                         )}
                         {!isWinner && winnerName && (
                           <>
-                            <p className="text-lg font-bold text-white mb-1">Enchere terminee</p>
+                            <p className="text-lg font-bold text-white mb-1">Enchere terminée</p>
                             <p className="text-sm text-gray-400">
                               Remportee par{' '}
                               <span className="text-white font-semibold">{winnerName}</span>
@@ -785,8 +816,8 @@ export default function AuctionClient() {
                         )}
                         {!winnerName && auction.bids.length === 0 && (
                           <>
-                            <p className="text-lg font-bold text-white mb-1">Enchere terminee</p>
-                            <p className="text-sm text-gray-500">Aucune enchere placee</p>
+                            <p className="text-lg font-bold text-white mb-1">Enchere terminée</p>
+                            <p className="text-sm text-gray-500">Aucune enchère placée</p>
                           </>
                         )}
                       </div>
@@ -809,7 +840,7 @@ export default function AuctionClient() {
                             </div>
                           )}
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Nombre d&apos;encheres</span>
+                            <span className="text-gray-500">Nombre d&apos;enchères</span>
                             <span className="text-white">{auction.totalBids}</span>
                           </div>
                           {isPaid && (
@@ -843,7 +874,7 @@ export default function AuctionClient() {
                           href="/purchases"
                           className="w-full py-4 rounded-xl font-bold text-white text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] bg-gradient-to-r from-blue-600 to-blue-800"
                         >
-                          <Download size={20} /> Telecharger mon beat
+                          <Download size={20} /> Télécharger mon beat
                         </Link>
                       )}
 
@@ -852,13 +883,13 @@ export default function AuctionClient() {
                         <div className="bg-white/[0.02] rounded-xl border border-[#222] p-4 text-center">
                           <XCircle size={20} className="text-gray-500 mx-auto mb-2" />
                           <p className="text-sm text-gray-400 mb-3">
-                            Tu n&apos;as pas remporte cette enchere
+                            Tu n&apos;as pas remporté cette enchère
                           </p>
                           <Link
                             href="/marketplace"
                             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-red-500 border border-red-500/20 hover:bg-red-500/5 transition"
                           >
-                            <Music size={14} /> Voir d&apos;autres encheres
+                            <Music size={14} /> Voir d&apos;autres enchères
                           </Link>
                         </div>
                       )}
