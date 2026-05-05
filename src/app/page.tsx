@@ -387,7 +387,37 @@ export default function Home() {
             />
           </div>
 
-          {/* Upload card — top left, absolute on desktop */}
+          {/* Upload card — mobile/tablet: inline centered, desktop: absolute top-left */}
+          {/* Mobile + Tablet version */}
+          <div className="lg:hidden relative z-20 hero-fade-in-delay-4 px-4 mb-6">
+            <div
+              onClick={() => router.push('/producers')}
+              className="bg-[#111]/80 backdrop-blur-xl border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl p-4 mx-auto max-w-sm transition-all group/upload cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center shrink-0 shadow-lg shadow-[#e11d48]/20">
+                  <Headphones size={18} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-extrabold text-white">Vends tes beats <span className="text-[#e11d48]">aux enchères</span></div>
+                  <div className="text-[10px] text-gray-500 flex items-center gap-2 mt-0.5">
+                    <span className="flex items-center gap-1"><TrendingUp size={9} className="text-[#2ed573]" /> 85% revenus</span>
+                    <span className="text-gray-700">·</span>
+                    <span className="flex items-center gap-1"><Zap size={9} className="text-amber-400" /> Paiements auto</span>
+                  </div>
+                </div>
+                <div
+                  onClick={(e) => { e.stopPropagation(); router.push('/producers/upload') }}
+                  className="shrink-0 border-2 border-dashed border-[#1e1e2e] rounded-xl px-3 py-2 text-center hover:border-[#e11d48]/50 hover:bg-[#e11d48]/10 transition-all"
+                >
+                  <Music size={14} className="mx-auto mb-0.5 text-gray-500" />
+                  <div className="text-[9px] text-gray-500 font-semibold">Upload</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop version — absolute top-left */}
           <div className="hidden lg:block absolute top-28 left-6 xl:left-12 z-20 hero-fade-in-delay-4">
             <div
               onClick={() => router.push('/producers')}
