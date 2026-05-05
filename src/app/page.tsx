@@ -387,16 +387,53 @@ export default function Home() {
             />
           </div>
 
-          <div
-            className="max-w-5xl mx-auto text-center relative z-10 hero-fade-in"
-          >
-            {/* Logo */}
-            <div className="mb-8">
+          {/* Top row: Beatmaker CTA (left) + Logo (right) */}
+          <div className="max-w-6xl mx-auto relative z-10 hero-fade-in">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
+              {/* Left: Vends tes beats aux enchères */}
+              <Link
+                href="/producers"
+                className="group flex items-center gap-4 bg-white/[0.03] hover:bg-white/[0.06] border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl px-5 py-4 transition-all backdrop-blur-sm"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-lg shadow-[#e11d48]/20">
+                  <Headphones size={22} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm md:text-base font-extrabold text-white group-hover:text-[#e11d48] transition-colors">
+                    Vends tes beats <span className="text-[#e11d48]">aux enchères</span>
+                  </div>
+                  <div className="text-[11px] text-gray-500 flex items-center gap-2 mt-0.5">
+                    <span className="flex items-center gap-1"><TrendingUp size={10} className="text-[#2ed573]" /> 85% revenus</span>
+                    <span className="text-gray-700">·</span>
+                    <span className="flex items-center gap-1"><Zap size={10} className="text-amber-400" /> Paiements auto</span>
+                  </div>
+                </div>
+                <ArrowRight size={16} className="text-gray-600 group-hover:text-[#e11d48] group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+              </Link>
+
+              {/* Right: Logo */}
+              <div className="hidden md:block">
+                <Image
+                  src="/logo-318-marketplace.png"
+                  alt="318 LEGAACY Marketplace"
+                  width={140}
+                  height={140}
+                  className="drop-shadow-[0_0_50px_rgba(225,29,72,0.5)]"
+                  style={{
+                    maskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
+                    WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Logo mobile — centré */}
+            <div className="mb-8 md:hidden">
               <Image
                 src="/logo-318-marketplace.png"
                 alt="318 LEGAACY Marketplace"
-                width={180}
-                height={180}
+                width={140}
+                height={140}
                 className="mx-auto drop-shadow-[0_0_50px_rgba(225,29,72,0.5)]"
                 style={{
                   maskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
@@ -404,7 +441,12 @@ export default function Home() {
                 }}
               />
             </div>
+          </div>
 
+          {/* Main hero content — centered */}
+          <div
+            className="max-w-5xl mx-auto text-center relative z-10 hero-fade-in"
+          >
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-5 py-2.5 text-sm font-bold text-red-400 mb-8 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
@@ -1121,111 +1163,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══════════ DEVENIR BEATMAKER SECTION ═══════════ */}
-        <section className="px-4 py-20 border-t border-[#1a1a1a] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[500px] h-[400px] bg-gradient-radial from-[#e11d48]/8 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
-
-          <div className="max-w-6xl mx-auto relative z-10">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              {/* Left: Visual card stack */}
-              <div className="relative hidden md:block">
-                <div className="absolute -top-10 -left-10 w-64 h-64 bg-gradient-radial from-[#e11d48]/10 via-transparent to-transparent rounded-full blur-2xl" />
-
-                {/* Stacked cards effect */}
-                <div className="relative">
-                  {/* Background card 3 */}
-                  <div className="absolute top-8 left-0 right-8 h-48 bg-[#13131a] rounded-2xl border border-[#1e1e2e] transform -rotate-3 opacity-30" />
-                  {/* Background card 2 */}
-                  <div className="absolute top-4 left-2 right-4 h-48 bg-[#15151f] rounded-2xl border border-[#1e1e2e] transform -rotate-1.5 opacity-50" />
-                  {/* Main card */}
-                  <div onClick={() => router.push('/producers')} className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-all group/card cursor-pointer">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center group-hover/card:scale-110 transition-transform">
-                        <Headphones size={24} className="text-white" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-white group-hover/card:text-[#e11d48] transition-colors">Dashboard Producteur</div>
-                        <div className="text-xs text-gray-500">
-                          Upload &middot; Enchères &middot; Revenus
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Fake stats */}
-                    <div className="grid grid-cols-3 gap-3 mb-5">
-                      {[
-                        { label: 'Beats', value: '12' },
-                        { label: 'Ventes', value: '8' },
-                        { label: 'Revenus', value: '2.4k€' },
-                      ].map((stat) => (
-                        <div
-                          key={stat.label}
-                          className="bg-white/[0.03] rounded-xl p-3 text-center group-hover/card:bg-white/[0.06] transition-colors"
-                        >
-                          <div className="text-sm font-extrabold text-white">{stat.value}</div>
-                          <div className="text-[10px] text-gray-600 mt-0.5">{stat.label}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Upload CTA — redirige vers la page d'upload */}
-                    <div
-                      onClick={(e) => { e.stopPropagation(); router.push('/producers/upload') }}
-                      className="border-2 border-dashed border-[#1e1e2e] rounded-xl p-4 text-center group-hover/card:border-[#e11d48]/30 group-hover/card:bg-[#e11d48]/5 transition-all hover:border-[#e11d48]/50 hover:bg-[#e11d48]/10 cursor-pointer"
-                    >
-                      <Music size={20} className="mx-auto mb-2 text-gray-600" />
-                      <div className="text-xs text-gray-500 font-semibold">Upload ton beat</div>
-                      <div className="text-[10px] text-gray-700 mt-1">
-                        MP3, WAV &amp; Stems
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between">
-                      <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
-                        Stripe Connect
-                      </span>
-                      <span className="text-[10px] font-bold text-[#2ed573]">● Actif</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Text content */}
-              <div>
-                <div className="inline-flex items-center gap-2 bg-[#e11d48]/10 border border-[#e11d48]/20 rounded-full px-4 py-1.5 text-xs font-bold text-[#e11d48] mb-5">
-                  <Music size={12} /> Beatmaker
-                </div>
-                <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-                  Vends tes beats
-                  <br />
-                  <span className="text-[#e11d48]">aux enchères</span>
-                </h2>
-                <p className="text-gray-400 text-sm leading-relaxed mb-6 max-w-md">
-                  Rejoins la communauté 318 LEGAACY en tant que producteur. Upload tes beats, lance
-                  des enchères et reçois 85% de chaque vente directement sur ton compte via Stripe.
-                </p>
-                <div className="flex flex-wrap gap-3 mb-8">
-                  <div onClick={() => router.push('/producers')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
-                    <TrendingUp size={12} className="text-[#2ed573]" /> 85% des revenus
-                  </div>
-                  <div onClick={() => router.push('/marketplace')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
-                    <Gavel size={12} className="text-[#e11d48]" /> Système d&apos;enchères
-                  </div>
-                  <div onClick={() => router.push('/producers')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
-                    <Zap size={12} className="text-amber-400" /> Paiements auto
-                  </div>
-                </div>
-                <Link
-                  href="/producers"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm text-black transition-transform hover:scale-105"
-                  style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
-                >
-                  Devenir producteur <ArrowRight size={16} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Devenir Beatmaker — intégré dans le hero */}
 
         {/* ═══════════ FEATURED PRODUCERS ═══════════ */}
         {homepage && homepage.featuredProducers.length > 0 && (
