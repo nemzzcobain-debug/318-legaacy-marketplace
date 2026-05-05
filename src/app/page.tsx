@@ -387,53 +387,65 @@ export default function Home() {
             />
           </div>
 
-          {/* Top row: Beatmaker CTA (left) + Logo (right) */}
-          <div className="max-w-6xl mx-auto relative z-10 hero-fade-in">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
-              {/* Left: Vends tes beats aux enchères */}
-              <Link
-                href="/producers"
-                className="group flex items-center gap-4 bg-white/[0.03] hover:bg-white/[0.06] border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl px-5 py-4 transition-all backdrop-blur-sm"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-lg shadow-[#e11d48]/20">
-                  <Headphones size={22} className="text-white" />
+          {/* Upload card — top left, absolute on desktop */}
+          <div className="hidden lg:block absolute top-28 left-6 xl:left-12 z-20 hero-fade-in-delay-4">
+            <div
+              onClick={() => router.push('/producers')}
+              className="bg-[#111]/80 backdrop-blur-xl border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl p-5 w-[240px] transition-all group/upload cursor-pointer hover:-translate-y-1 duration-300"
+            >
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center group-hover/upload:scale-110 transition-transform shadow-lg shadow-[#e11d48]/20">
+                  <Headphones size={18} className="text-white" />
                 </div>
-                <div className="text-left">
-                  <div className="text-sm md:text-base font-extrabold text-white group-hover:text-[#e11d48] transition-colors">
-                    Vends tes beats <span className="text-[#e11d48]">aux enchères</span>
-                  </div>
-                  <div className="text-[11px] text-gray-500 flex items-center gap-2 mt-0.5">
-                    <span className="flex items-center gap-1"><TrendingUp size={10} className="text-[#2ed573]" /> 85% revenus</span>
-                    <span className="text-gray-700">·</span>
-                    <span className="flex items-center gap-1"><Zap size={10} className="text-amber-400" /> Paiements auto</span>
-                  </div>
+                <div>
+                  <div className="text-xs font-extrabold text-white group-hover/upload:text-[#e11d48] transition-colors">Vends tes beats</div>
+                  <div className="text-[10px] text-gray-500">aux enchères</div>
                 </div>
-                <ArrowRight size={16} className="text-gray-600 group-hover:text-[#e11d48] group-hover:translate-x-1 transition-all shrink-0 ml-2" />
-              </Link>
+              </div>
 
-              {/* Right: Logo */}
-              <div className="hidden md:block">
-                <Image
-                  src="/logo-318-marketplace.png"
-                  alt="318 LEGAACY Marketplace"
-                  width={140}
-                  height={140}
-                  className="drop-shadow-[0_0_50px_rgba(225,29,72,0.5)]"
-                  style={{
-                    maskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
-                    WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
-                  }}
-                />
+              {/* Mini stats */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {[
+                  { label: 'Revenus', value: '85%' },
+                  { label: 'Ventes', value: 'Auto' },
+                  { label: 'Stripe', value: '✓' },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="bg-white/[0.03] rounded-lg p-2 text-center group-hover/upload:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="text-[11px] font-extrabold text-white">{stat.value}</div>
+                    <div className="text-[8px] text-gray-600 mt-0.5">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Upload zone */}
+              <div
+                onClick={(e) => { e.stopPropagation(); router.push('/producers/upload') }}
+                className="border-2 border-dashed border-[#1e1e2e] rounded-xl p-3 text-center group-hover/upload:border-[#e11d48]/30 group-hover/upload:bg-[#e11d48]/5 transition-all hover:border-[#e11d48]/50 hover:bg-[#e11d48]/10 cursor-pointer"
+              >
+                <Music size={16} className="mx-auto mb-1.5 text-gray-600" />
+                <div className="text-[10px] text-gray-500 font-semibold">Upload ton beat</div>
+                <div className="text-[9px] text-gray-700 mt-0.5">MP3, WAV &amp; Stems</div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-bold text-[#e11d48] group-hover/upload:translate-x-1 transition-transform">
+                Devenir producteur <ArrowRight size={10} />
               </div>
             </div>
+          </div>
 
-            {/* Logo mobile — centré */}
-            <div className="mb-8 md:hidden">
+          <div
+            className="max-w-5xl mx-auto text-center relative z-10 hero-fade-in"
+          >
+            {/* Logo — centré */}
+            <div className="mb-8">
               <Image
                 src="/logo-318-marketplace.png"
                 alt="318 LEGAACY Marketplace"
-                width={140}
-                height={140}
+                width={180}
+                height={180}
                 className="mx-auto drop-shadow-[0_0_50px_rgba(225,29,72,0.5)]"
                 style={{
                   maskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
@@ -441,12 +453,6 @@ export default function Home() {
                 }}
               />
             </div>
-          </div>
-
-          {/* Main hero content — centered */}
-          <div
-            className="max-w-5xl mx-auto text-center relative z-10 hero-fade-in"
-          >
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-5 py-2.5 text-sm font-bold text-red-400 mb-8 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
