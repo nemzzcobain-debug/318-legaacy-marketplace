@@ -392,7 +392,7 @@ export default function Home() {
           <div className="lg:hidden relative z-20 hero-fade-in-delay-4 px-4 mb-6">
             <div
               onClick={() => router.push('/producers')}
-              className="bg-[#111]/80 backdrop-blur-xl border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl p-4 mx-auto max-w-sm transition-all group/upload cursor-pointer"
+              className="bg-[#111]/80 backdrop-blur-xl border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl p-4 sm:p-5 mx-auto max-w-md transition-all group/upload cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center shrink-0 shadow-lg shadow-[#e11d48]/20">
@@ -421,7 +421,7 @@ export default function Home() {
           <div className="hidden lg:block absolute top-28 left-6 xl:left-12 z-20 hero-fade-in-delay-4">
             <div
               onClick={() => router.push('/producers')}
-              className="bg-[#111]/80 backdrop-blur-xl border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl p-5 w-[240px] transition-all group/upload cursor-pointer hover:-translate-y-1 duration-300"
+              className="bg-[#111]/80 backdrop-blur-xl border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl p-5 w-[290px] xl:w-[320px] transition-all group/upload cursor-pointer hover:-translate-y-1 duration-300"
             >
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center group-hover/upload:scale-110 transition-transform shadow-lg shadow-[#e11d48]/20">
