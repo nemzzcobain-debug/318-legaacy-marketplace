@@ -92,5 +92,5 @@ export const LICENSES: LicenseInfo[] = [
   { id: 'EXCLUSIVE', name: 'Exclusive', color: '#ff4757', icon: '♛', rights: 'WAV + Stems - Illimité - Droits complets', multiplier: 10 },
 ]
 
-export const GENRES = ['Trap', 'Drill', 'Boom Bap', 'Afrobeat', 'R&B', 'Lo-Fi', 'Pop', 'Dancehall'] as const
+export const GENRES = ['Trap', 'Drill', 'Boom Bap', 'Afrobeat', 'R&B', 'Lo-Fi', 'Pop', 'Dancehall', 'Reggaeton', 'Detroit', 'Philly'] as const
 export const MOODS = ['Sombre', 'Energique', 'Melancolique', 'Agressif', 'Chill', 'Epique'] as const
