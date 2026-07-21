@@ -5,9 +5,11 @@ import { prisma } from '@/lib/prisma'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Init lazy : évite crash au build si OPENAI_API_KEY manque
+function getOpenAI() {
+  if (!process.env.OPENAI_API_KEY) return null
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+}
 
 // SECURITY FIX H7: Quota par utilisateur pour la generation AI
 // Max 5 générations par jour par utilisateur
@@ -89,6 +91,8 @@ export async function POST(request: Request) {
     const stylePrompt = style && STYLE_PROMPTS[style] ? STYLE_PROMPTS[style] : ''
     const fullPrompt = `Album cover art for a music beat: ${prompt.trim()}. ${stylePrompt}. Square format, high quality, professional music artwork, no text, no letters, no words, no watermark.`
 
+    const openai = getOpenAI()
+    if (!openai) return NextResponse.json({ error: 'Génération de cover AI indisponible (OPENAI_API_KEY manquante)' }, { status: 503 })
     const response = await openai.images.generate({
       model: 'dall-e-3',
       prompt: fullPrompt,
