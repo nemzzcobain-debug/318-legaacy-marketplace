@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendAdminNewApplicationEmail } from '@/lib/emails/resend'
 
 export async function POST(req: Request) {
   try {
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
     if (role === 'PRODUCER') {
       const admins = await prisma.user.findMany({
         where: { role: 'ADMIN' },
-        select: { id: true },
+        select: { id: true, email: true },
       })
 
       if (admins.length > 0) {
@@ -51,6 +52,19 @@ export async function POST(req: Request) {
             userId: admin.id,
           })),
         })
+
+        for (const a of admins) {
+          if (a.email) {
+            sendAdminNewApplicationEmail({
+              adminEmail: a.email,
+              applicantName: user.name || 'Inconnu',
+              applicantEmail: user.email || '',
+              applicantId: session.user.id,
+              bio: 'Inscription via connexion sociale — bio pas encore renseignée.',
+              portfolio: undefined,
+            }).catch((err) => console.error('Email admin notification échoué:', err))
+          }
+        }
       }
     }
 
