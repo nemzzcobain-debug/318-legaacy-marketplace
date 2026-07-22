@@ -534,83 +534,6 @@ export default function UploadBeatPage() {
             />
           </div>
 
-          {/* Cover Image */}
-          <div>
-            <label className="text-sm font-semibold text-white mb-2 block">Cover (optionnel)</label>
-            {!coverPreview && !aiCoverUrl && !showAiGenerator ? (
-              <div className="flex flex-wrap gap-3">
-                <div
-                  onClick={() => coverInputRef.current?.click()}
-                  className="border-2 border-dashed border-[#1e1e2e] rounded-2xl p-6 text-center cursor-pointer hover:border-[#e11d4840] transition group inline-flex items-center gap-3"
-                >
-                  <div className="w-12 h-12 rounded-lg bg-[#e11d4810] flex items-center justify-center group-hover:scale-110 transition">
-                    <ImageIcon size={20} className="text-[#e11d48]" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-white text-sm font-semibold">Ajouter une cover</p>
-                    <p className="text-gray-500 text-xs">JPG, PNG, max 5 MB</p>
-                  </div>
-                </div>
-                <div
-                  onClick={() => setShowAiGenerator(true)}
-                  className="border-2 border-dashed border-purple-500/20 rounded-2xl p-6 text-center cursor-pointer hover:border-purple-500/40 transition group inline-flex items-center gap-3"
-                >
-                  <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition">
-                    <Wand2 size={20} className="text-purple-400" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-purple-300 text-sm font-semibold">Générer avec l&apos;IA</p>
-                    <p className="text-gray-500 text-xs">DALL·E 3 — cover unique</p>
-                  </div>
-                </div>
-              </div>
-            ) : showAiGenerator && !aiCoverUrl ? (
-              <CoverGenerator
-                onSelect={(url) => {
-                  setAiCoverUrl(url)
-                  setShowAiGenerator(false)
-                  setCoverFile(null)
-                  setCoverPreview(null)
-                }}
-                onCancel={() => setShowAiGenerator(false)}
-              />
-            ) : coverPreview || aiCoverUrl ? (
-              <div className="relative inline-block">
-                <Image
-                  src={(aiCoverUrl || coverPreview)!}
-                  alt="Cover"
-                  width={128}
-                  height={128}
-                  className="w-32 h-32 rounded-xl object-cover"
-                  unoptimized={!!aiCoverUrl}
-                />
-                {aiCoverUrl && (
-                  <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-purple-600/80 backdrop-blur-sm">
-                    <span className="text-[9px] text-white font-bold">IA</span>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    removeCover()
-                    setAiCoverUrl(null)
-                    setShowAiGenerator(false)
-                  }}
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center"
-                >
-                  <X size={12} className="text-white" />
-                </button>
-              </div>
-            ) : null}
-            <input
-              ref={coverInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleCoverSelect}
-              className="hidden"
-            />
-          </div>
-
           {/* WAV Upload */}
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">
@@ -713,115 +636,6 @@ export default function UploadBeatPage() {
               multiple
               onChange={handleStemsSelect}
               className="hidden"
-            />
-          </div>
-
-          {/* Title */}
-          <div>
-            <label className="text-sm font-semibold text-white mb-2 block">
-              Titre <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Midnight Vendetta"
-              className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
-            />
-          </div>
-
-          {/* Genre + BPM + Key row */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-semibold text-white mb-2 block">
-                Genre <span className="text-red-400">*</span>
-              </label>
-              <select
-                value={genre}
-                onChange={(e) => setGenre(e.target.value)}
-                className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
-              >
-                <option value="">Choisir</option>
-                {GENRES.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-white mb-2 block">
-                BPM <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="number"
-                value={bpm}
-                onChange={(e) => setBpm(e.target.value)}
-                placeholder="140"
-                min="60"
-                max="300"
-                className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-white mb-2 block">Tonalite</label>
-              <select
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
-              >
-                <option value="">Choisir</option>
-                {KEYS.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Mood */}
-          <div>
-            <label className="text-sm font-semibold text-white mb-2 block">Mood</label>
-            <div className="flex flex-wrap gap-2">
-              {MOODS.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMood(mood === m ? '' : m)}
-                  className={`px-4 py-2 rounded-full text-xs font-semibold border transition ${
-                    mood === m
-                      ? 'text-[#e11d48] bg-[#e11d4815] border-[#e11d4830]'
-                      : 'text-gray-400 bg-white/[0.02] border-[#1e1e2e] hover:text-white'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="text-sm font-semibold text-white mb-2 block">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Decris ton beat..."
-              rows={3}
-              className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition resize-none"
-            />
-          </div>
-
-          {/* Tags */}
-          <div>
-            <label className="text-sm font-semibold text-white mb-2 block">Tags</label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="dark, trap, 808, hard (separes par des virgules)"
-              className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
             />
           </div>
 
@@ -996,6 +810,192 @@ export default function UploadBeatPage() {
             <p className="text-xs text-gray-500 mt-3">
               Les fichiers WAV et Stems ne seront accessibles qu&apos;après achat de la licence correspondante.
             </p>
+          </div>
+
+          {/* Cover Image */}
+          <div>
+            <label className="text-sm font-semibold text-white mb-2 block">Cover (optionnel)</label>
+            {!coverPreview && !aiCoverUrl && !showAiGenerator ? (
+              <div className="flex flex-wrap gap-3">
+                <div
+                  onClick={() => coverInputRef.current?.click()}
+                  className="border-2 border-dashed border-[#1e1e2e] rounded-2xl p-6 text-center cursor-pointer hover:border-[#e11d4840] transition group inline-flex items-center gap-3"
+                >
+                  <div className="w-12 h-12 rounded-lg bg-[#e11d4810] flex items-center justify-center group-hover:scale-110 transition">
+                    <ImageIcon size={20} className="text-[#e11d48]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white text-sm font-semibold">Ajouter une cover</p>
+                    <p className="text-gray-500 text-xs">JPG, PNG, max 5 MB</p>
+                  </div>
+                </div>
+                <div
+                  onClick={() => setShowAiGenerator(true)}
+                  className="border-2 border-dashed border-purple-500/20 rounded-2xl p-6 text-center cursor-pointer hover:border-purple-500/40 transition group inline-flex items-center gap-3"
+                >
+                  <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition">
+                    <Wand2 size={20} className="text-purple-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-purple-300 text-sm font-semibold">Générer avec l&apos;IA</p>
+                    <p className="text-gray-500 text-xs">DALL·E 3 — cover unique</p>
+                  </div>
+                </div>
+              </div>
+            ) : showAiGenerator && !aiCoverUrl ? (
+              <CoverGenerator
+                onSelect={(url) => {
+                  setAiCoverUrl(url)
+                  setShowAiGenerator(false)
+                  setCoverFile(null)
+                  setCoverPreview(null)
+                }}
+                onCancel={() => setShowAiGenerator(false)}
+              />
+            ) : coverPreview || aiCoverUrl ? (
+              <div className="relative inline-block">
+                <Image
+                  src={(aiCoverUrl || coverPreview)!}
+                  alt="Cover"
+                  width={128}
+                  height={128}
+                  className="w-32 h-32 rounded-xl object-cover"
+                  unoptimized={!!aiCoverUrl}
+                />
+                {aiCoverUrl && (
+                  <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-purple-600/80 backdrop-blur-sm">
+                    <span className="text-[9px] text-white font-bold">IA</span>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    removeCover()
+                    setAiCoverUrl(null)
+                    setShowAiGenerator(false)
+                  }}
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center"
+                >
+                  <X size={12} className="text-white" />
+                </button>
+              </div>
+            ) : null}
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCoverSelect}
+              className="hidden"
+            />
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="text-sm font-semibold text-white mb-2 block">
+              Titre <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex: Midnight Vendetta"
+              className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
+            />
+          </div>
+
+          {/* Genre + BPM + Key row */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-white mb-2 block">
+                Genre <span className="text-red-400">*</span>
+              </label>
+              <select
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
+              >
+                <option value="">Choisir</option>
+                {GENRES.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-white mb-2 block">
+                BPM <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="number"
+                value={bpm}
+                onChange={(e) => setBpm(e.target.value)}
+                placeholder="140"
+                min="60"
+                max="300"
+                className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-white mb-2 block">Tonalite</label>
+              <select
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
+              >
+                <option value="">Choisir</option>
+                {KEYS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Mood */}
+          <div>
+            <label className="text-sm font-semibold text-white mb-2 block">Mood</label>
+            <div className="flex flex-wrap gap-2">
+              {MOODS.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMood(mood === m ? '' : m)}
+                  className={`px-4 py-2 rounded-full text-xs font-semibold border transition ${
+                    mood === m
+                      ? 'text-[#e11d48] bg-[#e11d4815] border-[#e11d4830]'
+                      : 'text-gray-400 bg-white/[0.02] border-[#1e1e2e] hover:text-white'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="text-sm font-semibold text-white mb-2 block">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Decris ton beat..."
+              rows={3}
+              className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition resize-none"
+            />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="text-sm font-semibold text-white mb-2 block">Tags</label>
+            <input
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="dark, trap, 808, hard (separes par des virgules)"
+              className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm outline-none focus:border-[#e11d4840] transition"
+            />
           </div>
 
           {/* Error */}
