@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       exclusivePrice,
       buyNowPrice,
       auctionDuration,
+      auctionStartAt,
       licenseType,
       bidIncrement,
     } = body
@@ -166,7 +167,14 @@ export async function POST(req: NextRequest) {
       }
       const now = new Date()
       const durationHours = auctionDuration || 24
-      const endTime = new Date(now.getTime() + durationHours * 60 * 60 * 1000)
+      // Enchere programmee : demarrage differe si une date future est fournie
+      const requestedStart = auctionStartAt ? new Date(auctionStartAt) : null
+      const startTime =
+        requestedStart && !isNaN(requestedStart.getTime()) && requestedStart.getTime() > now.getTime()
+          ? requestedStart
+          : now
+      const isScheduled = startTime.getTime() > now.getTime()
+      const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000)
 
       // Calculer les multiplicateurs a partir des prix definis
       const basePrice = startPrice || 10
@@ -185,9 +193,9 @@ export async function POST(req: NextRequest) {
           licenseType: licenseType || 'BASIC',
           premiumMultiplier: premMult,
           exclusiveMultiplier: exclMult,
-          startTime: now,
+          startTime: startTime,
           endTime: endTime,
-          status: 'ACTIVE',
+          status: isScheduled ? 'SCHEDULED' : 'ACTIVE',
           commissionPercent: 15,
         },
       })
