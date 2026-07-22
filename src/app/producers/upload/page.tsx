@@ -334,13 +334,13 @@ export default function UploadBeatPage() {
           audioSize: audioFile.size,
           // Auction data
           enableAuction,
-          startPrice: enableAuction ? parseFloat(priceMp3 || '10') : null,
+          startPrice: enableAuction ? parseFloat(startPrice || priceMp3 || '10') : null,
           premiumPrice: enableAuction && priceWav ? parseFloat(priceWav) : null,
           exclusivePrice: enableAuction && priceStems ? parseFloat(priceStems) : null,
           buyNowPrice: enableAuction && buyNowPrice ? parseFloat(buyNowPrice) : null,
           auctionDuration: enableAuction ? parseFloat(auctionDuration) : null,
           licenseType: enableAuction ? licenseType : null,
-          bidIncrement: enableAuction ? parseFloat(bidIncrement) : null,
+          bidIncrement: enableAuction ? 5 : null, // Incrément fixe 5 EUR
         }),
       })
 
@@ -921,12 +921,12 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <DollarSign size={14} className="text-green-400" />
-                      Incrément (EUR) <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Montant minimum entre 2 enchères. Ex: 5€ = chaque nouvelle offre doit être au moins 5€ supérieure à la précédente."><Info size={12} /></span>
+                      Prix de la mise de départ (EUR) <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Montant auquel démarre l'enchère. Les acheteurs placeront leurs offres à partir de ce prix. Surenchère minimum : +5€."><Info size={12} /></span>
                     </label>
                     <input
                       type="number"
-                      value={bidIncrement}
-                      onChange={(e) => setBidIncrement(e.target.value)}
+                      value={startPrice}
+                      onChange={(e) => setStartPrice(e.target.value)}
                       placeholder="5"
                       min="1"
                       step="1"
@@ -988,7 +988,7 @@ export default function UploadBeatPage() {
           <button
             type="submit"
             disabled={
-              uploading || !audioFile || !title || !genre || !bpm || (enableAuction && !priceMp3)
+              uploading || !audioFile || !title || !genre || !bpm || (enableAuction && !startPrice)
             }
             className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
