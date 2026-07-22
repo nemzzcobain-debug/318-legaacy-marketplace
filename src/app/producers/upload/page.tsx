@@ -916,12 +916,12 @@ export default function UploadBeatPage() {
 
             {enableAuction && (
               <div className="px-5 py-5 space-y-5 border-t border-[#1e1e2e] bg-[#0d0d14]">
-                {/* Increment + Achat immédiat <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Prix auquel un acheteur peut clore l'enchère instantanément sans attendre la fin. Optionnel : laisse vide pour laisser l'enchère aller jusqu'au bout."><Info size={12} /></span> + Duree */}
+                {/* Increment + Achat immédiat <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/50 cursor-help hover:bg-amber-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Prix auquel un acheteur peut clore l&apos;enchère instantanément sans attendre la fin. Optionnel : laisse vide pour laisser l&apos;enchère aller jusqu&apos;au bout.</span></span> + Duree */}
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <DollarSign size={14} className="text-green-400" />
-                      Prix de la mise de départ (EUR) <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Montant auquel démarre l'enchère. Les acheteurs placeront leurs offres à partir de ce prix. Surenchère minimum : +5€."><Info size={12} /></span>
+                      Prix de la mise de départ (EUR) <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/50 cursor-help hover:bg-blue-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Montant auquel démarre l&apos;enchère. Les acheteurs placeront leurs offres à partir de ce prix. Surenchère minimum : +5€.</span></span>
                     </label>
                     <input
                       type="number"
@@ -936,7 +936,7 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <Tag size={14} className="text-amber-400" />
-                      Achat immédiat <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Prix auquel un acheteur peut clore l'enchère instantanément sans attendre la fin. Optionnel : laisse vide pour laisser l'enchère aller jusqu'au bout."><Info size={12} /></span>
+                      Achat immédiat <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/50 cursor-help hover:bg-amber-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Prix auquel un acheteur peut clore l&apos;enchère instantanément sans attendre la fin. Optionnel : laisse vide pour laisser l&apos;enchère aller jusqu&apos;au bout.</span></span>
                       <span className="text-gray-500 text-xs font-normal ml-1">optionnel</span>
                     </label>
                     <input
@@ -952,7 +952,7 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <Clock size={14} className="text-blue-400" />
-                      Durée de l&apos;enchère <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Temps pendant lequel les acheteurs peuvent enchérir. À la fin, le plus offrant remporte le beat."><Info size={12} /></span>
+                      Durée de l&apos;enchère <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/50 cursor-help hover:bg-blue-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Temps pendant lequel les acheteurs peuvent enchérir. À la fin, le plus offrant remporte le beat.</span></span>
                     </label>
                     <select
                       value={auctionDuration}
