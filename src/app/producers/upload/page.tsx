@@ -334,9 +334,9 @@ export default function UploadBeatPage() {
           audioSize: audioFile.size,
           // Auction data
           enableAuction,
-          startPrice: enableAuction ? parseFloat(startPrice) : null,
-          premiumPrice: enableAuction && premiumPrice ? parseFloat(premiumPrice) : null,
-          exclusivePrice: enableAuction && exclusivePrice ? parseFloat(exclusivePrice) : null,
+          startPrice: enableAuction ? parseFloat(priceMp3 || '10') : null,
+          premiumPrice: enableAuction && priceWav ? parseFloat(priceWav) : null,
+          exclusivePrice: enableAuction && priceStems ? parseFloat(priceStems) : null,
           buyNowPrice: enableAuction && buyNowPrice ? parseFloat(buyNowPrice) : null,
           auctionDuration: enableAuction ? parseFloat(auctionDuration) : null,
           licenseType: enableAuction ? licenseType : null,
@@ -972,53 +972,7 @@ export default function UploadBeatPage() {
                   </div>
                 </div>
 
-                {/* Prix par licence */}
-                <div>
-                  <label className="text-sm font-semibold text-white mb-3 block">
-                    Prix par type de licence (EUR)
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {/* Basic */}
-                    <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5">
-                      <p className="text-sm font-bold text-blue-400">Basic</p>
-                      <p className="text-[11px] text-blue-400/70 mb-2 leading-snug">Usage non-commercial<br/>MP3 · 5000 streams max · Crédits obligatoires</p>
-                      <input
-                        type="number"
-                        value={startPrice}
-                        onChange={(e) => setStartPrice(e.target.value)}
-                        placeholder="10"
-                        min="1"
-                        className="w-full bg-[#0a0a12] border border-blue-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500/50 transition"
-                      />
-                    </div>
-                    {/* Premium */}
-                    <div className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/5">
-                      <p className="text-sm font-bold text-purple-400">Premium</p>
-                      <p className="text-[11px] text-purple-400/70 mb-2 leading-snug">Usage commercial<br/>WAV + MP3 · 50K streams · Crédits requis</p>
-                      <input
-                        type="number"
-                        value={premiumPrice}
-                        onChange={(e) => setPremiumPrice(e.target.value)}
-                        placeholder="25"
-                        min="1"
-                        className="w-full bg-[#0a0a12] border border-purple-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-purple-500/50 transition"
-                      />
-                    </div>
-                    {/* Exclusive */}
-                    <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
-                      <p className="text-sm font-bold text-amber-400">Exclusive</p>
-                      <p className="text-[11px] text-amber-400/70 mb-2 leading-snug">Droits exclusifs<br/>WAV + Stems · Illimité · Retire le beat du marketplace</p>
-                      <input
-                        type="number"
-                        value={exclusivePrice}
-                        onChange={(e) => setExclusivePrice(e.target.value)}
-                        placeholder="100"
-                        min="1"
-                        className="w-full bg-[#0a0a12] border border-amber-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-500/50 transition"
-                      />
-                    </div>
-                  </div>
-                </div>
+                {/* Prix des licences unifié en haut du form */}
               </div>
             )}
           </div>
@@ -1034,7 +988,7 @@ export default function UploadBeatPage() {
           <button
             type="submit"
             disabled={
-              uploading || !audioFile || !title || !genre || !bpm || (enableAuction && !startPrice)
+              uploading || !audioFile || !title || !genre || !bpm || (enableAuction && !priceMp3)
             }
             className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
