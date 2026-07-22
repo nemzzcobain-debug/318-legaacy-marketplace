@@ -124,6 +124,11 @@ export default function UploadBeatPage() {
     }
 
     setAudioFile(file)
+    // Auto-remplir WAV si l'audio principal est déjà un WAV (évite de le redemander)
+    const audioExt = file.name.split('.').pop()?.toLowerCase()
+    if (audioExt === 'wav') {
+      setWavFile(file)
+    }
     setAudioPreview(URL.createObjectURL(file))
     setError('')
 
