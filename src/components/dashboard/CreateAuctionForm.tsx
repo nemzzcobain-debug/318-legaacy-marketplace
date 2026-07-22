@@ -12,7 +12,7 @@ interface Beat {
 }
 
 const DURATIONS = [
-  { value: 1, label: '1 heure' },
+  { value: 0.25, label: '15 minutes' }, { value: 0.5, label: '30 minutes' }, { value: 1, label: '1 heure' },
   { value: 6, label: '6 heures' },
   { value: 12, label: '12 heures' },
   { value: 24, label: '24 heures' },
@@ -263,7 +263,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
         {/* Duration + Increment */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-semibold text-white mb-2 block">Duree</label>
+            <label className="text-sm font-semibold text-white mb-2 block">Durée</label>
             <select
               value={durationHours}
               onChange={(e) => setDurationHours(e.target.value)}
@@ -277,7 +277,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
             </select>
           </div>
           <div>
-            <label className="text-sm font-semibold text-white mb-2 block">Increment minimum</label>
+            <label className="text-sm font-semibold text-white mb-2 block">Incrément minimum</label>
             <div className="relative">
               <input
                 type="number"
