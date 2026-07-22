@@ -976,7 +976,7 @@ export default function UploadBeatPage() {
                     {/* Basic */}
                     <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5">
                       <p className="text-sm font-bold text-blue-400">Basic</p>
-                      <p className="text-[11px] text-blue-400/70 mb-2">Usage non-commercial</p>
+                      <p className="text-[11px] text-blue-400/70 mb-2 leading-snug">Usage non-commercial<br/>MP3 · 5000 streams max · Crédits obligatoires</p>
                       <input
                         type="number"
                         value={startPrice}
@@ -989,7 +989,7 @@ export default function UploadBeatPage() {
                     {/* Premium */}
                     <div className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/5">
                       <p className="text-sm font-bold text-purple-400">Premium</p>
-                      <p className="text-[11px] text-purple-400/70 mb-2">Usage commercial</p>
+                      <p className="text-[11px] text-purple-400/70 mb-2 leading-snug">Usage commercial<br/>WAV + MP3 · 50K streams · Crédits requis</p>
                       <input
                         type="number"
                         value={premiumPrice}
@@ -1002,7 +1002,7 @@ export default function UploadBeatPage() {
                     {/* Exclusive */}
                     <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
                       <p className="text-sm font-bold text-amber-400">Exclusive</p>
-                      <p className="text-[11px] text-amber-400/70 mb-2">Droits exclusifs</p>
+                      <p className="text-[11px] text-amber-400/70 mb-2 leading-snug">Droits exclusifs<br/>WAV + Stems · Illimité · Retire le beat du marketplace</p>
                       <input
                         type="number"
                         value={exclusivePrice}
