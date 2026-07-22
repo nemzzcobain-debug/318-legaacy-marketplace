@@ -167,10 +167,10 @@ export default function UploadBeatPage() {
     if (files.length === 0) return
     const invalidFiles = files.filter(f => {
       const ext = f.name.split('.').pop()?.toLowerCase()
-      return ext !== 'wav'
+      return ext !== 'wav' && ext !== 'zip'
     })
     if (invalidFiles.length > 0) {
-      setError('Tous les stems doivent être au format WAV')
+      setError('Les stems doivent être en WAV (individuellement) ou dans un ZIP')
       return
     }
     const totalSize = files.reduce((sum, f) => sum + f.size, 0)
@@ -211,7 +211,7 @@ export default function UploadBeatPage() {
       const wavFileName = wavFile ? `${timestamp}-${slug}.wav` : null
 
       // Préparer les stems pour signed URLs
-      const stemsForSigning = stemFiles.map(f => ({ name: f.name, contentType: 'audio/wav' }))
+      const stemsForSigning = stemFiles.map(f => ({ name: f.name, contentType: f.name.toLowerCase().endsWith('.zip') ? 'application/zip' : 'audio/wav' }))
 
       // 1. Obtenir les signed URLs depuis l'API
       setUploadProgress("Préparation de l'upload...")
@@ -709,7 +709,7 @@ export default function UploadBeatPage() {
             <input
               ref={stemsInputRef}
               type="file"
-              accept=".wav,audio/wav,audio/x-wav"
+              accept=".wav,.zip,audio/wav,audio/x-wav,application/zip"
               multiple
               onChange={handleStemsSelect}
               className="hidden"
