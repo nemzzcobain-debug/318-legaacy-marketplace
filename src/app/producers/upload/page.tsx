@@ -169,8 +169,8 @@ export default function UploadBeatPage() {
       return
     }
     const totalSize = files.reduce((sum, f) => sum + f.size, 0)
-    if (stemFiles.length + files.length > 30) { setError('Maximum 30 stems par beat. Retire des stems avant d’en ajouter d’autres.'); return; } if (totalSize > 500 * 1024 * 1024) {
-      setError('La taille totale des stems ne doit pas dépasser 500 MB')
+    if (stemFiles.length + files.length > 30) { setError('Maximum 30 stems par beat. Retire des stems avant d’en ajouter d’autres.'); return; } if (totalSize > 5 * 1024 * 1024 * 1024) {
+      setError('La taille totale des stems ne doit pas dépasser 5 GB')
       return
     }
     setStemFiles(prev => [...prev, ...files])
