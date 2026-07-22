@@ -475,7 +475,7 @@ export default function UploadBeatPage() {
           {/* Audio Upload */}
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">
-              Fichier audio <span className="text-red-400">*</span>
+              Fichier audio MP3 <span className="text-red-400">*</span>
             </label>
             {!audioFile ? (
               <div
