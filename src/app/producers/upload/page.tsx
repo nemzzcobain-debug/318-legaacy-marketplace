@@ -414,8 +414,8 @@ export default function UploadBeatPage() {
     )
   }
 
-  // Écran hero si aucun fichier audio sélectionné
-  if (!audioFile) {
+  // Écran hero désactivé : le beatmaker atterrit direct sur le formulaire complet
+  if (false) {
     return (
       <div className="min-h-screen bg-[#0a0a0a]">
         <Header />
