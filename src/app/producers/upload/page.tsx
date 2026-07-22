@@ -111,11 +111,11 @@ export default function UploadBeatPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const allowedMimeTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/x-wav', 'audio/wave', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/x-m4a', 'audio/x-flac', 'audio/webm', 'application/octet-stream', '']
-    const allowedExtensions = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', '.webm']
+    const allowedMimeTypes = ['audio/mpeg', 'audio/mp3', 'application/octet-stream', '']
+    const allowedExtensions = ['.mp3']
     const fileExt = '.' + (file.name.split('.').pop()?.toLowerCase() || '')
     if (!allowedMimeTypes.includes(file.type) && !allowedExtensions.includes(fileExt)) {
-      setError('Format non supporte. Utilise MP3, WAV, FLAC, M4A ou OGG.')
+      setError('Format non supporté. Le fichier principal doit être un MP3.')
       return
     }
     if (file.size > 200 * 1024 * 1024) {
@@ -447,7 +447,7 @@ export default function UploadBeatPage() {
           <input
             ref={audioInputRef}
             type="file"
-            accept="audio/mpeg,audio/wav,audio/mp3,audio/x-wav,audio/wave,audio/mp4,audio/aac,audio/ogg,audio/flac,.mp3,.wav,.m4a,.aac,.ogg,.flac"
+            accept="audio/mpeg,audio/mp3,.mp3"
             onChange={handleAudioSelect}
             className="hidden"
           />
@@ -493,7 +493,7 @@ export default function UploadBeatPage() {
                   <Music size={28} className="text-[#e11d48]" />
                 </div>
                 <p className="text-white font-semibold mb-1">Glisse ton beat ici</p>
-                <p className="text-gray-500 text-sm">MP3 ou WAV, Max 200 MB</p>
+                <p className="text-gray-500 text-sm">MP3 uniquement, max 200 MB</p>
               </div>
             ) : (
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-4">
@@ -528,7 +528,7 @@ export default function UploadBeatPage() {
             <input
               ref={audioInputRef}
               type="file"
-              accept="audio/mpeg,audio/wav,audio/mp3,audio/x-wav,audio/wave,audio/mp4,audio/aac,audio/ogg,audio/flac,.mp3,.wav,.m4a,.aac,.ogg,.flac"
+              accept="audio/mpeg,audio/mp3,.mp3"
               onChange={handleAudioSelect}
               className="hidden"
             />
@@ -640,11 +640,11 @@ export default function UploadBeatPage() {
           </div>
 
           {/* ─── MISE AUX ENCHÈRES ─── */}
-          <div className="border border-[#1e1e2e] rounded-2xl overflow-hidden">
+          <div className="border border-[#1e1e2e] rounded-2xl">
             <button
               type="button"
               onClick={() => setEnableAuction(!enableAuction)}
-              className="w-full flex items-center justify-between px-5 py-4 bg-[#13131a] hover:bg-[#1a1a25] transition"
+              className="w-full flex items-center justify-between px-5 py-4 bg-[#13131a] hover:bg-[#1a1a25] transition rounded-t-2xl"
             >
               <div className="flex items-center gap-3">
                 <div
@@ -669,9 +669,9 @@ export default function UploadBeatPage() {
             </button>
 
             {enableAuction && (
-              <div className="px-5 py-5 space-y-5 border-t border-[#1e1e2e] bg-[#0d0d14]">
+              <div className="px-5 py-5 space-y-5 border-t border-[#1e1e2e] bg-[#0d0d14] rounded-b-2xl">
                 {/* Prix départ + Achat immédiat + Durée */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-4 items-end">
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <DollarSign size={14} className="text-green-400" />
@@ -760,7 +760,7 @@ export default function UploadBeatPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className={`p-3 rounded-xl border ${audioFile ? 'border-blue-500/30 bg-blue-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
                 <p className="text-sm font-bold text-blue-400">MP3 <span className="text-[9px] font-normal opacity-60 ml-1">(Basic)</span></p>
-                <p className="text-[11px] text-blue-400/70 mb-2 leading-snug">Non-commercial · 5K streams max · Crédits requis</p>
+                <p className="text-[11px] text-blue-400/70 mb-2 leading-snug min-h-[34px]">Non-commercial · 5K streams max · Crédits requis</p>
                 <div className="relative">
                   <input
                     type="number"
@@ -776,7 +776,7 @@ export default function UploadBeatPage() {
               </div>
               <div className={`p-3 rounded-xl border ${wavFile ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
                 <p className="text-sm font-bold text-emerald-400">WAV <span className="text-[9px] font-normal opacity-60 ml-1">(Premium)</span></p>
-                <p className="text-[11px] text-emerald-400/70 mb-2 leading-snug">Commercial · 50K streams · Crédits requis</p>
+                <p className="text-[11px] text-emerald-400/70 mb-2 leading-snug min-h-[34px]">Commercial · 50K streams · Crédits requis</p>
                 <div className="relative">
                   <input
                     type="number"
@@ -792,7 +792,7 @@ export default function UploadBeatPage() {
               </div>
               <div className={`p-3 rounded-xl border ${stemFiles.length > 0 ? 'border-amber-500/30 bg-amber-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
                 <p className="text-sm font-bold text-amber-400">Stems <span className="text-[9px] font-normal opacity-60 ml-1">(Exclusive)</span></p>
-                <p className="text-[11px] text-amber-400/70 mb-2 leading-snug">WAV + MP3 + Stems · Droits exclusifs</p>
+                <p className="text-[11px] text-amber-400/70 mb-2 leading-snug min-h-[34px]">WAV + MP3 + Stems · Droits exclusifs</p>
                 <div className="relative">
                   <input
                     type="number"
