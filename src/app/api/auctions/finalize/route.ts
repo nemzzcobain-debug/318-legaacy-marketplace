@@ -54,6 +54,46 @@ async function handleFinalize(req: NextRequest) {
 
     const now = new Date()
 
+    // Activer les encheres programmees dont l'heure de demarrage est arrivee
+    let activated = 0
+    try {
+      const toActivate = await prisma.auction.findMany({
+        where: { status: 'SCHEDULED', startTime: { lte: now } },
+        include: { beat: { include: { producer: true } } },
+      })
+
+      for (const a of toActivate) {
+        await prisma.auction.update({
+          where: { id: a.id },
+          data: { status: 'ACTIVE' },
+        })
+        activated++
+
+        try {
+          const producerName = a.beat.producer.displayName || a.beat.producer.name
+          const followers = await prisma.follow.findMany({
+            where: { followingId: a.beat.producerId },
+            select: { followerId: true },
+          })
+          if (followers.length > 0) {
+            await prisma.notification.createMany({
+              data: followers.map((f) => ({
+                type: 'NEW_AUCTION',
+                title: 'Enchere ouverte : ' + a.beat.title,
+                message: "L'enchere de " + producerName + ' sur ' + a.beat.title + ' vient de demarrer',
+                link: '/auction/' + a.id,
+                userId: f.followerId,
+              })),
+            })
+          }
+        } catch (notifErr) {
+          console.warn('[FINALIZE] Notif demarrage echouee:', String(notifErr))
+        }
+      }
+    } catch (activateErr) {
+      console.error('[FINALIZE] Activation encheres programmees echouee:', String(activateErr))
+    }
+
     // Trouver toutes les enchères expirées mais pas encore finalisées
     const expiredAuctions = await prisma.auction.findMany({
       where: {
@@ -335,6 +375,7 @@ async function handleFinalize(req: NextRequest) {
     return NextResponse.json({
       message: `${results.processed} enchères finalisées`,
       ...results,
+      activated,
       timestamp: now.toISOString(),
     })
   } catch (error: any) {
