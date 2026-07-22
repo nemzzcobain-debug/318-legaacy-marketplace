@@ -14,6 +14,7 @@ export default function OnboardingPage() {
   const [name, setName] = useState(session?.user?.name ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
 
   const handleSubmit = async () => {
     if (!role) return
@@ -37,6 +38,12 @@ export default function OnboardingPage() {
       // Update the session with new role
       await update({ role: data.user.role, needsOnboarding: false })
 
+      if (role === 'PRODUCER') {
+        setSubmitted(true)
+        setLoading(false)
+        return
+      }
+
       // Redirect to marketplace
       router.push('/marketplace')
       router.refresh()
@@ -45,6 +52,21 @@ export default function OnboardingPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (submitted && role === 'PRODUCER') {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-lg bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center mx-auto mb-5">
+            <Sparkles size={28} className="text-emerald-400" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-white mb-3">Candidature reçue !</h1>
+          <p className="text-sm text-gray-400 mb-6 leading-relaxed">Ta demande de compte producteur est en cours d’examen par l’équipe 318 LEGAACY. Tu recevras un email dès que ton compte sera approuvé et que tu pourras commencer à mettre tes beats aux enchères.</p>
+          <button onClick={() => { router.push('/marketplace'); router.refresh() }} className="w-full py-3 rounded-xl font-bold text-black text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}>Explorer la marketplace <ArrowRight size={16} /></button>
+        </div>
+      </div>
+    )
   }
 
   return (
