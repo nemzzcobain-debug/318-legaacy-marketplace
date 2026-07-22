@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs'
 import { randomUUID, createHash } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { registerSchema } from '@/lib/validations'
-import { sendVerificationEmail } from '@/lib/emails/resend'
+import { sendVerificationEmail, sendAdminNewApplicationEmail } from '@/lib/emails/resend'
 import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       // Notifier les admins
       const admins = await prisma.user.findMany({
         where: { role: 'ADMIN' },
-        select: { id: true },
+        select: { id: true, email: true },
       })
 
       await prisma.notification.createMany({
@@ -93,6 +93,20 @@ export async function POST(request: Request) {
           link: `/producer/${user.id}`,
         })),
       })
+
+      // Envoyer email admin (même logique que producers/apply)
+      for (const a of admins) {
+        if (a.email) {
+          sendAdminNewApplicationEmail({
+            adminEmail: a.email,
+            applicantName: name,
+            applicantEmail: email,
+            applicantId: user.id,
+            bio: 'Inscription via email/password.',
+            portfolio: undefined,
+          }).catch((err) => console.error('Email admin notification échoué:', err))
+        }
+      }
     }
 
     return NextResponse.json(
