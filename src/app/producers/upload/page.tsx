@@ -21,7 +21,7 @@ import {
   FileAudio,
   Layers,
   Plus,
-  Trash2,
+  Trash2,  Info,
 } from 'lucide-react'
 import { GENRES, MOODS } from '@/types'
 import CoverGenerator from '@/components/ai/CoverGenerator'
@@ -916,12 +916,12 @@ export default function UploadBeatPage() {
 
             {enableAuction && (
               <div className="px-5 py-5 space-y-5 border-t border-[#1e1e2e] bg-[#0d0d14]">
-                {/* Increment + Achat immédiat + Duree */}
+                {/* Increment + Achat immédiat <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Prix auquel un acheteur peut clore l'enchère instantanément sans attendre la fin. Optionnel : laisse vide pour laisser l'enchère aller jusqu'au bout."><Info size={12} /></span> + Duree */}
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <DollarSign size={14} className="text-green-400" />
-                      Incrément (EUR)
+                      Incrément (EUR) <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Montant minimum entre 2 enchères. Ex: 5€ = chaque nouvelle offre doit être au moins 5€ supérieure à la précédente."><Info size={12} /></span>
                     </label>
                     <input
                       type="number"
@@ -936,7 +936,7 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <Tag size={14} className="text-amber-400" />
-                      Achat immédiat
+                      Achat immédiat <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Prix auquel un acheteur peut clore l'enchère instantanément sans attendre la fin. Optionnel : laisse vide pour laisser l'enchère aller jusqu'au bout."><Info size={12} /></span>
                       <span className="text-gray-500 text-xs font-normal ml-1">optionnel</span>
                     </label>
                     <input
@@ -952,7 +952,7 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <Clock size={14} className="text-blue-400" />
-                      Durée de l&apos;enchère
+                      Durée de l&apos;enchère <span className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-300 cursor-help" title="Temps pendant lequel les acheteurs peuvent enchérir. À la fin, le plus offrant remporte le beat."><Info size={12} /></span>
                     </label>
                     <select
                       value={auctionDuration}
