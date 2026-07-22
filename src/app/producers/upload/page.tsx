@@ -333,7 +333,7 @@ export default function UploadBeatPage() {
           premiumPrice: enableAuction && premiumPrice ? parseFloat(premiumPrice) : null,
           exclusivePrice: enableAuction && exclusivePrice ? parseFloat(exclusivePrice) : null,
           buyNowPrice: enableAuction && buyNowPrice ? parseFloat(buyNowPrice) : null,
-          auctionDuration: enableAuction ? parseInt(auctionDuration) : null,
+          auctionDuration: enableAuction ? parseFloat(auctionDuration) : null,
           licenseType: enableAuction ? licenseType : null,
           bidIncrement: enableAuction ? parseFloat(bidIncrement) : null,
         }),
@@ -916,7 +916,7 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <DollarSign size={14} className="text-green-400" />
-                      Increment (EUR)
+                      Incrément (EUR)
                     </label>
                     <input
                       type="number"
@@ -954,6 +954,9 @@ export default function UploadBeatPage() {
                       onChange={(e) => setAuctionDuration(e.target.value)}
                       className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
                     >
+                      <option value="0.25">15 minutes</option>
+                      <option value="0.5">30 minutes</option>
+                      <option value="1">1 heure</option>
                       <option value="6">6 heures</option>
                       <option value="12">12 heures</option>
                       <option value="24">24 heures</option>
