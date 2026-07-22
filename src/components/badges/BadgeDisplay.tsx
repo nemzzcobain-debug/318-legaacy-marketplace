@@ -341,6 +341,17 @@ export function BadgesFullView({ userId }: { userId: string }) {
         </div>
       </div>
 
+      {/* Guide badges */}
+      <details className="rounded-xl bg-[#13131a] border border-[#1e1e2e] p-4 group">
+        <summary className="text-sm font-bold text-white cursor-pointer flex items-center gap-2 list-none"><span className="text-yellow-400">💡</span> Comment ça marche ?<span className="ml-auto text-xs text-gray-500 group-open:rotate-180 transition-transform">▼</span></summary>
+        <div className="mt-4 space-y-4 text-xs text-gray-400 leading-relaxed">
+          <div><div className="text-white font-bold mb-1">🎯 Comment gagner des badges ?</div><p>Chaque badge se débloque automatiquement dès que tu atteins un objectif : ventes, uploads, followers, ratings.</p></div>
+          <div><div className="text-white font-bold mb-1">📊 Les 5 catégories</div><ul className="space-y-1 pl-4 list-disc"><li><strong className="text-emerald-400">Ventes</strong> — Nombre de beats vendus (1ère vente, 5, 25, 100...)</li><li><strong className="text-blue-400">Beats</strong> — Nombre de beats uploads et actifs</li><li><strong className="text-purple-400">Community</strong> — Followers et participations aux enchères</li><li><strong className="text-amber-400">Quality</strong> — Ratings positifs et taux de vente</li><li><strong className="text-red-400">Special</strong> — Badges exclusifs (early adopter, milestones)</li></ul></div>
+          <div><div className="text-white font-bold mb-1">✨ Les 4 raretés</div><ul className="space-y-1 pl-4 list-disc"><li><span className="text-gray-400 font-semibold">Commun</span> — Objectifs faciles à obtenir</li><li><span className="text-blue-400 font-semibold">Rare</span> — Demande un peu d'investissement</li><li><span className="text-purple-400 font-semibold">Épique</span> — Réservé aux beatmakers actifs</li><li><span className="text-yellow-400 font-semibold">Légendaire</span> — Le top du marketplace</li></ul></div>
+          <div><div className="text-white font-bold mb-1">⭐ Niveau et XP</div><p>Chaque badge te donne des points XP. Cumule-les pour monter en niveau et débloquer des privilèges.</p></div>
+        </div>
+      </details>
+
       {/* Category filter */}
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {categories.map((cat) => (
