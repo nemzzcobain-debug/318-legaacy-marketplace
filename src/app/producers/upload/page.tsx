@@ -720,12 +720,12 @@ export default function UploadBeatPage() {
           <div className="border border-[#1e1e2e] rounded-2xl p-5 bg-[#0d0d14]">
             <label className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
               <DollarSign size={16} className="text-green-400" />
-              Prix des licences (achat direct)
+              Prix des licences (achat direct et enchère)
             </label>
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5">
-                <p className="text-sm font-bold text-blue-400">MP3</p>
-                <p className="text-[11px] text-blue-400/70 mb-2">Fichier MP3 uniquement</p>
+                <p className="text-sm font-bold text-blue-400">MP3 <span className="text-[9px] font-normal opacity-60 ml-1">(Basic)</span></p>
+                <p className="text-[11px] text-blue-400/70 mb-2 leading-snug">Non-commercial · 5K streams max · Crédits requis</p>
                 <div className="relative">
                   <input
                     type="number"
@@ -739,8 +739,8 @@ export default function UploadBeatPage() {
                 </div>
               </div>
               <div className={`p-3 rounded-xl border ${wavFile ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
-                <p className="text-sm font-bold text-emerald-400">WAV</p>
-                <p className="text-[11px] text-emerald-400/70 mb-2">Fichier WAV HD</p>
+                <p className="text-sm font-bold text-emerald-400">WAV <span className="text-[9px] font-normal opacity-60 ml-1">(Premium)</span></p>
+                <p className="text-[11px] text-emerald-400/70 mb-2 leading-snug">Commercial · 50K streams · Crédits requis</p>
                 <div className="relative">
                   <input
                     type="number"
@@ -755,8 +755,8 @@ export default function UploadBeatPage() {
                 </div>
               </div>
               <div className={`p-3 rounded-xl border ${stemFiles.length > 0 ? 'border-amber-500/30 bg-amber-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
-                <p className="text-sm font-bold text-amber-400">Stems</p>
-                <p className="text-[11px] text-amber-400/70 mb-2">WAV + MP3 + Stems</p>
+                <p className="text-sm font-bold text-amber-400">Stems <span className="text-[9px] font-normal opacity-60 ml-1">(Exclusive)</span></p>
+                <p className="text-[11px] text-amber-400/70 mb-2 leading-snug">WAV + MP3 + Stems · Droits exclusifs</p>
                 <div className="relative">
                   <input
                     type="number"
