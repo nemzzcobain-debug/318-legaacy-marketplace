@@ -118,8 +118,8 @@ export default function UploadBeatPage() {
       setError('Format non supporte. Utilise MP3, WAV, FLAC, M4A ou OGG.')
       return
     }
-    if (file.size > 50 * 1024 * 1024) {
-      setError('Le fichier ne doit pas dépasser 50 MB.')
+    if (file.size > 200 * 1024 * 1024) {
+      setError('Le fichier ne doit pas dépasser 200 MB.')
       return
     }
 
@@ -442,7 +442,7 @@ export default function UploadBeatPage() {
             <p className="text-gray-400 text-center text-sm">
               {dragOver ? 'Lâche ton fichier ici' : 'Clique ou glisse ton beat ici'}
             </p>
-            <p className="text-gray-600 text-xs mt-1">MP3, WAV, FLAC · Max 50 MB</p>
+            <p className="text-gray-600 text-xs mt-1">MP3, WAV, FLAC · Max 200 MB</p>
           </div>
           <input
             ref={audioInputRef}
@@ -493,7 +493,7 @@ export default function UploadBeatPage() {
                   <Music size={28} className="text-[#e11d48]" />
                 </div>
                 <p className="text-white font-semibold mb-1">Glisse ton beat ici</p>
-                <p className="text-gray-500 text-sm">MP3 ou WAV, max 50 MB</p>
+                <p className="text-gray-500 text-sm">MP3 ou WAV, Max 200 MB</p>
               </div>
             ) : (
               <div className="bg-[#13131a] border border-[#1e1e2e] rounded-2xl p-4">
