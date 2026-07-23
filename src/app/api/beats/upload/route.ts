@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { sendBeatUploadConfirmationEmail } from '@/lib/emails/resend'
+import { sendBeatUploadConfirmationEmail, sendAdminNewBeatEmail } from '@/lib/emails/resend'
 
 /**
  * Endpoint d'upload de beats (v2 - metadata only)
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
       // Notifier les admins (sauf si c'est un admin qui uploade)
       const admins = await prisma.user.findMany({
         where: { role: 'ADMIN', id: { not: user.id } },
-        select: { id: true },
+        select: { id: true, email: true },
       })
 
       const notifications = [
@@ -235,9 +235,17 @@ export async function POST(req: NextRequest) {
       ]
 
       if (notifications.length > 0) {
-        await prisma.notification.createMany({ data: notifications })
+        where: { rolawait prisma.notification.createMany({ data: notifications })
       }
-    } catch (notifErr) {
+
+      // Email admin pour chaque admin (nouveau beat)
+      for (const a of admins) {
+        if (a.email) {
+          sendAdminNewBeatEmail({ adminEmail: a.email, producerName: producerName || 'Producteur', beatTitle: title, genre, bpm }).catch((err) => console.error('Email admin beat echoue:', err))
+        }
+      }
+    } catch (notifErr) {e: 'ADMIN', id: { not: user.id } },
+        select: { id: true, email: true },
       // SECURITY FIX M1: Logger les erreurs de notification au lieu de les ignorer
       console.warn('[UPLOAD] Erreur notification fan-out:', String(notifErr))
     }
