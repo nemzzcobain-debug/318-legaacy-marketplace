@@ -666,3 +666,15 @@ async function sendEmail(to: string, subject: string, html: string) {
     return { success: false, error }
   }
 }
+
+export async function sendAdminNewBeatEmail(params: { adminEmail: string; producerName: string; beatTitle: string; genre: string; bpm: number | string }) {
+  const { adminEmail, producerName, beatTitle, genre, bpm } = params
+  const html = emailLayout('<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouveau beat publié</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' + producerName + '</strong> a publié <strong style="color:#fff;">' + beatTitle + '</strong> (' + genre + ', ' + bpm + ' BPM).</p>' + button("Voir dans l'admin", PLATFORM_URL + '/admin?tab=beats'))
+  return sendEmail(adminEmail, 'Nouveau beat - ' + beatTitle, html)
+}
+
+export async function sendAdminNewBidEmail(params: { adminEmail: string; bidderName: string; beatTitle: string; amount: number | string; licenseType: string; auctionId: string }) {
+  const { adminEmail, bidderName, beatTitle, amount, licenseType, auctionId } = params
+  const html = emailLayout('<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouvelle enchère</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' + bidderName + '</strong> a placé <strong style="color:#2ed573;">' + amount + ' EUR</strong> sur <strong style="color:#fff;">' + beatTitle + '</strong> (' + licenseType + ').</p>' + button("Voir l'enchère", PLATFORM_URL + '/auction/' + auctionId))
+  return sendEmail(adminEmail, 'Enchere ' + amount + ' EUR sur ' + beatTitle, html)
+}
