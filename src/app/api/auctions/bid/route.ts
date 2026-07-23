@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { placeBidSchema } from '@/lib/validations'
 import { calculateFinalPrice } from '@/lib/stripe'
-import { sendOutbidEmail } from '@/lib/emails/resend'
+import { sendOutbidEmail, sendAdminNewBidEmail } from '@/lib/emails/resend'
 import { randomBytes } from 'crypto'
 
 // POST /api/auctions/bid?auctionId=xxx - Placer une enchère
@@ -221,6 +221,19 @@ export async function POST(request: Request) {
         newBid: amount,
         auctionId,
       }).catch((err) => console.warn('[BID] Erreur envoi email outbid:', String(err)))
+    }
+
+    // Email admin pour chaque nouvelle enchere
+    try {
+      const bidAdmins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { email: true } })
+      const bidderName = (session?.user as any)?.name || 'Encherisseur'
+      for (const a of bidAdmins) {
+        if (a.email) {
+          sendAdminNewBidEmail({ adminEmail: a.email, bidderName, beatTitle: auction.beat.title, amount, licenseType, auctionId }).catch((err) => console.error('Email admin bid echoue:', err))
+        }
+      }
+    } catch (e) {
+      console.warn('[BID] Erreur email admin:', String(e))
     }
 
     return NextResponse.json({
