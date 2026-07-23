@@ -235,7 +235,7 @@ export async function POST(req: NextRequest) {
       ]
 
       if (notifications.length > 0) {
-        where: { rolawait prisma.notification.createMany({ data: notifications })
+        await prisma.notification.createMany({ data: notifications })
       }
 
       // Email admin pour chaque admin (nouveau beat)
@@ -244,8 +244,7 @@ export async function POST(req: NextRequest) {
           sendAdminNewBeatEmail({ adminEmail: a.email, producerName: producerName || 'Producteur', beatTitle: title, genre, bpm }).catch((err) => console.error('Email admin beat echoue:', err))
         }
       }
-    } catch (notifErr) {e: 'ADMIN', id: { not: user.id } },
-        select: { id: true, email: true },
+    } catch (notifErr) {
       // SECURITY FIX M1: Logger les erreurs de notification au lieu de les ignorer
       console.warn('[UPLOAD] Erreur notification fan-out:', String(notifErr))
     }
