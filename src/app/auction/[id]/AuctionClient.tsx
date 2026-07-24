@@ -464,18 +464,22 @@ export default function AuctionClient() {
                     <ReportButton type="AUCTION" targetAuctionId={auction.id} />
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center text-xs font-bold text-white">
+                <Link
+                  href={`/producer/${producer.id}`}
+                  className="group flex w-fit items-center gap-2 mb-4 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                  aria-label={`Voir le profil de ${producer.displayName || producer.name}`}
+                >
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center text-xs font-bold text-white transition-transform group-hover:scale-105">
                     {producer.name[0]}
                   </div>
-                  <span className="text-sm text-gray-300">
+                  <span className="text-sm text-gray-300 transition-colors group-hover:text-red-400 group-hover:underline">
                     {producer.displayName || producer.name}
                   </span>
                   {producer.producerStatus === 'APPROVED' && (
                     <Shield size={14} className="text-red-500" />
                   )}
                   <span className="text-xs text-gray-600">({producer.totalSales} ventes)</span>
-                </div>
+                </Link>
 
                 {beat.description && (
                   <p className="text-sm text-gray-400 mb-4">{beat.description}</p>
