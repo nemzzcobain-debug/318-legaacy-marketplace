@@ -4,6 +4,44 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { deleteFile } from '@/lib/supabase'
 
+// GET /api/beats/[id] — Charger un beat à corriger
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+  }
+
+  const beat = await prisma.beat.findUnique({
+    where: { id: params.id },
+    select: {
+      id: true,
+      producerId: true,
+      title: true,
+      description: true,
+      genre: true,
+      mood: true,
+      bpm: true,
+      key: true,
+      tags: true,
+      priceMp3: true,
+      priceWav: true,
+      priceStems: true,
+      status: true,
+      rejectionType: true,
+      rejectionReason: true,
+    },
+  })
+
+  if (!beat || beat.producerId !== (session.user as any).id) {
+    return NextResponse.json({ error: 'Beat introuvable' }, { status: 404 })
+  }
+  if (beat.status !== 'REJECTED' || beat.rejectionType !== 'CHANGES_REQUESTED') {
+    return NextResponse.json({ error: 'Ce beat ne peut pas être renvoyé' }, { status: 400 })
+  }
+
+  return NextResponse.json({ beat })
+}
+
 // DELETE /api/beats/[id] — Supprimer un beat (producteur uniquement)
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
