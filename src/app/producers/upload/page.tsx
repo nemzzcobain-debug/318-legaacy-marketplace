@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import AudioPlayer from '@/components/audio/AudioPlayer'
 import {
@@ -57,6 +57,8 @@ const KEYS = [
 export default function UploadBeatPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const editBeatId = searchParams.get('edit')
 
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [audioPreview, setAudioPreview] = useState<string | null>(null)
@@ -92,6 +94,8 @@ export default function UploadBeatPage() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [isPlaying, setIsPlaying] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [loadingBeat, setLoadingBeat] = useState(Boolean(editBeatId))
 
   const [dragOver, setDragOver] = useState(false)
   const [uploadProgress, setUploadProgress] = useState('')
@@ -101,6 +105,36 @@ export default function UploadBeatPage() {
   const wavInputRef = useRef<HTMLInputElement>(null)
   const stemsInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!editBeatId || status !== 'authenticated') return
+
+    fetch(`/api/beats/${editBeatId}`)
+      .then(async (res) => {
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Impossible de charger le beat')
+        return data.beat
+      })
+      .then((beat) => {
+        setTitle(beat.title || '')
+        setGenre(beat.genre || '')
+        setBpm(String(beat.bpm || ''))
+        setKey(beat.key || '')
+        setMood(beat.mood || '')
+        setDescription(beat.description || '')
+        try {
+          setTags(JSON.parse(beat.tags || '[]').join(', '))
+        } catch {
+          setTags(beat.tags || '')
+        }
+        setPriceMp3(beat.priceMp3 ? String(beat.priceMp3) : '')
+        setPriceWav(beat.priceWav ? String(beat.priceWav) : '')
+        setPriceStems(beat.priceStems ? String(beat.priceStems) : '')
+        setRejectionReason(beat.rejectionReason || '')
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : 'Erreur de chargement'))
+      .finally(() => setLoadingBeat(false))
+  }, [editBeatId, status])
 
   if (status === 'unauthenticated') {
     router.push('/login')
@@ -326,6 +360,7 @@ export default function UploadBeatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          editBeatId,
           title,
           genre,
           bpm: parseInt(bpm),
@@ -480,6 +515,17 @@ export default function UploadBeatPage() {
     )
   }
 
+  if (loadingBeat) {
+    return (
+      <div className="min-h-screen bg-[#08080c]">
+        <Header />
+        <div className="flex justify-center py-32">
+          <Loader2 size={32} className="animate-spin text-[#e11d48]" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
@@ -491,6 +537,15 @@ export default function UploadBeatPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {editBeatId && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+              <p className="font-bold text-amber-300">Modifications demandées</p>
+              <p className="mt-1 text-sm text-amber-100">{rejectionReason}</p>
+              <p className="mt-2 text-xs text-amber-200/70">
+                Corrige les informations et sélectionne de nouveau les fichiers avant de renvoyer le beat.
+              </p>
+            </div>
+          )}
           {/* Audio Upload */}
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">
