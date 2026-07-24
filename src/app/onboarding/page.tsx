@@ -159,7 +159,7 @@ export default function OnboardingPage() {
                   Artiste / Acheteur
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Tu cherches des instrumentales exclusives. Participe aux enchères et décroche le beat parfait.
+                  <span className="font-bold text-blue-400">🛒 J&apos;achète des beats</span> — Tu cherches des instrumentales et tu enchéris pour décrocher le beat parfait.
                 </p>
               </div>
               {role === 'ARTIST' && (
@@ -193,7 +193,7 @@ export default function OnboardingPage() {
                   Beatmaker / Producteur
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Tu crées des instrumentales. Mets tes beats aux enchères et vends à la communauté.
+                  <span className="font-bold text-[#e11d48]">💰 Je vends mes beats</span> — Tu crées des instrumentales, tu les mets aux enchères et tu encaisses tes ventes.
                 </p>
               </div>
               {role === 'PRODUCER' && (
