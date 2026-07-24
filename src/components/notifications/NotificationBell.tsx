@@ -89,11 +89,24 @@ export default function NotificationBell() {
     }
   }, [session])
 
-  // Polling toutes les 5 secondes
+  // Vérification périodique raisonnable. À 5 secondes, quelques onglets
+  // suffisaient à saturer la limite API et pouvaient bloquer le reste du site.
   useEffect(() => {
-    fetchNotifications()
-    const interval = setInterval(fetchNotifications, 5000)
-    return () => clearInterval(interval)
+    void fetchNotifications()
+
+    const refreshIfVisible = () => {
+      if (!document.hidden) {
+        void fetchNotifications()
+      }
+    }
+
+    const interval = setInterval(refreshIfVisible, 30000)
+    document.addEventListener('visibilitychange', refreshIfVisible)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', refreshIfVisible)
+    }
   }, [fetchNotifications])
 
   // Fermer le dropdown en cliquant dehors
