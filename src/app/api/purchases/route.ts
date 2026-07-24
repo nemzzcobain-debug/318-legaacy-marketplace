@@ -30,10 +30,12 @@ export async function GET(req: NextRequest) {
             genre: true,
             bpm: true,
             key: true,
-            // TASK49: Ne plus exposer les URLs directes — utiliser /api/beats/[id]/download
             coverImage: true,
-            audioWav: true,   // Juste pour savoir si WAV est dispo (bool)
-            stemsUrl: true,   // Juste pour savoir si stems sont dispo (bool)
+            audioUrl: true, // Aperçu public uniquement
+            audioOriginal: true,
+            audioWav: true,
+            stemsUrl: true,
+            stemsFiles: true,
             producer: {
               select: {
                 id: true,
@@ -73,15 +75,23 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    // TASK49: Transformer les URLs en booleen (hasWav, hasStems) + ajouter downloadUrl
+    // Ne jamais exposer les emplacements privés. Les téléchargements passent
+    // exclusivement par l'endpoint qui vérifie l'achat et la licence.
     const safePurchases = allPurchases.map((p) => ({
       ...p,
+      finalPrice: p.amount,
+      currentBid: p.amount,
+      winningLicense: p.licenseType,
+      paidAt: p.updatedAt,
       beat: {
         ...p.beat,
+        hasMp3: !!(p.beat.audioOriginal || p.beat.audioUrl),
         hasWav: !!p.beat.audioWav,
-        hasStems: !!p.beat.stemsUrl,
+        hasStems: !!(p.beat.stemsUrl || p.beat.stemsFiles),
+        audioOriginal: undefined,
         audioWav: undefined,
         stemsUrl: undefined,
+        stemsFiles: undefined,
         downloadUrl: `/api/beats/${p.beat.id}/download`,
       },
     }))

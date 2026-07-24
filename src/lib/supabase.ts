@@ -103,14 +103,16 @@ export function getStreamUrl(bucket: string, filePath: string): string {
 }
 
 /**
- * Extraire le bucket et le path d'une URL publique Supabase
+ * Extraire le bucket et le path d'une URL Supabase publique ou privée
  * Ex: https://xxx.supabase.co/storage/v1/object/public/beats/file.mp3
  *   → { bucket: 'beats', path: 'file.mp3' }
+ * Ex: https://xxx.supabase.co/storage/v1/object/beat-files/user/file.mp3
+ *   → { bucket: 'beat-files', path: 'user/file.mp3' }
  */
 export function parseSupabaseUrl(url: string): { bucket: string; path: string } | null {
   try {
-    // Format: /storage/v1/object/public/{bucket}/{path}
-    const match = url.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/)
+    // Formats: /object/public/{bucket}/{path} et /object/{bucket}/{path}
+    const match = url.match(/\/storage\/v1\/object\/(?:public\/)?([^/]+)\/(.+)$/)
     if (match) return { bucket: match[1], path: decodeURIComponent(match[2]) }
     return null
   } catch {

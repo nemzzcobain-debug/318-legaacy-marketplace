@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { GENRES, MOODS } from '@/types'
 import CoverGenerator from '@/components/ai/CoverGenerator'
+import { createAudioPreview } from '@/lib/audio/create-preview'
 // Upload utilise des signed URLs générées par l'API (contourne RLS + limite 4.5MB Vercel)
 
 const KEYS = [
@@ -256,6 +257,10 @@ export default function UploadBeatPage() {
 
       const wavFileName = wavFile ? `${timestamp}-${slug}.wav` : null
 
+      // Généré localement : seules les 60 premières secondes seront publiques.
+      setUploadProgress("Création de l'aperçu sécurisé (60 secondes)...")
+      const audioPreviewFile = await createAudioPreview(audioFile)
+
       // Préparer les stems pour signed URLs
       const stemsForSigning = stemFiles.map(f => ({ name: f.name, contentType: f.name.toLowerCase().endsWith('.zip') ? 'application/zip' : 'audio/wav' }))
 
@@ -282,9 +287,23 @@ export default function UploadBeatPage() {
         return
       }
 
-      // 2. Upload audio MP3
-      setUploadProgress('Upload du MP3...')
-      const audioUploadRes = await fetch(signedData.audio.signedUrl, {
+      // 2. Upload de l'aperçu public limité à 60 secondes
+      setUploadProgress("Upload de l'aperçu sécurisé...")
+      const previewUploadRes = await fetch(signedData.preview.signedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': audioPreviewFile.file.type },
+        body: audioPreviewFile.file,
+      })
+
+      if (!previewUploadRes.ok) {
+        setError("Erreur lors de l'upload de l'aperçu audio")
+        setUploading(false)
+        return
+      }
+
+      // 3. Upload du MP3 complet dans le bucket privé
+      setUploadProgress('Stockage privé du MP3 complet...')
+      const audioUploadRes = await fetch(signedData.audioOriginal.signedUrl, {
         method: 'PUT',
         headers: { 'Content-Type': audioFile.type || 'audio/mpeg' },
         body: audioFile,
@@ -296,9 +315,10 @@ export default function UploadBeatPage() {
         return
       }
 
-      const audioUrl = signedData.audio.publicUrl
+      const audioUrl = signedData.preview.publicUrl
+      const audioOriginalUrl = signedData.audioOriginal.privateUrl
 
-      // 3. Upload WAV si fourni
+      // 4. Upload WAV privé si fourni
       let wavUrl: string | null = null
       if (wavFile && signedData.wav) {
         setUploadProgress('Upload du WAV...')
@@ -308,11 +328,11 @@ export default function UploadBeatPage() {
           body: wavFile,
         })
         if (wavUploadRes.ok) {
-          wavUrl = signedData.wav.publicUrl
+          wavUrl = signedData.wav.privateUrl
         }
       }
 
-      // 4. Upload stems individuels
+      // 5. Upload stems privés
       let uploadedStems: Array<{name: string; url: string; size: number}> = []
       if (stemFiles.length > 0 && signedData.stems) {
         for (let i = 0; i < stemFiles.length; i++) {
@@ -331,14 +351,14 @@ export default function UploadBeatPage() {
           if (stemUploadRes.ok) {
             uploadedStems.push({
               name: stemFile.name,
-              url: stemData.publicUrl,
+              url: stemData.privateUrl,
               size: stemFile.size,
             })
           }
         }
       }
 
-      // 5. Upload cover si fournie
+      // 6. Upload cover si fournie
       let coverUrl: string | null = null
       if (aiCoverUrl) {
         coverUrl = aiCoverUrl
@@ -354,7 +374,7 @@ export default function UploadBeatPage() {
         }
       }
 
-      // 6. Envoyer les métadonnées à l'API
+      // 7. Envoyer les métadonnées à l'API
       setUploadProgress('Enregistrement du beat...')
       const res = await fetch('/api/beats/upload', {
         method: 'POST',
@@ -374,6 +394,8 @@ export default function UploadBeatPage() {
                 .filter(Boolean)
             : [],
           audioUrl,
+          audioOriginalUrl,
+          audioDuration: Math.round(audioPreviewFile.sourceDuration),
           coverUrl,
           wavUrl,
           stemsFiles: uploadedStems.length > 0 ? uploadedStems : null,
@@ -405,7 +427,7 @@ export default function UploadBeatPage() {
       setTimeout(() => router.push('/dashboard'), 2000)
     } catch (err) {
       console.error('Upload error:', err)
-      setError('Erreur de connexion')
+      setError(err instanceof Error ? err.message : 'Erreur de connexion')
     } finally {
       setUploading(false)
       setUploadProgress('')
@@ -551,6 +573,9 @@ export default function UploadBeatPage() {
             <label className="text-sm font-semibold text-white mb-2 block">
               Fichier audio MP3 <span className="text-red-400">*</span>
             </label>
+            <p className="mb-3 text-xs text-emerald-400/80">
+              Un aperçu public de 60 secondes sera créé automatiquement. Le fichier complet restera privé.
+            </p>
             {!audioFile ? (
               <div
                 onClick={() => audioInputRef.current?.click()}

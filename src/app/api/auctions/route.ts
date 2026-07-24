@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { createAuctionSchema } from '@/lib/validations'
 import { logger } from '@/lib/logger'
+import { withoutPrivateAuctionFiles } from '@/lib/public-beat-files'
 import {
   parsePagination,
   parseAuctionSort,
@@ -74,7 +75,7 @@ export async function GET(request: Request) {
     ])
 
     return NextResponse.json({
-      auctions,
+      auctions: auctions.map(withoutPrivateAuctionFiles),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
   } catch (error) {

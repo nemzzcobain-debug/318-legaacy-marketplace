@@ -760,12 +760,12 @@ function ArtistPurchasesTab({
                     )}
                     {(purchase.winningLicense === 'PREMIUM' ||
                       purchase.winningLicense === 'EXCLUSIVE') &&
-                      purchase.beat?.audioWav && (
+                      purchase.beat?.hasWav && (
                         <span className="flex items-center gap-1 text-[10px] text-[#e11d48] px-2 py-1 rounded bg-[#e11d48]/10">
                           <FileAudio size={10} /> WAV
                         </span>
                       )}
-                    {purchase.winningLicense === 'EXCLUSIVE' && purchase.beat?.stemsUrl && (
+                    {purchase.winningLicense === 'EXCLUSIVE' && purchase.beat?.hasStems && (
                       <span className="flex items-center gap-1 text-[10px] text-amber-400 px-2 py-1 rounded bg-amber-500/10">
                         <Package size={10} /> Stems
                       </span>

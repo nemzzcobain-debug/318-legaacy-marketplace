@@ -162,11 +162,12 @@ model Beat {
   description String?
 
   // Audio files
-  audioUrl    String   // MP3 — fichier d'écoute/preview
-  audioWav    String?  // WAV — fichier haute qualité (téléchargeable à l'achat WAV+)
-  stemsUrl    String?  // ZIP des stems (généré automatiquement)
-  duration    Int?
-  waveform    String?
+  audioUrl      String   // Aperçu public — 60 secondes maximum pour les nouveaux uploads
+  audioOriginal String?  // MP3 complet privé — téléchargeable uniquement après achat
+  audioWav      String?  // WAV complet privé — téléchargeable à l'achat WAV+
+  stemsUrl      String?  // ZIP privé des stems
+  duration      Int?
+  waveform      String?
 
   // Stems individuels (JSON array of {name, url, size})
   stemsFiles  String?  // JSON: [{name: "kick.wav", url: "...", size: 1234}, ...]

@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { PUBLIC_AUCTION_VISIBILITY_WHERE } from '@/lib/public-catalog';
+import { withoutPrivateAuctionFiles } from '@/lib/public-beat-files';
 
 export async function GET(
   req: NextRequest,
@@ -14,8 +16,13 @@ export async function GET(
     const session = await getServerSession(authOptions);
     const isAuthenticated = !!session?.user;
 
-    const auction = await prisma.auction.findUnique({
-      where: { id: params.id },
+    const auction = await prisma.auction.findFirst({
+      where: {
+        AND: [
+          { id: params.id },
+          PUBLIC_AUCTION_VISIBILITY_WHERE,
+        ],
+      },
       include: {
         beat: {
           include: {
@@ -50,7 +57,7 @@ export async function GET(
       return NextResponse.json({ error: 'Enchere introuvable' }, { status: 404 });
     }
 
-    return NextResponse.json(auction);
+    return NextResponse.json(withoutPrivateAuctionFiles(auction));
   } catch (error) {
     console.error('Auction detail error:', String(error));
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

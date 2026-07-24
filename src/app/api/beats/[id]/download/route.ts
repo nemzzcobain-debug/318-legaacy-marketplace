@@ -77,7 +77,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Récupérer le beat et l'URL du fichier demandé
     const beat = await prisma.beat.findUnique({
       where: { id: beatId },
-      select: { audioUrl: true, audioWav: true, stemsUrl: true, stemsFiles: true, title: true },
+      select: {
+        audioUrl: true,
+        audioOriginal: true,
+        audioWav: true,
+        stemsUrl: true,
+        stemsFiles: true,
+        title: true,
+      },
     })
 
     if (!beat) {
@@ -85,7 +92,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     let fileUrl: string | null = null
-    if (fileType === 'mp3') fileUrl = beat.audioUrl
+    // Compatibilité : les anciens beats n'ont pas encore audioOriginal.
+    if (fileType === 'mp3') fileUrl = beat.audioOriginal || beat.audioUrl
     else if (fileType === 'wav') fileUrl = beat.audioWav || null
     else if (fileType === 'stems') fileUrl = beat.stemsUrl || null
 
@@ -97,11 +105,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
           const signedStems = await Promise.all(
             stems.map(async (stem) => {
               const parsed = parseSupabaseUrl(stem.url)
-              if (!parsed) return { name: stem.name, url: stem.url, size: stem.size }
+              if (!parsed) return null
               const signed = await getSignedUrl(parsed.bucket, parsed.path, 3600)
-              return { name: stem.name, url: signed || stem.url, size: stem.size }
+              if (!signed) return null
+              return { name: stem.name, url: signed, size: stem.size }
             })
           )
+          if (signedStems.some((stem) => !stem)) {
+            return NextResponse.json(
+              { error: 'Impossible de préparer tous les stems' },
+              { status: 500 }
+            )
+          }
           return NextResponse.json({
             stems: signedStems,
             expiresIn: 3600,

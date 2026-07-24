@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { withoutPrivateAuctionFiles } from '@/lib/public-beat-files'
 import { logger } from '@/lib/logger'
 import {
   parsePagination,
@@ -104,7 +105,7 @@ export async function GET(req: NextRequest) {
     ])
 
     return NextResponse.json({
-      auctions,
+      auctions: auctions.map(withoutPrivateAuctionFiles),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       filters: {
         genres: genres.map(g => ({ name: g.genre, count: g._count })),

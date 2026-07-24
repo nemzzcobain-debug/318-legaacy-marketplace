@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { deleteFile } from '@/lib/supabase'
+import { deleteFile, parseSupabaseUrl } from '@/lib/supabase'
 
 // GET /api/beats/[id] — Charger un beat à corriger
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -115,26 +115,27 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     // 2. Supprimer les fichiers de Supabase Storage (en arriere-plan, on ne bloque pas)
     const deletePromises: Promise<void>[] = []
+    const storageUrls = new Set(
+      [beat.audioUrl, beat.audioOriginal, beat.audioWav, beat.stemsUrl, beat.coverImage].filter(
+        (value): value is string => Boolean(value)
+      )
+    )
 
-    if (beat.audioUrl) {
-      const audioPath = extractStoragePath(beat.audioUrl, 'beats')
-      if (audioPath) deletePromises.push(deleteFile('beats', audioPath))
+    if (beat.stemsFiles) {
+      try {
+        const stems = JSON.parse(beat.stemsFiles) as Array<{ url?: string }>
+        stems.forEach((stem) => {
+          if (stem.url) storageUrls.add(stem.url)
+        })
+      } catch {
+        // Un JSON historique invalide ne doit pas empêcher la suppression du beat.
+      }
     }
 
-    if (beat.audioWav) {
-      const wavPath = extractStoragePath(beat.audioWav, 'beats')
-      if (wavPath) deletePromises.push(deleteFile('beats', wavPath))
-    }
-
-    if (beat.stemsUrl) {
-      const stemsPath = extractStoragePath(beat.stemsUrl, 'beats')
-      if (stemsPath) deletePromises.push(deleteFile('beats', stemsPath))
-    }
-
-    if (beat.coverImage) {
-      const coverPath = extractStoragePath(beat.coverImage, 'covers')
-      if (coverPath) deletePromises.push(deleteFile('covers', coverPath))
-    }
+    storageUrls.forEach((url) => {
+      const parsed = parseSupabaseUrl(url)
+      if (parsed) deletePromises.push(deleteFile(parsed.bucket, parsed.path))
+    })
 
     // On attend les suppressions mais on ne bloque pas si ca échoué
     await Promise.allSettled(deletePromises)
@@ -143,21 +144,5 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   } catch (error) {
     console.error('Erreur suppression beat:', error)
     return NextResponse.json({ error: 'Erreur serveur lors de la suppression' }, { status: 500 })
-  }
-}
-
-/**
- * Extrait le chemin relatif d'un fichier dans Supabase Storage a partir de l'URL publique
- * Ex: https://xxx.supabase.co/storage/v1/object/public/beats/userId/123_file.mp3
- *  -> userId/123_file.mp3
- */
-function extractStoragePath(url: string, bucket: string): string | null {
-  try {
-    const marker = `/storage/v1/object/public/${bucket}/`
-    const idx = url.indexOf(marker)
-    if (idx === -1) return null
-    return decodeURIComponent(url.substring(idx + marker.length))
-  } catch {
-    return null
   }
 }

@@ -6,6 +6,62 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendBeatUploadConfirmationEmail, sendAdminNewBeatEmail } from '@/lib/emails/resend'
 
+const MAX_PUBLIC_PREVIEW_SECONDS = 60.5
+
+function isExpectedStorageUrl(
+  value: unknown,
+  bucket: 'beat-previews' | 'beat-files',
+  userId: string,
+  isPublic: boolean
+): value is string {
+  if (typeof value !== 'string') return false
+
+  try {
+    const supabaseUrl = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!)
+    const candidate = new URL(value)
+    const visibilityPath = isPublic ? 'public/' : ''
+    const expectedPrefix = `/storage/v1/object/${visibilityPath}${bucket}/${userId}/`
+
+    return candidate.origin === supabaseUrl.origin && candidate.pathname.startsWith(expectedPrefix)
+  } catch {
+    return false
+  }
+}
+
+async function validatePublicWavPreview(url: string): Promise<boolean> {
+  try {
+    const response = await fetch(url, {
+      headers: { Range: 'bytes=0-43' },
+      cache: 'no-store',
+    })
+    if (!response.ok) return false
+
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    if (bytes.byteLength < 44) return false
+
+    const ascii = (start: number, end: number) =>
+      String.fromCharCode(...bytes.slice(start, end))
+    if (ascii(0, 4) !== 'RIFF' || ascii(8, 12) !== 'WAVE' || ascii(36, 40) !== 'data') {
+      return false
+    }
+
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+    const byteRate = view.getUint32(28, true)
+    const dataSize = view.getUint32(40, true)
+    if (byteRate <= 0 || dataSize <= 0 || dataSize / byteRate > MAX_PUBLIC_PREVIEW_SECONDS) {
+      return false
+    }
+
+    // Empêche d'ajouter un morceau complet après un faux en-tête de 60 secondes.
+    const contentRange = response.headers.get('content-range')
+    const totalSize =
+      contentRange?.match(/\/(\d+)$/)?.[1] || response.headers.get('content-length')
+    return Boolean(totalSize) && Number(totalSize) === 44 + dataSize
+  } catch {
+    return false
+  }
+}
+
 /**
  * Endpoint d'upload de beats (v2 - metadata only)
  * Les fichiers sont uploadés directement du client vers Supabase Storage
@@ -50,8 +106,10 @@ export async function POST(req: NextRequest) {
       description,
       tags,
       audioUrl,
+      audioOriginalUrl,
       coverUrl,
       audioSize,
+      audioDuration,
       // Fichiers haute qualité
       wavUrl,
       stemsFiles, // [{name, url, size}]
@@ -72,26 +130,38 @@ export async function POST(req: NextRequest) {
     } = body
 
     // Validations des champs requis
-    if (!title || !genre || !bpm || !audioUrl) {
+    if (!title || !genre || !bpm || !audioUrl || !audioOriginalUrl) {
       return NextResponse.json(
-        { error: 'Champs requis: titre, genre, BPM, audioUrl' },
+        { error: 'Champs requis: titre, genre, BPM, aperçu audio et MP3 original' },
         { status: 400 }
       )
     }
 
-    // SECURITY FIX M2: Valider que audioUrl est un URL Supabase valide
-    const SUPABASE_DOMAIN = process.env.NEXT_PUBLIC_SUPABASE_URL || 'onfwowxfflnijuvpspkq.supabase.co'
-    if (typeof audioUrl !== 'string' || !audioUrl.includes('supabase.co/storage/')) {
+    if (!isExpectedStorageUrl(audioUrl, 'beat-previews', user.id, true)) {
       return NextResponse.json(
-        { error: 'audioUrl doit etre un lien Supabase Storage valide' },
+        { error: "L'aperçu doit provenir du stockage public sécurisé" },
         { status: 400 }
       )
     }
 
-    // SECURITY FIX M2: Valider la taille du fichier audio (max 50 MB)
-    if (audioSize && (typeof audioSize !== 'number' || audioSize > 50 * 1024 * 1024)) {
+    if (!(await validatePublicWavPreview(audioUrl))) {
       return NextResponse.json(
-        { error: 'Fichier audio trop volumineux (max 50 MB)' },
+        { error: "L'aperçu public doit être un WAV réel limité à 60 secondes" },
+        { status: 400 }
+      )
+    }
+
+    if (!isExpectedStorageUrl(audioOriginalUrl, 'beat-files', user.id, false)) {
+      return NextResponse.json(
+        { error: 'Le MP3 complet doit provenir du stockage privé sécurisé' },
+        { status: 400 }
+      )
+    }
+
+    // Cohérent avec la limite affichée dans le formulaire.
+    if (audioSize && (typeof audioSize !== 'number' || audioSize > 200 * 1024 * 1024)) {
+      return NextResponse.json(
+        { error: 'Fichier audio trop volumineux (max 200 MB)' },
         { status: 400 }
       )
     }
@@ -102,15 +172,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Le BPM doit être entre 40 et 300' }, { status: 400 })
     }
 
-    // Calcul approximatif de la durée basé sur la taille du fichier
-    const estimatedDuration = audioSize ? Math.round(audioSize / 16000) : 0
+    const parsedAudioDuration = Number(audioDuration)
+    const duration =
+      Number.isFinite(parsedAudioDuration) && parsedAudioDuration > 0 && parsedAudioDuration <= 60 * 60
+        ? Math.round(parsedAudioDuration)
+        : audioSize
+          ? Math.round(audioSize / 16000)
+          : 0
 
     // Validation des stems (si fournis)
     let parsedStems: Array<{name: string; url: string; size: number}> | null = null
     if (stemsFiles && Array.isArray(stemsFiles) && stemsFiles.length > 0) {
       // Valider que chaque stem a un URL Supabase valide
       for (const stem of stemsFiles) {
-        if (!stem.url || !stem.url.includes('supabase.co/storage/')) {
+        if (!isExpectedStorageUrl(stem.url, 'beat-files', user.id, false)) {
           return NextResponse.json(
             { error: `URL stem invalide pour "${stem.name}"` },
             { status: 400 }
@@ -121,9 +196,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Validation WAV URL si fourni
-    if (wavUrl && !wavUrl.includes('supabase.co/storage/')) {
+    if (wavUrl && !isExpectedStorageUrl(wavUrl, 'beat-files', user.id, false)) {
       return NextResponse.json(
-        { error: 'wavUrl doit être un lien Supabase Storage valide' },
+        { error: 'Le WAV doit provenir du stockage privé sécurisé' },
         { status: 400 }
       )
     }
@@ -166,6 +241,7 @@ export async function POST(req: NextRequest) {
         title,
         description: description || null,
         audioUrl,
+        audioOriginal: audioOriginalUrl,
         audioWav: wavUrl || null,
         stemsFiles: parsedStems ? JSON.stringify(parsedStems) : null,
         genre,
@@ -174,7 +250,7 @@ export async function POST(req: NextRequest) {
         mood: mood || null,
         tags: Array.isArray(tags) ? JSON.stringify(tags) : tags || '[]',
         coverImage: coverUrl || null,
-        duration: estimatedDuration,
+        duration,
         priceMp3: priceMp3 ? parseFloat(priceMp3) : null,
         priceWav: priceWav ? parseFloat(priceWav) : null,
         priceStems: priceStems ? parseFloat(priceStems) : null,

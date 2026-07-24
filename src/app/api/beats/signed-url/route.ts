@@ -6,12 +6,20 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@supabase/supabase-js';
 
+const PRIVATE_BEAT_BUCKET = 'beat-files';
+const PUBLIC_PREVIEW_BUCKET = 'beat-previews';
+
 // F10 FIX: Protection path traversal — nettoyer les noms de fichiers
 function sanitizeFileName(name: string): string {
   // Extraire uniquement le nom de fichier (pas de chemin)
   const baseName = name.split('/').pop()?.split('\\').pop() || name;
   // Supprimer les caractères dangereux, garder alphanumériques, tirets, underscores, points
   return baseName.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.{2,}/g, '.');
+}
+
+function buildPrivateObjectUrl(supabaseUrl: string, bucket: string, path: string): string {
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+  return `${supabaseUrl}/storage/v1/object/${bucket}/${encodedPath}`;
 }
 
 /**
@@ -60,12 +68,14 @@ export async function POST(req: NextRequest) {
 
     // F4 FIX: Scoper les chemins au répertoire de l'utilisateur authentifié
     const timestamp = Date.now();
-    const userScopedAudioPath = `${user.id}/${timestamp}_${audioFileName}`;
+    const previewBaseName = audioFileName.replace(/\.[^/.]+$/, '');
+    const previewPath = `${user.id}/previews/${timestamp}_${previewBaseName}_preview_60s.wav`;
+    const audioOriginalPath = `${user.id}/originals/${timestamp}_${audioFileName}`;
     const userScopedCoverPath = coverFileName ? `${user.id}/${timestamp}_${coverFileName}` : null;
-    const userScopedWavPath = wavFileName ? `${user.id}/${timestamp}_${wavFileName}` : null;
+    const userScopedWavPath = wavFileName ? `${user.id}/wav/${timestamp}_${wavFileName}` : null;
 
     // Validate MIME type for audio uploads
-    const allowedAudioMimes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/aac', 'audio/mp4', 'audio/x-wav'];
+    const allowedAudioMimes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/aac', 'audio/mp4', 'audio/x-wav', 'application/octet-stream'];
     if (!allowedAudioMimes.includes(audioContentType)) {
       return NextResponse.json(
         { error: 'Type MIME audio invalide. Types acceptes: ' + allowedAudioMimes.join(', ') },
@@ -91,13 +101,25 @@ export async function POST(req: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Générer signed URL pour l'audio (valide 10 minutes) — chemin scopé à l'utilisateur
-    const { data: audioSignedUrl, error: audioError } = await supabase.storage
-      .from('beats')
-      .createSignedUploadUrl(userScopedAudioPath);
+    // L'aperçu de 60 secondes est public. Le MP3 complet reste privé.
+    const { data: previewSignedUrl, error: previewError } = await supabase.storage
+      .from(PUBLIC_PREVIEW_BUCKET)
+      .createSignedUploadUrl(previewPath);
 
-    if (audioError) {
-      console.error('Signed URL audio error:', audioError);
+    if (previewError) {
+      console.error('Signed URL preview error:', previewError);
+      return NextResponse.json(
+        { error: 'Erreur serveur' },
+        { status: 500 }
+      );
+    }
+
+    const { data: originalSignedUrl, error: originalError } = await supabase.storage
+      .from(PRIVATE_BEAT_BUCKET)
+      .createSignedUploadUrl(audioOriginalPath);
+
+    if (originalError) {
+      console.error('Signed URL original error:', originalError);
       return NextResponse.json(
         { error: 'Erreur serveur' },
         { status: 500 }
@@ -127,7 +149,7 @@ export async function POST(req: NextRequest) {
         );
       }
       const { data: wavData, error: wavError } = await supabase.storage
-        .from('beats')
+        .from(PRIVATE_BEAT_BUCKET)
         .createSignedUploadUrl(userScopedWavPath);
       if (!wavError && wavData) {
         wavSignedUrl = wavData;
@@ -135,7 +157,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Générer signed URLs pour les stems individuels
-    let stemsSignedUrls: Array<{ name: string; signedUrl: string; path: string; publicUrl: string }> = [];
+    let stemsSignedUrls: Array<{ name: string; signedUrl: string; path: string; privateUrl: string }> = [];
     if (stems && Array.isArray(stems) && stems.length > 0) {
       const allowedStemMimes = ['audio/wav', 'audio/x-wav', 'audio/wave', 'application/zip'];
       const zipCount = stems.filter((stem) => stem.contentType === 'application/zip').length;
@@ -163,39 +185,46 @@ export async function POST(req: NextRequest) {
         const stemName = sanitizeFileName(stem.name);
         const stemPath = `${user.id}/stems/${timestamp}_${stemName}`;
         const { data: stemData, error: stemError } = await supabase.storage
-          .from('beats')
+          .from(PRIVATE_BEAT_BUCKET)
           .createSignedUploadUrl(stemPath);
         if (!stemError && stemData) {
-          const { data: stemPublic } = supabase.storage.from('beats').getPublicUrl(stemPath);
           stemsSignedUrls.push({
             name: stem.name,
             signedUrl: stemData.signedUrl,
             path: stemData.path,
-            publicUrl: stemPublic.publicUrl,
+            privateUrl: buildPrivateObjectUrl(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              PRIVATE_BEAT_BUCKET,
+              stemPath
+            ),
           });
         }
       }
     }
 
-    // Obtenir les URLs publiques (chemins scopés)
-    const { data: audioPublicData } = supabase.storage.from('beats').getPublicUrl(userScopedAudioPath);
+    // Seul l'aperçu et la cover possèdent une URL publique.
+    const { data: previewPublicData } = supabase.storage
+      .from(PUBLIC_PREVIEW_BUCKET)
+      .getPublicUrl(previewPath);
     let coverPublicUrl = null;
     if (userScopedCoverPath) {
       const { data: coverPublicData } = supabase.storage.from('covers').getPublicUrl(userScopedCoverPath);
       coverPublicUrl = coverPublicData.publicUrl;
     }
-    let wavPublicUrl = null;
-    if (userScopedWavPath) {
-      const { data: wavPublicData } = supabase.storage.from('beats').getPublicUrl(userScopedWavPath);
-      wavPublicUrl = wavPublicData.publicUrl;
-    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
     return NextResponse.json({
-      audio: {
-        signedUrl: audioSignedUrl.signedUrl,
-        token: audioSignedUrl.token,
-        path: audioSignedUrl.path,
-        publicUrl: audioPublicData.publicUrl,
+      preview: {
+        signedUrl: previewSignedUrl.signedUrl,
+        token: previewSignedUrl.token,
+        path: previewSignedUrl.path,
+        publicUrl: previewPublicData.publicUrl,
+      },
+      audioOriginal: {
+        signedUrl: originalSignedUrl.signedUrl,
+        token: originalSignedUrl.token,
+        path: originalSignedUrl.path,
+        privateUrl: buildPrivateObjectUrl(supabaseUrl, PRIVATE_BEAT_BUCKET, audioOriginalPath),
       },
       cover: coverSignedUrl ? {
         signedUrl: coverSignedUrl.signedUrl,
@@ -207,7 +236,7 @@ export async function POST(req: NextRequest) {
         signedUrl: wavSignedUrl.signedUrl,
         token: wavSignedUrl.token,
         path: wavSignedUrl.path,
-        publicUrl: wavPublicUrl,
+        privateUrl: buildPrivateObjectUrl(supabaseUrl, PRIVATE_BEAT_BUCKET, userScopedWavPath!),
       } : null,
       stems: stemsSignedUrls.length > 0 ? stemsSignedUrls : null,
     });

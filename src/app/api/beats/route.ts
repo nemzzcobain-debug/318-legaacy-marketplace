@@ -5,7 +5,8 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
 import { authOptions } from '@/lib/auth'
-import { createBeatSchema } from '@/lib/validations'
+import { PUBLIC_BEAT_WHERE, getPublicLiveAuctionWhere } from '@/lib/public-catalog'
+import { withoutPrivateBeatFiles } from '@/lib/public-beat-files'
 
 // GET /api/beats - Liste des beats
 export async function GET(request: Request) {
@@ -20,15 +21,18 @@ export async function GET(request: Request) {
     const limit = Number(searchParams.get('limit') || 20)
 
     const where: any = {}
+    let isOwnerView = false
 
     // Si mine=true, récupérer les beats du producteur connecte (tout status)
     if (mine === 'true') {
       const session = await getServerSession(authOptions)
-      if (session?.user) {
-        where.producerId = (session.user as any).id
+      if (!session?.user) {
+        return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
       }
+      where.producerId = (session.user as any).id
+      isOwnerView = true
     } else {
-      where.status = 'ACTIVE'
+      Object.assign(where, PUBLIC_BEAT_WHERE)
     }
 
     if (genre) where.genre = genre
@@ -57,9 +61,7 @@ export async function GET(request: Request) {
             },
           },
           auctions: {
-            where: {
-              status: { in: ['ACTIVE', 'ENDING_SOON'] },
-            },
+            where: getPublicLiveAuctionWhere(),
             orderBy: { endTime: 'asc' },
             take: 1,
           },
@@ -76,13 +78,14 @@ export async function GET(request: Request) {
 
     // Generate public stream URLs for audio
     const beatsWithSignedUrls = beats.map((beat) => {
-      if (beat.audioUrl) {
-        const parsed = parseSupabaseUrl(beat.audioUrl)
+      const visibleBeat = isOwnerView ? beat : withoutPrivateBeatFiles(beat)
+      if (visibleBeat.audioUrl) {
+        const parsed = parseSupabaseUrl(visibleBeat.audioUrl)
         if (parsed) {
-          return { ...beat, audioUrl: getStreamUrl(parsed.bucket, parsed.path) }
+          return { ...visibleBeat, audioUrl: getStreamUrl(parsed.bucket, parsed.path) }
         }
       }
-      return beat
+      return visibleBeat
     })
 
     return NextResponse.json({
@@ -100,47 +103,11 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/beats - Creer un beat (producteurs uniquement)
-export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: (session.user as any).id },
-    })
-
-    if (!user || user.role !== 'PRODUCER' || user.producerStatus !== 'APPROVED') {
-      return NextResponse.json(
-        { error: 'Seuls les producteurs approuvés peuvent ajouter des beats' },
-        { status: 403 }
-      )
-    }
-
-    const body = await request.json()
-    const validated = createBeatSchema.safeParse(body)
-    if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.errors[0].message },
-        { status: 400 }
-      )
-    }
-
-    const beat = await prisma.beat.create({
-      data: {
-        ...validated.data,
-        tags: JSON.stringify(validated.data.tags || []),
-        producerId: user.id,
-        audioUrl: body.audioUrl || '',
-        status: 'PENDING', // Necessite validation admin
-      },
-    })
-
-    return NextResponse.json({ beat }, { status: 201 })
-  } catch (error) {
-    console.error('Erreur création beat:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
-  }
+// Cet ancien endpoint contournait le stockage privé. Tous les nouveaux beats
+// doivent passer par le flux signé /api/beats/upload.
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Utilisez le formulaire sécurisé d’upload producteur.' },
+    { status: 410 }
+  )
 }

@@ -24,8 +24,10 @@ interface Purchase {
     bpm: number
     key: string | null
     audioUrl: string
-    audioWav: string | null
-    stemsUrl: string | null
+    hasMp3: boolean
+    hasWav: boolean
+    hasStems: boolean
+    downloadUrl: string
     coverImage: string | null
     producer: {
       id: string
@@ -74,6 +76,10 @@ export default function PurchasesPage() {
   const [loading, setLoading] = useState(true)
   const [playingId, setPlayingId] = useState<string | null>(null)
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const [stemDownloads, setStemDownloads] = useState<{
+    beatTitle: string
+    files: Array<{ name: string; url: string }>
+  } | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -111,6 +117,36 @@ export default function PurchasesPage() {
     newAudio.onended = () => setPlayingId(null)
     setAudio(newAudio)
     setPlayingId(id)
+  }
+
+  const downloadFile = async (
+    beatId: string,
+    type: 'mp3' | 'wav' | 'stems',
+    beatTitle = 'Stems'
+  ) => {
+    try {
+      const response = await fetch(`/api/beats/${beatId}/download?type=${type}`)
+      const data = await response.json()
+      if (!response.ok) {
+        window.alert(data.error || 'Téléchargement indisponible')
+        return
+      }
+
+      if (data.stems) {
+        setStemDownloads({ beatTitle, files: data.stems })
+        return
+      }
+
+      const link = document.createElement('a')
+      link.href = data.url
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch {
+      window.alert('Impossible de préparer le téléchargement')
+    }
   }
 
   if (status === 'loading' || loading) {
@@ -229,37 +265,34 @@ export default function PurchasesPage() {
                     {/* Download buttons */}
                     <div className="flex flex-col gap-2 shrink-0">
                       {/* MP3 — always available */}
-                      <a
-                        href={beat.audioUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => downloadFile(beat.id, 'mp3')}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-[#222222] text-xs font-semibold text-white hover:bg-white/10 transition"
                       >
                         <FileAudio size={14} className="text-red-500" /> MP3
-                      </a>
+                      </button>
 
                       {/* WAV — Premium + Exclusive */}
-                      {beat.audioWav && (purchase.winningLicense === 'PREMIUM' || purchase.winningLicense === 'EXCLUSIVE') && (
-                        <a
-                          href={beat.audioWav}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      {beat.hasWav && (purchase.winningLicense === 'PREMIUM' || purchase.winningLicense === 'EXCLUSIVE') && (
+                        <button
+                          type="button"
+                          onClick={() => downloadFile(beat.id, 'wav')}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-[#222222] text-xs font-semibold text-white hover:bg-white/10 transition"
                         >
                           <FileAudio size={14} className="text-blue-400" /> WAV
-                        </a>
+                        </button>
                       )}
 
                       {/* Stems — Exclusive only */}
-                      {beat.stemsUrl && purchase.winningLicense === 'EXCLUSIVE' && (
-                        <a
-                          href={beat.stemsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      {beat.hasStems && purchase.winningLicense === 'EXCLUSIVE' && (
+                        <button
+                          type="button"
+                          onClick={() => downloadFile(beat.id, 'stems', beat.title)}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-[#222222] text-xs font-semibold text-white hover:bg-white/10 transition"
                         >
                           <Archive size={14} className="text-yellow-400" /> Stems
-                        </a>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -306,6 +339,47 @@ export default function PurchasesPage() {
             </Link>
           </div>
         ) : null}
+
+        {stemDownloads && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Télécharger les stems de ${stemDownloads.beatTitle}`}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          >
+            <div className="w-full max-w-lg rounded-2xl border border-[#2a2a2a] bg-[#111111] p-5 shadow-2xl">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-bold text-white">Stems — {stemDownloads.beatTitle}</h2>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Les liens privés expirent dans une heure.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStemDownloads(null)}
+                  className="rounded-lg border border-[#2a2a2a] px-3 py-1.5 text-xs text-gray-300"
+                >
+                  Fermer
+                </button>
+              </div>
+              <div className="max-h-[55vh] space-y-2 overflow-y-auto">
+                {stemDownloads.files.map((stem) => (
+                  <a
+                    key={`${stem.name}-${stem.url}`}
+                    href={stem.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[#242424] bg-white/[0.03] px-4 py-3 text-sm text-white hover:bg-white/[0.07]"
+                  >
+                    <span className="truncate">{stem.name}</span>
+                    <Download size={15} className="shrink-0 text-yellow-400" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
