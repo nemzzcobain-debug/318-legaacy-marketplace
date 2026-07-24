@@ -767,7 +767,7 @@ export default function UploadBeatPage() {
                   </div>
                 </div>
 
-                <div><label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5"><Clock size={14} className="text-purple-400" />Date et heure de démarrage<span className="text-gray-500 text-xs font-normal ml-1">optionnel</span><span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/50 cursor-help hover:bg-purple-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Laisse vide pour démarrer immédiatement. Sinon ton beat reste masqué jusqu&apos;à la date choisie, puis l&apos;enchère s&apos;ouvre et tes abonnés sont notifiés.</span></span></label><input type="datetime-local" value={auctionStartAt} onChange={(e) => setAuctionStartAt(e.target.value)} className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition" /><p className="text-xs text-gray-500 mt-2">Vide = l&apos;enchère démarre dès la publication.</p></div>
+                <div><label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5"><Clock size={14} className="text-purple-400" />Date et heure de démarrage<span className="text-gray-500 text-xs font-normal ml-1">optionnel</span><span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/50 cursor-help hover:bg-purple-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Laisse vide pour démarrer dès l&apos;approbation. Si tu choisis une date future, ton beat restera masqué jusqu&apos;à cette date après sa validation.</span></span></label><input type="datetime-local" value={auctionStartAt} onChange={(e) => setAuctionStartAt(e.target.value)} className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition" /><p className="text-xs text-gray-500 mt-2">Vide = l&apos;enchère démarrera dès que le beat aura été approuvé.</p></div>
               </div>
             )}
           </div>
@@ -1026,6 +1026,14 @@ export default function UploadBeatPage() {
             </div>
           )}
 
+          <div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
+            <Info size={18} className="mt-0.5 shrink-0 text-amber-400" />
+            <p className="text-sm leading-relaxed text-amber-100">
+              Après validation par 318 LEGAACY, ton beat sera publié
+              {enableAuction ? ' et l’enchère démarrera à la date prévue.' : '.'}
+            </p>
+          </div>
+
           {/* Submit */}
           <button
             type="submit"
@@ -1043,7 +1051,7 @@ export default function UploadBeatPage() {
             ) : (
               <>
                 {enableAuction ? <Gavel size={20} /> : <Upload size={20} />}
-                {enableAuction ? "Publier et lancer l'enchère" : 'Publier le beat'}
+                Envoyer le beat pour validation
               </>
             )}
           </button>
