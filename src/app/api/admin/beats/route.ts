@@ -90,9 +90,18 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
-    const { beatId, action, reason } = await request.json()
+    const { beatId, action, reason, rejectionType } = await request.json()
     if (!beatId || !['APPROVE', 'REJECT'].includes(action)) {
       return NextResponse.json({ error: 'Action invalide' }, { status: 400 })
+    }
+    if (
+      action === 'REJECT' &&
+      (!reason?.trim() || !['CHANGES_REQUESTED', 'FINAL'].includes(rejectionType))
+    ) {
+      return NextResponse.json(
+        { error: 'Le type et le motif du refus sont obligatoires' },
+        { status: 400 }
+      )
     }
 
     const beat = await prisma.beat.findUnique({
@@ -116,7 +125,19 @@ export async function PATCH(request: Request) {
     await prisma.$transaction(async (tx) => {
       await tx.beat.update({
         where: { id: beat.id },
-        data: { status: approved ? 'ACTIVE' : 'REJECTED' },
+        data: approved
+          ? {
+              status: 'ACTIVE',
+              rejectionType: null,
+              rejectionReason: null,
+              rejectedAt: null,
+            }
+          : {
+              status: 'REJECTED',
+              rejectionType,
+              rejectionReason: reason.trim(),
+              rejectedAt: now,
+            },
       })
 
       for (const auction of beat.auctions) {
@@ -148,7 +169,9 @@ export async function PATCH(request: Request) {
           title: approved ? 'Beat validé !' : 'Beat non retenu',
           message: approved
             ? `"${beat.title}" est maintenant en ligne.`
-            : `"${beat.title}" n'a pas été retenu.${reason ? ` Motif : ${reason}` : ''}`,
+            : rejectionType === 'CHANGES_REQUESTED'
+              ? `Modifications demandées pour "${beat.title}". Motif : ${reason}`
+              : `"${beat.title}" a été définitivement refusé. Motif : ${reason}`,
           link: '/dashboard?tab=beats',
           userId: beat.producer.id,
         },
