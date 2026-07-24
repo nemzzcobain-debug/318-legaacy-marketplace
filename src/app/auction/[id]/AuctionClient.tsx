@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useParams, useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
@@ -197,7 +197,9 @@ export default function AuctionClient() {
   const selectedLicense = auction?.licenseType || 'BASIC'
   const [bidding, setBidding] = useState(false)
   const [bidError, setBidError] = useState('')
+  const [bidNotice, setBidNotice] = useState('')
   const [bidSuccess, setBidSuccess] = useState('')
+  const bidSubmissionRef = useRef(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [buyingNow, setBuyingNow] = useState(false)
   const [buyNowClientSecret, setBuyNowClientSecret] = useState<string | null>(null)
@@ -298,6 +300,7 @@ export default function AuctionClient() {
     }
 
     setBidError('')
+    setBidNotice('')
     setBidSuccess('')
 
     const parsedBidAmount = Number.parseFloat(bidAmount)
@@ -309,10 +312,16 @@ export default function AuctionClient() {
     }
 
     if (parsedBidAmount < minimumBid) {
-      setBidError(`La mise minimale est de ${minimumBid} EUR`)
+      setBidNotice(
+        `La mise minimale est de ${minimumBid} EUR. Ta mise n'a pas été envoyée.`
+      )
       return
     }
 
+    // Verrou immédiat contre les doubles clics/taps, avant même que React
+    // ait le temps de désactiver visuellement le bouton.
+    if (bidSubmissionRef.current) return
+    bidSubmissionRef.current = true
     setBidding(true)
 
     try {
@@ -335,6 +344,16 @@ export default function AuctionClient() {
       const data = await res.json().catch(() => null)
 
       if (!res.ok) {
+        if (data?.code === 'BID_TOO_LOW' && Number.isFinite(Number(data.minimumBid))) {
+          const newMinimum = Number(data.minimumBid)
+          setBidAmount(String(newMinimum))
+          setBidNotice(
+            `Une autre mise est passée avant la tienne. Le nouveau minimum est de ${newMinimum} EUR. Ta mise n'a pas été enregistrée.`
+          )
+          void fetchAuction()
+          return
+        }
+
         setBidError(data?.error || "Impossible de placer l'enchère")
         return
       }
@@ -388,6 +407,7 @@ export default function AuctionClient() {
         )
       }
     } finally {
+      bidSubmissionRef.current = false
       setBidding(false)
     }
   }
@@ -696,6 +716,11 @@ export default function AuctionClient() {
                   </div>
 
                   {/* Error / Success */}
+                  {bidNotice && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3 text-amber-300 text-sm">
+                      {bidNotice}
+                    </div>
+                  )}
                   {bidError && (
                     <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-3 text-red-400 text-sm">
                       {bidError}

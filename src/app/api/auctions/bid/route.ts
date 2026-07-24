@@ -116,9 +116,14 @@ export async function POST(request: Request) {
     }
 
     if (amount < auction.currentBid + auction.bidIncrement) {
+      const minimumBid = auction.currentBid + auction.bidIncrement
       return NextResponse.json(
-        { error: `L'enchère minimum est de ${auction.currentBid + auction.bidIncrement}EUR` },
-        { status: 400 }
+        {
+          error: `La mise minimale est maintenant de ${minimumBid} EUR`,
+          code: 'BID_TOO_LOW',
+          minimumBid,
+        },
+        { status: 409 }
       )
     }
 
@@ -140,7 +145,9 @@ export async function POST(request: Request) {
         throw new Error('Cette enchère est terminée')
       }
       if (amount < freshAuction.currentBid + freshAuction.bidIncrement) {
-        throw new Error(`L'enchère minimum est de ${freshAuction.currentBid + freshAuction.bidIncrement}EUR`)
+        throw new Error(
+          `BID_TOO_LOW:${freshAuction.currentBid + freshAuction.bidIncrement}`
+        )
       }
 
       // Creer le bid
@@ -249,8 +256,19 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     const msg = String(error)
+    if (msg.includes('BID_TOO_LOW:')) {
+      const minimumBid = Number(msg.split('BID_TOO_LOW:')[1])
+      return NextResponse.json(
+        {
+          error: `La mise minimale est maintenant de ${minimumBid} EUR`,
+          code: 'BID_TOO_LOW',
+          minimumBid,
+        },
+        { status: 409 }
+      )
+    }
     // BUG FIX 6: Retourner 400 pour les erreurs de validation de la transaction
-    if (msg.includes('enchère minimum') || msg.includes('plus active') || msg.includes('terminée')) {
+    if (msg.includes('plus active') || msg.includes('terminée')) {
       return NextResponse.json({ error: msg.replace('Error: ', '') }, { status: 400 })
     }
     console.error('Erreur placement enchère:', msg)

@@ -224,8 +224,10 @@ describe('POST /api/auctions/bid', () => {
     const response = await POST(request)
     const data = await response.json()
 
-    expect(response.status).toBe(400)
-    expect(data.error).toContain('enchère minimum')
+    expect(response.status).toBe(409)
+    expect(data.code).toBe('BID_TOO_LOW')
+    expect(data.minimumBid).toBe(105)
+    expect(data.error).toContain('mise minimale')
   })
 
   it('should prevent bidding on own auction', async () => {
