@@ -239,6 +239,7 @@ export default function Header() {
               </Link>
               <Link
                 href="/register"
+                aria-label={t('nav.register')}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-black"
                 style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
               >
