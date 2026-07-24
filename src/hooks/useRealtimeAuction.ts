@@ -212,7 +212,10 @@ async function loadBidWithUser(bidData: unknown): Promise<BidData | null> {
     const bid = bidData as BidData & { userId?: string };
 
     if (!bid.userId) {
-      return bid as BidData;
+      return {
+        ...bid,
+        user: bid.user || { displayName: 'Enchérisseur' },
+      };
     }
 
     const supabase = getSupabaseClient();
@@ -226,7 +229,7 @@ async function loadBidWithUser(bidData: unknown): Promise<BidData | null> {
 
     return {
       ...bid,
-      user: userData || { displayName: 'Anonyme' },
+      user: userData || { displayName: 'Enchérisseur' },
     };
   } catch (err) {
     console.error('Erreur lors du chargement des détails de l\'enchère:', err);
