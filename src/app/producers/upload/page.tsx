@@ -692,7 +692,7 @@ export default function UploadBeatPage() {
             {enableAuction && (
               <div className="px-5 py-5 space-y-5 border-t border-[#1e1e2e] bg-[#0d0d14] rounded-b-2xl">
                 {/* Prix départ + Achat immédiat + Durée */}
-                <div className="grid grid-cols-3 gap-4 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <DollarSign size={14} className="text-green-400" />
@@ -796,7 +796,7 @@ export default function UploadBeatPage() {
               <DollarSign size={16} className="text-green-400" />
               Prix des licences (achat direct et enchère)
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className={`p-3 rounded-xl border ${audioFile ? 'border-blue-500/30 bg-blue-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
                 <p className="text-sm font-bold text-blue-400">MP3 <span className="text-[9px] font-normal opacity-60 ml-1">(Basic)</span></p>
                 <p className="text-[11px] text-blue-400/70 mb-2 leading-snug min-h-[34px]">Non-commercial · 5K streams max · Crédits requis</p>
@@ -943,7 +943,7 @@ export default function UploadBeatPage() {
           </div>
 
           {/* Genre + BPM + Key row */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-semibold text-white mb-2 block">
                 Genre <span className="text-red-400">*</span>
