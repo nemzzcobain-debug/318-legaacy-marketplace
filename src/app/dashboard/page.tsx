@@ -184,6 +184,7 @@ function ArtistDashboard({ session }: { session: any }) {
 
   const aStats = auctionData?.stats
   const pStats = purchaseData?.stats
+  const firstPendingAuction = auctionData?.pendingPayment?.[0]
 
   const statCards = [
     {
@@ -261,7 +262,9 @@ function ArtistDashboard({ session }: { session: any }) {
                 {aStats!.pendingPayment} paiement{aStats!.pendingPayment > 1 ? 's' : ''} en attente
               </p>
               <p className="text-xs text-amber-400/70">
-                Tu as gagné des enchères ! Finalise le paiement pour recevoir tes beats.
+                {aStats!.pendingPayment === 1 && firstPendingAuction?.beat?.title
+                  ? `L'enchère « ${firstPendingAuction.beat.title} » est terminée et gagnée. Finalise le paiement pour recevoir ton beat.`
+                  : 'Ces enchères sont terminées et gagnées. Finalise les paiements pour recevoir tes beats.'}
               </p>
             </div>
             <button
