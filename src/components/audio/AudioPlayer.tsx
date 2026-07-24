@@ -45,6 +45,7 @@ export default function AudioPlayer({
   // Offset dans le buffer ou reprendre la lecture apres un pause.
   const offsetRef = useRef<number>(0)
   const progressIntervalRef = useRef<number | null>(null)
+  const isSeekingRef = useRef(false)
 
   const [internalPlaying, setInternalPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -283,29 +284,32 @@ export default function AudioPlayer({
     const newOffset = progress * buffer.duration
     offsetRef.current = newOffset
     setCurrentTime(newOffset)
-    if (isPlaying) {
-      stopSource()
-      startFrom(newOffset)
-    }
   }
 
-  const handleSeekStart = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const getX = (ev: MouseEvent | TouchEvent) => 'touches' in ev ? ev.touches[0].clientX : ev.clientX
-    seekToClientX(getX(e.nativeEvent))
-    const move = (ev: MouseEvent | TouchEvent) => {
-      const x = 'touches' in ev ? ev.touches[0]?.clientX : ev.clientX
-      if (x != null) seekToClientX(x)
+  const handleSeekStart = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (audioError || !audioBufferRef.current || !e.isPrimary) return
+    e.preventDefault()
+    isSeekingRef.current = true
+    e.currentTarget.setPointerCapture(e.pointerId)
+    if (isPlaying) stopSource()
+    seekToClientX(e.clientX)
+  }
+
+  const handleSeekMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isSeekingRef.current || !e.isPrimary) return
+    e.preventDefault()
+    seekToClientX(e.clientX)
+  }
+
+  const handleSeekEnd = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isSeekingRef.current || !e.isPrimary) return
+    e.preventDefault()
+    seekToClientX(e.clientX)
+    isSeekingRef.current = false
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
     }
-    const up = () => {
-      window.removeEventListener('mousemove', move)
-      window.removeEventListener('mouseup', up)
-      window.removeEventListener('touchmove', move)
-      window.removeEventListener('touchend', up)
-    }
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
-    window.addEventListener('touchmove', move)
-    window.addEventListener('touchend', up)
+    if (isPlaying) startFrom(offsetRef.current)
   }
 
   const restart = () => {
@@ -347,8 +351,11 @@ export default function AudioPlayer({
           </button>
           <canvas
             ref={canvasRef}
-            className="flex-1 h-8 cursor-pointer"
-            onClick={handleWaveformClick}
+            className="flex-1 h-8 cursor-pointer touch-none select-none"
+            onPointerDown={handleSeekStart}
+            onPointerMove={handleSeekMove}
+            onPointerUp={handleSeekEnd}
+            onPointerCancel={handleSeekEnd}
             style={{ width: '100%' }}
             role="slider"
             aria-label="Barre de progression audio"
@@ -393,8 +400,16 @@ export default function AudioPlayer({
       <div className="px-4 py-2">
         <canvas
           ref={canvasRef}
-          className="w-full h-16 cursor-pointer rounded-lg"
-          onClick={handleWaveformClick}
+          className="w-full h-16 cursor-pointer touch-none select-none rounded-lg"
+          onPointerDown={handleSeekStart}
+          onPointerMove={handleSeekMove}
+          onPointerUp={handleSeekEnd}
+          onPointerCancel={handleSeekEnd}
+          role="slider"
+          aria-label="Barre de progression audio"
+          aria-valuemin={0}
+          aria-valuemax={duration}
+          aria-valuenow={currentTime}
         />
       </div>
 
