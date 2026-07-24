@@ -5,7 +5,12 @@ import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import Stripe from 'stripe'
-import { sendAuctionWonEmail, sendPaymentReceivedEmail, sendGuestPurchaseEmail } from '@/lib/emails/resend'
+import {
+  sendAuctionWonEmail,
+  sendPaymentReceivedEmail,
+  sendGuestPurchaseEmail,
+  sendNtfy,
+} from '@/lib/emails/resend'
 
 /**
  * WEBHOOK CONSOLIDÉ STRIPE
@@ -225,6 +230,12 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     const commissionAmount = commission ? parseFloat(commission) : auction.commissionAmount || 0
     const finalPrice = auction.finalPrice || auction.currentBid
 
+    sendNtfy(
+      'Vente finalisee',
+      `${auction.beat.title} vendu pour ${finalPrice} EUR`,
+      'high'
+    ).catch(() => {})
+
     if (auction.beat.producer?.email) {
       sendPaymentReceivedEmail({
         to: auction.beat.producer.email,
@@ -336,6 +347,12 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       })
     }
 
+    sendNtfy(
+      'Vente finalisee',
+      `${auction.beat.title} vendu pour ${auction.finalPrice || auction.currentBid} EUR`,
+      'high'
+    ).catch(() => {})
+
     if (isDev) logger.debug(`[WEBHOOK] ✓ PaymentIntent ${auctionId} complété`)
   } catch (err: any) {
     logger.error(`[WEBHOOK] Erreur PaymentIntent (${auctionId}):`, { error: err.message })
@@ -440,6 +457,12 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
         userId: beat.producerId,
       },
     })
+
+    sendNtfy(
+      'Vente finalisee',
+      `${beat.title} vendu pour ${finalPriceAmount} EUR (${licenseType})`,
+      'high'
+    ).catch(() => {})
 
     // Envoyer email au producteur (non-bloquant)
     if (beat.producer?.email) {
