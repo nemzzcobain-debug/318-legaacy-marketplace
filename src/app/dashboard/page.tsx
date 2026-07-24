@@ -1472,6 +1472,18 @@ function ProducerBeatsTab({
                         {beat.genre} &middot; {beat.bpm} BPM
                         {beat.key ? ` \u00B7 ${beat.key}` : ''}
                       </div>
+                      {beat.status === 'REJECTED' && beat.rejectionReason && (
+                        <div className="mt-2 max-w-xl rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                          <p className="text-xs font-bold text-red-300">
+                            {beat.rejectionType === 'CHANGES_REQUESTED'
+                              ? 'Modifications demandées'
+                              : 'Refus définitif'}
+                          </p>
+                          <p className="mt-1 text-xs leading-relaxed text-gray-300">
+                            {beat.rejectionReason}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -1500,6 +1512,15 @@ function ProducerBeatsTab({
                             ? 'Brouillon'
                             : beat.status}
                     </span>
+                    {beat.status === 'REJECTED' &&
+                      beat.rejectionType === 'CHANGES_REQUESTED' && (
+                        <Link
+                          href={`/producers/upload?edit=${beat.id}`}
+                          className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 transition hover:bg-amber-500/20"
+                        >
+                          Corriger et renvoyer
+                        </Link>
+                      )}
                     {beat.status !== 'SOLD' && (
                       <button
                         onClick={() => setDeleteTarget({ id: beat.id, title: beat.title })}
