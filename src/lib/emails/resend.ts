@@ -676,5 +676,16 @@ export async function sendAdminNewBeatEmail(params: { adminEmail: string; produc
 export async function sendAdminNewBidEmail(params: { adminEmail: string; bidderName: string; beatTitle: string; amount: number | string; licenseType: string; auctionId: string }) {
   const { adminEmail, bidderName, beatTitle, amount, licenseType, auctionId } = params
   const html = emailLayout('<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouvelle enchère</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' + bidderName + '</strong> a placé <strong style="color:#2ed573;">' + amount + ' EUR</strong> sur <strong style="color:#fff;">' + beatTitle + '</strong> (' + licenseType + ').</p>' + button("Voir l'enchère", PLATFORM_URL + '/auction/' + auctionId))
+  sendNtfy('Nouvelle enchere', bidderName + ' a place ' + amount + ' EUR sur ' + beatTitle).catch(() => {})
   return sendEmail(adminEmail, 'Enchere ' + amount + ' EUR sur ' + beatTitle, html)
+}
+
+export async function sendNtfy(title: string, message: string, priority = 'default') {
+  const topic = process.env.NTFY_TOPIC
+  if (!topic) return
+  try {
+    await fetch('https://ntfy.sh/' + topic, { method: 'POST', headers: { Title: title, Priority: priority }, body: message })
+  } catch (err) {
+    console.warn('[NTFY] echec:', String(err))
+  }
 }
