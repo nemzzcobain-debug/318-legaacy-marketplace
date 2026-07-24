@@ -187,8 +187,11 @@ model Beat {
   priceStems  Float?   // Prix licence Stems (inclut WAV + MP3)
 
   // Status
-  status      String   @default("DRAFT")
-  plays       Int      @default(0)
+  status          String   @default("DRAFT")
+  rejectionType   String?  // CHANGES_REQUESTED | FINAL
+  rejectionReason String?
+  rejectedAt      DateTime?
+  plays           Int      @default(0)
 
   // Featured (admin selection)
   isFeatured    Boolean  @default(false)
