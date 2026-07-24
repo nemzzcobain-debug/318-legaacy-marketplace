@@ -50,6 +50,7 @@ describe('POST /api/auctions/bid', () => {
       endTime,
       currentBid: 100,
       bidIncrement: 5,
+      licenseType: 'BASIC',
       antiSnipeMinutes: 2,
       antiSnipeExtension: 5,
       beat: {
@@ -70,16 +71,16 @@ describe('POST /api/auctions/bid', () => {
 
     prismaMock.bid.create.mockResolvedValueOnce({
       id: 'bid-789',
-      amount: 110,
+      amount: 107,
       licenseType: 'BASIC',
-      finalAmount: 110,
+      finalAmount: 107,
       auctionId,
       userId,
     })
 
     prismaMock.auction.update.mockResolvedValueOnce({
       id: auctionId,
-      currentBid: 110,
+      currentBid: 107,
       totalBids: 2,
       endTime,
     })
@@ -95,7 +96,8 @@ describe('POST /api/auctions/bid', () => {
       {
         method: 'POST',
         body: JSON.stringify({
-          amount: 110,
+          // Le minimum est 105 €, mais un montant libre supérieur doit être accepté.
+          amount: 107,
           licenseType: 'BASIC',
           isAutoBid: false,
         }),
@@ -108,8 +110,15 @@ describe('POST /api/auctions/bid', () => {
     expect(response.status).toBe(200)
     expect(data.message).toBe('Enchère placée avec succès')
     expect(data.bid).toBeDefined()
-    expect(data.bid.amount).toBe(110)
-    expect(prismaMock.bid.create).toHaveBeenCalled()
+    expect(data.bid.amount).toBe(107)
+    expect(prismaMock.bid.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          amount: 107,
+          licenseType: 'BASIC',
+        }),
+      })
+    )
   })
 
   it('should return 401 for unauthenticated user', async () => {

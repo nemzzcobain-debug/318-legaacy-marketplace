@@ -59,7 +59,7 @@ export const createAuctionSchema = z
     startPrice: z.number().positive('Prix doit etre positif').max(100000, 'Prix max 100 000€'),
     reservePrice: z.number().positive().max(100000).optional(),
     buyNowPrice: z.number().positive().max(100000).optional(),
-    licenseType: z.literal('EXCLUSIVE').default('EXCLUSIVE'),
+    licenseType: z.enum(['BASIC', 'PREMIUM', 'EXCLUSIVE']).default('EXCLUSIVE'),
     durationHours: z.number().int().min(1).max(168), // 1h a 7 jours
     bidIncrement: z.number().positive().min(1).max(1000).default(5),
   })
@@ -79,7 +79,6 @@ export const createAuctionSchema = z
 // ─── Bid ───
 export const placeBidSchema = z.object({
   amount: z.number().positive('Montant doit etre positif'),
-  licenseType: z.literal('EXCLUSIVE').default('EXCLUSIVE'),
   isAutoBid: z.boolean().default(false),
   maxAutoBid: z.number().positive().optional(),
 })

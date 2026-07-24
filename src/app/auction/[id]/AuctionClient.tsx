@@ -281,14 +281,27 @@ export default function AuctionClient() {
       }
     }
 
-    setBidding(true)
     setBidError('')
     setBidSuccess('')
 
+    const parsedBidAmount = Number.parseFloat(bidAmount)
+    const minimumBid = auction ? auction.currentBid + auction.bidIncrement : 0
+
+    if (!Number.isFinite(parsedBidAmount)) {
+      setBidError('Entre un montant valide')
+      return
+    }
+
+    if (parsedBidAmount < minimumBid) {
+      setBidError(`La mise minimale est de ${minimumBid} EUR`)
+      return
+    }
+
+    setBidding(true)
+
     try {
       const bidBody: any = {
-        amount: parseFloat(bidAmount),
-        licenseType: selectedLicense,
+        amount: parsedBidAmount,
       }
       if (!session && guestEmail) {
         bidBody.guestEmail = guestEmail
@@ -610,11 +623,12 @@ export default function AuctionClient() {
                         value={bidAmount}
                         onChange={(e) => setBidAmount(e.target.value)}
                         min={auction.currentBid + auction.bidIncrement}
-                        step={auction.bidIncrement}
+                        step="0.01"
+                        aria-label="Montant de ton enchère"
                         className="w-full bg-[#0a0a0a] border border-[#222] rounded-xl px-4 py-3 text-white text-lg font-bold outline-none focus:border-red-500 transition"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                        min {auction.currentBid + auction.bidIncrement} EUR
+                        minimum {auction.currentBid + auction.bidIncrement} EUR
                       </span>
                     </div>
                   </div>
