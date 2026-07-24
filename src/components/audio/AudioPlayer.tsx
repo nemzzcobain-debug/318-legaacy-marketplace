@@ -274,13 +274,12 @@ export default function AudioPlayer({
     else setInternalPlaying(!internalPlaying)
   }
 
-  const handleWaveformClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const seekToClientX = (clientX: number) => {
     const canvas = canvasRef.current
     const buffer = audioBufferRef.current
     if (!canvas || !buffer) return
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const progress = x / rect.width
+    const progress = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
     const newOffset = progress * buffer.duration
     offsetRef.current = newOffset
     setCurrentTime(newOffset)
@@ -288,6 +287,25 @@ export default function AudioPlayer({
       stopSource()
       startFrom(newOffset)
     }
+  }
+
+  const handleSeekStart = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const getX = (ev: MouseEvent | TouchEvent) => 'touches' in ev ? ev.touches[0].clientX : ev.clientX
+    seekToClientX(getX(e.nativeEvent))
+    const move = (ev: MouseEvent | TouchEvent) => {
+      const x = 'touches' in ev ? ev.touches[0]?.clientX : ev.clientX
+      if (x != null) seekToClientX(x)
+    }
+    const up = () => {
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup', up)
+      window.removeEventListener('touchmove', move)
+      window.removeEventListener('touchend', up)
+    }
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+    window.addEventListener('touchmove', move)
+    window.addEventListener('touchend', up)
   }
 
   const restart = () => {
