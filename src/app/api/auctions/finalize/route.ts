@@ -53,6 +53,76 @@ async function handleFinalize(req: NextRequest) {
     }
 
     const now = new Date()
+    let repairedPrematureFinalizations = 0
+
+    // Réparer une éventuelle course entre une mise anti-snipe et le cron :
+    // l'ancienne version pouvait finaliser une enchère, puis conserver sa
+    // nouvelle endTime située dans le futur.
+    const prematurelyEnded = await prisma.auction.findMany({
+      where: {
+        status: 'ENDED',
+        endTime: { gt: now },
+        winnerId: { not: null },
+        paidAt: null,
+        paymentDeadline: { not: null },
+      },
+      select: {
+        id: true,
+        endTime: true,
+        winnerId: true,
+        beat: { select: { producerId: true } },
+      },
+    })
+
+    for (const auction of prematurelyEnded) {
+      let didRepair = false
+      await prisma.$transaction(async (tx) => {
+        const updateResult = await tx.auction.updateMany({
+          where: {
+            id: auction.id,
+            status: 'ENDED',
+            endTime: { gt: now },
+            winnerId: auction.winnerId,
+            paidAt: null,
+            paymentDeadline: { not: null },
+          },
+          data: {
+            status:
+              auction.endTime.getTime() - now.getTime() <= 10 * 60 * 1000
+                ? 'ENDING_SOON'
+                : 'ACTIVE',
+            winnerId: null,
+            winningLicense: null,
+            finalPrice: null,
+            commissionAmount: null,
+            producerPayout: null,
+            paymentDeadline: null,
+          },
+        })
+        if (updateResult.count === 0) return
+
+        didRepair = true
+        await tx.notification.deleteMany({
+          where: {
+            OR: [
+              {
+                userId: auction.winnerId!,
+                type: 'AUCTION_WON',
+                link: `/checkout/${auction.id}`,
+              },
+              {
+                userId: auction.beat.producerId,
+                type: 'AUCTION_ENDED',
+                link: `/auction/${auction.id}`,
+                title: 'Enchere terminée !',
+              },
+            ],
+          },
+        })
+      })
+
+      if (didRepair) repairedPrematureFinalizations++
+    }
 
     // Activer les encheres programmees dont l'heure de demarrage est arrivee
     let activated = 0
@@ -80,7 +150,8 @@ async function handleFinalize(req: NextRequest) {
               data: followers.map((f) => ({
                 type: 'NEW_AUCTION',
                 title: 'Enchere ouverte : ' + a.beat.title,
-                message: "L'enchere de " + producerName + ' sur ' + a.beat.title + ' vient de demarrer',
+                message:
+                  "L'enchere de " + producerName + ' sur ' + a.beat.title + ' vient de demarrer',
                 link: '/auction/' + a.id,
                 userId: f.followerId,
               })),
@@ -164,10 +235,18 @@ async function handleFinalize(req: NextRequest) {
 
     for (const expired of expiredDeadlines) {
       try {
+        let didExpirePayment = false
         await prisma.$transaction(async (tx) => {
-          // Annuler le gagnant et remettre en Nouveautes
-          await tx.auction.update({
-            where: { id: expired.id },
+          // La condition est répétée au moment de l'écriture pour ne jamais
+          // annuler un achat payé pendant que le cron était en cours.
+          const updateResult = await tx.auction.updateMany({
+            where: {
+              id: expired.id,
+              status: 'ENDED',
+              winnerId: expired.winnerId,
+              paidAt: null,
+              paymentDeadline: { lte: now },
+            },
             data: {
               status: 'ENDED',
               winnerId: null,
@@ -178,6 +257,8 @@ async function handleFinalize(req: NextRequest) {
               paymentDeadline: null,
             },
           })
+          if (updateResult.count === 0) return
+          didExpirePayment = true
 
           // Notifier l'ancien gagnant
           if (expired.winnerId) {
@@ -224,7 +305,7 @@ async function handleFinalize(req: NextRequest) {
           }
         })
 
-        results.expiredPayments++
+        if (didExpirePayment) results.expiredPayments++
       } catch (err) {
         console.error(`Erreur expiration deadline ${expired.id}:`, String(err))
         results.errors++
@@ -234,6 +315,7 @@ async function handleFinalize(req: NextRequest) {
     for (const auction of expiredAuctions) {
       try {
         const topBid = auction.bids[0]
+        let didFinalize = false
 
         await prisma.$transaction(async (tx) => {
           if (topBid) {
@@ -243,8 +325,13 @@ async function handleFinalize(req: NextRequest) {
             if (reserveMet) {
               // Enchere gagnée — en attente de paiement (48h deadline)
               const PAYMENT_DEADLINE_HOURS = 48
-              await tx.auction.update({
-                where: { id: auction.id },
+              const updateResult = await tx.auction.updateMany({
+                where: {
+                  id: auction.id,
+                  status: { in: ['ACTIVE', 'ENDING_SOON'] },
+                  endTime: { lte: now },
+                  currentBid: auction.currentBid,
+                },
                 data: {
                   status: 'ENDED',
                   winnerId: topBid.userId,
@@ -255,9 +342,13 @@ async function handleFinalize(req: NextRequest) {
                   producerPayout:
                     Math.round(topBid.finalAmount * (1 - auction.commissionPercent / 100) * 100) /
                     100,
-                  paymentDeadline: new Date(now.getTime() + PAYMENT_DEADLINE_HOURS * 60 * 60 * 1000),
+                  paymentDeadline: new Date(
+                    now.getTime() + PAYMENT_DEADLINE_HOURS * 60 * 60 * 1000
+                  ),
                 },
               })
+              if (updateResult.count === 0) return
+              didFinalize = true
 
               // Notifier le gagnant
               await tx.notification.create({
@@ -284,10 +375,17 @@ async function handleFinalize(req: NextRequest) {
               results.withWinner++
             } else {
               // Reserve non atteinte
-              await tx.auction.update({
-                where: { id: auction.id },
+              const updateResult = await tx.auction.updateMany({
+                where: {
+                  id: auction.id,
+                  status: { in: ['ACTIVE', 'ENDING_SOON'] },
+                  endTime: { lte: now },
+                  currentBid: auction.currentBid,
+                },
                 data: { status: 'ENDED' },
               })
+              if (updateResult.count === 0) return
+              didFinalize = true
 
               // Notifier le producteur
               await tx.notification.create({
@@ -325,10 +423,17 @@ async function handleFinalize(req: NextRequest) {
             }
           } else {
             // Aucune enchère
-            await tx.auction.update({
-              where: { id: auction.id },
+            const updateResult = await tx.auction.updateMany({
+              where: {
+                id: auction.id,
+                status: { in: ['ACTIVE', 'ENDING_SOON'] },
+                endTime: { lte: now },
+                currentBid: auction.currentBid,
+              },
               data: { status: 'ENDED' },
             })
+            if (updateResult.count === 0) return
+            didFinalize = true
 
             await tx.notification.create({
               data: {
@@ -365,7 +470,7 @@ async function handleFinalize(req: NextRequest) {
           }
         })
 
-        results.processed++
+        if (didFinalize) results.processed++
       } catch (err) {
         console.error(`Erreur finalisation enchère ${auction.id}:`, err)
         results.errors++
@@ -376,6 +481,7 @@ async function handleFinalize(req: NextRequest) {
       message: `${results.processed} enchères finalisées`,
       ...results,
       activated,
+      repairedPrematureFinalizations,
       timestamp: now.toISOString(),
     })
   } catch (error: any) {
