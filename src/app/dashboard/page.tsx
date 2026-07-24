@@ -1486,11 +1486,15 @@ function ProducerBeatsTab({
                       </div>
                     </div>
                     <span
-                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${beat.status === 'ACTIVE' ? 'bg-[#2ed57320] text-[#2ed573]' : beat.status === 'SOLD' ? 'bg-[#e11d4820] text-[#e11d48]' : 'bg-[#ffffff10] text-gray-500'}`}
+                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${beat.status === 'ACTIVE' ? 'bg-[#2ed57320] text-[#2ed573]' : beat.status === 'PENDING' ? 'bg-amber-500/20 text-amber-400' : beat.status === 'REJECTED' ? 'bg-red-500/20 text-red-400' : beat.status === 'SOLD' ? 'bg-[#e11d4820] text-[#e11d48]' : 'bg-[#ffffff10] text-gray-500'}`}
                     >
                       {beat.status === 'ACTIVE'
                         ? 'Actif'
-                        : beat.status === 'SOLD'
+                        : beat.status === 'PENDING'
+                          ? 'En validation'
+                          : beat.status === 'REJECTED'
+                            ? 'Non retenu'
+                            : beat.status === 'SOLD'
                           ? 'Vendu'
                           : beat.status === 'DRAFT'
                             ? 'Brouillon'
