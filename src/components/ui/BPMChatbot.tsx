@@ -116,6 +116,7 @@ export default function BPMChatbot() {
     '/profile/edit',
     '/checkout',
     '/auction',
+    '/marketplace',
   ].some((route) => pathname.startsWith(route))
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
