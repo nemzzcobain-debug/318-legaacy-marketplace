@@ -858,6 +858,10 @@ function ProducerDashboard({ session }: { session: any }) {
   const [error, setError] = useState('')
   const [playingId, setPlayingId] = useState<string | null>(null)
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const [extensionAuctionId, setExtensionAuctionId] = useState<string | null>(null)
+  const [extensionHours, setExtensionHours] = useState(24)
+  const [extendingAuctionId, setExtendingAuctionId] = useState<string | null>(null)
+  const [extensionMessage, setExtensionMessage] = useState('')
 
   // Sync tab when URL params change (e.g. from notification click)
   useEffect(() => {
@@ -896,6 +900,32 @@ function ProducerDashboard({ session }: { session: any }) {
     newAudio.onended = () => setPlayingId(null)
     setAudio(newAudio)
     setPlayingId(id)
+  }
+
+  const extendAuction = async (auctionId: string) => {
+    setExtendingAuctionId(auctionId)
+    setExtensionMessage('')
+
+    try {
+      const res = await fetch(`/api/auctions/${auctionId}/extend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hours: extensionHours }),
+      })
+      const json = await res.json()
+
+      if (!res.ok) {
+        throw new Error(json.error || "Impossible de prolonger l'enchère")
+      }
+
+      setExtensionMessage(json.message)
+      setExtensionAuctionId(null)
+      await fetchData()
+    } catch (err) {
+      setExtensionMessage(err instanceof Error ? err.message : 'Une erreur est survenue')
+    } finally {
+      setExtendingAuctionId(null)
+    }
   }
 
   const tabs: { id: ProducerTab; label: string; icon: any }[] = [
@@ -1164,30 +1194,92 @@ function ProducerDashboard({ session }: { session: any }) {
                 <h2 className="text-lg font-bold text-white mb-5">
                   Enchères actives ({data!.activeAuctions.length})
                 </h2>
+                {extensionMessage && (
+                  <div className="mb-4 rounded-lg border border-[#2ed57340] bg-[#2ed57310] px-4 py-3 text-sm text-[#2ed573]">
+                    {extensionMessage}
+                  </div>
+                )}
                 <div className="space-y-3">
                   {data!.activeAuctions.map((auction: any) => (
-                    <Link
+                    <div
                       key={auction.id}
-                      href={`/auction/${auction.id}`}
-                      className="flex items-center justify-between p-3.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                      className="rounded-lg bg-white/[0.02] p-3.5 transition-colors hover:bg-white/[0.04]"
                     >
-                      <div>
-                        <div className="text-sm font-bold text-white">{auction.beat.title}</div>
-                        <div className="text-xs text-gray-500">
-                          {auction._count.bids} enchère{auction._count.bids > 1 ? 's' : ''} &middot;
-                          Départ: {auction.startPrice}&euro; &middot; {auction.licenseType}
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <Link
+                            href={`/auction/${auction.id}`}
+                            className="text-sm font-bold text-white hover:text-[#e11d48]"
+                          >
+                            {auction.beat.title}
+                          </Link>
+                          <div className="text-xs text-gray-500">
+                            {auction._count.bids} enchère{auction._count.bids > 1 ? 's' : ''}{' '}
+                            &middot; Départ: {auction.startPrice}&euro; &middot;{' '}
+                            {auction.licenseType}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 sm:justify-end">
+                          <div className="text-right">
+                            <div className="text-lg font-extrabold text-[#e11d48]">
+                              {auction.currentBid}&euro;
+                            </div>
+                            <div className="flex items-center justify-end gap-1 text-xs text-[#2ed573]">
+                              <Clock size={10} />{' '}
+                              <CountdownTimer
+                                endTime={auction.endTime}
+                                size="sm"
+                                showIcon={false}
+                              />
+                            </div>
+                          </div>
+                          {auction.status !== 'SCHEDULED' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setExtensionMessage('')
+                                setExtensionAuctionId(
+                                  extensionAuctionId === auction.id ? null : auction.id
+                                )
+                              }}
+                              className="rounded-lg border border-[#e11d4850] bg-[#e11d4810] px-3 py-2 text-xs font-bold text-[#e11d48] transition-colors hover:bg-[#e11d4820]"
+                            >
+                              Prolonger
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-extrabold text-[#e11d48]">
-                          {auction.currentBid}&euro;
+
+                      {extensionAuctionId === auction.id && (
+                        <div className="mt-3 flex flex-col gap-3 border-t border-[#1e1e2e] pt-3 sm:flex-row sm:items-center sm:justify-end">
+                          <label className="text-xs text-gray-400">
+                            Ajouter à la durée :
+                          </label>
+                          <select
+                            value={extensionHours}
+                            onChange={(e) => setExtensionHours(Number(e.target.value))}
+                            className="rounded-lg border border-[#2a2a35] bg-[#0d0d12] px-3 py-2 text-sm text-white outline-none focus:border-[#e11d48]"
+                          >
+                            {[1, 3, 6, 12, 24, 48].map((hours) => (
+                              <option key={hours} value={hours}>
+                                +{hours} heure{hours > 1 ? 's' : ''}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            disabled={extendingAuctionId === auction.id}
+                            onClick={() => extendAuction(auction.id)}
+                            className="flex items-center justify-center gap-2 rounded-lg bg-[#e11d48] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#be123c] disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {extendingAuctionId === auction.id && (
+                              <Loader2 size={13} className="animate-spin" />
+                            )}
+                            Confirmer la prolongation
+                          </button>
                         </div>
-                        <div className="text-xs text-[#2ed573] flex items-center gap-1 justify-end">
-                          <Clock size={10} />{' '}
-                          <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
-                        </div>
-                      </div>
-                    </Link>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
