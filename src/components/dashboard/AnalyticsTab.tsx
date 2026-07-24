@@ -162,7 +162,7 @@ export default function AnalyticsTab() {
             <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 10, fill: '#666' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: '#666' }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
-            <Area type="monotone" dataKey="payout" name="Payout EUR" stroke="#10b981" fill="url(#colorPayout)" strokeWidth={2} />
+            <Area type="monotone" dataKey="payout" name="Montant net producteur (EUR)" stroke="#10b981" fill="url(#colorPayout)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
