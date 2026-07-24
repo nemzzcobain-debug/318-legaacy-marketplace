@@ -1011,8 +1011,42 @@ function ProducerDashboard({ session }: { session: any }) {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-1 mb-8 overflow-x-auto pb-2">
+        {/* Navigation mobile simplifiée */}
+        <div className="grid grid-cols-4 gap-1 mb-6 md:hidden">
+          {[
+            { id: 'overview' as ProducerTab, label: 'Accueil', icon: BarChart3 },
+            { id: 'beats' as ProducerTab, label: 'Beats', icon: Music },
+            { id: 'auctions' as ProducerTab, label: 'Ventes', icon: DollarSign },
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2.5 text-[11px] font-semibold transition-all ${activeTab === id ? 'border-[#e11d4830] bg-[#e11d4815] text-[#e11d48]' : 'border-transparent text-gray-400'}`}
+            >
+              <Icon size={16} />
+              <span>{label}</span>
+            </button>
+          ))}
+          <label className="relative min-w-0">
+            <span className="sr-only">Plus d&apos;options du dashboard</span>
+            <select
+              aria-label="Plus d'options du dashboard"
+              value={['analytics', 'badges', 'settings'].includes(activeTab) ? activeTab : ''}
+              onChange={(event) => {
+                if (event.target.value) setActiveTab(event.target.value as ProducerTab)
+              }}
+              className={`h-full w-full appearance-none rounded-xl border px-1 py-2.5 text-center text-[11px] font-semibold outline-none ${['analytics', 'badges', 'settings'].includes(activeTab) ? 'border-[#e11d4830] bg-[#e11d4815] text-[#e11d48]' : 'border-transparent bg-transparent text-gray-400'}`}
+            >
+              <option value="" disabled>Plus</option>
+              <option value="analytics">Analytics</option>
+              <option value="badges">Badges</option>
+              <option value="settings">Paramètres</option>
+            </select>
+          </label>
+        </div>
+
+        {/* Navigation complète sur ordinateur */}
+        <div className="hidden md:flex gap-1 mb-8 overflow-x-auto pb-2">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
