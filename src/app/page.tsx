@@ -389,7 +389,7 @@ export default function Home() {
 
           {/* Upload card — mobile/tablet: inline centered, desktop: absolute top-left */}
           {/* Mobile + Tablet version */}
-          <div className="lg:hidden relative z-20 hero-fade-in-delay-4 px-2 mb-4 sm:px-4 sm:mb-6">
+          <div className="hidden sm:block lg:hidden relative z-20 hero-fade-in-delay-4 px-4 mb-6">
             <div
               onClick={() => router.push('/producers')}
               className="bg-[#111]/80 backdrop-blur-xl border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl p-4 sm:p-5 mx-auto max-w-md transition-all group/upload cursor-pointer"
