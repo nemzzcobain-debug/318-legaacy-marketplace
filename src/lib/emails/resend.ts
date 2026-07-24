@@ -496,7 +496,7 @@ export async function sendBeatUploadConfirmationEmail(params: {
   const auctionSection = hasAuction
     ? `<tr>
         <td style="color:#666;font-size:12px;padding:6px 0;border-top:1px solid #1e1e2e;">Enchère</td>
-        <td style="color:#2ed573;font-size:12px;padding:6px 0;text-align:right;font-weight:600;border-top:1px solid #1e1e2e;">Active — ${auctionStartPrice} EUR (${auctionDuration || 24}h)</td>
+        <td style="color:#f59e0b;font-size:12px;padding:6px 0;text-align:right;font-weight:600;border-top:1px solid #1e1e2e;">En attente — ${auctionStartPrice} EUR (${auctionDuration || 24}h)</td>
       </tr>`
     : `<tr>
         <td style="color:#666;font-size:12px;padding:6px 0;border-top:1px solid #1e1e2e;">Mode</td>
@@ -504,9 +504,9 @@ export async function sendBeatUploadConfirmationEmail(params: {
       </tr>`
 
   const html = emailLayout(`
-    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Beat en ligne ! 🎶</h1>
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Beat envoyé ! 🎶</h1>
     <p style="color:#999;font-size:14px;margin:0 0 24px;">
-      Bien joué <strong style="color:#fff;">${producerName}</strong>, ton beat a été publié avec succès sur 318 LEGAACY !
+      Bien joué <strong style="color:#fff;">${producerName}</strong>, ton beat a bien été envoyé à l'équipe 318 LEGAACY.
     </p>
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
@@ -527,12 +527,41 @@ export async function sendBeatUploadConfirmationEmail(params: {
       </table>
     </div>
 
-    <p style="color:#999;font-size:13px;margin:0 0 4px;text-align:center;">Ton beat est maintenant visible par toute la communauté.</p>
-    <p style="color:#666;font-size:12px;margin:0 0 16px;text-align:center;">Partage-le pour maximiser ta visibilité !</p>
+    <p style="color:#f59e0b;font-size:13px;margin:0 0 4px;text-align:center;font-weight:700;">Validation en cours</p>
+    <p style="color:#666;font-size:12px;margin:0 0 16px;text-align:center;">Il restera invisible jusqu'à la décision de l'équipe. Tu recevras une notification dès qu'il sera accepté ou refusé.</p>
     ${button('Voir mon dashboard', `${PLATFORM_URL}/dashboard`)}
   `)
 
-  return sendEmail(to, `🎶 "${beatTitle}" est en ligne sur 318 LEGAACY !`, html)
+  return sendEmail(to, `🎶 "${beatTitle}" est en attente de validation`, html)
+}
+
+export async function sendBeatReviewDecisionEmail(params: {
+  to: string
+  producerName: string
+  beatTitle: string
+  approved: boolean
+  reason?: string
+}) {
+  const { to, producerName, beatTitle, approved, reason } = params
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">
+      ${approved ? 'Beat validé ! ✅' : 'Beat non retenu'}
+    </h1>
+    <p style="color:#999;font-size:14px;margin:0 0 20px;">
+      Bonjour <strong style="color:#fff;">${producerName}</strong>,
+      ${approved
+        ? `ton beat <strong style="color:#fff;">${beatTitle}</strong> a été validé et est maintenant disponible sur la marketplace.`
+        : `ton beat <strong style="color:#fff;">${beatTitle}</strong> n'a pas été retenu pour le moment.`}
+    </p>
+    ${!approved && reason ? `<div style="background:#13131a;border:1px solid #e11d4840;border-radius:12px;padding:16px;margin-bottom:20px;color:#ccc;font-size:13px;"><strong style="color:#fff;">Motif :</strong> ${reason}</div>` : ''}
+    ${button('Voir mon dashboard', `${PLATFORM_URL}/dashboard?tab=beats`)}
+  `)
+
+  return sendEmail(
+    to,
+    approved ? `✅ "${beatTitle}" a été validé` : `Décision concernant "${beatTitle}"`,
+    html
+  )
 }
 
 // ─── Guest Purchase Email ───
@@ -675,9 +704,9 @@ async function sendEmail(to: string, subject: string, html: string) {
 
 export async function sendAdminNewBeatEmail(params: { adminEmail: string; producerName: string; beatTitle: string; genre: string; bpm: number | string }) {
   const { adminEmail, producerName, beatTitle, genre, bpm } = params
-  const html = emailLayout('<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouveau beat publié</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' + producerName + '</strong> a publié <strong style="color:#fff;">' + beatTitle + '</strong> (' + genre + ', ' + bpm + ' BPM).</p>' + button("Voir dans l'admin", PLATFORM_URL + '/admin?tab=beats'))
-  sendNtfy('Nouveau beat', producerName + ' a publie ' + beatTitle).catch(() => {})
-  return sendEmail(adminEmail, 'Nouveau beat - ' + beatTitle, html)
+  const html = emailLayout('<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Beat à valider</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' + producerName + '</strong> demande la validation de <strong style="color:#fff;">' + beatTitle + '</strong> (' + genre + ', ' + bpm + ' BPM).</p>' + button("Examiner le beat", PLATFORM_URL + '/admin?tab=beats'))
+  sendNtfy('Beat a valider', producerName + ' a envoye ' + beatTitle).catch(() => {})
+  return sendEmail(adminEmail, 'Beat a valider - ' + beatTitle, html)
 }
 
 export async function sendAdminNewBidEmail(params: { adminEmail: string; bidderName: string; beatTitle: string; amount: number | string; licenseType: string; auctionId: string }) {
