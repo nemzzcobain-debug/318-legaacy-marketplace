@@ -137,7 +137,29 @@ export async function POST(req: NextRequest) {
     // Générer signed URLs pour les stems individuels
     let stemsSignedUrls: Array<{ name: string; signedUrl: string; path: string; publicUrl: string }> = [];
     if (stems && Array.isArray(stems) && stems.length > 0) {
+      const allowedStemMimes = ['audio/wav', 'audio/x-wav', 'audio/wave', 'application/zip'];
+      const zipCount = stems.filter((stem) => stem.contentType === 'application/zip').length;
+
+      if (stems.length > 30) {
+        return NextResponse.json(
+          { error: 'Maximum 30 fichiers WAV ou un fichier ZIP pour les stems' },
+          { status: 400 }
+        );
+      }
+      if (zipCount > 0 && stems.length > 1) {
+        return NextResponse.json(
+          { error: 'Choisissez soit un seul fichier ZIP, soit des fichiers WAV individuels' },
+          { status: 400 }
+        );
+      }
+
       for (const stem of stems) {
+        if (!stem.name || !allowedStemMimes.includes(stem.contentType)) {
+          return NextResponse.json(
+            { error: 'Les stems doivent être des fichiers WAV ou un fichier ZIP' },
+            { status: 400 }
+          );
+        }
         const stemName = sanitizeFileName(stem.name);
         const stemPath = `${user.id}/stems/${timestamp}_${stemName}`;
         const { data: stemData, error: stemError } = await supabase.storage
