@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Play, Pause, Volume2, VolumeX, SkipBack, Loader2 } from 'lucide-react'
+import { configurePlaybackAudioSession } from '@/lib/audio/session'
 
 interface AudioPlayerProps {
   src: string
@@ -63,6 +64,7 @@ export default function AudioPlayer({
   // de facon lazy au premier play().
   const getContext = useCallback(() => {
     if (!audioContextRef.current) {
+      configurePlaybackAudioSession()
       const AC = window.AudioContext || (window as any).webkitAudioContext
       audioContextRef.current = new AC()
       gainNodeRef.current = audioContextRef.current.createGain()
