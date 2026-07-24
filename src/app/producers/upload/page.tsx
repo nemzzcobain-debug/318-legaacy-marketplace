@@ -173,12 +173,24 @@ export default function UploadBeatPage() {
       setError('Les stems doivent être en WAV (individuellement) ou dans un ZIP')
       return
     }
-    const totalSize = files.reduce((sum, f) => sum + f.size, 0)
-    if (stemFiles.length + files.length > 30) { setError('Maximum 30 stems par beat. Retire des stems avant d’en ajouter d’autres.'); return; } if (totalSize > 5 * 1024 * 1024 * 1024) {
+
+    const combinedFiles = [...stemFiles, ...files]
+    const zipFiles = combinedFiles.filter(f => f.name.toLowerCase().endsWith('.zip'))
+    if (zipFiles.length > 0 && combinedFiles.length > 1) {
+      setError('Choisis soit un seul fichier ZIP, soit jusqu’à 30 fichiers WAV')
+      return
+    }
+
+    const totalSize = combinedFiles.reduce((sum, f) => sum + f.size, 0)
+    if (combinedFiles.length > 30) {
+      setError('Maximum 30 stems par beat. Retire des stems avant d’en ajouter d’autres.')
+      return
+    }
+    if (totalSize > 5 * 1024 * 1024 * 1024) {
       setError('La taille totale des stems ne doit pas dépasser 5 GB')
       return
     }
-    setStemFiles(prev => [...prev, ...files])
+    setStemFiles(combinedFiles)
     setError('')
   }
 
@@ -273,10 +285,13 @@ export default function UploadBeatPage() {
           const stemFile = stemFiles[i]
           const stemData = signedData.stems[i]
           if (!stemData) continue
+          const stemContentType = stemFile.name.toLowerCase().endsWith('.zip')
+            ? 'application/zip'
+            : 'audio/wav'
           setUploadProgress(`Upload stem ${i + 1}/${stemFiles.length} (${stemFile.name})...`)
           const stemUploadRes = await fetch(stemData.signedUrl, {
             method: 'PUT',
-            headers: { 'Content-Type': 'audio/wav' },
+            headers: { 'Content-Type': stemContentType },
             body: stemFile,
           })
           if (stemUploadRes.ok) {
@@ -628,7 +643,9 @@ export default function UploadBeatPage() {
                     <p className="text-purple-300 text-sm font-semibold">
                       {stemFiles.length > 0 ? 'Ajouter d\'autres stems' : 'Ajouter les stems'}
                     </p>
-                    <p className="text-gray-500 text-xs">Kick, Snare, Hi-Hat, Melody, Bass... (WAV uniquement)</p>
+                    <p className="text-gray-500 text-xs">
+                      Jusqu&apos;à 30 fichiers WAV ou un fichier ZIP contenant tous les stems — 5 GB maximum.
+                    </p>
                   </div>
                 </div>
               </div>
