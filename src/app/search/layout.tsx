@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fr_FR',
   },
-  alternates: { canonical: `${siteUrl}/search` },
+  alternates: { canonical: `${siteUrl}/marketplace` },
 }
 
 export default function SearchLayout({ children }: { children: React.ReactNode }) {
