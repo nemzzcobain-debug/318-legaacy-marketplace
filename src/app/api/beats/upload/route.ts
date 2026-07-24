@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
         priceMp3: priceMp3 ? parseFloat(priceMp3) : null,
         priceWav: priceWav ? parseFloat(priceWav) : null,
         priceStems: priceStems ? parseFloat(priceStems) : null,
-        status: 'ACTIVE',
+        status: 'PENDING',
         producerId: user.id,
       },
       include: {
@@ -173,7 +173,6 @@ export async function POST(req: NextRequest) {
         requestedStart && !isNaN(requestedStart.getTime()) && requestedStart.getTime() > now.getTime()
           ? requestedStart
           : now
-      const isScheduled = startTime.getTime() > now.getTime()
       const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000)
 
       // Calculer les multiplicateurs a partir des prix definis
@@ -195,21 +194,16 @@ export async function POST(req: NextRequest) {
           exclusiveMultiplier: exclMult,
           startTime: startTime,
           endTime: endTime,
-          status: isScheduled ? 'SCHEDULED' : 'ACTIVE',
+          // L'enchère ne devient visible et ne démarre qu'après validation du beat.
+          status: 'PENDING_APPROVAL',
           commissionPercent: 15,
         },
       })
     }
 
-    // Notifier tous les followers du producteur + les admins
+    // Tant que le beat n'est pas validé, seuls les admins sont notifiés.
     try {
       const producerName = user.displayName || user.name
-
-      // Notifier les followers
-      const followers = await prisma.follow.findMany({
-        where: { followingId: user.id },
-        select: { followerId: true },
-      })
 
       // Notifier les admins (sauf si c'est un admin qui uploade)
       const admins = await prisma.user.findMany({
@@ -218,17 +212,10 @@ export async function POST(req: NextRequest) {
       })
 
       const notifications = [
-        ...followers.map((f) => ({
-          type: 'NEW_BEAT',
-          title: `Nouveau beat de ${producerName}`,
-          message: `${producerName} a publié "${title}" (${genre}, ${bpm} BPM)`,
-          link: `/beats/${beat.id}`,
-          userId: f.followerId,
-        })),
         ...admins.map((a) => ({
           type: 'NEW_BEAT',
-          title: `Nouveau beat uploadé`,
-          message: `${producerName} a uploadé "${title}" (${genre}, ${bpm} BPM)`,
+          title: `Beat à valider`,
+          message: `${producerName} demande la validation de "${title}" (${genre}, ${bpm} BPM)`,
           link: `/admin?tab=beats`,
           userId: a.id,
         })),
@@ -268,7 +255,7 @@ export async function POST(req: NextRequest) {
         success: true,
         beat,
         auction,
-        message: enableAuction ? 'Beat uploadé et enchère lancée !' : 'Beat uploadé avec succès!',
+        message: 'Beat envoyé avec succès. Il sera mis en ligne après validation par 318 LEGAACY.',
       },
       { status: 201 }
     )
