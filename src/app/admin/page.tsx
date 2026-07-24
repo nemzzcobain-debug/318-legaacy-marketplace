@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -77,6 +77,14 @@ interface ReportItem {
   reporter: { id: string; name: string; displayName: string | null; avatar: string | null }
 }
 
+const BEAT_STATUS_LABELS: Record<string, string> = {
+  PENDING: 'En attente de validation',
+  ACTIVE: 'Approuvé et en ligne',
+  REJECTED: 'Refusé',
+  SOLD: 'Vendu',
+  DRAFT: 'Brouillon',
+}
+
 function StatCard({
   label,
   value,
@@ -132,7 +140,8 @@ export default function AdminPage() {
   const [beatStatusFilter, setBeatStatusFilter] = useState('')
   const [reviewingBeatId, setReviewingBeatId] = useState<string | null>(null)
   const [playingBeatId, setPlayingBeatId] = useState<string | null>(null)
-  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [audioError, setAudioError] = useState<{ beatId: string; message: string } | null>(null)
   const [beatSearch, setBeatSearch] = useState('')
   const [beatResults, setBeatResults] = useState<any[]>([])
   const [searchingBeats, setSearchingBeats] = useState(false)
@@ -150,21 +159,48 @@ export default function AdminPage() {
   const [previousTab, setPreviousTab] = useState<string | null>(null)
 
   // Lecture audio des beats
-  const togglePlay = (beatId: string, audioUrl: string) => {
+  const togglePlay = async (beatId: string, audioUrl: string) => {
     if (playingBeatId === beatId) {
       // Pause
-      audioRef?.pause()
+      audioRef.current?.pause()
       setPlayingBeatId(null)
-    } else {
-      // Play new beat
-      if (audioRef) {
-        audioRef.pause()
-      }
-      const audio = new Audio(audioUrl)
-      audio.onended = () => setPlayingBeatId(null)
-      audio.play()
-      setAudioRef(audio)
+      return
+    }
+
+    // Arrêter le beat précédent avant d'en lancer un nouveau.
+    audioRef.current?.pause()
+    setPlayingBeatId(null)
+    setAudioError(null)
+
+    const audio = new Audio(audioUrl)
+    audio.preload = 'metadata'
+    audio.onended = () => {
+      setPlayingBeatId(null)
+      audioRef.current = null
+    }
+    audio.onerror = () => {
+      setPlayingBeatId(null)
+      audioRef.current = null
+      setAudioError({
+        beatId,
+        message: "Impossible de lire l'aperçu audio. Réessaie dans quelques secondes.",
+      })
+    }
+
+    try {
+      // Attendre la confirmation réelle de lecture évite d'afficher « pause »
+      // lorsque le navigateur a refusé ou échoué à charger le fichier.
+      await audio.play()
+      audioRef.current = audio
       setPlayingBeatId(beatId)
+    } catch (error) {
+      console.error('Erreur lecture aperçu admin:', error)
+      setPlayingBeatId(null)
+      audioRef.current = null
+      setAudioError({
+        beatId,
+        message: "Impossible de lire l'aperçu audio. Réessaie dans quelques secondes.",
+      })
     }
   }
 
@@ -1034,6 +1070,7 @@ export default function AdminPage() {
                           onClick={() => beat.audioUrl && togglePlay(beat.id, beat.audioUrl)}
                           className="relative w-14 h-14 rounded-lg overflow-hidden group flex-shrink-0"
                           disabled={!beat.audioUrl}
+                          aria-label={isPlaying ? `Mettre ${beat.title} en pause` : `Écouter ${beat.title}`}
                         >
                           {beat.coverImage ? (
                             <img src={beat.coverImage} alt={beat.title} className="w-full h-full object-cover" />
@@ -1058,6 +1095,11 @@ export default function AdminPage() {
                           {!beat.audioUrl && (
                             <p className="text-xs text-red-400 mt-0.5">Pas de fichier audio</p>
                           )}
+                          {audioError && audioError.beatId === beat.id && (
+                            <p className="text-xs text-red-400 mt-1" role="alert">
+                              {audioError.message}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -1068,7 +1110,7 @@ export default function AdminPage() {
                           beat.status === 'SOLD' ? 'bg-blue-500/20 text-blue-400' :
                           'bg-gray-500/20 text-gray-400'
                         }`}>
-                          {beat.status}
+                          {BEAT_STATUS_LABELS[beat.status] || beat.status}
                         </span>
                         {beat.status === 'PENDING' && (
                           <>

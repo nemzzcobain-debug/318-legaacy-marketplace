@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
 import { sendBeatReviewDecisionEmail } from '@/lib/emails/resend'
 
 export async function GET(request: Request) {
@@ -57,19 +56,18 @@ export async function GET(request: Request) {
       prisma.beat.count({ where }),
     ])
 
-    // Generate public stream URLs for audio
-    const beatsWithSignedUrls = beats.map((beat) => {
-      if (beat.audioUrl) {
-        const parsed = parseSupabaseUrl(beat.audioUrl)
-        if (parsed) {
-          return { ...beat, audioUrl: getStreamUrl(parsed.bucket, parsed.path) }
-        }
-      }
-      return beat
-    })
+    // Le lecteur admin passe par un flux authentifié du même domaine.
+    // Cela fonctionne avec les aperçus publics comme avec les anciens fichiers privés.
+    const beatsWithAdminPreviews = beats.map((beat) => ({
+      ...beat,
+      audioUrl:
+        beat.audioUrl || beat.audioOriginal
+          ? `/api/admin/beats/${beat.id}/preview`
+          : null,
+    }))
 
     return NextResponse.json({
-      beats: beatsWithSignedUrls,
+      beats: beatsWithAdminPreviews,
       pagination: {
         page,
         limit,
