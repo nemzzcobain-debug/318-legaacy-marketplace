@@ -118,9 +118,27 @@ export async function POST(request: Request) {
     // Vérifier que le beat appartient au producteur
     const beat = await prisma.beat.findFirst({
       where: { id: beatId, producerId: userId },
+      select: {
+        id: true,
+        title: true,
+        audioWav: true,
+        stemsFiles: true,
+      },
     })
     if (!beat) {
       return NextResponse.json({ error: 'Beat introuvable' }, { status: 404 })
+    }
+    if (licenseType === 'PREMIUM' && !beat.audioWav) {
+      return NextResponse.json(
+        { error: 'Ajoute le fichier WAV avant de créer une enchère Premium' },
+        { status: 400 }
+      )
+    }
+    if (licenseType === 'EXCLUSIVE' && !beat.stemsFiles) {
+      return NextResponse.json(
+        { error: 'Ajoute les stems avant de créer une enchère Exclusive' },
+        { status: 400 }
+      )
     }
 
     // Vérifier qu'il n'y a pas déjà une enchère active sur ce beat
