@@ -463,7 +463,37 @@ function MarketplaceExplorerContent() {
             )}
 
             {/* Results Grid */}
-            {!loading && auctions.length === 0 ? (
+            {loading ? (
+              <div
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                role="status"
+                aria-label="Chargement des enchères"
+                aria-live="polite"
+              >
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-[#111111] border border-[#222222] rounded-xl overflow-hidden animate-pulse"
+                    aria-hidden="true"
+                  >
+                    <div className="h-28 bg-gradient-to-br from-[#1a1a24] to-[#15151d]" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-4 w-2/3 rounded bg-white/10" />
+                      <div className="h-3 w-1/3 rounded bg-white/[0.07]" />
+                      <div className="flex gap-2">
+                        <div className="h-5 w-16 rounded-full bg-white/[0.07]" />
+                        <div className="h-5 w-20 rounded-full bg-white/[0.07]" />
+                      </div>
+                      <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                        <div className="h-3 w-14 rounded bg-white/[0.07]" />
+                        <div className="h-5 w-12 rounded bg-white/10" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <span className="sr-only">Chargement des enchères en cours…</span>
+              </div>
+            ) : auctions.length === 0 ? (
               <div className="text-center py-20 bg-[#111111] border border-[#222222] rounded-xl">
                 <Search size={48} className="text-gray-700 mx-auto mb-4" />
                 <p className="text-gray-400 font-bold text-lg">Aucun résultat</p>
