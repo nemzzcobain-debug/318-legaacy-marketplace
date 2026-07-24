@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     // Extraction des métadonnées JSON
     const body = await req.json()
     const {
+      editBeatId,
       title,
       genre,
       bpm,
@@ -145,9 +146,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Création de l'entrée beat dans la base de données
-    const beat = await prisma.beat.create({
-      data: {
+    let rejectedBeat = null
+    if (editBeatId) {
+      rejectedBeat = await prisma.beat.findUnique({ where: { id: editBeatId } })
+      if (
+        !rejectedBeat ||
+        rejectedBeat.producerId !== user.id ||
+        rejectedBeat.status !== 'REJECTED' ||
+        rejectedBeat.rejectionType !== 'CHANGES_REQUESTED'
+      ) {
+        return NextResponse.json(
+          { error: 'Ce beat ne peut pas être corrigé ou renvoyé' },
+          { status: 403 }
+        )
+      }
+    }
+
+    const beatData = {
         title,
         description: description || null,
         audioUrl,
@@ -165,13 +180,35 @@ export async function POST(req: NextRequest) {
         priceStems: priceStems ? parseFloat(priceStems) : null,
         status: 'PENDING',
         producerId: user.id,
-      },
-      include: {
-        producer: {
-          select: { name: true, displayName: true },
-        },
-      },
-    })
+        rejectionType: null,
+        rejectionReason: null,
+        rejectedAt: null,
+    }
+
+    // Un renvoi remplace le beat refusé afin de conserver son historique.
+    // Les anciennes enchères annulées sont recréées avec les nouveaux paramètres.
+    if (rejectedBeat) {
+      await prisma.auction.deleteMany({ where: { beatId: rejectedBeat.id } })
+    }
+
+    const beat = rejectedBeat
+      ? await prisma.beat.update({
+          where: { id: rejectedBeat.id },
+          data: beatData,
+          include: {
+            producer: {
+              select: { name: true, displayName: true },
+            },
+          },
+        })
+      : await prisma.beat.create({
+          data: beatData,
+          include: {
+            producer: {
+              select: { name: true, displayName: true },
+            },
+          },
+        })
 
     // ─── Création de l'enchère si demandée ───
     let auction = null
