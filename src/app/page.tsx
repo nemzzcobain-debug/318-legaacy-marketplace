@@ -362,7 +362,7 @@ export default function Home() {
 
       <main id="main-content">
         {/* ═══════════ HERO ═══════════ */}
-        <section className="relative overflow-hidden pt-24 pb-32 px-4">
+        <section className="relative overflow-hidden pt-10 pb-16 px-4 md:pt-24 md:pb-32">
           <FloatingParticles />
 
           {/* Animated background */}
@@ -389,7 +389,7 @@ export default function Home() {
 
           {/* Upload card — mobile/tablet: inline centered, desktop: absolute top-left */}
           {/* Mobile + Tablet version */}
-          <div className="lg:hidden relative z-20 hero-fade-in-delay-4 px-4 mb-6">
+          <div className="lg:hidden relative z-20 hero-fade-in-delay-4 px-2 mb-4 sm:px-4 sm:mb-6">
             <div
               onClick={() => router.push('/producers')}
               className="bg-[#111]/80 backdrop-blur-xl border border-[#1e1e2e] hover:border-[#e11d48]/30 rounded-2xl p-4 sm:p-5 mx-auto max-w-md transition-all group/upload cursor-pointer"
@@ -470,13 +470,13 @@ export default function Home() {
             className="max-w-5xl mx-auto text-center relative z-10 hero-fade-in"
           >
             {/* Logo — centré */}
-            <div className="mb-8">
+            <div className="mb-4 md:mb-8">
               <Image
                 src="/logo-318-marketplace.png"
                 alt="318 LEGAACY Marketplace"
                 width={180}
                 height={180}
-                className="mx-auto drop-shadow-[0_0_50px_rgba(225,29,72,0.5)]"
+                className="mx-auto w-28 h-28 md:w-44 md:h-44 drop-shadow-[0_0_50px_rgba(225,29,72,0.5)]"
                 style={{
                   maskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
                   WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
@@ -484,7 +484,7 @@ export default function Home() {
               />
             </div>
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-5 py-2.5 text-sm font-bold text-red-400 mb-8 backdrop-blur-sm">
+            <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-4 py-2 text-xs md:px-5 md:py-2.5 md:text-sm font-bold text-red-400 mb-4 md:mb-8 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
@@ -493,7 +493,7 @@ export default function Home() {
             </div>
 
             {/* Main title with staggered animation */}
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-[0.9] tracking-tight">
+            <h1 className="text-4xl md:text-7xl lg:text-8xl font-black mb-5 md:mb-8 leading-[0.9] tracking-tight">
               <span
                 className="inline-block text-white hero-fade-in-delay-1"
               >
@@ -524,7 +524,7 @@ export default function Home() {
             </h1>
 
             <p
-              className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed hero-fade-in-delay-4"
+              className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto mb-7 md:mb-12 leading-relaxed hero-fade-in-delay-4"
             >
               {t('hero.subtitle')}
             </p>
@@ -535,7 +535,7 @@ export default function Home() {
             >
               <Link
                 href="/marketplace"
-                className="group relative px-8 py-4 rounded-2xl font-extrabold text-white text-lg flex items-center gap-2 transition-all hover:scale-105 overflow-hidden"
+                className="group relative px-6 py-3 md:px-8 md:py-4 rounded-2xl font-extrabold text-white text-base md:text-lg flex items-center gap-2 transition-all hover:scale-105 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-700 rounded-2xl" />
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -553,7 +553,7 @@ export default function Home() {
               </Link>
               <Link
                 href="/register"
-                className="px-8 py-4 rounded-2xl font-extrabold text-white text-lg border-2 border-[#2a2a2a] hover:border-red-500/40 transition-all hover:bg-white/[0.02] backdrop-blur-sm"
+                className="px-6 py-3 md:px-8 md:py-4 rounded-2xl font-extrabold text-white text-base md:text-lg border-2 border-[#2a2a2a] hover:border-red-500/40 transition-all hover:bg-white/[0.02] backdrop-blur-sm"
               >
                 {t('hero.ctaSecondary')}
               </Link>
@@ -562,7 +562,7 @@ export default function Home() {
             {/* Mini live stats */}
             {homepage && (
               <div
-                className="flex items-center justify-center gap-6 md:gap-10 mt-16 hero-fade-in-delay-4"
+                className="flex items-center justify-center gap-6 md:gap-10 mt-8 md:mt-16 hero-fade-in-delay-4"
               >
                 <div onClick={() => router.push('/marketplace')} className="flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
                   <div className="relative flex h-2.5 w-2.5">
@@ -596,9 +596,9 @@ export default function Home() {
         {/* Genres scroll supprimé */}
 
         {/* ═══════════ LIVE AUCTIONS ═══════════ */}
-        <section className="px-4 pb-24">
+        <section className="px-4 pb-16 md:pb-24">
           <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center justify-between mb-6 md:mb-10">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="relative flex h-2.5 w-2.5">
