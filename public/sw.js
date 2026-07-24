@@ -1,13 +1,12 @@
 // 318 LEGAACY Marketplace - Service Worker
-const CACHE_NAME = '318-legaacy-v2'
-const STATIC_CACHE = '318-legaacy-static-v2'
-const DYNAMIC_CACHE = '318-legaacy-dynamic-v2'
+const STATIC_CACHE = '318-legaacy-static-v3'
+const DYNAMIC_CACHE = '318-legaacy-dynamic-v3'
 
-// Assets to pre-cache on install
+// Ne précharger que des fichiers réellement statiques.
+// Les pages et les fichiers Next.js changent à chaque déploiement : les
+// conserver ici peut mélanger deux versions du site et provoquer un écran
+// « Quelque chose s'est mal passé ».
 const PRECACHE_ASSETS = [
-  '/',
-  '/marketplace',
-  '/search',
   '/manifest.json',
   '/favicon.ico',
   '/icons/icon-192x192.png',
@@ -56,6 +55,18 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  // Toujours laisser le navigateur et Next.js récupérer la version courante.
+  // En particulier, ne jamais répondre avec un ancien chunk JavaScript.
+  if (
+    request.mode === 'navigate' ||
+    request.destination === 'document' ||
+    request.destination === 'script' ||
+    request.destination === 'style' ||
+    url.pathname.startsWith('/_next/')
+  ) {
+    return
+  }
+
   // Images - Cache First
   if (
     request.destination === 'image' ||
@@ -76,50 +87,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Static assets (JS, CSS) - Network First with cache fallback
-  // Avoids serving stale/broken cached responses when deploy changes chunk hashes
-  if (
-    request.destination === 'script' ||
-    request.destination === 'style' ||
-    url.pathname.startsWith('/_next/')
-  ) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone()
-            caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone))
-          }
-          return response
-        })
-        .catch(() => {
-          return caches.match(request).then((cached) => cached || new Response('', { status: 408 }))
-        })
-    )
-    return
-  }
-
-  // Pages - Network First with fallback
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const clone = response.clone()
-          caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone))
-        }
-        return response
-      })
-      .catch(() => {
-        return caches.match(request).then((cached) => {
-          if (cached) return cached
-          // Fallback to home page for navigation requests
-          if (request.mode === 'navigate') {
-            return caches.match('/')
-          }
-          return new Response('Offline', { status: 503 })
-        })
-      })
-  )
+  // Toutes les autres requêtes restent gérées normalement par le navigateur.
 })
 
 // Handle push notifications (future)
