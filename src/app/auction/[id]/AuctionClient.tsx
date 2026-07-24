@@ -194,7 +194,7 @@ export default function AuctionClient() {
   const [auction, setAuction] = useState<AuctionDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [bidAmount, setBidAmount] = useState('')
-  const selectedLicense = 'EXCLUSIVE' // Encheres = licence exclusive uniquement
+  const selectedLicense = auction?.licenseType || 'BASIC'
   const [bidding, setBidding] = useState(false)
   const [bidError, setBidError] = useState('')
   const [bidSuccess, setBidSuccess] = useState('')
@@ -589,10 +589,12 @@ export default function AuctionClient() {
               {/* License Info + Bid Amount */}
               {isActive && (
                 <>
-                  {/* Licence exclusive info */}
+                  {/* Licence définie par le beatmaker */}
                   <div className="mb-4 bg-[#0a0a0a] border border-[#222] rounded-xl p-3">
-                    <p className="text-xs font-bold text-red-400 mb-1">Licence Exclusive</p>
-                    <p className="text-[10px] text-gray-500">WAV + Stems - Droits illimites</p>
+                    <p className="text-xs font-bold text-red-400 mb-1">
+                      Licence {license.name} définie par le beatmaker
+                    </p>
+                    <p className="text-[10px] text-gray-500">{license.rights}</p>
                   </div>
 
                   {/* Bid Amount */}
