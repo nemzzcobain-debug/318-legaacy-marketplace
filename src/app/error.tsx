@@ -15,20 +15,48 @@ export default function Error({
   useEffect(() => {
     console.error('[APP_ERROR]', error)
 
-    // Après un déploiement, un onglet déjà ouvert peut encore demander un
-    // ancien fichier JavaScript. Un seul rechargement complet réaligne toutes
-    // les ressources sans répéter une action comme une mise.
-    if (!isVersionLoadError) return
+    // En production, Next.js masque parfois le vrai message de l'erreur.
+    // Envoyer un diagnostic minimal permet de retrouver la cause exacte sans
+    // collecter les champs du formulaire ni les paramètres de l'URL.
+    const report = JSON.stringify({
+      message: (error.message || 'Erreur client sans message').slice(0, 500),
+      stack: (error.stack || '').slice(0, 2000),
+      digest: error.digest || null,
+      pathname: window.location.pathname,
+      userAgent: navigator.userAgent.slice(0, 300),
+      occurredAt: new Date().toISOString(),
+    })
 
-    const recoveryKey = '318-version-recovery'
-    if (sessionStorage.getItem(recoveryKey) === 'done') return
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(
+        '/api/client-errors',
+        new Blob([report], { type: 'application/json' })
+      )
+    } else {
+      void fetch('/api/client-errors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: report,
+        keepalive: true,
+      }).catch(() => {})
+    }
 
-    sessionStorage.setItem(recoveryKey, 'done')
+    // Après un déploiement, le message réel peut être masqué et ne plus
+    // contenir « ChunkLoadError ». Faire un seul rechargement complet pour
+    // toutes les erreurs réaligne les fichiers du site. La fenêtre de 30
+    // secondes empêche une boucle si l'erreur est réellement persistante.
+    const recoveryKey = `318-error-recovery:${window.location.pathname}`
+    const previousRecovery = Number(sessionStorage.getItem(recoveryKey) || 0)
+    const now = Date.now()
+
+    if (now - previousRecovery < 30_000) return
+
+    sessionStorage.setItem(recoveryKey, String(now))
     window.location.reload()
-  }, [error, isVersionLoadError])
+  }, [error])
 
   const reloadPage = () => {
-    sessionStorage.removeItem('318-version-recovery')
+    sessionStorage.removeItem(`318-error-recovery:${window.location.pathname}`)
     window.location.reload()
   }
 
