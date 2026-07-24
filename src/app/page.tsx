@@ -36,6 +36,7 @@ import Image from 'next/image'
 import Header from '@/components/layout/Header'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 import { useTranslation } from '@/i18n/LanguageContext'
+import { configurePlaybackAudioSession } from '@/lib/audio/session'
 
 interface LiveAuction {
   id: string
@@ -226,6 +227,7 @@ export default function Home() {
 
   const getAudioContext = useCallback(() => {
     if (!audioCtxRef.current) {
+      configurePlaybackAudioSession()
       const AC = window.AudioContext || (window as any).webkitAudioContext
       audioCtxRef.current = new AC()
       gainNodeRef.current = audioCtxRef.current.createGain()
