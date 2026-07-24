@@ -6,13 +6,18 @@ export default function ServiceWorkerRegistration() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('/sw.js')
+        // Le paramètre de version force les anciens appareils à récupérer le
+        // service worker corrigé au lieu de garder un cache obsolète.
+        .register('/sw.js?v=3', { updateViaCache: 'none' })
         .then((reg) => {
           console.log('SW registered:', reg.scope)
 
+          // Vérifier tout de suite au chargement, puis régulièrement.
+          void reg.update()
+
           // Check for updates every 60 minutes
           setInterval(() => {
-            reg.update()
+            void reg.update()
           }, 60 * 60 * 1000)
         })
         .catch((err) => {
