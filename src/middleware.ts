@@ -53,8 +53,9 @@ const rateLimiters = redis ? {
   upload: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, '5 m'), prefix: 'rl:upload' }),
   webhook: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(200, '1 m'), prefix: 'rl:webhook' }),
   admin: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(100, '1 m'), prefix: 'rl:admin' }),
-  api: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(60, '1 m'), prefix: 'rl:api' }),
-  public: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(120, '1 m'), prefix: 'rl:public' }),
+  notifications: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(120, '1 m'), prefix: 'rl:notifications' }),
+  api: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(300, '1 m'), prefix: 'rl:api' }),
+  public: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(300, '1 m'), prefix: 'rl:public' }),
 } : null
 
 // Fallback in-memory pour le dev (quand Upstash n'est pas dispo)
@@ -67,8 +68,9 @@ const LIMITS: Record<string, { max: number; window: number }> = {
   upload:   { max: 10,  window: 5 * 60 * 1000 },
   webhook:  { max: 200, window: 60 * 1000 },
   admin:    { max: 100, window: 60 * 1000 },
-  api:      { max: 60,  window: 60 * 1000 },
-  public:   { max: 120, window: 60 * 1000 },
+  notifications: { max: 120, window: 60 * 1000 },
+  api:      { max: 300, window: 60 * 1000 },
+  public:   { max: 300, window: 60 * 1000 },
 }
 
 function inMemoryCheckLimit(key: string, max: number, windowMs: number): { allowed: boolean; remaining: number } {
@@ -94,7 +96,7 @@ function cleanupInMemory() {
 }
 
 // ─── Route classification ───
-type RouteType = 'login' | 'register' | 'bid' | 'upload' | 'webhook' | 'admin' | 'api' | 'public' | 'skip'
+type RouteType = 'login' | 'register' | 'bid' | 'upload' | 'webhook' | 'admin' | 'notifications' | 'api' | 'public' | 'skip'
 
 function getRouteType(pathname: string, method: string): RouteType {
   if (pathname.startsWith('/api/stripe/webhook') || pathname.startsWith('/api/payments/webhook')) return 'webhook'
@@ -103,6 +105,7 @@ function getRouteType(pathname: string, method: string): RouteType {
   if (pathname.includes('/bid') && method === 'POST') return 'bid'
   if (pathname.includes('/upload') || pathname.includes('/beats/upload')) return 'upload'
   if (pathname.startsWith('/api/admin')) return 'admin'
+  if (pathname.startsWith('/api/notifications') && method === 'GET') return 'notifications'
   if (pathname.startsWith('/api/')) return 'api'
   if (pathname.startsWith('/_next') || pathname.startsWith('/icons') || pathname === '/favicon.ico') return 'skip'
   return 'public'
