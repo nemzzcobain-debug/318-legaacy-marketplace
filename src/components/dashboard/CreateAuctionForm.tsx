@@ -34,7 +34,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
   const [startPrice, setStartPrice] = useState('10')
   const [reservePrice, setReservePrice] = useState('')
   const [buyNowPrice, setBuyNowPrice] = useState('')
-  const licenseType = 'EXCLUSIVE' // Encheres = licence exclusive uniquement
+  const [licenseType, setLicenseType] = useState('BASIC')
   const [durationHours, setDurationHours] = useState('24')
   const [bidIncrement, setBidIncrement] = useState('5')
 
@@ -245,19 +245,23 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
           </div>
         </div>
 
-        {/* License info (exclusive only for auctions) */}
+        {/* Licence mise aux enchères */}
         <div className="bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center flex-shrink-0">
-              <Gavel size={16} className="text-white" />
-            </div>
-            <div>
-              <div className="text-sm font-bold text-white">Licence Exclusive</div>
-              <div className="text-xs text-gray-500">
-                Les enchères sont exclusivement pour les droits exclusifs (WAV + Stems - Illimité)
-              </div>
-            </div>
-          </div>
+          <label className="text-sm font-semibold text-white mb-2 block">
+            Licence mise aux enchères
+          </label>
+          <select
+            value={licenseType}
+            onChange={(e) => setLicenseType(e.target.value)}
+            className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840]"
+          >
+            <option value="BASIC">Basic — MP3</option>
+            <option value="PREMIUM">Premium — WAV + MP3</option>
+            <option value="EXCLUSIVE">Exclusive — WAV + Stems</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-2">
+            La licence choisie sera affichée aux artistes et ne changera pas pendant l&apos;enchère.
+          </p>
         </div>
 
         {/* Duration + Increment */}
