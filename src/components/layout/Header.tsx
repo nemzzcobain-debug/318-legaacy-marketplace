@@ -17,7 +17,6 @@ import {
   Shield,
   LogOut,
   MessageCircle,
-  Search,
   ShoppingBag,
   Eye,
   User,
@@ -64,7 +63,6 @@ export default function Header() {
 
   const navItems = [
     { href: '/marketplace', label: t('nav.auctions'), icon: Gavel },
-    { href: '/search', label: t('nav.search'), icon: Search },
     { href: '/producers', label: t('nav.producers'), icon: Users },
   ]
 
