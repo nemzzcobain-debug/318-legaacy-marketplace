@@ -33,6 +33,7 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
   for (const auction of expiredAuctions) {
     try {
       const topBid = auction.bids[0]
+      let didFinalize = false
 
       await prisma.$transaction(async (tx) => {
         if (topBid) {
@@ -41,8 +42,13 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
           if (reserveMet) {
             // Winner exists and reserve met — set payment deadline (48h)
             const PAYMENT_DEADLINE_HOURS = 48
-            await tx.auction.update({
-              where: { id: auction.id },
+            const updateResult = await tx.auction.updateMany({
+              where: {
+                id: auction.id,
+                status: { in: ['ACTIVE', 'ENDING_SOON'] },
+                endTime: { lte: now },
+                currentBid: auction.currentBid,
+              },
               data: {
                 status: 'ENDED',
                 winnerId: topBid.userId,
@@ -51,10 +57,13 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
                 commissionAmount:
                   Math.round(topBid.finalAmount * (auction.commissionPercent / 100) * 100) / 100,
                 producerPayout:
-                  Math.round(topBid.finalAmount * (1 - auction.commissionPercent / 100) * 100) / 100,
+                  Math.round(topBid.finalAmount * (1 - auction.commissionPercent / 100) * 100) /
+                  100,
                 paymentDeadline: new Date(now.getTime() + PAYMENT_DEADLINE_HOURS * 60 * 60 * 1000),
               },
             })
+            if (updateResult.count === 0) return
+            didFinalize = true
 
             // Notify winner
             await tx.notification.create({
@@ -79,10 +88,17 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
             })
           } else {
             // Reserve not met — end auction and add to Nouveautés
-            await tx.auction.update({
-              where: { id: auction.id },
+            const updateResult = await tx.auction.updateMany({
+              where: {
+                id: auction.id,
+                status: { in: ['ACTIVE', 'ENDING_SOON'] },
+                endTime: { lte: now },
+                currentBid: auction.currentBid,
+              },
               data: { status: 'ENDED' },
             })
+            if (updateResult.count === 0) return
+            didFinalize = true
 
             await tx.notification.create({
               data: {
@@ -114,10 +130,17 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
           }
         } else {
           // No bids at all — end auction and add to Nouveautés
-          await tx.auction.update({
-            where: { id: auction.id },
+          const updateResult = await tx.auction.updateMany({
+            where: {
+              id: auction.id,
+              status: { in: ['ACTIVE', 'ENDING_SOON'] },
+              endTime: { lte: now },
+              currentBid: auction.currentBid,
+            },
             data: { status: 'ENDED' },
           })
+          if (updateResult.count === 0) return
+          didFinalize = true
 
           await tx.notification.create({
             data: {
@@ -149,7 +172,7 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
         }
       })
 
-      finalized++
+      if (didFinalize) finalized++
     } catch (err) {
       console.error(`[LazyFinalize] Error finalizing auction ${auction.id}:`, err)
     }
@@ -170,9 +193,16 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
 
   for (const expired of expiredDeadlines) {
     try {
+      let didExpirePayment = false
       await prisma.$transaction(async (tx) => {
-        await tx.auction.update({
-          where: { id: expired.id },
+        const updateResult = await tx.auction.updateMany({
+          where: {
+            id: expired.id,
+            status: 'ENDED',
+            winnerId: expired.winnerId,
+            paidAt: null,
+            paymentDeadline: { lte: now },
+          },
           data: {
             winnerId: null,
             winningLicense: null,
@@ -182,6 +212,8 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
             paymentDeadline: null,
           },
         })
+        if (updateResult.count === 0) return
+        didExpirePayment = true
 
         if (expired.winnerId) {
           await tx.notification.create({
@@ -222,7 +254,7 @@ async function lazyFinalizeExpiredAuctions(playlistId: string) {
           })
         }
       })
-      finalized++
+      if (didExpirePayment) finalized++
     } catch (err) {
       console.error(`[LazyFinalize] Error processing expired deadline ${expired.id}:`, err)
     }
@@ -303,8 +335,9 @@ export async function GET() {
     }
 
     // Filtrer: exclure les beats en enchères actives ou déjà vendus
-    const availableBeats = fullPlaylist.beats
-      .filter((pb) => pb.beat.auctions.length === 0 && pb.beat.status !== 'SOLD')
+    const availableBeats = fullPlaylist.beats.filter(
+      (pb) => pb.beat.auctions.length === 0 && pb.beat.status !== 'SOLD'
+    )
 
     // Récupérer les prix de base pour chaque beat (startPrice de la dernière enchère)
     const beatsWithPrices = await Promise.all(
