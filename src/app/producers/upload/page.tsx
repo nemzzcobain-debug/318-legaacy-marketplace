@@ -407,8 +407,12 @@ export default function UploadBeatPage() {
           <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
             <Check size={40} className="text-green-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Beat uploadé !</h2>
-          <p className="text-gray-400">Redirection vers le dashboard...</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Beat envoyé !</h2>
+          <p className="text-amber-400 font-semibold mb-1">En attente de validation</p>
+          <p className="text-gray-400 text-sm">
+            Tu recevras une notification après vérification par 318 LEGAACY.
+          </p>
+          <p className="text-gray-600 text-xs mt-3">Redirection vers le dashboard...</p>
         </div>
       </div>
     )
