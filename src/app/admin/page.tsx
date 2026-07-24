@@ -279,7 +279,13 @@ export default function AdminPage() {
 
   const reviewBeat = async (beatId: string, action: 'APPROVE' | 'REJECT') => {
     let reason = ''
+    let rejectionType: 'CHANGES_REQUESTED' | 'FINAL' | null = null
     if (action === 'REJECT') {
+      rejectionType = window.confirm(
+        'Le beatmaker peut-il corriger ce beat ?\n\nOK = Modifications demandées\nAnnuler = Refus définitif'
+      )
+        ? 'CHANGES_REQUESTED'
+        : 'FINAL'
       reason = window.prompt('Indique le motif du refus pour le beatmaker :')?.trim() || ''
       if (!reason) return
     }
@@ -289,7 +295,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/beats', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ beatId, action, reason }),
+        body: JSON.stringify({ beatId, action, reason, rejectionType }),
       })
       const data = await res.json()
       if (!res.ok) {
