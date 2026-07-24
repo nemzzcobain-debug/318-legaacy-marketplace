@@ -79,7 +79,6 @@ export async function POST(request: Request) {
     }
 
     const { amount, isAutoBid, maxAutoBid } = validated.data
-    const licenseType = 'EXCLUSIVE' // Encheres = licence exclusive uniquement
 
     // Récupérer l'enchère avec le beat
     const auction = await prisma.auction.findUnique({
@@ -97,6 +96,8 @@ export async function POST(request: Request) {
     if (!auction) {
       return NextResponse.json({ error: 'Enchere introuvable' }, { status: 404 })
     }
+
+    const licenseType = auction.licenseType
 
     // Verifications
     if (auction.status !== 'ACTIVE' && auction.status !== 'ENDING_SOON') {
