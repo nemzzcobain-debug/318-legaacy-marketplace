@@ -232,6 +232,20 @@ export default function AuctionClient() {
     }
   }, [realtimeState.currentBid, realtimeState.bidCount, realtimeState.status])
 
+  // Si une nouvelle mise augmente le minimum, ne pas laisser un ancien
+  // montant devenu invalide dans le champ.
+  useEffect(() => {
+    if (realtimeState.currentBid <= 0 || !auction?.bidIncrement) return
+
+    const nextMinimum = realtimeState.currentBid + auction.bidIncrement
+    setBidAmount((currentAmount) => {
+      const parsedCurrent = Number.parseFloat(currentAmount)
+      return !Number.isFinite(parsedCurrent) || parsedCurrent < nextMinimum
+        ? String(nextMinimum)
+        : currentAmount
+    })
+  }, [realtimeState.currentBid, auction?.bidIncrement])
+
   // Fetch auction data
   const fetchAuction = useCallback(async () => {
     try {
@@ -239,9 +253,10 @@ export default function AuctionClient() {
       if (res.ok) {
         const data = await res.json()
         setAuction(data)
-        if (!bidAmount) {
-          setBidAmount(String(data.currentBid + data.bidIncrement))
-        }
+        setBidAmount((currentAmount) =>
+          currentAmount || String(data.currentBid + data.bidIncrement)
+        )
+        return data as AuctionDetail
       } else if (res.status === 404) {
         setAuction(null)
       }
@@ -250,7 +265,8 @@ export default function AuctionClient() {
     } finally {
       setLoading(false)
     }
-  }, [id, bidAmount])
+    return null
+  }, [id])
 
   // Auto-finalize when timer reaches 0 (client-side trigger since Hobby cron is daily)
   const [finalizeCalled, setFinalizeCalled] = useState(false)
@@ -314,25 +330,63 @@ export default function AuctionClient() {
         body: JSON.stringify(bidBody),
       })
 
-      const data = await res.json()
+      // Une mise peut être enregistrée alors que la lecture de la réponse
+      // échoue côté navigateur. Le statut HTTP reste la source de vérité.
+      const data = await res.json().catch(() => null)
 
       if (!res.ok) {
-        setBidError(data.error)
+        setBidError(data?.error || "Impossible de placer l'enchère")
         return
       }
 
-      setBidSuccess(`Enchere de ${bidAmount} EUR placée !`)
-      setBidAmount(String(data.auction.currentBid + (auction?.bidIncrement || 5)))
+      const confirmedAmount = Number(data?.auction?.currentBid ?? parsedBidAmount)
+      const confirmedBidCount = Number(data?.auction?.totalBids ?? (auction?.totalBids || 0) + 1)
+      const increment = auction?.bidIncrement || 5
 
-      if (data.auction.antiSnipeTriggered) {
-        setBidSuccess((prev) => prev + ' Anti-snipe active: temps prolonge!')
+      // Afficher immédiatement le succès : les notifications et le
+      // rafraîchissement de l'historique ne doivent jamais transformer une
+      // mise déjà enregistrée en faux message d'erreur.
+      setAuction((currentAuction) =>
+        currentAuction
+          ? {
+              ...currentAuction,
+              currentBid: confirmedAmount,
+              totalBids: confirmedBidCount,
+              endTime: data?.auction?.endTime || currentAuction.endTime,
+            }
+          : currentAuction
+      )
+      setBidAmount(String(confirmedAmount + increment))
+      setBidSuccess(`Enchère de ${parsedBidAmount} EUR bien prise en compte !`)
+
+      if (data?.auction?.antiSnipeTriggered) {
+        setBidSuccess((prev) => prev + ' Anti-snipe actif : temps prolongé !')
       }
 
-      // Realtime will handle the update, but also refresh for full bid history
-      fetchAuction()
+      // Le rafraîchissement est secondaire et ne peut plus modifier le
+      // résultat affiché à l'utilisateur.
+      void fetchAuction()
       setTimeout(() => setBidSuccess(''), 5000)
     } catch (e) {
-      setBidError('Erreur de connexion')
+      // Si la connexion s'est coupée après l'enregistrement, vérifier l'état
+      // réel avant d'afficher une erreur et risquer une double mise.
+      const refreshedAuction = await fetchAuction()
+      const currentUserId = (session?.user as any)?.id
+      const matchingBid = refreshedAuction?.bids?.some(
+        (bid) => bid.amount === parsedBidAmount && (!currentUserId || bid.user?.id === currentUserId)
+      )
+
+      if (refreshedAuction && matchingBid) {
+        setBidAmount(
+          String(refreshedAuction.currentBid + refreshedAuction.bidIncrement)
+        )
+        setBidSuccess(`Enchère de ${parsedBidAmount} EUR bien prise en compte !`)
+        setTimeout(() => setBidSuccess(''), 5000)
+      } else {
+        setBidError(
+          "La réponse n'a pas pu être confirmée. Actualise la page avant de réessayer pour éviter une double mise."
+        )
+      }
     } finally {
       setBidding(false)
     }
