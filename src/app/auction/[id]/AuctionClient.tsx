@@ -42,11 +42,22 @@ import SimilarBeats from '@/components/auction/SimilarBeats'
 interface BidItem {
   id: string
   amount: number
-  finalAmount: number
-  licenseType: string
+  finalAmount?: number
+  licenseType?: string
   createdAt: string
-  user: { id?: string; name: string; displayName: string | null; avatar: string | null }
+  user?: {
+    id?: string
+    name?: string
+    displayName?: string | null
+    avatar?: string | null
+  } | null
 }
+
+const getBidderName = (bid: BidItem) =>
+  bid.user?.displayName?.trim() || bid.user?.name?.trim() || 'Enchérisseur'
+
+const getBidderInitial = (bid: BidItem) =>
+  getBidderName(bid).charAt(0).toUpperCase()
 
 interface AuctionDetail {
   id: string
@@ -612,11 +623,11 @@ export default function AuctionClient() {
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-[10px] font-bold text-white">
-                          {bid.user.name[0]}
+                          {getBidderInitial(bid)}
                         </div>
                         <div>
                           <span className="text-sm text-white font-semibold">
-                            {bid.user.displayName || bid.user.name}
+                            {getBidderName(bid)}
                           </span>
                           {i === 0 && (
                             <span className="ml-2 text-[10px] text-red-400 font-bold">LEADER</span>
@@ -626,7 +637,8 @@ export default function AuctionClient() {
                       <div className="text-right">
                         <span className="text-sm font-bold text-white">{bid.amount} EUR</span>
                         <span className="block text-[10px] text-gray-500">
-                          {bid.licenseType} • {new Date(bid.createdAt).toLocaleTimeString('fr-FR')}
+                          {bid.licenseType || auction.licenseType} •{' '}
+                          {new Date(bid.createdAt).toLocaleTimeString('fr-FR')}
                         </span>
                       </div>
                     </div>
@@ -841,12 +853,13 @@ export default function AuctionClient() {
                 (() => {
                   const userId = session?.user?.id ?? null
                   const isWinner = userId && auction.winnerId === userId
-                  const isParticipant = userId && auction.bids.some((b) => b.user.id === userId)
+                  const isParticipant =
+                    userId && auction.bids.some((b) => b.user?.id === userId)
                   const isPaid = !!auction.paidAt
                   const winnerName = auction.winner
                     ? auction.winner.displayName || auction.winner.name
                     : auction.bids[0]
-                      ? auction.bids[0].user.displayName || auction.bids[0].user.name
+                      ? getBidderName(auction.bids[0])
                       : null
                   const winLicense = auction.winningLicense
                     ? LICENSE_INFO[auction.winningLicense]
