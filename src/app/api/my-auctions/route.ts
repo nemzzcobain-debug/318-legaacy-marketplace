@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       distinct: ['auctionId'],
     })
 
-    const auctionIds = userBids.map(b => b.auctionId)
+    const auctionIds = userBids.map((b) => b.auctionId)
 
     if (auctionIds.length === 0) {
       return NextResponse.json({
@@ -78,6 +78,9 @@ export async function GET(req: NextRequest) {
     })
 
     // Categorize
+    // Le statut seul ne suffit pas : une enchère peut avoir été prolongée
+    // pendant que le cron de finalisation travaillait encore sur l'ancienne date.
+    const now = new Date()
     const active: any[] = []
     const won: any[] = []
     const lost: any[] = []
@@ -87,6 +90,8 @@ export async function GET(req: NextRequest) {
       const myLastBid = auction.bids[0]
       const isWinner = auction.winnerId === userId
       const isLeader = auction.currentBid === myLastBid?.amount
+      const hasActuallyEnded = auction.endTime <= now
+      const hasEndedStatus = auction.status === 'ENDED' || auction.status === 'COMPLETED'
 
       const item = {
         id: auction.id,
@@ -107,13 +112,18 @@ export async function GET(req: NextRequest) {
         isLeader,
       }
 
-      if (auction.status === 'ACTIVE' || auction.status === 'ENDING_SOON' || auction.status === 'SCHEDULED') {
+      if (
+        !hasActuallyEnded &&
+        (auction.status === 'ACTIVE' ||
+          auction.status === 'ENDING_SOON' ||
+          auction.status === 'SCHEDULED')
+      ) {
         active.push(item)
-      } else if (isWinner && !auction.paidAt) {
+      } else if (hasActuallyEnded && hasEndedStatus && isWinner && !auction.paidAt) {
         pendingPayment.push(item)
-      } else if (isWinner && auction.paidAt) {
+      } else if (hasEndedStatus && isWinner && auction.paidAt) {
         won.push(item)
-      } else if (auction.status === 'ENDED' || auction.status === 'COMPLETED') {
+      } else if (hasActuallyEnded && hasEndedStatus) {
         lost.push(item)
       }
     }
