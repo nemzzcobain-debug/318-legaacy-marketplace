@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+
 export default function Error({
   error,
   reset,
@@ -7,6 +9,29 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const isVersionLoadError =
+    /ChunkLoadError|Loading chunk|dynamically imported module/i.test(error.message || '')
+
+  useEffect(() => {
+    console.error('[APP_ERROR]', error)
+
+    // Après un déploiement, un onglet déjà ouvert peut encore demander un
+    // ancien fichier JavaScript. Un seul rechargement complet réaligne toutes
+    // les ressources sans répéter une action comme une mise.
+    if (!isVersionLoadError) return
+
+    const recoveryKey = '318-version-recovery'
+    if (sessionStorage.getItem(recoveryKey) === 'done') return
+
+    sessionStorage.setItem(recoveryKey, 'done')
+    window.location.reload()
+  }, [error, isVersionLoadError])
+
+  const reloadPage = () => {
+    sessionStorage.removeItem('318-version-recovery')
+    window.location.reload()
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-black px-4">
       <div className="max-w-md w-full text-center">
@@ -34,7 +59,8 @@ export default function Error({
             Quelque chose s'est mal passé
           </h1>
           <p className="text-gray-400 text-sm">
-            Une erreur inattendue s'est produite. Notre équipe a été notifiée.
+            La page n'a pas pu se mettre à jour correctement. Ta dernière
+            action peut néanmoins avoir été enregistrée.
           </p>
         </div>
 
@@ -55,11 +81,20 @@ export default function Error({
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => reset()}
+            onClick={isVersionLoadError ? reloadPage : reset}
             className="w-full px-6 py-3 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-semibold rounded-lg transition duration-300 transform hover:scale-105"
           >
-            Réessayer
+            {isVersionLoadError ? 'Recharger la page' : 'Réessayer'}
           </button>
+
+          {!isVersionLoadError && (
+            <button
+              onClick={reloadPage}
+              className="w-full px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg transition duration-300"
+            >
+              Recharger complètement
+            </button>
+          )}
 
           <a
             href="/"
