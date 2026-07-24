@@ -56,8 +56,7 @@ interface BidItem {
 const getBidderName = (bid: BidItem) =>
   bid.user?.displayName?.trim() || bid.user?.name?.trim() || 'Enchérisseur'
 
-const getBidderInitial = (bid: BidItem) =>
-  getBidderName(bid).charAt(0).toUpperCase()
+const getBidderInitial = (bid: BidItem) => getBidderName(bid).charAt(0).toUpperCase()
 
 interface AuctionDetail {
   id: string
@@ -266,8 +265,8 @@ export default function AuctionClient() {
       if (res.ok) {
         const data = await res.json()
         setAuction(data)
-        setBidAmount((currentAmount) =>
-          currentAmount || String(data.currentBid + data.bidIncrement)
+        setBidAmount(
+          (currentAmount) => currentAmount || String(data.currentBid + data.bidIncrement)
         )
         return data as AuctionDetail
       } else if (res.status === 404) {
@@ -323,9 +322,7 @@ export default function AuctionClient() {
     }
 
     if (parsedBidAmount < minimumBid) {
-      setBidNotice(
-        `La mise minimale est de ${minimumBid} EUR. Ta mise n'a pas été envoyée.`
-      )
+      setBidNotice(`La mise minimale est de ${minimumBid} EUR. Ta mise n'a pas été envoyée.`)
       return
     }
 
@@ -403,13 +400,12 @@ export default function AuctionClient() {
       const refreshedAuction = await fetchAuction()
       const currentUserId = (session?.user as any)?.id
       const matchingBid = refreshedAuction?.bids?.some(
-        (bid) => bid.amount === parsedBidAmount && (!currentUserId || bid.user?.id === currentUserId)
+        (bid) =>
+          bid.amount === parsedBidAmount && (!currentUserId || bid.user?.id === currentUserId)
       )
 
       if (refreshedAuction && matchingBid) {
-        setBidAmount(
-          String(refreshedAuction.currentBid + refreshedAuction.bidIncrement)
-        )
+        setBidAmount(String(refreshedAuction.currentBid + refreshedAuction.bidIncrement))
         setBidSuccess(`Enchère de ${parsedBidAmount} EUR bien prise en compte !`)
         setTimeout(() => setBidSuccess(''), 5000)
       } else {
@@ -488,27 +484,35 @@ export default function AuctionClient() {
   } catch {}
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="relative min-h-screen overflow-hidden bg-[#08080a] text-white">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 top-0 h-[520px] bg-[radial-gradient(circle_at_18%_0%,rgba(225,29,72,0.16),transparent_42%),radial-gradient(circle_at_82%_8%,rgba(127,29,29,0.12),transparent_36%)]"
+      />
       <Header />
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <Breadcrumbs items={[{ label: 'Enchères', href: '/marketplace' }, { label: beat.title }]} />
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pb-16 pt-5 sm:px-6 sm:pt-8">
+        <div className="hidden sm:block">
+          <Breadcrumbs
+            items={[{ label: 'Enchères', href: '/marketplace' }, { label: beat.title }]}
+          />
+        </div>
 
         {/* Back link */}
         <Link
           href="/marketplace"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-white mb-6 transition"
+          className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-zinc-400 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white sm:mb-6"
         >
           <ArrowLeft size={14} /> Retour aux enchères
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Left: Beat Info (3 cols) */}
-          <div className="lg:col-span-3 space-y-6">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:gap-8">
+          {/* Left: Beat Info */}
+          <div className="min-w-0 space-y-5">
             {/* Beat Header */}
-            <div className="bg-[#111] border border-[#222] rounded-2xl overflow-hidden">
+            <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[#101014]/95 shadow-2xl shadow-black/30 backdrop-blur-xl">
               {/* Cover */}
-              <div className="h-48 bg-gradient-to-br from-[#1a0000] to-[#330011] flex items-center justify-center relative overflow-hidden">
+              <div className="relative flex h-56 items-center justify-center overflow-hidden bg-gradient-to-br from-[#1a0000] to-[#330011] sm:h-72">
                 {/* Cover Image */}
                 {beat.coverImage ? (
                   <Image
@@ -523,35 +527,44 @@ export default function AuctionClient() {
                   <Music size={48} className="text-red-500/20 absolute" />
                 )}
 
-                <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-md rounded-full px-3 py-1 text-xs font-semibold text-white z-10">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#101014] via-black/10 to-black/20" />
+
+                <div className="absolute left-4 top-4 z-10 rounded-full border border-white/15 bg-black/45 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur-md">
                   {beat.genre}
                 </div>
                 {isEndingSoon && (
-                  <div className="absolute top-3 right-3 bg-red-600 rounded-full px-3 py-1 text-xs font-bold text-white flex items-center gap-1 animate-pulse z-10">
-                    <AlertTriangle size={12} /> ENDING SOON
+                  <div className="absolute right-4 top-4 z-10 flex animate-pulse items-center gap-1.5 rounded-full border border-red-400/30 bg-red-600/90 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-white shadow-lg shadow-red-950/40 backdrop-blur-md">
+                    <AlertTriangle size={12} /> Fin imminente
                   </div>
                 )}
-                <div className="absolute bottom-3 left-3 flex gap-2 z-10">
-                  <span className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5 text-xs text-gray-300">
+                <div className="absolute bottom-4 left-4 z-10 flex flex-wrap gap-2">
+                  <span className="rounded-lg border border-white/10 bg-black/55 px-2.5 py-1 text-xs font-semibold text-zinc-200 backdrop-blur-md">
                     {beat.bpm} BPM
                   </span>
                   {beat.key && (
-                    <span className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5 text-xs text-gray-300">
+                    <span className="rounded-lg border border-white/10 bg-black/55 px-2.5 py-1 text-xs font-semibold text-zinc-200 backdrop-blur-md">
                       {beat.key}
                     </span>
                   )}
                   {beat.mood && (
-                    <span className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5 text-xs text-gray-300">
+                    <span className="rounded-lg border border-white/10 bg-black/55 px-2.5 py-1 text-xs font-semibold text-zinc-200 backdrop-blur-md">
                       {beat.mood}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <h1 className="text-2xl font-black text-white">{beat.title}</h1>
-                  <div className="flex items-center gap-1">
+              <div className="p-5 sm:p-7">
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="mb-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-red-400">
+                      Beat aux enchères
+                    </p>
+                    <h1 className="truncate text-2xl font-black tracking-tight text-white sm:text-3xl">
+                      {beat.title}
+                    </h1>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
                     <AddToPlaylistButton beatId={beat.id} />
                     <WatchlistButton auctionId={auction.id} />
                     <ShareButton
@@ -564,32 +577,38 @@ export default function AuctionClient() {
                 </div>
                 <Link
                   href={`/producer/${producer.id}`}
-                  className="group flex w-fit items-center gap-2 mb-4 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                  className="group mb-5 flex w-fit items-center gap-3 rounded-xl border border-transparent py-1 pr-3 transition hover:border-white/10 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                   aria-label={`Voir le profil de ${producer.displayName || producer.name}`}
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center text-xs font-bold text-white transition-transform group-hover:scale-105">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-900 text-xs font-black text-white shadow-lg shadow-red-950/40 transition-transform group-hover:scale-105">
                     {producer.name[0]}
                   </div>
-                  <span className="text-sm text-gray-300 transition-colors group-hover:text-red-400 group-hover:underline">
-                    {producer.displayName || producer.name}
-                  </span>
-                  {producer.producerStatus === 'APPROVED' && (
-                    <Shield size={14} className="text-red-500" />
-                  )}
-                  <span className="text-xs text-gray-600">({producer.totalSales} ventes)</span>
+                  <div>
+                    <span className="flex items-center gap-1.5 text-sm font-bold text-zinc-200 transition-colors group-hover:text-white">
+                      {producer.displayName || producer.name}
+                      {producer.producerStatus === 'APPROVED' && (
+                        <Shield size={13} className="text-red-500" />
+                      )}
+                    </span>
+                    <span className="block text-[11px] text-zinc-600">
+                      Beatmaker • {producer.totalSales} ventes
+                    </span>
+                  </div>
                 </Link>
 
                 {beat.description && (
-                  <p className="text-sm text-gray-400 mb-4">{beat.description}</p>
+                  <p className="mb-5 max-w-2xl text-sm leading-6 text-zinc-400">
+                    {beat.description}
+                  </p>
                 )}
 
                 {/* Tags */}
                 {parsedTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-4">
+                  <div className="mb-5 flex flex-wrap gap-1.5">
                     {parsedTags.map((tag: string) => (
                       <span
                         key={tag}
-                        className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full"
+                        className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-zinc-400"
                       >
                         #{tag}
                       </span>
@@ -598,45 +617,67 @@ export default function AuctionClient() {
                 )}
 
                 {/* Audio Player */}
-                <AudioPlayer
-                  src={beat.audioUrl}
-                  title={beat.title}
-                  producer={producer.displayName || producer.name}
-                  isPlaying={isPlaying}
-                  onPlayToggle={() => setIsPlaying(!isPlaying)}
-                  accentColor="#e11d48"
-                />
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-2 sm:p-3">
+                  <AudioPlayer
+                    src={beat.audioUrl}
+                    title={beat.title}
+                    producer={producer.displayName || producer.name}
+                    isPlaying={isPlaying}
+                    onPlayToggle={() => setIsPlaying(!isPlaying)}
+                    accentColor="#e11d48"
+                  />
+                </div>
               </div>
-            </div>
+            </section>
 
             {/* Bid History */}
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <TrendingUp size={18} className="text-red-500" /> Historique des enchères
-              </h3>
+            <section className="rounded-[24px] border border-white/10 bg-[#101014]/90 p-4 shadow-xl shadow-black/20 backdrop-blur-xl sm:p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-base font-black text-white sm:text-lg">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-500/10 text-red-400">
+                    <TrendingUp size={16} />
+                  </span>
+                  Historique des enchères
+                </h2>
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-bold text-zinc-400">
+                  {auction.totalBids} mise{auction.totalBids !== 1 ? 's' : ''}
+                </span>
+              </div>
               {auction.bids.length > 0 ? (
-                <div className="space-y-2 max-h-80 overflow-y-auto">
+                <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
                   {auction.bids.map((bid, i) => (
                     <div
                       key={bid.id}
-                      className={`flex items-center justify-between p-3 rounded-xl ${i === 0 ? 'bg-red-500/10 border border-red-500/20' : 'bg-white/[0.02]'}`}
+                      className={`flex items-center justify-between gap-3 rounded-2xl border p-3.5 transition ${
+                        i === 0
+                          ? 'border-red-500/25 bg-gradient-to-r from-red-500/10 to-transparent'
+                          : 'border-transparent bg-white/[0.025] hover:border-white/10 hover:bg-white/[0.04]'
+                      }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-[10px] font-bold text-white">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black text-white ${
+                            i === 0
+                              ? 'bg-gradient-to-br from-red-500 to-red-900 shadow-lg shadow-red-950/30'
+                              : 'bg-gradient-to-br from-zinc-700 to-zinc-900'
+                          }`}
+                        >
                           {getBidderInitial(bid)}
                         </div>
-                        <div>
-                          <span className="text-sm text-white font-semibold">
+                        <div className="min-w-0">
+                          <span className="block truncate text-sm font-bold text-white">
                             {getBidderName(bid)}
                           </span>
                           {i === 0 && (
-                            <span className="ml-2 text-[10px] text-red-400 font-bold">LEADER</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.16em] text-red-400">
+                              En tête
+                            </span>
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-sm font-bold text-white">{bid.amount} EUR</span>
-                        <span className="block text-[10px] text-gray-500">
+                      <div className="shrink-0 text-right">
+                        <span className="text-sm font-black text-white">{bid.amount} EUR</span>
+                        <span className="block text-[10px] text-zinc-600">
                           {bid.licenseType || auction.licenseType} •{' '}
                           {new Date(bid.createdAt).toLocaleTimeString('fr-FR')}
                         </span>
@@ -645,33 +686,50 @@ export default function AuctionClient() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-sm text-center py-6">
+                <p className="rounded-2xl border border-dashed border-white/10 py-8 text-center text-sm text-zinc-500">
                   Aucune enchère pour le moment. Sois le premier !
                 </p>
               )}
-            </div>
+            </section>
           </div>
 
-          {/* Right: Bid Panel (2 cols) */}
-          <div className="lg:col-span-2 space-y-4">
+          {/* Right: Bid Panel */}
+          <aside className="space-y-4 lg:sticky lg:top-24">
             {/* Auction Status Card */}
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 sticky top-20">
+            <div className="overflow-hidden rounded-[28px] border border-red-500/20 bg-gradient-to-b from-[#171116] to-[#0e0e12] p-4 shadow-2xl shadow-red-950/15 sm:p-5">
               {/* Realtime indicator */}
-              <div className="flex items-center justify-end gap-1.5 mb-2">
-                <Wifi size={10} className="text-green-400" />
-                <span className="text-[10px] text-green-400 font-medium">Temps reel</span>
+              <div className="mb-4 flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                  Vente aux enchères
+                </span>
+                <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                  <Wifi size={10} className="text-emerald-400" />
+                  <span className="text-[9px] font-black uppercase tracking-wide text-emerald-400">
+                    En direct
+                  </span>
+                </div>
               </div>
 
               {/* Timer */}
               <div
-                className={`flex items-center justify-between mb-4 p-3 rounded-xl ${isEndingCritical(realtimeState.timeLeft) ? 'bg-red-600/10 border border-red-600/30 animate-pulse' : 'bg-white/[0.03] border border-[#222]'}`}
+                className={`mb-3 flex items-center justify-between rounded-2xl border p-3.5 ${
+                  isEndingCritical(realtimeState.timeLeft)
+                    ? 'animate-pulse border-red-500/40 bg-red-600/10'
+                    : 'border-white/10 bg-black/20'
+                }`}
               >
-                <span className="text-sm text-gray-400 flex items-center gap-1">
-                  <Clock size={14} /> {isActive ? 'Fin dans' : 'Terminee'}
+                <span className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.05]">
+                    <Clock size={14} />
+                  </span>
+                  {isActive ? 'Temps restant' : 'Terminée'}
                 </span>
                 {isActive && (
                   <span
-                    className={`text-lg font-mono font-bold ${isEndingCritical(realtimeState.timeLeft) ? 'text-red-500' : 'text-white'}`}
+                    className={`font-mono text-lg font-black tracking-tight ${
+                      isEndingCritical(realtimeState.timeLeft) ? 'text-red-400' : 'text-white'
+                    }`}
                   >
                     {formatTimeLeft(realtimeState.timeLeft)}
                   </span>
@@ -679,13 +737,17 @@ export default function AuctionClient() {
               </div>
 
               {/* Current Bid */}
-              <div className="text-center mb-5">
-                <p className="text-xs text-gray-500 mb-1">Enchere actuelle</p>
-                <p className="text-4xl font-black text-red-500">
-                  {auction.currentBid} <span className="text-lg">EUR</span>
+              <div className="mb-4 rounded-2xl border border-red-500/15 bg-[radial-gradient(circle_at_50%_0%,rgba(225,29,72,0.16),transparent_70%)] px-4 py-5 text-center">
+                <p className="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">
+                  Enchère actuelle
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {auction.totalBids} enchères • Début à {auction.startPrice} EUR
+                <p className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                  {auction.currentBid}
+                  <span className="ml-1.5 text-base font-bold text-red-400">EUR</span>
+                </p>
+                <p className="mt-2 text-[11px] text-zinc-500">
+                  {auction.totalBids} enchère{auction.totalBids !== 1 ? 's' : ''} • Prix de départ{' '}
+                  {auction.startPrice} EUR
                 </p>
               </div>
 
@@ -693,53 +755,67 @@ export default function AuctionClient() {
               {isActive && (
                 <>
                   {/* Licence définie par le beatmaker */}
-                  <div className="mb-4 bg-[#0a0a0a] border border-[#222] rounded-xl p-3">
-                    <p className="text-xs font-bold text-red-400 mb-1">
-                      Licence {license.name} définie par le beatmaker
-                    </p>
-                    <p className="text-[10px] text-gray-500">{license.rights}</p>
+                  <div className="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3.5">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-400">
+                      <Shield size={17} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-black text-white">Licence {license.name}</p>
+                      <p className="mt-0.5 text-[10px] leading-4 text-zinc-500">{license.rights}</p>
+                    </div>
                   </div>
 
                   {/* Bid Amount */}
                   <div className="mb-4">
-                    <p className="text-xs text-gray-400 mb-2">Ton enchère (EUR)</p>
+                    <div className="mb-2 flex items-end justify-between gap-3">
+                      <label htmlFor="bid-amount" className="text-xs font-bold text-zinc-300">
+                        Ton enchère
+                      </label>
+                      <span className="text-[10px] text-zinc-600">
+                        Minimum {auction.currentBid + auction.bidIncrement} EUR
+                      </span>
+                    </div>
                     <div className="relative">
                       <input
+                        id="bid-amount"
                         type="number"
                         value={bidAmount}
                         onChange={(e) => setBidAmount(e.target.value)}
                         min={auction.currentBid + auction.bidIncrement}
                         step="0.01"
                         aria-label="Montant de ton enchère"
-                        className="w-full bg-[#0a0a0a] border border-[#222] rounded-xl px-4 py-3 text-white text-lg font-bold outline-none focus:border-red-500 transition"
+                        className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 pr-14 text-xl font-black text-white outline-none transition placeholder:text-zinc-700 focus:border-red-500/70 focus:ring-4 focus:ring-red-500/10"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                        minimum {auction.currentBid + auction.bidIncrement} EUR
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-500">
+                        EUR
                       </span>
                     </div>
                   </div>
 
                   {/* Anti-snipe info */}
-                  <div className="bg-white/[0.02] border border-[#222] rounded-xl p-3 mb-4">
-                    <p className="text-[10px] text-gray-500 flex items-center gap-1">
-                      <Zap size={10} className="text-red-500" /> Anti-snipe actif : si tu enchéris
-                      dans les {auction.antiSnipeMinutes} dernières minutes, le temps est prolonge
+                  <div className="mb-4 rounded-xl border border-white/5 bg-white/[0.02] p-3">
+                    <p className="flex items-start gap-2 text-[10px] leading-4 text-zinc-500">
+                      <Zap size={12} className="mt-0.5 shrink-0 text-red-500" />
+                      <span>
+                        Protection anti-snipe : une mise dans les {auction.antiSnipeMinutes}{' '}
+                        dernières minutes prolonge automatiquement l&apos;enchère.
+                      </span>
                     </p>
                   </div>
 
                   {/* Error / Success */}
                   {bidNotice && (
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3 text-amber-300 text-sm">
+                    <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-300">
                       {bidNotice}
                     </div>
                   )}
                   {bidError && (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-3 text-red-400 text-sm">
+                    <div className="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
                       {bidError}
                     </div>
                   )}
                   {bidSuccess && (
-                    <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 mb-3 text-green-400 text-sm">
+                    <div className="mb-3 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-400">
                       {bidSuccess}
                     </div>
                   )}
@@ -747,7 +823,9 @@ export default function AuctionClient() {
                   {/* Guest email form for bidding */}
                   {!session && showGuestBidForm && (
                     <div className="mb-3 p-3 rounded-xl bg-[#1a1a2e] border border-[#2e2e4e]">
-                      <p className="text-xs text-gray-400 mb-2">Entre ton email pour enchérir en tant qu&apos;invité :</p>
+                      <p className="text-xs text-gray-400 mb-2">
+                        Entre ton email pour enchérir en tant qu&apos;invité :
+                      </p>
                       <input
                         type="email"
                         value={guestEmail}
@@ -755,7 +833,9 @@ export default function AuctionClient() {
                         placeholder="ton@email.com"
                         className="w-full px-3 py-2 rounded-lg bg-[#0a0a0f] border border-[#2e2e4e] text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#e11d48]"
                       />
-                      <p className="text-[10px] text-gray-500 mt-1">Un compte sera créé automatiquement avec cet email.</p>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        Un compte sera créé automatiquement avec cet email.
+                      </p>
                     </div>
                   )}
 
@@ -763,10 +843,14 @@ export default function AuctionClient() {
                   <button
                     onClick={placeBid}
                     disabled={bidding}
-                    className="w-full py-4 rounded-xl font-bold text-white text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 bg-gradient-to-r from-red-600 to-red-800"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#f20d46] to-[#c70b35] py-4 text-base font-black text-white shadow-lg shadow-red-950/35 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-red-950/50 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Gavel size={20} />
-                    {bidding ? 'Enchere en cours...' : !session && !showGuestBidForm ? `Enchérir en tant qu'invité` : `Encherir ${bidAmount} EUR`}
+                    {bidding
+                      ? 'Enchère en cours...'
+                      : !session && !showGuestBidForm
+                        ? `Enchérir en tant qu'invité`
+                        : `Enchérir à ${bidAmount} EUR`}
                   </button>
 
                   {/* Buy Now Button */}
@@ -785,7 +869,7 @@ export default function AuctionClient() {
                           <button
                             onClick={buyNow}
                             disabled={buyingNow}
-                            className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 bg-gradient-to-r from-amber-400 to-amber-500"
+                            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-400/25 bg-amber-400/10 py-3.5 text-sm font-black text-amber-300 transition hover:bg-amber-400/15 disabled:opacity-50"
                           >
                             {buyingNow ? (
                               <>
@@ -853,8 +937,7 @@ export default function AuctionClient() {
                 (() => {
                   const userId = session?.user?.id ?? null
                   const isWinner = userId && auction.winnerId === userId
-                  const isParticipant =
-                    userId && auction.bids.some((b) => b.user?.id === userId)
+                  const isParticipant = userId && auction.bids.some((b) => b.user?.id === userId)
                   const isPaid = !!auction.paidAt
                   const winnerName = auction.winner
                     ? auction.winner.displayName || auction.winner.name
@@ -1009,10 +1092,12 @@ export default function AuctionClient() {
                   )
                 })()}
             </div>
-          </div>
+          </aside>
         </div>
 
-        <SimilarBeats auctionId={auction.id} />
+        <div className="mt-10">
+          <SimilarBeats auctionId={auction.id} />
+        </div>
       </main>
     </div>
   )
