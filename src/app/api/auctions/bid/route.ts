@@ -135,7 +135,14 @@ export async function POST(request: Request) {
       // BUG FIX 6: Re-lire l'enchère dans la transaction pour eviter la race condition
       const freshAuction = await tx.auction.findUnique({
         where: { id: auctionId },
-        select: { currentBid: true, bidIncrement: true, status: true, endTime: true },
+        select: {
+          currentBid: true,
+          bidIncrement: true,
+          status: true,
+          endTime: true,
+          antiSnipeMinutes: true,
+          antiSnipeExtension: true,
+        },
       })
       if (!freshAuction) throw new Error('Enchere introuvable')
       if (freshAuction.status !== 'ACTIVE' && freshAuction.status !== 'ENDING_SOON') {
@@ -145,9 +152,7 @@ export async function POST(request: Request) {
         throw new Error('Cette enchère est terminée')
       }
       if (amount < freshAuction.currentBid + freshAuction.bidIncrement) {
-        throw new Error(
-          `BID_TOO_LOW:${freshAuction.currentBid + freshAuction.bidIncrement}`
-        )
+        throw new Error(`BID_TOO_LOW:${freshAuction.currentBid + freshAuction.bidIncrement}`)
       }
 
       // Creer le bid
@@ -163,20 +168,36 @@ export async function POST(request: Request) {
         },
       })
 
-      // Mettre a jour l'enchère
-      const updatedAuction = await tx.auction.update({
-        where: { id: auctionId },
+      const millisecondsRemaining = freshAuction.endTime.getTime() - Date.now()
+      const extendedEndTime =
+        millisecondsRemaining < freshAuction.antiSnipeMinutes * 60000
+          ? new Date(freshAuction.endTime.getTime() + freshAuction.antiSnipeExtension * 60000)
+          : freshAuction.endTime
+
+      // Mise à jour optimiste : si le cron ou une autre mise a changé
+      // l'enchère depuis la relecture, toute la transaction est annulée.
+      const updateResult = await tx.auction.updateMany({
+        where: {
+          id: auctionId,
+          currentBid: freshAuction.currentBid,
+          status: { in: ['ACTIVE', 'ENDING_SOON'] },
+          endTime: freshAuction.endTime,
+        },
         data: {
           currentBid: amount,
           totalBids: { increment: 1 },
-          // Anti-snipe: si l'enchère est dans les 2 dernières minutes, on ajoute du temps
-          endTime:
-            auction.endTime.getTime() - Date.now() < auction.antiSnipeMinutes * 60000
-              ? new Date(auction.endTime.getTime() + auction.antiSnipeExtension * 60000)
-              : auction.endTime,
+          endTime: extendedEndTime,
           // Mettre en ENDING_SOON si moins de 10 min
-          status: auction.endTime.getTime() - Date.now() < 600000 ? 'ENDING_SOON' : auction.status,
+          status: millisecondsRemaining < 600000 ? 'ENDING_SOON' : freshAuction.status,
         },
+      })
+
+      if (updateResult.count === 0) {
+        throw new Error('AUCTION_CHANGED')
+      }
+
+      const updatedAuction = await tx.auction.findUniqueOrThrow({
+        where: { id: auctionId },
       })
 
       // Notifier le précédent enchérisseur qu'il a été surenchéri
@@ -212,7 +233,10 @@ export async function POST(request: Request) {
           select: { email: true, name: true, displayName: true },
         })
         if (prevUser?.email) {
-          outbidEmailData = { email: prevUser.email, name: prevUser.displayName || prevUser.name || '' }
+          outbidEmailData = {
+            email: prevUser.email,
+            name: prevUser.displayName || prevUser.name || '',
+          }
         }
       }
 
@@ -233,11 +257,21 @@ export async function POST(request: Request) {
 
     // Email admin pour chaque nouvelle enchere
     try {
-      const bidAdmins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { email: true } })
+      const bidAdmins = await prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { email: true },
+      })
       const bidderName = (session?.user as any)?.name || 'Encherisseur'
       for (const a of bidAdmins) {
         if (a.email) {
-          sendAdminNewBidEmail({ adminEmail: a.email, bidderName, beatTitle: auction.beat.title, amount, licenseType, auctionId }).catch((err) => console.error('Email admin bid echoue:', err))
+          sendAdminNewBidEmail({
+            adminEmail: a.email,
+            bidderName,
+            beatTitle: auction.beat.title,
+            amount,
+            licenseType,
+            auctionId,
+          }).catch((err) => console.error('Email admin bid echoue:', err))
         }
       }
     } catch (e) {
@@ -263,6 +297,15 @@ export async function POST(request: Request) {
           error: `La mise minimale est maintenant de ${minimumBid} EUR`,
           code: 'BID_TOO_LOW',
           minimumBid,
+        },
+        { status: 409 }
+      )
+    }
+    if (msg.includes('AUCTION_CHANGED')) {
+      return NextResponse.json(
+        {
+          error: "L'enchère vient d'être mise à jour. Réessaie avec le nouveau montant.",
+          code: 'AUCTION_CHANGED',
         },
         { status: 409 }
       )
