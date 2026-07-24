@@ -129,6 +129,8 @@ export default function AdminPage() {
   const [allBeats, setAllBeats] = useState<any[]>([])
   const [beatsPagination, setBeatsPagination] = useState({ page: 1, total: 0, totalPages: 0 })
   const [beatsFilter, setBeatsFilter] = useState('')
+  const [beatStatusFilter, setBeatStatusFilter] = useState('')
+  const [reviewingBeatId, setReviewingBeatId] = useState<string | null>(null)
   const [playingBeatId, setPlayingBeatId] = useState<string | null>(null)
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null)
   const [beatSearch, setBeatSearch] = useState('')
@@ -263,6 +265,7 @@ export default function AdminPage() {
       const params = new URLSearchParams({ page: String(page), limit: '20' })
       if (search) params.set('search', search)
       if (beatsFilter) params.set('genre', beatsFilter)
+      if (beatStatusFilter) params.set('status', beatStatusFilter)
       const res = await fetch(`/api/admin/beats?${params}`)
       if (res.ok) {
         const data = await res.json()
@@ -272,7 +275,35 @@ export default function AdminPage() {
     } catch (e) {
       console.error(e)
     }
-  }, [search, beatsFilter])
+  }, [search, beatsFilter, beatStatusFilter])
+
+  const reviewBeat = async (beatId: string, action: 'APPROVE' | 'REJECT') => {
+    let reason = ''
+    if (action === 'REJECT') {
+      reason = window.prompt('Indique le motif du refus pour le beatmaker :')?.trim() || ''
+      if (!reason) return
+    }
+
+    setReviewingBeatId(beatId)
+    try {
+      const res = await fetch('/api/admin/beats', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ beatId, action, reason }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        window.alert(data.error || 'Impossible de traiter ce beat')
+        return
+      }
+      await fetchAllBeats(beatsPagination.page)
+      fetchStats()
+    } catch {
+      window.alert('Erreur de connexion')
+    } finally {
+      setReviewingBeatId(null)
+    }
+  }
 
   const fetchFeatured = useCallback(async () => {
     try {
@@ -961,6 +992,17 @@ export default function AdminPage() {
                   <option key={g} value={g}>{g}</option>
                 ))}
               </select>
+              <select
+                value={beatStatusFilter}
+                onChange={(e) => setBeatStatusFilter(e.target.value)}
+                className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+              >
+                <option value="">Tous les statuts</option>
+                <option value="PENDING">À valider</option>
+                <option value="ACTIVE">En ligne</option>
+                <option value="REJECTED">Refusés</option>
+                <option value="SOLD">Vendus</option>
+              </select>
               <button
                 onClick={() => fetchAllBeats(1)}
                 className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-lg transition"
@@ -1022,6 +1064,24 @@ export default function AdminPage() {
                         }`}>
                           {beat.status}
                         </span>
+                        {beat.status === 'PENDING' && (
+                          <>
+                            <button
+                              disabled={reviewingBeatId === beat.id}
+                              onClick={() => reviewBeat(beat.id, 'APPROVE')}
+                              className="px-3 py-1 text-xs font-bold rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 disabled:opacity-50"
+                            >
+                              Approuver
+                            </button>
+                            <button
+                              disabled={reviewingBeatId === beat.id}
+                              onClick={() => reviewBeat(beat.id, 'REJECT')}
+                              className="px-3 py-1 text-xs font-bold rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 disabled:opacity-50"
+                            >
+                              Refuser
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); toggleFeatured(beat.id, beat.isFeatured) }}
                           className={`px-3 py-1 text-xs font-bold rounded transition ${
