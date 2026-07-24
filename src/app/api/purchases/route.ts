@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
       where: {
         winnerId: userId,
         status: { in: ['ENDED', 'COMPLETED'] },
+        endTime: { lte: new Date() },
         paidAt: null,
       },
       orderBy: { endTime: 'desc' },
