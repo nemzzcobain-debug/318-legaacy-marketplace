@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { getBPMResponse, WHATSAPP_LINK, type BPMResponse } from '@/lib/bpm-knowledge'
 
 // ─── Types ───
@@ -105,6 +106,16 @@ function BPMLogo({ size = 48, pulse = false }: { size?: number; pulse?: boolean 
 
 // ─── Main Chatbot Component ───
 export default function BPMChatbot() {
+  const pathname = usePathname()
+  const hideOnMobile = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/producers/upload',
+    '/profile/edit',
+    '/checkout',
+  ].some((route) => pathname.startsWith(route))
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -251,6 +262,8 @@ export default function BPMChatbot() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`fixed z-50 transition-all duration-300 shadow-2xl hover:scale-110 active:scale-95 ${
+          hideOnMobile ? 'hidden sm:flex' : 'flex'
+        } ${
           isOpen
             ? 'bottom-[440px] sm:bottom-[520px] right-4 sm:right-6'
             : 'bottom-4 sm:bottom-6 right-4 sm:right-6'
@@ -260,7 +273,6 @@ export default function BPMChatbot() {
           borderRadius: '50%',
           width: 64,
           height: 64,
-          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           border: '2px solid #e11d48',
@@ -281,7 +293,9 @@ export default function BPMChatbot() {
       {/* ─── Chat Window ─── */}
       {isOpen && (
         <div
-          className="fixed z-40 bottom-4 sm:bottom-6 right-4 sm:right-6 flex flex-col overflow-hidden"
+          className={`fixed z-40 bottom-4 sm:bottom-6 right-4 sm:right-6 flex-col overflow-hidden ${
+            hideOnMobile ? 'hidden sm:flex' : 'flex'
+          }`}
           style={{
             width: 'min(380px, calc(100vw - 32px))',
             height: 'min(480px, calc(100vh - 120px))',
