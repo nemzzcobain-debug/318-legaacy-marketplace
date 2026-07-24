@@ -670,7 +670,7 @@ async function sendEmail(to: string, subject: string, html: string) {
 export async function sendAdminNewBeatEmail(params: { adminEmail: string; producerName: string; beatTitle: string; genre: string; bpm: number | string }) {
   const { adminEmail, producerName, beatTitle, genre, bpm } = params
   const html = emailLayout('<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouveau beat publié</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' + producerName + '</strong> a publié <strong style="color:#fff;">' + beatTitle + '</strong> (' + genre + ', ' + bpm + ' BPM).</p>' + button("Voir dans l'admin", PLATFORM_URL + '/admin?tab=beats'))
-  return sendEmail(adminEmail, 'Nouveau beat - ' + beatTitle, html)
+  sendNtfy('Nouveau beat', producerName + ' a publie ' + beatTitle).catch(() => {}); return sendEmail(adminEmail, 'Nouveau beat - ' + beatTitle, html)
 }
 
 export async function sendAdminNewBidEmail(params: { adminEmail: string; bidderName: string; beatTitle: string; amount: number | string; licenseType: string; auctionId: string }) {
