@@ -48,7 +48,8 @@ const redis = hasUpstash
 // Rate limiters par type de route (F8 + F13)
 const rateLimiters = redis ? {
   login: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, '15 m'), prefix: 'rl:login' }),
-  register: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(3, '1 h'), prefix: 'rl:register' }),
+  // Limite volontairement quasi illimitée pendant la phase de test.
+  register: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10000, '1 h'), prefix: 'rl:register' }),
   bid: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(20, '1 m'), prefix: 'rl:bid' }),
   upload: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, '5 m'), prefix: 'rl:upload' }),
   webhook: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(200, '1 m'), prefix: 'rl:webhook' }),
@@ -63,7 +64,7 @@ const inMemoryMap = new Map<string, { count: number; resetTime: number }>()
 
 const LIMITS: Record<string, { max: number; window: number }> = {
   login:    { max: 5,   window: 15 * 60 * 1000 },
-  register: { max: 3,   window: 60 * 60 * 1000 },
+  register: { max: 10000, window: 60 * 60 * 1000 },
   bid:      { max: 20,  window: 60 * 1000 },
   upload:   { max: 10,  window: 5 * 60 * 1000 },
   webhook:  { max: 200, window: 60 * 1000 },
@@ -101,6 +102,8 @@ type RouteType = 'login' | 'register' | 'bid' | 'upload' | 'webhook' | 'admin' |
 function getRouteType(pathname: string, method: string): RouteType {
   if (pathname.startsWith('/api/stripe/webhook') || pathname.startsWith('/api/payments/webhook')) return 'webhook'
   if (pathname === '/api/auth/callback/credentials' && method === 'POST') return 'login'
+  // Les tentatives d'inscription ont une limite quasi illimitée pendant les
+  // tests : une erreur de formulaire ne bloque plus l'utilisateur.
   if (pathname.startsWith('/api/auth/register') && method === 'POST') return 'register'
   if (pathname.includes('/bid') && method === 'POST') return 'bid'
   if (pathname.includes('/upload') || pathname.includes('/beats/upload')) return 'upload'
