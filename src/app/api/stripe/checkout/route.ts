@@ -39,8 +39,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Enchere non trouvee' }, { status: 404 })
     }
 
-    // Vérifier que l'enchère est terminée
-    if (auction.status !== 'ENDED' && auction.status !== 'COMPLETED') {
+    // Vérifier le statut ET la date. Cela bloque tout paiement prématuré si
+    // une prolongation et le cron de finalisation se croisent.
+    const hasEndedStatus = auction.status === 'ENDED' || auction.status === 'COMPLETED'
+    if (!hasEndedStatus || auction.endTime > new Date()) {
       return NextResponse.json(
         { error: "Cette enchère n'est pas encore terminée" },
         { status: 400 }
