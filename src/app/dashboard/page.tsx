@@ -1308,7 +1308,7 @@ function ProducerDashboard({ session }: { session: any }) {
                           {auction.finalPrice}&euro;
                         </div>
                         <div className="text-[10px] text-gray-600">
-                          Payout : {auction.producerPayout}&euro;
+                          Montant net producteur : {auction.producerPayout}&euro;
                           {auction.paidAt ? ' &middot; Payé' : ' &middot; En attente'}
                         </div>
                       </div>
