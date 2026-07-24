@@ -127,6 +127,24 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    if (enableAuction) {
+      if (!['BASIC', 'PREMIUM', 'EXCLUSIVE'].includes(licenseType)) {
+        return NextResponse.json({ error: 'Licence d’enchère invalide' }, { status: 400 })
+      }
+      if (licenseType === 'PREMIUM' && !wavUrl) {
+        return NextResponse.json(
+          { error: 'Ajoute le fichier WAV pour une enchère Premium' },
+          { status: 400 }
+        )
+      }
+      if (licenseType === 'EXCLUSIVE' && (!parsedStems || parsedStems.length === 0)) {
+        return NextResponse.json(
+          { error: 'Ajoute les stems pour une enchère Exclusive' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Création de l'entrée beat dans la base de données
     const beat = await prisma.beat.create({
       data: {
