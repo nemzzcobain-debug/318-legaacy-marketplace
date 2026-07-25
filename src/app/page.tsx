@@ -353,7 +353,7 @@ function QuickBidForm({
     return (
       <div
         data-quick-bid
-        className="mt-4 flex h-11 items-center justify-center rounded-xl border border-white/5 bg-black/20"
+        className="mt-4 flex h-11 items-center justify-center rounded-xl border border-white/5 bg-black/20 lg:mt-0 lg:w-[300px]"
       >
         <Loader2 size={15} className="animate-spin text-gray-600" />
       </div>
@@ -369,7 +369,7 @@ function QuickBidForm({
           event.stopPropagation()
           onLogin()
         }}
-        className="mt-4 w-full rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-black text-red-400 transition hover:bg-red-500/10"
+        className="mt-4 w-full rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-black text-red-400 transition hover:bg-red-500/10 lg:mt-0 lg:w-[300px]"
       >
         Se connecter pour enchérir
       </button>
@@ -380,7 +380,7 @@ function QuickBidForm({
     <div
       data-quick-bid
       onClick={(event) => event.stopPropagation()}
-      className="mt-4 rounded-2xl border border-white/[0.08] bg-black/25 p-3"
+      className="mt-4 rounded-2xl border border-white/[0.08] bg-black/25 p-3 lg:mt-0 lg:w-[300px]"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-[9px] font-black uppercase tracking-[0.14em] text-gray-600">
@@ -912,12 +912,19 @@ export default function Home() {
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d0d10]">
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="bg-[#111] rounded-2xl h-72 animate-pulse border border-[#222]"
-                  />
+                    className="flex animate-pulse items-center gap-4 border-b border-white/[0.06] p-4 last:border-b-0"
+                  >
+                    <div className="h-20 w-20 shrink-0 rounded-2xl bg-white/[0.06]" />
+                    <div className="flex-1 space-y-3">
+                      <div className="h-4 w-1/3 rounded bg-white/[0.08]" />
+                      <div className="h-3 w-1/2 rounded bg-white/[0.05]" />
+                    </div>
+                    <div className="hidden h-11 w-[300px] rounded-xl bg-white/[0.06] lg:block" />
+                  </div>
                 ))}
               </div>
             ) : auctions.length === 0 ? (
@@ -927,8 +934,17 @@ export default function Home() {
                 <p className="text-gray-600 text-sm mt-1">{t('liveAuctions.comingSoon')}</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {auctions.map((auction) => (
+              <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d0d10] shadow-2xl shadow-black/30">
+                <div className="hidden grid-cols-[76px_minmax(180px,1fr)_105px_95px_135px_300px] items-center gap-4 border-b border-white/[0.08] bg-white/[0.025] px-4 py-3 text-[9px] font-black uppercase tracking-[0.15em] text-gray-600 lg:grid">
+                  <span>Lot</span>
+                  <span>Instrumentale</span>
+                  <span>Prix actuel</span>
+                  <span>Mises</span>
+                  <span>Fin de vente</span>
+                  <span>Votre enchère</span>
+                </div>
+
+                {auctions.map((auction, index) => (
                   <div
                     key={auction.id}
                     onClick={(e) => {
@@ -939,101 +955,121 @@ export default function Home() {
                       }
                       router.push(`/auction/${auction.id}`)
                     }}
-                    className="group relative bg-[#111] rounded-2xl border border-[#1e1e2e] hover:border-red-500/30 transition-all hover:-translate-y-1 duration-300 cursor-pointer"
+                    className="group relative cursor-pointer border-b border-white/[0.07] p-4 transition duration-300 last:border-b-0 hover:bg-white/[0.025] lg:grid lg:grid-cols-[76px_minmax(180px,1fr)_105px_95px_135px_300px] lg:items-center lg:gap-4"
                   >
-                    {/* Cover + Play button wrapper */}
-                    <div className="relative">
-                      <div className="relative h-28 bg-gradient-to-br from-[#1a0a2e] via-[#111] to-[#0a0a1a] overflow-hidden rounded-t-2xl">
+                    <div className="flex gap-3 lg:contents">
+                      {/* Cover du lot */}
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a0a2e] via-[#111] to-[#0a0a1a] lg:h-[76px] lg:w-[76px]">
                         {auction.beat.coverImage && (
                           <Image
                             src={auction.beat.coverImage}
                             alt={auction.beat.title}
                             fill
-                            className="absolute inset-0 object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-500"
+                            className="absolute inset-0 object-cover opacity-75 transition duration-500 group-hover:scale-105 group-hover:opacity-90"
                           />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/50 to-transparent" />
+                        <div className="absolute inset-0 bg-black/20" />
+                        <span className="absolute left-2 top-2 rounded-md bg-black/65 px-1.5 py-0.5 text-[8px] font-black text-gray-300 backdrop-blur">
+                          #{String(index + 1).padStart(2, '0')}
+                        </span>
+                        <button
+                          data-play-btn
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            togglePlay(auction.id, auction.beat.audioUrl)
+                          }}
+                          aria-label={
+                            playingId === auction.id
+                              ? `Mettre ${auction.beat.title} en pause`
+                              : `Écouter ${auction.beat.title}`
+                          }
+                          className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white text-black shadow-xl transition hover:scale-105"
+                        >
+                          {playingId === auction.id ? (
+                            <Pause size={14} fill="currentColor" />
+                          ) : (
+                            <Play size={14} className="ml-0.5" fill="currentColor" />
+                          )}
+                        </button>
+                      </div>
 
-                        <div className="absolute top-3 right-3">
+                      {/* Informations principales */}
+                      <div className="min-w-0 self-center">
+                        <div className="flex items-center gap-2">
+                          <h3 className="truncate text-base font-black text-white transition group-hover:text-red-400">
+                            {auction.beat.title}
+                          </h3>
+                          <WaveformVisual active={playingId === auction.id} />
+                        </div>
+                        <p className="mt-1 truncate text-xs font-medium text-gray-500">
+                          {auction.beat.producer.displayName || auction.beat.producer.name}
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <span className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-gray-500">
+                            {auction.beat.genre}
+                          </span>
+                          <span className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-gray-500">
+                            {auction.beat.bpm} BPM
+                          </span>
+                          {auction.beat.key && (
+                            <span className="hidden rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-gray-500 sm:inline-flex">
+                              {auction.beat.key}
+                            </span>
+                          )}
                           <span
-                            className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${licenseColors[auction.licenseType] || licenseColors.BASIC}`}
+                            className={`rounded-full border px-2 py-1 text-[9px] font-black ${licenseColors[auction.licenseType] || licenseColors.BASIC}`}
                           >
                             {auction.licenseType}
                           </span>
                         </div>
-
-                        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1">
-                          <Timer size={11} className="text-red-500" />
-                          <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
-                        </div>
-                      </div>
-
-                      {/* Play button - outside overflow-hidden */}
-                      <div
-                        data-play-btn
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          togglePlay(auction.id, auction.beat.audioUrl)
-                        }}
-                        className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-red-900/40 hover:scale-110 transition-transform z-20 border-4 border-[#111] cursor-pointer"
-                        style={{ background: 'linear-gradient(135deg, #e11d48 0%, #9f1239 100%)' }}
-                      >
-                        {playingId === auction.id ? (
-                          <Pause size={18} className="text-white" fill="white" />
-                        ) : (
-                          <Play size={18} className="text-white ml-0.5" fill="white" />
-                        )}
                       </div>
                     </div>
 
-                    <div className="px-5 pt-10 pb-5">
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <h3 className="text-white font-extrabold text-base truncate group-hover:text-red-400 transition-colors">
-                          {auction.beat.title}
-                        </h3>
-                        <WaveformVisual active={playingId === auction.id} />
-                      </div>
-                      <p className="text-gray-500 text-xs text-center mb-4">
-                        {auction.beat.producer.displayName || auction.beat.producer.name} ·{' '}
-                        {auction.beat.bpm} BPM{auction.beat.key ? ` · ${auction.beat.key}` : ''}
-                      </p>
-
-                      <div className="flex items-center justify-center gap-2 mb-4">
-                        <span className="text-[10px] font-bold text-gray-500 bg-white/5 rounded-full px-3 py-1">
-                          {auction.beat.genre}
+                    {/* Chiffres de la vente */}
+                    <div className="mt-4 grid grid-cols-3 rounded-2xl border border-white/[0.06] bg-black/20 p-3 lg:contents">
+                      <div>
+                        <span className="text-[8px] font-black uppercase tracking-wider text-gray-600 lg:hidden">
+                          Prix actuel
+                        </span>
+                        <div className="mt-0.5 text-xl font-black text-white lg:mt-0">
+                          {auction.currentBid}
+                          <span className="ml-0.5 text-xs text-red-400">€</span>
+                        </div>
+                        <span className="text-[9px] text-gray-600">
+                          Départ {auction.startPrice}€
                         </span>
                       </div>
 
-                      <div className="flex items-end justify-between pt-3 border-t border-[#1e1e2e]">
-                        <div>
-                          <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
-                            {t('liveAuctions.currentBid')}
-                          </span>
-                          <div className="text-2xl font-black text-white">
-                            {auction.currentBid}&euro;
-                          </div>
+                      <div className="border-l border-white/[0.06] pl-3 lg:border-0 lg:pl-0">
+                        <span className="text-[8px] font-black uppercase tracking-wider text-gray-600 lg:hidden">
+                          Mises
+                        </span>
+                        <div className="mt-1 flex items-center gap-1 text-sm font-black text-gray-300 lg:mt-0">
+                          <Gavel size={13} className="text-red-400" />
+                          {auction.totalBids}
                         </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <Gavel size={11} /> {auction.totalBids}{' '}
-                            {auction.totalBids > 1 ? t('liveAuctions.bids') : t('liveAuctions.bid')}
-                          </div>
-                          <div className="text-[10px] text-gray-600 mt-0.5">
-                            {t('liveAuctions.startPrice')} : {auction.startPrice}&euro;
-                          </div>
-                        </div>
+                        <span className="text-[9px] text-gray-600">enchères placées</span>
                       </div>
 
-                      <QuickBidForm
-                        auction={auction}
-                        sessionStatus={sessionStatus}
-                        onLogin={() => router.push('/login?callbackUrl=%2F')}
-                        onBidPlaced={updateAuctionAfterBid}
-                        onRefresh={refreshAuction}
-                      />
+                      <div className="border-l border-white/[0.06] pl-3 lg:border-0 lg:pl-0">
+                        <span className="text-[8px] font-black uppercase tracking-wider text-gray-600 lg:hidden">
+                          Fin
+                        </span>
+                        <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-red-500/15 bg-red-500/[0.07] px-2.5 py-1 text-[10px] font-black text-red-300 lg:mt-0">
+                          <Timer size={11} className="text-red-400" />
+                          <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
+                        </div>
+                      </div>
                     </div>
+
+                    <QuickBidForm
+                      auction={auction}
+                      sessionStatus={sessionStatus}
+                      onLogin={() => router.push('/login?callbackUrl=%2F')}
+                      onBidPlaced={updateAuctionAfterBid}
+                      onRefresh={refreshAuction}
+                    />
                   </div>
                 ))}
               </div>
