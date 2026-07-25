@@ -1,6 +1,6 @@
 // 318 LEGAACY Marketplace - Service Worker
-const STATIC_CACHE = '318-legaacy-static-v4'
-const DYNAMIC_CACHE = '318-legaacy-dynamic-v4'
+const STATIC_CACHE = '318-legaacy-static-v5'
+const DYNAMIC_CACHE = '318-legaacy-dynamic-v5'
 
 // Ne précharger que des fichiers réellement statiques.
 // Les pages et les fichiers Next.js changent à chaque déploiement : les
@@ -9,8 +9,8 @@ const DYNAMIC_CACHE = '318-legaacy-dynamic-v4'
 const PRECACHE_ASSETS = [
   '/manifest.json',
   '/favicon.ico',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  '/icons/icon-318-192x192.png',
+  '/icons/icon-318-512x512.png',
 ]
 
 // Install - pre-cache essential assets
@@ -107,8 +107,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || '',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: '/icons/icon-318-192x192.png',
+    badge: '/icons/icon-318-72x72.png',
     vibrate: [100, 50, 100],
     tag: data.tag || '318-legaacy-notification',
     renotify: true,
