@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
+import { useExclusiveAudioPlayer } from '@/hooks/useExclusiveAudioPlayer'
 import {
   Download, Music, Play, Pause, CreditCard, Clock, Check,
   Loader2, ShoppingBag, AlertCircle, FileAudio, Archive, ExternalLink
@@ -74,8 +75,7 @@ export default function PurchasesPage() {
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([])
   const [stats, setStats] = useState({ totalPurchases: 0, totalSpent: 0, pendingCount: 0 })
   const [loading, setLoading] = useState(true)
-  const [playingId, setPlayingId] = useState<string | null>(null)
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const { playingId, togglePlay } = useExclusiveAudioPlayer()
   const [stemDownloads, setStemDownloads] = useState<{
     beatTitle: string
     files: Array<{ name: string; url: string }>
@@ -103,20 +103,6 @@ export default function PurchasesPage() {
     } catch {} finally {
       setLoading(false)
     }
-  }
-
-  const togglePlay = (id: string, url: string) => {
-    if (playingId === id) {
-      audio?.pause()
-      setPlayingId(null)
-      return
-    }
-    audio?.pause()
-    const newAudio = new Audio(url)
-    newAudio.play()
-    newAudio.onended = () => setPlayingId(null)
-    setAudio(newAudio)
-    setPlayingId(id)
   }
 
   const downloadFile = async (
