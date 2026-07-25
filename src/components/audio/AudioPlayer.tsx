@@ -211,6 +211,10 @@ export default function AudioPlayer({
       const gain = gainNodeRef.current
       if (!buffer || !ctx || !gain) return
 
+      // Toujours couper la source précédente avant d'en créer une autre.
+      // Deux sources connectées simultanément continueraient sinon à jouer.
+      stopSource()
+
       // AudioContext peut etre suspendu initialement sur certains navigateurs.
       // On le reprend apres le user gesture (le click du user).
       if (ctx.state === 'suspended') ctx.resume()
