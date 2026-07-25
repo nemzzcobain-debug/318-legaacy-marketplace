@@ -107,7 +107,7 @@ function BPMLogo({ size = 48, pulse = false }: { size?: number; pulse?: boolean 
 // ─── Main Chatbot Component ───
 export default function BPMChatbot() {
   const pathname = usePathname()
-  const hideOnMobile = [
+  const hideOnMobile = pathname === '/' || [
     '/login',
     '/register',
     '/forgot-password',
