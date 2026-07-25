@@ -72,6 +72,7 @@ model User {
   bids           Bid[]
   wonAuctions    Auction[] @relation("AuctionWinner")
   notifications  Notification[]
+  pushSubscriptions PushSubscription[]
   likes          Like[]
   accounts       Account[]
   sessions       Session[]
@@ -383,6 +384,25 @@ model Notification {
 
   @@index([userId])
   @@index([userId, read])
+}
+
+// ─── ABONNEMENTS PUSH TÉLÉPHONE ───
+// Un utilisateur peut activer plusieurs appareils/navigateurs.
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ─── CONVERSATIONS ───
