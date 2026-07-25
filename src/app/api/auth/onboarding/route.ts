@@ -12,6 +12,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    })
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Compte introuvable' }, { status: 404 })
+    }
+
+    // L'onboarding ne doit jamais pouvoir rétrograder un compte administrateur.
+    if (currentUser.role === 'ADMIN') {
+      return NextResponse.json(
+        { error: "Le rôle administrateur ne peut pas être modifié depuis l'onboarding" },
+        { status: 403 }
+      )
+    }
+
     const { role, name } = await req.json()
 
     if (!role || !['ARTIST', 'PRODUCER'].includes(role)) {
