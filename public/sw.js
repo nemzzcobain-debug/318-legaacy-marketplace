@@ -1,6 +1,6 @@
 // 318 LEGAACY Marketplace - Service Worker
-const STATIC_CACHE = '318-legaacy-static-v3'
-const DYNAMIC_CACHE = '318-legaacy-dynamic-v3'
+const STATIC_CACHE = '318-legaacy-static-v4'
+const DYNAMIC_CACHE = '318-legaacy-dynamic-v4'
 
 // Ne précharger que des fichiers réellement statiques.
 // Les pages et les fichiers Next.js changent à chaque déploiement : les
@@ -90,40 +90,72 @@ self.addEventListener('fetch', (event) => {
   // Toutes les autres requêtes restent gérées normalement par le navigateur.
 })
 
-// Handle push notifications (future)
+// Notifications push téléphone
 self.addEventListener('push', (event) => {
   if (!event.data) return
 
-  const data = event.data.json()
+  let data
+  try {
+    data = event.data.json()
+  } catch {
+    data = {
+      title: '318 LEGAACY',
+      body: event.data.text(),
+      url: '/notifications',
+    }
+  }
+
   const options = {
     body: data.body || '',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-72x72.png',
     vibrate: [100, 50, 100],
+    tag: data.tag || '318-legaacy-notification',
+    renotify: true,
     data: {
       url: data.url || '/',
     },
-    actions: data.actions || [],
+    actions: data.actions || [
+      {
+        action: 'open',
+        title: data.actionLabel || 'Voir maintenant',
+      },
+    ],
   }
 
-  event.waitUntil(
-    self.registration.showNotification(data.title || '318 LEGAACY', options)
-  )
+  const tasks = [
+    self.registration.showNotification(data.title || '318 LEGAACY', options),
+  ]
+
+  if (self.navigator && typeof self.navigator.setAppBadge === 'function') {
+    tasks.push(self.navigator.setAppBadge())
+  }
+
+  event.waitUntil(Promise.all(tasks))
 })
 
 // Notification click handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const url = event.notification.data?.url || '/'
+  const targetUrl = new URL(url, self.location.origin).href
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clients) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       for (const client of clients) {
-        if (client.url.includes(url) && 'focus' in client) {
+        if (client.url === targetUrl && 'focus' in client) {
           return client.focus()
         }
       }
-      return self.clients.openWindow(url)
+
+      const sameOriginClient = clients.find((client) =>
+        client.url.startsWith(self.location.origin)
+      )
+      if (sameOriginClient && 'navigate' in sameOriginClient) {
+        return sameOriginClient.navigate(targetUrl).then(() => sameOriginClient.focus())
+      }
+
+      return self.clients.openWindow(targetUrl)
     })
   )
 })
