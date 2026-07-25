@@ -675,7 +675,7 @@ export default function UploadBeatPage() {
                     src={audioPreview}
                     compact
                     isPlaying={isPlaying}
-                    onPlayToggle={() => setIsPlaying(!isPlaying)}
+                    onPlayToggle={() => setIsPlaying((playing) => !playing)}
                   />
                 )}
               </div>
