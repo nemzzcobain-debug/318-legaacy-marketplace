@@ -1137,214 +1137,175 @@ export default function Home() {
               }
 
               return (
-                <div className="space-y-5">
+                <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d0d10] shadow-2xl shadow-black/30">
+                  <div className="hidden grid-cols-[76px_minmax(180px,1fr)_105px_95px_135px_180px] items-center gap-4 border-b border-white/[0.08] bg-white/[0.025] px-4 py-3 text-[9px] font-black uppercase tracking-[0.15em] text-gray-600 lg:grid">
+                    <span>Sélection</span>
+                    <span>Instrumentale</span>
+                    <span>Prix</span>
+                    <span>Offre</span>
+                    <span>Disponibilité</span>
+                    <span>Action</span>
+                  </div>
+
                   {featured.map((currentBeat, beatIndex) => {
-                    const hasAuction = !!currentBeat.auction
+                    const auction = currentBeat.auction
+                    const directBeat = homepage?.nouveautesBeats.find(
+                      (beat) => beat.id === currentBeat.id
+                    )
+                    const actionHref = auction
+                      ? `/auction/${auction.id}`
+                      : `/nouveautes?beat=${currentBeat.id}`
 
                     return (
                       <div
                         key={currentBeat.id}
-                        className="group relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d0d10] shadow-2xl shadow-black/30 transition-colors duration-300 hover:border-[#E50914]/25"
+                        className="group relative border-b border-white/[0.07] p-4 transition duration-300 last:border-b-0 hover:bg-white/[0.025] lg:grid lg:grid-cols-[76px_minmax(180px,1fr)_105px_95px_135px_180px] lg:items-center lg:gap-4"
                       >
-                        {/* Bandeau de contexte, comme l'en-tête de la salle des ventes */}
-                        <div className="flex items-center justify-between border-b border-white/[0.08] bg-white/[0.025] px-5 py-3">
-                          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
-                            <Flame size={12} className="text-[#ff4d5f]" />
-                            Sélection 318 LEGAACY · {String(beatIndex + 1).padStart(2, '0')}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                              {hasAuction ? 'Enchère spéciale' : 'Disponible maintenant'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-0 lg:grid-cols-[minmax(300px,0.82fr)_1.18fr]">
-                          {/* Left: Cover & Audio */}
-                          <div className="relative min-h-[280px] overflow-hidden border-b border-white/[0.08] lg:min-h-[360px] lg:border-b-0 lg:border-r">
-                            {currentBeat.coverImage ? (
+                        <div className="flex gap-3 lg:contents">
+                          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a0a2e] via-[#111] to-[#0a0a1a] lg:h-[76px] lg:w-[76px]">
+                            {currentBeat.coverImage && (
                               <Image
                                 src={currentBeat.coverImage}
                                 alt={currentBeat.title}
                                 fill
-                                className="object-cover opacity-60 transition-all duration-700 group-hover:scale-105 group-hover:opacity-70"
+                                className="absolute inset-0 object-cover opacity-75 transition duration-500 group-hover:scale-105 group-hover:opacity-90"
                               />
-                            ) : (
-                              <div className="absolute inset-0 bg-gradient-to-br from-[#E50914]/40 via-[#B20710]/20 to-[#111]" />
                             )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d10] via-transparent to-black/10" />
-
-                            {/* Badge "Selection" */}
-                            <div className="absolute top-5 left-5 flex items-center gap-2">
-                              <span className="rounded-lg border border-white/10 bg-black/65 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-white backdrop-blur-md">
-                                Beat de la semaine
-                              </span>
-                              {featured.length > 1 && (
-                                <span className="rounded-lg border border-white/10 bg-black/65 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md">
-                                  {beatIndex + 1}/{featured.length}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* License badge */}
-                            {hasAuction && currentBeat.auction && (
-                              <div className="absolute top-5 right-5">
-                                <span
-                                  className={`text-[11px] font-bold px-3 py-1.5 rounded-full border backdrop-blur-sm ${licenseColors[currentBeat.auction.licenseType] || licenseColors.BASIC}`}
-                                >
-                                  {currentBeat.auction.licenseType}
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Play button center */}
+                            <div className="absolute inset-0 bg-black/20" />
+                            <span className="absolute left-2 top-2 rounded-md bg-black/65 px-1.5 py-0.5 text-[8px] font-black text-gray-300 backdrop-blur">
+                              #{String(beatIndex + 1).padStart(2, '0')}
+                            </span>
                             <button
+                              type="button"
                               onClick={() => togglePlay(currentBeat.id, currentBeat.audioUrl)}
                               aria-label={
                                 playingId === currentBeat.id
                                   ? `Mettre ${currentBeat.title} en pause`
                                   : `Écouter ${currentBeat.title}`
                               }
-                              className="absolute left-1/2 top-1/2 z-10 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white text-black shadow-2xl shadow-black/50 transition-transform hover:scale-110"
+                              className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white text-black shadow-xl transition hover:scale-105"
                             >
                               {playingId === currentBeat.id ? (
-                                <Pause size={24} fill="currentColor" />
+                                <Pause size={14} fill="currentColor" />
                               ) : (
-                                <Play size={24} className="ml-1" fill="currentColor" />
+                                <Play size={14} className="ml-0.5" fill="currentColor" />
                               )}
                             </button>
-
-                            {/* Waveform bottom */}
-                            <div className="absolute bottom-5 left-5 right-5 flex items-center gap-3">
-                              <WaveformVisual active={playingId === currentBeat.id} />
-                              <div className="h-[2px] flex-1 bg-gradient-to-r from-[#E50914]/40 via-[#E50914]/20 to-transparent rounded-full" />
-                            </div>
                           </div>
 
-                          {/* Right: Info */}
-                          <div className="flex flex-col justify-center p-6 md:p-8 lg:p-10">
-                            {/* Genre tags */}
-                            <div className="mb-4 flex flex-wrap items-center gap-2">
-                              <span className="rounded-lg border border-[#E50914]/20 bg-[#E50914]/10 px-3 py-1 text-[10px] font-bold text-[#ff4d5f]">
+                          <div className="min-w-0 self-center">
+                            <div className="flex items-center gap-2">
+                              <h3 className="truncate text-base font-black text-white transition group-hover:text-red-400">
+                                {currentBeat.title}
+                              </h3>
+                              <WaveformVisual active={playingId === currentBeat.id} />
+                            </div>
+                            <div className="mt-1 flex items-center gap-1.5">
+                              <span className="truncate text-xs font-medium text-gray-500">
+                                {currentBeat.producer.name}
+                              </span>
+                              <BadgeCheck size={12} className="shrink-0 text-red-400" />
+                            </div>
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              <span className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-gray-500">
                                 {currentBeat.genre}
                               </span>
-                              <span className="rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-1 text-[10px] font-bold text-gray-500">
+                              <span className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-gray-500">
                                 {currentBeat.bpm} BPM
                               </span>
                               {currentBeat.key && (
-                                <span className="rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-1 text-[10px] font-bold text-gray-500">
+                                <span className="hidden rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-gray-500 sm:inline-flex">
                                   {currentBeat.key}
                                 </span>
                               )}
-                            </div>
-
-                            {/* Title */}
-                            <h3 className="mb-2 text-2xl font-black text-white transition-colors group-hover:text-[#ff5c6d] md:text-3xl">
-                              {currentBeat.title}
-                            </h3>
-
-                            {/* Producer */}
-                            <div className="flex items-center gap-2 mb-6">
-                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#E50914] to-[#B20710] flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
-                                {currentBeat.producer.avatar ? (
-                                  <Image
-                                    src={currentBeat.producer.avatar}
-                                    alt={currentBeat.producer.name}
-                                    width={24}
-                                    height={24}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  currentBeat.producer.name[0].toUpperCase()
-                                )}
-                              </div>
-                              <span className="text-sm text-gray-400 font-semibold">
-                                {currentBeat.producer.name}
-                              </span>
-                              <BadgeCheck size={14} className="text-[#E50914]" />
-                            </div>
-
-                            {/* Timer + Price — only if auction exists */}
-                            {hasAuction && currentBeat.auction ? (
-                              <>
-                                <div className="mb-5 grid grid-cols-2 overflow-hidden rounded-2xl border border-white/[0.08] bg-black/25">
-                                  <div className="border-r border-white/[0.08] p-4">
-                                    <div className="mb-2 flex items-center gap-2">
-                                      <Timer size={13} className="text-[#ff4d5f]" />
-                                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                                        {t('weeklySelection.timeRemaining')}
-                                      </span>
-                                    </div>
-                                    <div className="text-lg font-black text-white md:text-xl">
-                                      <CountdownTimer
-                                        endTime={currentBeat.auction.endTime}
-                                        size="lg"
-                                        showIcon={false}
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="p-4">
-                                    <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                                      {t('weeklySelection.currentBid')}
-                                    </span>
-                                    <div className="text-2xl font-black text-white">
-                                      {currentBeat.auction.currentBid}&euro;
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="mb-6 flex items-center justify-between border-b border-[#222] pb-5">
-                                  <div className="flex items-center gap-1.5 text-sm text-gray-400">
-                                    <Gavel size={14} className="text-[#ff4d5f]" />{' '}
-                                    {currentBeat.auction.totalBids}{' '}
-                                    {currentBeat.auction.totalBids > 1
-                                      ? t('liveAuctions.bids')
-                                      : t('liveAuctions.bid')}
-                                  </div>
-                                  <div className="text-xs text-gray-600">
-                                    {t('weeklySelection.startPrice')} :{' '}
-                                    {currentBeat.auction.startPrice}
-                                    &euro;
-                                  </div>
-                                </div>
-
-                                <Link
-                                  href={`/auction/${currentBeat.auction.id}`}
-                                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-[#dc2626] py-3.5 text-center text-sm font-extrabold text-white shadow-lg shadow-red-950/20 transition-all hover:brightness-110"
+                              {auction && (
+                                <span
+                                  className={`rounded-full border px-2 py-1 text-[9px] font-black ${licenseColors[auction.licenseType] || licenseColors.BASIC}`}
                                 >
-                                  {t('weeklySelection.placeBid')} <ArrowRight size={17} />
-                                </Link>
+                                  {auction.licenseType}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-3 rounded-2xl border border-white/[0.06] bg-black/20 p-3 lg:contents">
+                          <div>
+                            <span className="text-[8px] font-black uppercase tracking-wider text-gray-600 lg:hidden">
+                              Prix
+                            </span>
+                            {auction ? (
+                              <>
+                                <div className="mt-0.5 text-xl font-black text-white lg:mt-0">
+                                  {auction.currentBid}
+                                  <span className="ml-0.5 text-xs text-red-400">€</span>
+                                </div>
+                                <span className="text-[9px] text-gray-600">
+                                  Départ {auction.startPrice}€
+                                </span>
                               </>
                             ) : (
                               <>
-                                <div className="mb-6 rounded-2xl border border-white/[0.08] bg-black/25 p-5">
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <Music size={14} className="text-[#ff4d5f]" />
-                                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">
-                                      Sélection éditoriale
-                                    </span>
-                                  </div>
-                                  <p className="text-sm leading-relaxed text-gray-400">
-                                    Ce beat a été sélectionné par l&apos;équipe 318 LEGAACY pour sa
-                                    qualité et son potentiel artistique.
-                                  </p>
+                                <div className="mt-0.5 text-xl font-black text-white lg:mt-0">
+                                  {directBeat?.price ? `${directBeat.price}€` : 'Fixe'}
                                 </div>
-
-                                <Link
-                                  href={
-                                    currentBeat.auction?.id
-                                      ? `/auction/${currentBeat.auction.id}`
-                                      : `/nouveautes?beat=${currentBeat.id}`
-                                  }
-                                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-[#dc2626] py-3.5 text-center text-sm font-extrabold text-white shadow-lg shadow-red-950/20 transition-all hover:brightness-110"
-                                >
-                                  Acheter ce beat <ArrowRight size={17} />
-                                </Link>
+                                <span className="text-[9px] text-gray-600">Achat direct</span>
                               </>
                             )}
                           </div>
+
+                          <div className="border-l border-white/[0.06] pl-3 lg:border-0 lg:pl-0">
+                            <span className="text-[8px] font-black uppercase tracking-wider text-gray-600 lg:hidden">
+                              Offre
+                            </span>
+                            {auction ? (
+                              <>
+                                <div className="mt-1 flex items-center gap-1 text-sm font-black text-gray-300 lg:mt-0">
+                                  <Gavel size={13} className="text-red-400" />
+                                  {auction.totalBids}
+                                </div>
+                                <span className="text-[9px] text-gray-600">enchères</span>
+                              </>
+                            ) : (
+                              <>
+                                <div className="mt-1 flex items-center gap-1 text-sm font-black text-gray-300 lg:mt-0">
+                                  <Music size={13} className="text-red-400" />
+                                  Direct
+                                </div>
+                                <span className="text-[9px] text-gray-600">prix fixe</span>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="border-l border-white/[0.06] pl-3 lg:border-0 lg:pl-0">
+                            <span className="text-[8px] font-black uppercase tracking-wider text-gray-600 lg:hidden">
+                              Disponibilité
+                            </span>
+                            {auction ? (
+                              <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-red-500/15 bg-red-500/[0.07] px-2.5 py-1 text-[10px] font-black text-red-300 lg:mt-0">
+                                <Timer size={11} className="text-red-400" />
+                                <CountdownTimer
+                                  endTime={auction.endTime}
+                                  size="sm"
+                                  showIcon={false}
+                                />
+                              </div>
+                            ) : (
+                              <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/[0.07] px-2.5 py-1 text-[10px] font-black text-emerald-300 lg:mt-0">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                                Disponible
+                              </div>
+                            )}
+                          </div>
                         </div>
+
+                        <Link
+                          href={actionHref}
+                          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-[#dc2626] px-4 py-3 text-center text-xs font-extrabold text-white shadow-lg shadow-red-950/20 transition-all hover:brightness-110 lg:mt-0"
+                        >
+                          {auction ? 'Placer mon enchère' : 'Acheter ce beat'}
+                          <ArrowRight size={15} />
+                        </Link>
                       </div>
                     )
                   })}
