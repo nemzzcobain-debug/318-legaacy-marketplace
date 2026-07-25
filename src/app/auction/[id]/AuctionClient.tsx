@@ -623,7 +623,7 @@ export default function AuctionClient() {
                     title={beat.title}
                     producer={producer.displayName || producer.name}
                     isPlaying={isPlaying}
-                    onPlayToggle={() => setIsPlaying(!isPlaying)}
+                    onPlayToggle={() => setIsPlaying((playing) => !playing)}
                     accentColor="#e11d48"
                   />
                 </div>
