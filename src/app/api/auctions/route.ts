@@ -108,13 +108,18 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validated = createAuctionSchema.safeParse(body)
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.errors[0].message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
 
-    const { beatId, startPrice, reservePrice, buyNowPrice, licenseType, durationHours, bidIncrement } = validated.data
+    const {
+      beatId,
+      startPrice,
+      reservePrice,
+      buyNowPrice,
+      licenseType,
+      durationHours,
+      bidIncrement,
+    } = validated.data
 
     // Vérifier que le beat appartient au producteur
     const beat = await prisma.beat.findFirst({
@@ -122,12 +127,19 @@ export async function POST(request: Request) {
       select: {
         id: true,
         title: true,
+        audioOriginal: true,
         audioWav: true,
         stemsFiles: true,
       },
     })
     if (!beat) {
       return NextResponse.json({ error: 'Beat introuvable' }, { status: 404 })
+    }
+    if (licenseType === 'BASIC' && !beat.audioOriginal) {
+      return NextResponse.json(
+        { error: 'Ajoute le fichier MP3 avant de créer une enchère Basic' },
+        { status: 400 }
+      )
     }
     if (licenseType === 'PREMIUM' && !beat.audioWav) {
       return NextResponse.json(
@@ -199,7 +211,7 @@ export async function POST(request: Request) {
       if (followers.length > 0) {
         const producerName = user.displayName || user.name
         await prisma.notification.createMany({
-          data: followers.map(f => ({
+          data: followers.map((f) => ({
             type: 'NEW_AUCTION',
             title: `Nouvelle enchère de ${producerName}`,
             message: `${producerName} a lance une enchère sur "${beat.title}" a partir de ${startPrice} EUR`,
