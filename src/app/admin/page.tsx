@@ -141,6 +141,8 @@ export default function AdminPage() {
   const [reviewingBeatId, setReviewingBeatId] = useState<string | null>(null)
   const [playingBeatId, setPlayingBeatId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const playingBeatIdRef = useRef<string | null>(null)
+  const audioRequestTokenRef = useRef(0)
   const [audioError, setAudioError] = useState<{ beatId: string; message: string } | null>(null)
   const [beatSearch, setBeatSearch] = useState('')
   const [beatResults, setBeatResults] = useState<any[]>([])
@@ -158,51 +160,89 @@ export default function AdminPage() {
   const [filterStatus, setFilterStatus] = useState('')
   const [previousTab, setPreviousTab] = useState<string | null>(null)
 
+  const releaseAdminAudio = useCallback((audio: HTMLAudioElement | null) => {
+    if (!audio) return
+    audio.onended = null
+    audio.onerror = null
+    audio.pause()
+    audio.removeAttribute('src')
+    audio.load()
+  }, [])
+
   // Lecture audio des beats
   const togglePlay = async (beatId: string, audioUrl: string) => {
-    if (playingBeatId === beatId) {
-      // Pause
-      audioRef.current?.pause()
+    // Le ref change immédiatement : même plusieurs appuis très rapides ne
+    // peuvent plus lancer plusieurs instances du même aperçu.
+    if (playingBeatIdRef.current === beatId) {
+      audioRequestTokenRef.current += 1
+      const currentAudio = audioRef.current
+      audioRef.current = null
+      playingBeatIdRef.current = null
+      releaseAdminAudio(currentAudio)
       setPlayingBeatId(null)
       return
     }
 
     // Arrêter le beat précédent avant d'en lancer un nouveau.
-    audioRef.current?.pause()
-    setPlayingBeatId(null)
+    const token = audioRequestTokenRef.current + 1
+    audioRequestTokenRef.current = token
+    releaseAdminAudio(audioRef.current)
     setAudioError(null)
 
     const audio = new Audio(audioUrl)
     audio.preload = 'metadata'
-    audio.onended = () => {
-      setPlayingBeatId(null)
+    audioRef.current = audio
+    playingBeatIdRef.current = beatId
+    setPlayingBeatId(beatId)
+
+    const clearIfCurrent = () => {
+      if (audioRequestTokenRef.current !== token || audioRef.current !== audio) return
       audioRef.current = null
+      playingBeatIdRef.current = null
+      setPlayingBeatId(null)
+    }
+
+    audio.onended = () => {
+      clearIfCurrent()
     }
     audio.onerror = () => {
-      setPlayingBeatId(null)
-      audioRef.current = null
-      setAudioError({
-        beatId,
-        message: "Impossible de lire l'aperçu audio. Réessaie dans quelques secondes.",
-      })
+      if (audioRequestTokenRef.current === token && audioRef.current === audio) {
+        clearIfCurrent()
+        setAudioError({
+          beatId,
+          message: "Impossible de lire l'aperçu audio. Réessaie dans quelques secondes.",
+        })
+      }
     }
 
     try {
-      // Attendre la confirmation réelle de lecture évite d'afficher « pause »
-      // lorsque le navigateur a refusé ou échoué à charger le fichier.
       await audio.play()
-      audioRef.current = audio
-      setPlayingBeatId(beatId)
+
+      // Une pause peut avoir été demandée pendant le chargement de play().
+      if (audioRequestTokenRef.current !== token || audioRef.current !== audio) {
+        releaseAdminAudio(audio)
+      }
     } catch (error) {
       console.error('Erreur lecture aperçu admin:', error)
-      setPlayingBeatId(null)
-      audioRef.current = null
-      setAudioError({
-        beatId,
-        message: "Impossible de lire l'aperçu audio. Réessaie dans quelques secondes.",
-      })
+      if (audioRequestTokenRef.current === token && audioRef.current === audio) {
+        releaseAdminAudio(audio)
+        clearIfCurrent()
+        setAudioError({
+          beatId,
+          message: "Impossible de lire l'aperçu audio. Réessaie dans quelques secondes.",
+        })
+      }
     }
   }
+
+  useEffect(() => {
+    return () => {
+      audioRequestTokenRef.current += 1
+      releaseAdminAudio(audioRef.current)
+      audioRef.current = null
+      playingBeatIdRef.current = null
+    }
+  }, [releaseAdminAudio])
 
   // Synchroniser l'URL avec l'onglet actif
   useEffect(() => {
