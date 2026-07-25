@@ -464,6 +464,8 @@ export default function Home() {
   const [homepage, setHomepage] = useState<HomepageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [playingId, setPlayingId] = useState<string | null>(null)
+  const playingIdRef = useRef<string | null>(null)
+  const audioRequestTokenRef = useRef(0)
   // Web Audio API refs — même approche que AudioPlayer.tsx pour les WAV DAW
   const audioCtxRef = useRef<AudioContext | null>(null)
   const bufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map())
@@ -561,19 +563,25 @@ export default function Home() {
   const togglePlay = useCallback(
     async (auctionId: string, audioUrl: string) => {
       // Si on reclique sur le même beat → stop
-      if (playingId === auctionId) {
+      if (playingIdRef.current === auctionId) {
+        audioRequestTokenRef.current += 1
         stopCurrentSource()
+        playingIdRef.current = null
         setPlayingId(null)
         return
       }
 
-      // Stop le beat précédent
+      // Invalider toute ancienne lecture encore en cours de chargement.
+      const token = audioRequestTokenRef.current + 1
+      audioRequestTokenRef.current = token
       stopCurrentSource()
+      playingIdRef.current = auctionId
       setPlayingId(auctionId)
 
       try {
         const ctx = getAudioContext()
         if (ctx.state === 'suspended') await ctx.resume()
+        if (audioRequestTokenRef.current !== token) return
 
         // Cache le buffer pour éviter de re-télécharger
         let buffer = bufferCacheRef.current.get(audioUrl)
@@ -597,28 +605,38 @@ export default function Home() {
           bufferCacheRef.current.set(audioUrl, buffer)
         }
 
+        // L'utilisateur a peut-être appuyé sur pause pendant le téléchargement.
+        if (audioRequestTokenRef.current !== token || playingIdRef.current !== auctionId) return
+
         const source = ctx.createBufferSource()
         source.buffer = buffer
         source.connect(gainNodeRef.current!)
         source.onended = () => {
-          if (sourceNodeRef.current === source) {
+          if (sourceNodeRef.current === source && audioRequestTokenRef.current === token) {
             sourceNodeRef.current = null
+            playingIdRef.current = null
             setPlayingId(null)
           }
         }
+        stopCurrentSource()
         source.start(0)
         sourceNodeRef.current = source
       } catch (err) {
         console.error('Web Audio play error:', err)
-        setPlayingId(null)
+        if (audioRequestTokenRef.current === token) {
+          playingIdRef.current = null
+          setPlayingId(null)
+        }
       }
     },
-    [playingId, getAudioContext, stopCurrentSource]
+    [getAudioContext, stopCurrentSource]
   )
 
   // Cleanup Web Audio a l'unmount
   useEffect(() => {
     return () => {
+      audioRequestTokenRef.current += 1
+      playingIdRef.current = null
       if (sourceNodeRef.current) {
         try {
           sourceNodeRef.current.stop()
