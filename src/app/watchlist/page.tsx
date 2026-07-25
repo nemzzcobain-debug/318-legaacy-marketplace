@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 import Link from 'next/link'
+import { useExclusiveAudioPlayer } from '@/hooks/useExclusiveAudioPlayer'
 import {
   Eye, Trash2, Gavel, Clock, Shield, Loader2, Music, Play, Pause
 } from 'lucide-react'
@@ -65,8 +66,7 @@ export default function WatchlistPage() {
   const [items, setItems] = useState<WatchlistItem[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'active' | 'ended'>('all')
-  const [playingId, setPlayingId] = useState<string | null>(null)
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const { playingId, togglePlay } = useExclusiveAudioPlayer()
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -100,14 +100,6 @@ export default function WatchlistPage() {
     } catch (e) {
       console.error(e)
     }
-  }
-
-  const togglePlay = (id: string, url: string) => {
-    if (playingId === id) { audio?.pause(); setPlayingId(null); return }
-    audio?.pause()
-    const a = new Audio(url)
-    a.play(); a.onended = () => setPlayingId(null)
-    setAudio(a); setPlayingId(id)
   }
 
   const filtered = items.filter((item) => {
