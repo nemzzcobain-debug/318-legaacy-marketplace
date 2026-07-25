@@ -470,11 +470,9 @@ export async function sendAdminNewApplicationEmail(params: {
     ${button('Examiner la candidature', `${PLATFORM_URL}/producer/${applicantId}`)}
   `)
 
-  sendNtfy(
-    'Nouvelle candidature',
-    `${applicantName} souhaite devenir producteur`,
-    'high'
-  ).catch(() => {})
+  sendNtfy('Nouvelle candidature', `${applicantName} souhaite devenir producteur`, 'high').catch(
+    () => {}
+  )
 
   return sendEmail(adminEmail, `🔔 Nouvelle candidature producteur — ${applicantName}`, html)
 }
@@ -491,7 +489,16 @@ export async function sendBeatUploadConfirmationEmail(params: {
   auctionStartPrice?: number
   auctionDuration?: number
 }) {
-  const { to, producerName, beatTitle, genre, bpm, hasAuction, auctionStartPrice, auctionDuration } = params
+  const {
+    to,
+    producerName,
+    beatTitle,
+    genre,
+    bpm,
+    hasAuction,
+    auctionStartPrice,
+    auctionDuration,
+  } = params
 
   const auctionSection = hasAuction
     ? `<tr>
@@ -549,9 +556,11 @@ export async function sendBeatReviewDecisionEmail(params: {
     </h1>
     <p style="color:#999;font-size:14px;margin:0 0 20px;">
       Bonjour <strong style="color:#fff;">${producerName}</strong>,
-      ${approved
-        ? `ton beat <strong style="color:#fff;">${beatTitle}</strong> a été validé et est maintenant disponible sur la marketplace.`
-        : `ton beat <strong style="color:#fff;">${beatTitle}</strong> n'a pas été retenu pour le moment.`}
+      ${
+        approved
+          ? `ton beat <strong style="color:#fff;">${beatTitle}</strong> a été validé et est maintenant disponible sur la marketplace.`
+          : `ton beat <strong style="color:#fff;">${beatTitle}</strong> n'a pas été retenu pour le moment.`
+      }
     </p>
     ${!approved && reason ? `<div style="background:#13131a;border:1px solid #e11d4840;border-radius:12px;padding:16px;margin-bottom:20px;color:#ccc;font-size:13px;"><strong style="color:#fff;">Motif :</strong> ${reason}</div>` : ''}
     ${button('Voir mon dashboard', `${PLATFORM_URL}/dashboard?tab=beats`)}
@@ -575,7 +584,8 @@ export async function sendGuestPurchaseEmail(params: {
   downloadUrl: string
   magicLoginUrl: string
 }) {
-  const { to, beatTitle, producerName, licenseType, finalPrice, downloadUrl, magicLoginUrl } = params
+  const { to, beatTitle, producerName, licenseType, finalPrice, downloadUrl, magicLoginUrl } =
+    params
 
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Ton beat est prêt ! 🎵</h1>
@@ -702,26 +712,75 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
-export async function sendAdminNewBeatEmail(params: { adminEmail: string; producerName: string; beatTitle: string; genre: string; bpm: number | string }) {
+export async function sendAdminNewBeatEmail(params: {
+  adminEmail: string
+  producerName: string
+  beatTitle: string
+  genre: string
+  bpm: number | string
+}) {
   const { adminEmail, producerName, beatTitle, genre, bpm } = params
-  const html = emailLayout('<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Beat à valider</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' + producerName + '</strong> demande la validation de <strong style="color:#fff;">' + beatTitle + '</strong> (' + genre + ', ' + bpm + ' BPM).</p>' + button("Examiner le beat", PLATFORM_URL + '/admin?tab=beats'))
-  sendNtfy('Beat a valider', producerName + ' a envoye ' + beatTitle).catch(() => {})
+  const html = emailLayout(
+    '<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Beat à valider</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' +
+      producerName +
+      '</strong> demande la validation de <strong style="color:#fff;">' +
+      beatTitle +
+      '</strong> (' +
+      genre +
+      ', ' +
+      bpm +
+      ' BPM).</p>' +
+      button('Examiner le beat', PLATFORM_URL + '/admin?tab=beats')
+  )
   return sendEmail(adminEmail, 'Beat a valider - ' + beatTitle, html)
 }
 
-export async function sendAdminNewBidEmail(params: { adminEmail: string; bidderName: string; beatTitle: string; amount: number | string; licenseType: string; auctionId: string }) {
+export async function sendAdminNewBidEmail(params: {
+  adminEmail: string
+  bidderName: string
+  beatTitle: string
+  amount: number | string
+  licenseType: string
+  auctionId: string
+}) {
   const { adminEmail, bidderName, beatTitle, amount, licenseType, auctionId } = params
-  const html = emailLayout('<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouvelle enchère</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' + bidderName + '</strong> a placé <strong style="color:#2ed573;">' + amount + ' EUR</strong> sur <strong style="color:#fff;">' + beatTitle + '</strong> (' + licenseType + ').</p>' + button("Voir l'enchère", PLATFORM_URL + '/auction/' + auctionId))
-  sendNtfy('Nouvelle enchere', bidderName + ' a place ' + amount + ' EUR sur ' + beatTitle).catch(() => {})
+  const html = emailLayout(
+    '<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouvelle enchère</h1><p style="color:#999;font-size:14px;margin:0 0 24px;"><strong style="color:#fff;">' +
+      bidderName +
+      '</strong> a placé <strong style="color:#2ed573;">' +
+      amount +
+      ' EUR</strong> sur <strong style="color:#fff;">' +
+      beatTitle +
+      '</strong> (' +
+      licenseType +
+      ').</p>' +
+      button("Voir l'enchère", PLATFORM_URL + '/auction/' + auctionId)
+  )
+  sendNtfy('Nouvelle enchere', bidderName + ' a place ' + amount + ' EUR sur ' + beatTitle).catch(
+    () => {}
+  )
   return sendEmail(adminEmail, 'Enchere ' + amount + ' EUR sur ' + beatTitle, html)
 }
 
 export async function sendNtfy(title: string, message: string, priority = 'default') {
   const topic = process.env.NTFY_TOPIC
-  if (!topic) return
+  if (!topic) {
+    console.warn('[NTFY] NTFY_TOPIC non configuré')
+    return { success: false, reason: 'missing_topic' as const }
+  }
   try {
-    await fetch('https://ntfy.sh/' + topic, { method: 'POST', headers: { Title: title, Priority: priority }, body: message })
+    const response = await fetch('https://ntfy.sh/' + topic, {
+      method: 'POST',
+      headers: { Title: title, Priority: priority },
+      body: message,
+    })
+    if (!response.ok) {
+      console.warn(`[NTFY] réponse HTTP ${response.status}`)
+      return { success: false, reason: 'http_error' as const, status: response.status }
+    }
+    return { success: true }
   } catch (err) {
     console.warn('[NTFY] echec:', String(err))
+    return { success: false, reason: 'network_error' as const }
   }
 }
