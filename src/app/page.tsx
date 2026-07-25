@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -31,6 +32,8 @@ import {
   Smartphone,
   ListMusic,
   Globe,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react'
 import Image from 'next/image'
 import Header from '@/components/layout/Header'
@@ -42,6 +45,7 @@ interface LiveAuction {
   id: string
   currentBid: number
   startPrice: number
+  bidIncrement?: number
   totalBids: number
   status: string
   endTime: string
@@ -212,8 +216,250 @@ function WaveformVisual({ active }: { active: boolean }) {
   )
 }
 
+interface QuickBidFormProps {
+  auction: LiveAuction
+  sessionStatus: 'loading' | 'authenticated' | 'unauthenticated'
+  onLogin: () => void
+  onBidPlaced: (
+    auctionId: string,
+    update: { currentBid: number; totalBids: number; endTime?: string }
+  ) => void
+  onRefresh: (auctionId: string) => Promise<LiveAuction | null>
+}
+
+// Formulaire compact utilisé sur l'accueil pour miser sans quitter la page.
+function QuickBidForm({
+  auction,
+  sessionStatus,
+  onLogin,
+  onBidPlaced,
+  onRefresh,
+}: QuickBidFormProps) {
+  const increment = auction.bidIncrement || 5
+  const minimumBid = auction.currentBid + increment
+  const [amount, setAmount] = useState(String(minimumBid))
+  const [confirming, setConfirming] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const submissionRef = useRef(false)
+
+  useEffect(() => {
+    setAmount(String(minimumBid))
+  }, [minimumBid])
+
+  const prepareBid = () => {
+    setError('')
+    setSuccess('')
+
+    const parsedAmount = Number.parseFloat(amount)
+    if (!Number.isFinite(parsedAmount)) {
+      setError('Entre un montant valide.')
+      return
+    }
+    if (parsedAmount < minimumBid) {
+      setAmount(String(minimumBid))
+      setError(`La mise minimale est de ${minimumBid} EUR.`)
+      return
+    }
+
+    setConfirming(true)
+  }
+
+  const submitBid = async () => {
+    const parsedAmount = Number.parseFloat(amount)
+    if (!Number.isFinite(parsedAmount) || submissionRef.current) return
+
+    submissionRef.current = true
+    setSubmitting(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch(`/api/auctions/bid?auctionId=${auction.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: parsedAmount }),
+      })
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setConfirming(false)
+          setError('Ta session a expiré. Reconnecte-toi pour enchérir.')
+          return
+        }
+
+        if (data?.code === 'BID_TOO_LOW' && Number.isFinite(Number(data.minimumBid))) {
+          const newMinimum = Number(data.minimumBid)
+          setAmount(String(newMinimum))
+          setConfirming(false)
+          setError(`Une autre mise vient de passer. Nouveau minimum : ${newMinimum} EUR.`)
+          await onRefresh(auction.id)
+          return
+        }
+
+        if (data?.code === 'AUCTION_CHANGED') {
+          const refreshedAuction = await onRefresh(auction.id)
+          if (refreshedAuction) {
+            setAmount(
+              String(refreshedAuction.currentBid + (refreshedAuction.bidIncrement || increment))
+            )
+          }
+          setConfirming(false)
+          setError("L'enchère vient d'être mise à jour. Vérifie le nouveau minimum.")
+          return
+        }
+
+        setConfirming(false)
+        setError(data?.error || "Impossible de placer l'enchère.")
+        return
+      }
+
+      const confirmedAmount = Number(data?.auction?.currentBid ?? parsedAmount)
+      const confirmedBidCount = Number(data?.auction?.totalBids ?? auction.totalBids + 1)
+
+      onBidPlaced(auction.id, {
+        currentBid: confirmedAmount,
+        totalBids: confirmedBidCount,
+        endTime: data?.auction?.endTime,
+      })
+      setAmount(String(confirmedAmount + increment))
+      setConfirming(false)
+      setSuccess(`Mise de ${parsedAmount} EUR enregistrée !`)
+      setTimeout(() => setSuccess(''), 5000)
+    } catch {
+      // En cas de coupure après l'envoi, on relit l'enchère avant d'afficher
+      // une erreur afin d'éviter qu'un utilisateur mise deux fois.
+      const refreshedAuction = await onRefresh(auction.id)
+      if (refreshedAuction?.currentBid === parsedAmount) {
+        setAmount(
+          String(refreshedAuction.currentBid + (refreshedAuction.bidIncrement || increment))
+        )
+        setConfirming(false)
+        setSuccess(`Mise de ${parsedAmount} EUR enregistrée !`)
+        setTimeout(() => setSuccess(''), 5000)
+      } else {
+        setConfirming(false)
+        setError("La réponse n'a pas pu être confirmée. Vérifie le prix avant de réessayer.")
+      }
+    } finally {
+      submissionRef.current = false
+      setSubmitting(false)
+    }
+  }
+
+  if (sessionStatus === 'loading') {
+    return (
+      <div
+        data-quick-bid
+        className="mt-4 flex h-11 items-center justify-center rounded-xl border border-white/5 bg-black/20"
+      >
+        <Loader2 size={15} className="animate-spin text-gray-600" />
+      </div>
+    )
+  }
+
+  if (sessionStatus !== 'authenticated') {
+    return (
+      <button
+        data-quick-bid
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
+          onLogin()
+        }}
+        className="mt-4 w-full rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-black text-red-400 transition hover:bg-red-500/10"
+      >
+        Se connecter pour enchérir
+      </button>
+    )
+  }
+
+  return (
+    <div
+      data-quick-bid
+      onClick={(event) => event.stopPropagation()}
+      className="mt-4 rounded-2xl border border-white/[0.08] bg-black/25 p-3"
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-[9px] font-black uppercase tracking-[0.14em] text-gray-600">
+          Mise rapide
+        </span>
+        <span className="text-[10px] font-bold text-gray-500">Min. {minimumBid} EUR</span>
+      </div>
+
+      <div className="flex gap-2">
+        <div className="relative min-w-0 flex-1">
+          <input
+            type="number"
+            inputMode="decimal"
+            min={minimumBid}
+            step={increment}
+            value={amount}
+            onChange={(event) => {
+              setAmount(event.target.value)
+              setConfirming(false)
+              setError('')
+            }}
+            aria-label={`Montant de la mise pour ${auction.beat.title}`}
+            className="h-11 w-full rounded-xl border border-white/10 bg-[#09090c] px-3 pr-10 text-sm font-black text-white outline-none transition focus:border-red-500/50 focus:ring-2 focus:ring-red-500/10"
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-600">
+            EUR
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={prepareBid}
+          disabled={submitting}
+          className="h-11 shrink-0 rounded-xl bg-gradient-to-r from-[#f20d46] to-[#c70b35] px-4 text-xs font-black text-white shadow-lg shadow-red-950/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Enchérir
+        </button>
+      </div>
+
+      {confirming && (
+        <div className="mt-2 rounded-xl border border-red-500/20 bg-red-500/[0.07] p-2.5">
+          <p className="text-center text-[11px] font-bold text-gray-300">
+            Confirmer la mise de <span className="text-white">{amount} EUR</span> ?
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              disabled={submitting}
+              className="rounded-lg border border-white/10 px-2 py-2 text-[10px] font-bold text-gray-500 transition hover:text-white"
+            >
+              Modifier
+            </button>
+            <button
+              type="button"
+              onClick={submitBid}
+              disabled={submitting}
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-red-500 px-2 py-2 text-[10px] font-black text-white transition hover:bg-red-400 disabled:opacity-60"
+            >
+              {submitting ? <Loader2 size={12} className="animate-spin" /> : <Gavel size={12} />}
+              Confirmer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="mt-2 text-[10px] font-semibold leading-4 text-red-400">{error}</p>}
+      {success && (
+        <p className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-emerald-400">
+          <CheckCircle2 size={12} />
+          {success}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function Home() {
   const router = useRouter()
+  const { status: sessionStatus } = useSession()
   const [auctions, setAuctions] = useState<LiveAuction[]>([])
   const [homepage, setHomepage] = useState<HomepageData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -238,13 +484,48 @@ export default function Home() {
   }, [])
   const { t } = useTranslation()
 
+  const fetchLiveAuctions = useCallback(async () => {
+    const response = await fetch('/api/auctions?status=active&limit=6&sort=most_bids')
+    if (!response.ok) throw new Error('Impossible de charger les enchères')
+    const data = await response.json()
+    const nextAuctions: LiveAuction[] = data.auctions || []
+    setAuctions(nextAuctions)
+    return nextAuctions
+  }, [])
+
+  const refreshAuction = useCallback(
+    async (auctionId: string) => {
+      try {
+        const nextAuctions = await fetchLiveAuctions()
+        return nextAuctions.find((auction) => auction.id === auctionId) || null
+      } catch {
+        return null
+      }
+    },
+    [fetchLiveAuctions]
+  )
+
+  const updateAuctionAfterBid = useCallback(
+    (auctionId: string, update: { currentBid: number; totalBids: number; endTime?: string }) => {
+      setAuctions((currentAuctions) =>
+        currentAuctions.map((auction) =>
+          auction.id === auctionId
+            ? {
+                ...auction,
+                currentBid: update.currentBid,
+                totalBids: update.totalBids,
+                endTime: update.endTime || auction.endTime,
+              }
+            : auction
+        )
+      )
+    },
+    []
+  )
+
   useEffect(() => {
-    Promise.all([
-      fetch('/api/auctions?status=active&limit=6&sort=most_bids').then((r) => r.json()),
-      fetch('/api/homepage').then((r) => r.json()),
-    ])
-      .then(([auctionsData, homepageData]) => {
-        setAuctions(auctionsData.auctions || [])
+    Promise.all([fetchLiveAuctions(), fetch('/api/homepage').then((r) => r.json())])
+      .then(([, homepageData]) => {
         if (homepageData && homepageData.stats) {
           setHomepage(homepageData)
         } else {
@@ -265,7 +546,7 @@ export default function Home() {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [fetchLiveAuctions])
 
   const stopCurrentSource = useCallback(() => {
     if (sourceNodeRef.current) {
@@ -401,15 +682,24 @@ export default function Home() {
                   <Headphones size={18} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-extrabold text-white">Vends tes beats <span className="text-[#e11d48]">aux enchères</span></div>
+                  <div className="text-sm font-extrabold text-white">
+                    Vends tes beats <span className="text-[#e11d48]">aux enchères</span>
+                  </div>
                   <div className="text-[10px] text-gray-500 flex items-center gap-2 mt-0.5">
-                    <span className="flex items-center gap-1"><TrendingUp size={9} className="text-[#2ed573]" /> 85% revenus</span>
+                    <span className="flex items-center gap-1">
+                      <TrendingUp size={9} className="text-[#2ed573]" /> 85% revenus
+                    </span>
                     <span className="text-gray-700">·</span>
-                    <span className="flex items-center gap-1"><Zap size={9} className="text-amber-400" /> Paiements auto</span>
+                    <span className="flex items-center gap-1">
+                      <Zap size={9} className="text-amber-400" /> Paiements auto
+                    </span>
                   </div>
                 </div>
                 <div
-                  onClick={(e) => { e.stopPropagation(); router.push('/producers/upload') }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    router.push('/producers/upload')
+                  }}
                   className="shrink-0 border-2 border-dashed border-[#1e1e2e] rounded-xl px-3 py-2 text-center hover:border-[#e11d48]/50 hover:bg-[#e11d48]/10 transition-all"
                 >
                   <Music size={14} className="mx-auto mb-0.5 text-gray-500" />
@@ -430,7 +720,9 @@ export default function Home() {
                   <Headphones size={18} className="text-white" />
                 </div>
                 <div>
-                  <div className="text-xs font-extrabold text-white group-hover/upload:text-[#e11d48] transition-colors">Vends tes beats</div>
+                  <div className="text-xs font-extrabold text-white group-hover/upload:text-[#e11d48] transition-colors">
+                    Vends tes beats
+                  </div>
                   <div className="text-[10px] text-gray-500">aux enchères</div>
                 </div>
               </div>
@@ -454,7 +746,10 @@ export default function Home() {
 
               {/* Upload zone */}
               <div
-                onClick={(e) => { e.stopPropagation(); router.push('/producers/upload') }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push('/producers/upload')
+                }}
                 className="border-2 border-dashed border-[#1e1e2e] rounded-xl p-3 text-center group-hover/upload:border-[#e11d48]/30 group-hover/upload:bg-[#e11d48]/5 transition-all hover:border-[#e11d48]/50 hover:bg-[#e11d48]/10 cursor-pointer"
               >
                 <Music size={16} className="mx-auto mb-1.5 text-gray-600" />
@@ -468,9 +763,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div
-            className="max-w-5xl mx-auto text-center relative z-10 hero-fade-in"
-          >
+          <div className="max-w-5xl mx-auto text-center relative z-10 hero-fade-in">
             {/* Logo — centré */}
             <div className="mb-4 md:mb-8">
               <Image
@@ -496,25 +789,17 @@ export default function Home() {
 
             {/* Main title with staggered animation */}
             <h1 className="text-4xl md:text-7xl lg:text-8xl font-black mb-5 md:mb-8 leading-[0.9] tracking-tight">
-              <span
-                className="inline-block text-white hero-fade-in-delay-1"
-              >
+              <span className="inline-block text-white hero-fade-in-delay-1">
                 {t('hero.title1')}
               </span>{' '}
-              <span
-                className="inline-block bg-gradient-to-r from-red-500 via-red-400 to-red-600 bg-clip-text text-transparent hero-fade-in-delay-2"
-              >
+              <span className="inline-block bg-gradient-to-r from-red-500 via-red-400 to-red-600 bg-clip-text text-transparent hero-fade-in-delay-2">
                 {t('hero.title2')}
               </span>
               <br />
-              <span
-                className="inline-block text-white hero-fade-in-delay-3"
-              >
+              <span className="inline-block text-white hero-fade-in-delay-3">
                 {t('hero.title3')}
               </span>{' '}
-              <span
-                className="inline-block relative hero-fade-in-delay-4"
-              >
+              <span className="inline-block relative hero-fade-in-delay-4">
                 <span className="bg-gradient-to-r from-red-500 via-purple-500 to-red-500 bg-clip-text text-transparent bg-[length:200%] animate-gradient-x">
                   {t('hero.title4')}
                 </span>
@@ -525,16 +810,12 @@ export default function Home() {
               </span>
             </h1>
 
-            <p
-              className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto mb-7 md:mb-12 leading-relaxed hero-fade-in-delay-4"
-            >
+            <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto mb-7 md:mb-12 leading-relaxed hero-fade-in-delay-4">
               {t('hero.subtitle')}
             </p>
 
             {/* CTA Buttons */}
-            <div
-              className="flex gap-4 flex-wrap justify-center hero-fade-in-delay-4"
-            >
+            <div className="flex gap-4 flex-wrap justify-center hero-fade-in-delay-4">
               <Link
                 href="/marketplace"
                 className="group relative px-6 py-3 md:px-8 md:py-4 rounded-2xl font-extrabold text-white text-base md:text-lg flex items-center gap-2 transition-all hover:scale-105 overflow-hidden"
@@ -563,10 +844,11 @@ export default function Home() {
 
             {/* Mini live stats */}
             {homepage && (
-              <div
-                className="flex items-center justify-center gap-6 md:gap-10 mt-8 md:mt-16 hero-fade-in-delay-4"
-              >
-                <div onClick={() => router.push('/marketplace')} className="flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
+              <div className="flex items-center justify-center gap-6 md:gap-10 mt-8 md:mt-16 hero-fade-in-delay-4">
+                <div
+                  onClick={() => router.push('/marketplace')}
+                  className="flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group"
+                >
                   <div className="relative flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
@@ -576,14 +858,20 @@ export default function Home() {
                     {t('hero.liveAuctions')}
                   </span>
                 </div>
-                <div onClick={() => router.push('/producers')} className="hidden sm:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
+                <div
+                  onClick={() => router.push('/producers')}
+                  className="hidden sm:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group"
+                >
                   <BadgeCheck size={16} className="text-red-500" />
                   <span className="text-gray-500 group-hover:text-gray-300 transition-colors">
                     <strong className="text-white">{homepage.stats.totalProducers}</strong>{' '}
                     {t('hero.producers')}
                   </span>
                 </div>
-                <div onClick={() => router.push('/marketplace')} className="hidden md:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group">
+                <div
+                  onClick={() => router.push('/marketplace')}
+                  className="hidden md:flex items-center gap-2 text-sm hover:scale-105 transition-transform cursor-pointer group"
+                >
                   <Gavel size={14} className="text-red-500" />
                   <span className="text-gray-500 group-hover:text-gray-300 transition-colors">
                     <strong className="text-white">{homepage.stats.totalBids}</strong>{' '}
@@ -644,8 +932,11 @@ export default function Home() {
                   <div
                     key={auction.id}
                     onClick={(e) => {
-                      // Ne pas naviguer si on clique sur le bouton play
-                      if ((e.target as HTMLElement).closest('[data-play-btn]')) return
+                      // Les contrôles de lecture et de mise restent utilisables
+                      // sans ouvrir automatiquement la page détaillée.
+                      if ((e.target as HTMLElement).closest('[data-play-btn], [data-quick-bid]')) {
+                        return
+                      }
                       router.push(`/auction/${auction.id}`)
                     }}
                     className="group relative bg-[#111] rounded-2xl border border-[#1e1e2e] hover:border-red-500/30 transition-all hover:-translate-y-1 duration-300 cursor-pointer"
@@ -734,6 +1025,14 @@ export default function Home() {
                           </div>
                         </div>
                       </div>
+
+                      <QuickBidForm
+                        auction={auction}
+                        sessionStatus={sessionStatus}
+                        onLogin={() => router.push('/login?callbackUrl=%2F')}
+                        onBidPlaced={updateAuctionAfterBid}
+                        onRefresh={refreshAuction}
+                      />
                     </div>
                   </div>
                 ))}
@@ -953,7 +1252,8 @@ export default function Home() {
                                       : t('liveAuctions.bid')}
                                   </div>
                                   <div className="text-xs text-gray-600">
-                                    {t('weeklySelection.startPrice')} : {currentBeat.auction.startPrice}&euro;
+                                    {t('weeklySelection.startPrice')} :{' '}
+                                    {currentBeat.auction.startPrice}&euro;
                                   </div>
                                 </div>
                               </div>
@@ -983,7 +1283,11 @@ export default function Home() {
                               </div>
 
                               <Link
-                                href={currentBeat.auction?.id ? `/auction/${currentBeat.auction.id}` : `/nouveautes?beat=${currentBeat.id}`}
+                                href={
+                                  currentBeat.auction?.id
+                                    ? `/auction/${currentBeat.auction.id}`
+                                    : `/nouveautes?beat=${currentBeat.id}`
+                                }
                                 className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
                               >
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
@@ -1042,7 +1346,9 @@ export default function Home() {
                           onClick={() => {
                             stopCurrentSource()
                             setPlayingId(null)
-                            setFeaturedIndex((prev) => (prev === 0 ? featured.length - 1 : prev - 1))
+                            setFeaturedIndex((prev) =>
+                              prev === 0 ? featured.length - 1 : prev - 1
+                            )
                           }}
                           className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
                         >
@@ -1064,7 +1370,9 @@ export default function Home() {
                           onClick={() => {
                             stopCurrentSource()
                             setPlayingId(null)
-                            setFeaturedIndex((prev) => (prev === featured.length - 1 ? 0 : prev + 1))
+                            setFeaturedIndex((prev) =>
+                              prev === featured.length - 1 ? 0 : prev + 1
+                            )
                           }}
                           className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
                         >
@@ -1101,13 +1409,22 @@ export default function Home() {
                   quelques clics.
                 </p>
                 <div className="flex flex-wrap gap-3 mb-8">
-                  <div onClick={() => router.push('/nouveautes')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                  <div
+                    onClick={() => router.push('/nouveautes')}
+                    className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                  >
                     <Star size={12} className="text-gray-400" /> Licence Basic
                   </div>
-                  <div onClick={() => router.push('/nouveautes')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                  <div
+                    onClick={() => router.push('/nouveautes')}
+                    className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                  >
                     <Crown size={12} className="text-[#e11d48]" /> Licence Premium
                   </div>
-                  <div onClick={() => router.push('/nouveautes')} className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                  <div
+                    onClick={() => router.push('/nouveautes')}
+                    className="flex items-center gap-2 text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                  >
                     <Sparkles size={12} className="text-amber-400" /> Licence Exclusive
                   </div>
                 </div>
@@ -1131,68 +1448,94 @@ export default function Home() {
                   {/* Background card 2 */}
                   <div className="absolute top-4 left-4 right-2 h-48 bg-[#15151f] rounded-2xl border border-[#1e1e2e] transform rotate-1.5 opacity-50" />
                   {/* Main card */}
-                  <div onClick={() => router.push('/nouveautes')} className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-all group/ncard cursor-pointer">
+                  <div
+                    onClick={() => router.push('/nouveautes')}
+                    className="relative bg-gradient-to-br from-[#13131a] to-[#0d0d14] rounded-2xl border border-[#1e1e2e] p-6 hover:border-[#e11d48]/30 transition-all group/ncard cursor-pointer"
+                  >
                     <div className="flex items-center gap-3 mb-5">
                       <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e11d48] to-[#ff0033] flex items-center justify-center group-hover/ncard:scale-110 transition-transform">
                         <Music size={24} className="text-white" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-white group-hover/ncard:text-[#e11d48] transition-colors">Achat immédiat</div>
+                        <div className="text-sm font-bold text-white group-hover/ncard:text-[#e11d48] transition-colors">
+                          Achat immédiat
+                        </div>
                         <div className="text-xs text-gray-500">Prix fixes &middot; 3 licences</div>
                       </div>
                     </div>
 
                     {/* Real beat rows from Nouveautés */}
                     <div className="space-y-2.5">
-                      {(homepage?.nouveautesBeats || []).length > 0 ? (
-                        homepage!.nouveautesBeats.slice(0, 4).map((beat) => (
-                          <div
-                            key={beat.id}
-                            onClick={(e) => { e.stopPropagation(); router.push(`/nouveautes?beat=${beat.id}`) }}
-                            className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#e11d48]/20 border border-transparent transition-all group cursor-pointer"
-                          >
-                            <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 relative">
-                              {beat.coverImage ? (
-                                <Image src={beat.coverImage} alt={beat.title} fill className="object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center">
-                                  <Music size={10} className="text-gray-500" />
+                      {(homepage?.nouveautesBeats || []).length > 0
+                        ? homepage!.nouveautesBeats.slice(0, 4).map((beat) => (
+                            <div
+                              key={beat.id}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                router.push(`/nouveautes?beat=${beat.id}`)
+                              }}
+                              className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#e11d48]/20 border border-transparent transition-all group cursor-pointer"
+                            >
+                              <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 relative">
+                                {beat.coverImage ? (
+                                  <Image
+                                    src={beat.coverImage}
+                                    alt={beat.title}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center">
+                                    <Music size={10} className="text-gray-500" />
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Play size={10} className="text-white ml-0.5" />
                                 </div>
-                              )}
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Play size={10} className="text-white ml-0.5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-bold text-white truncate">
+                                  {beat.title}
+                                </div>
+                                <div className="text-[10px] text-gray-500 truncate">
+                                  {beat.producer} &middot; {beat.genre}
+                                </div>
+                              </div>
+                              <div className="text-xs font-bold text-[#e11d48] shrink-0">
+                                {beat.price}€
                               </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-bold text-white truncate">{beat.title}</div>
-                              <div className="text-[10px] text-gray-500 truncate">{beat.producer} &middot; {beat.genre}</div>
+                          ))
+                        : [1, 2, 3].map((i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02]"
+                            >
+                              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center shrink-0">
+                                <Play size={10} className="text-white ml-0.5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div
+                                  className={`h-2.5 rounded-full bg-white/10 ${i === 1 ? 'w-3/4' : i === 2 ? 'w-1/2' : 'w-2/3'}`}
+                                />
+                                <div className="h-2 rounded-full bg-white/5 w-1/3 mt-1.5" />
+                              </div>
+                              <div className="text-xs font-bold text-[#e11d48]">
+                                {i === 1 ? '25€' : i === 2 ? '40€' : '30€'}
+                              </div>
                             </div>
-                            <div className="text-xs font-bold text-[#e11d48] shrink-0">
-                              {beat.price}€
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        [1, 2, 3].map((i) => (
-                          <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02]">
-                            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0f] flex items-center justify-center shrink-0">
-                              <Play size={10} className="text-white ml-0.5" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className={`h-2.5 rounded-full bg-white/10 ${i === 1 ? 'w-3/4' : i === 2 ? 'w-1/2' : 'w-2/3'}`} />
-                              <div className="h-2 rounded-full bg-white/5 w-1/3 mt-1.5" />
-                            </div>
-                            <div className="text-xs font-bold text-[#e11d48]">{i === 1 ? '25€' : i === 2 ? '40€' : '30€'}</div>
-                          </div>
-                        ))
-                      )}
+                          ))}
                     </div>
 
                     <div className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between">
                       <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
-                        {(homepage?.nouveautesBeats || []).length} beat{(homepage?.nouveautesBeats || []).length !== 1 ? 's' : ''} disponible{(homepage?.nouveautesBeats || []).length !== 1 ? 's' : ''}
+                        {(homepage?.nouveautesBeats || []).length} beat
+                        {(homepage?.nouveautesBeats || []).length !== 1 ? 's' : ''} disponible
+                        {(homepage?.nouveautesBeats || []).length !== 1 ? 's' : ''}
                       </span>
-                      <span className="text-xs font-bold text-[#e11d48] group-hover/ncard:translate-x-1 transition-transform">Voir tout →</span>
+                      <span className="text-xs font-bold text-[#e11d48] group-hover/ncard:translate-x-1 transition-transform">
+                        Voir tout →
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1348,8 +1691,13 @@ export default function Home() {
                       <Icon size={24} />
                     </div>
                     <AnimatedCounter target={value} />
-                    <div className="text-xs text-gray-400 mt-1 font-semibold group-hover:text-white transition-colors">{label}</div>
-                    <ChevronRight size={14} className="mx-auto mt-2 text-gray-700 group-hover:text-red-500 transition-colors" />
+                    <div className="text-xs text-gray-400 mt-1 font-semibold group-hover:text-white transition-colors">
+                      {label}
+                    </div>
+                    <ChevronRight
+                      size={14}
+                      className="mx-auto mt-2 text-gray-700 group-hover:text-red-500 transition-colors"
+                    />
                   </div>
                 ))}
               </div>
@@ -1402,7 +1750,9 @@ export default function Home() {
                   <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 mb-5 group-hover:scale-110 transition-transform">
                     {item.icon}
                   </div>
-                  <h3 className="text-lg font-extrabold text-white mb-2 group-hover:text-red-400 transition-colors">{item.title}</h3>
+                  <h3 className="text-lg font-extrabold text-white mb-2 group-hover:text-red-400 transition-colors">
+                    {item.title}
+                  </h3>
                   <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
                   <div className="mt-4 flex items-center gap-1 text-xs font-bold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                     En savoir plus <ArrowRight size={12} />
@@ -1493,10 +1843,15 @@ export default function Home() {
                     {item.icon}
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-extrabold text-white mb-1 group-hover:text-red-400 transition-colors">{item.title}</h3>
+                    <h3 className="text-base font-extrabold text-white mb-1 group-hover:text-red-400 transition-colors">
+                      {item.title}
+                    </h3>
                     <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
                   </div>
-                  <ChevronRight size={16} className="text-gray-700 group-hover:text-red-500 transition-colors shrink-0 self-center" />
+                  <ChevronRight
+                    size={16}
+                    className="text-gray-700 group-hover:text-red-500 transition-colors shrink-0 self-center"
+                  />
                 </div>
               ))}
             </div>
