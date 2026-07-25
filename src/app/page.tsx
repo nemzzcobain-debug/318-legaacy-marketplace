@@ -1089,21 +1089,21 @@ export default function Home() {
         </section>
 
         {/* ═══════════ SELECTION EN VEDETTE ═══════════ */}
-        <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-hidden">
-          {/* Background glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-[#E50914]/15 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gradient-radial from-[#E50914]/10 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
+        <section className="relative overflow-hidden border-t border-[#1a1a1a] px-4 py-20">
+          {/* Lueur discrète, cohérente avec la salle des ventes */}
+          <div className="pointer-events-none absolute left-1/2 top-0 h-[380px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-radial from-[#E50914]/10 via-transparent to-transparent blur-3xl" />
 
-          <div className="max-w-5xl mx-auto relative z-10">
+          <div className="relative z-10 mx-auto max-w-6xl">
             {/* Header */}
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 bg-[#E50914]/10 border border-[#E50914]/20 rounded-full px-4 py-1.5 text-xs font-bold text-[#E50914] mb-4">
-                <Flame size={12} className="animate-pulse" /> {t('weeklySelection.badge')}
+            <div className="mb-8 max-w-2xl">
+              <div className="mb-3 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#ff4d5f]">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-[#ff4d5f] shadow-[0_0_12px_rgba(255,77,95,0.8)]" />
+                {t('weeklySelection.badge')}
               </div>
-              <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
+              <h2 className="mb-2 text-3xl font-black text-white md:text-4xl">
                 {t('weeklySelection.title')}
               </h2>
-              <p className="text-gray-500 max-w-md mx-auto text-sm">
+              <p className="max-w-xl text-sm leading-relaxed text-gray-500">
                 {t('weeklySelection.subtitle')}
               </p>
             </div>
@@ -1114,10 +1114,10 @@ export default function Home() {
 
               if (featured.length === 0) {
                 return (
-                  <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl border border-[#E50914]/20 overflow-hidden">
-                    <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5" />
-                    <div className="relative z-10 py-20 text-center">
-                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#E50914]/20 to-[#B20710]/20 flex items-center justify-center mx-auto mb-5 border border-[#E50914]/20">
+                  <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d0d10] shadow-2xl shadow-black/30">
+                    <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.03]" />
+                    <div className="relative z-10 py-16 text-center">
+                      <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#E50914]/20 bg-[#E50914]/10">
                         <Clock size={32} className="text-[#E50914]" />
                       </div>
                       <h3 className="text-xl font-extrabold text-white mb-2">
@@ -1143,126 +1143,138 @@ export default function Home() {
               return (
                 <div>
                   {/* Main featured card */}
-                  <div className="relative bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl border border-[#E50914]/20 overflow-hidden group">
-                    {/* Animated border glow */}
-                    <div className="absolute -inset-[1px] bg-gradient-to-r from-[#E50914]/30 via-[#B20710]/30 to-[#E50914]/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-sm" />
+                  <div className="group relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d0d10] shadow-2xl shadow-black/30 transition-colors duration-300 hover:border-[#E50914]/25">
+                    {/* Bandeau de contexte, comme l'en-tête de la salle des ventes */}
+                    <div className="flex items-center justify-between border-b border-white/[0.08] bg-white/[0.025] px-5 py-3">
+                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
+                        <Flame size={12} className="text-[#ff4d5f]" />
+                        Sélection 318 LEGAACY
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                          {hasAuction ? 'Enchère spéciale' : 'Disponible maintenant'}
+                        </span>
+                      </div>
+                    </div>
 
-                    <div className="relative z-10 bg-gradient-to-br from-[#1a0808] via-[#111] to-[#0a0a1a] rounded-3xl">
-                      <div className="grid md:grid-cols-2 gap-0">
-                        {/* Left: Cover & Audio */}
-                        <div className="relative min-h-[320px] md:min-h-[400px] overflow-hidden rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none">
-                          {currentBeat.coverImage ? (
-                            <Image
-                              src={currentBeat.coverImage}
-                              alt={currentBeat.title}
-                              fill
-                              className="object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-700"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#E50914]/40 via-[#B20710]/20 to-[#111]" />
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#111] hidden md:block" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent md:hidden" />
+                    <div className="grid gap-0 lg:grid-cols-[minmax(300px,0.82fr)_1.18fr]">
+                      {/* Left: Cover & Audio */}
+                      <div className="relative min-h-[280px] overflow-hidden border-b border-white/[0.08] lg:min-h-[360px] lg:border-b-0 lg:border-r">
+                        {currentBeat.coverImage ? (
+                          <Image
+                            src={currentBeat.coverImage}
+                            alt={currentBeat.title}
+                            fill
+                            className="object-cover opacity-60 transition-all duration-700 group-hover:scale-105 group-hover:opacity-70"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#E50914]/40 via-[#B20710]/20 to-[#111]" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d10] via-transparent to-black/10" />
 
-                          {/* Badge "Selection" */}
-                          <div className="absolute top-5 left-5 flex items-center gap-2">
-                            <span className="bg-gradient-to-r from-[#E50914] to-[#B20710] text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-[#E50914]/40">
-                              {t('weeklySelection.badge')}
+                        {/* Badge "Selection" */}
+                        <div className="absolute top-5 left-5 flex items-center gap-2">
+                          <span className="rounded-lg border border-white/10 bg-black/65 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-white backdrop-blur-md">
+                            Beat de la semaine
+                          </span>
+                          {featured.length > 1 && (
+                            <span className="rounded-lg border border-white/10 bg-black/65 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md">
+                              {featuredIndex + 1}/{featured.length}
                             </span>
-                            {featured.length > 1 && (
-                              <span className="bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/10">
-                                {featuredIndex + 1}/{featured.length}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* License badge */}
-                          {hasAuction && currentBeat.auction && (
-                            <div className="absolute top-5 right-5">
-                              <span
-                                className={`text-[11px] font-bold px-3 py-1.5 rounded-full border backdrop-blur-sm ${licenseColors[currentBeat.auction.licenseType] || licenseColors.BASIC}`}
-                              >
-                                {currentBeat.auction.licenseType}
-                              </span>
-                            </div>
                           )}
-
-                          {/* Play button center */}
-                          <button
-                            onClick={() => togglePlay(currentBeat.id, currentBeat.audioUrl)}
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-[#E50914]/50 hover:scale-110 transition-transform z-10 border-2 border-white/10 backdrop-blur-sm"
-                            style={{
-                              background: 'linear-gradient(135deg, #E50914 0%, #B20710 100%)',
-                            }}
-                          >
-                            {playingId === currentBeat.id ? (
-                              <Pause size={28} className="text-white" fill="white" />
-                            ) : (
-                              <Play size={28} className="text-white ml-1" fill="white" />
-                            )}
-                          </button>
-
-                          {/* Waveform bottom */}
-                          <div className="absolute bottom-5 left-5 right-5 flex items-center gap-3">
-                            <WaveformVisual active={playingId === currentBeat.id} />
-                            <div className="h-[2px] flex-1 bg-gradient-to-r from-[#E50914]/40 via-[#E50914]/20 to-transparent rounded-full" />
-                          </div>
                         </div>
 
-                        {/* Right: Info */}
-                        <div className="p-8 md:p-10 flex flex-col justify-center">
-                          {/* Genre tags */}
-                          <div className="flex items-center gap-2 mb-4">
-                            <span className="text-[10px] font-bold text-[#E50914] bg-[#E50914]/10 rounded-full px-3 py-1 border border-[#E50914]/20">
-                              {currentBeat.genre}
+                        {/* License badge */}
+                        {hasAuction && currentBeat.auction && (
+                          <div className="absolute top-5 right-5">
+                            <span
+                              className={`text-[11px] font-bold px-3 py-1.5 rounded-full border backdrop-blur-sm ${licenseColors[currentBeat.auction.licenseType] || licenseColors.BASIC}`}
+                            >
+                              {currentBeat.auction.licenseType}
                             </span>
-                            <span className="text-[10px] font-bold text-gray-500 bg-white/5 rounded-full px-3 py-1">
-                              {currentBeat.bpm} BPM
+                          </div>
+                        )}
+
+                        {/* Play button center */}
+                        <button
+                          onClick={() => togglePlay(currentBeat.id, currentBeat.audioUrl)}
+                          aria-label={
+                            playingId === currentBeat.id
+                              ? `Mettre ${currentBeat.title} en pause`
+                              : `Écouter ${currentBeat.title}`
+                          }
+                          className="absolute left-1/2 top-1/2 z-10 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white text-black shadow-2xl shadow-black/50 transition-transform hover:scale-110"
+                        >
+                          {playingId === currentBeat.id ? (
+                            <Pause size={24} fill="currentColor" />
+                          ) : (
+                            <Play size={24} className="ml-1" fill="currentColor" />
+                          )}
+                        </button>
+
+                        {/* Waveform bottom */}
+                        <div className="absolute bottom-5 left-5 right-5 flex items-center gap-3">
+                          <WaveformVisual active={playingId === currentBeat.id} />
+                          <div className="h-[2px] flex-1 bg-gradient-to-r from-[#E50914]/40 via-[#E50914]/20 to-transparent rounded-full" />
+                        </div>
+                      </div>
+
+                      {/* Right: Info */}
+                      <div className="flex flex-col justify-center p-6 md:p-8 lg:p-10">
+                        {/* Genre tags */}
+                        <div className="mb-4 flex flex-wrap items-center gap-2">
+                          <span className="rounded-lg border border-[#E50914]/20 bg-[#E50914]/10 px-3 py-1 text-[10px] font-bold text-[#ff4d5f]">
+                            {currentBeat.genre}
+                          </span>
+                          <span className="rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-1 text-[10px] font-bold text-gray-500">
+                            {currentBeat.bpm} BPM
+                          </span>
+                          {currentBeat.key && (
+                            <span className="rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-1 text-[10px] font-bold text-gray-500">
+                              {currentBeat.key}
                             </span>
-                            {currentBeat.key && (
-                              <span className="text-[10px] font-bold text-gray-500 bg-white/5 rounded-full px-3 py-1">
-                                {currentBeat.key}
-                              </span>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="mb-2 text-2xl font-black text-white transition-colors group-hover:text-[#ff5c6d] md:text-3xl">
+                          {currentBeat.title}
+                        </h3>
+
+                        {/* Producer */}
+                        <div className="flex items-center gap-2 mb-6">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#E50914] to-[#B20710] flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
+                            {currentBeat.producer.avatar ? (
+                              <Image
+                                src={currentBeat.producer.avatar}
+                                alt={currentBeat.producer.name}
+                                width={24}
+                                height={24}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              currentBeat.producer.name[0].toUpperCase()
                             )}
                           </div>
+                          <span className="text-sm text-gray-400 font-semibold">
+                            {currentBeat.producer.name}
+                          </span>
+                          <BadgeCheck size={14} className="text-[#E50914]" />
+                        </div>
 
-                          {/* Title */}
-                          <h3 className="text-2xl md:text-3xl font-black text-white mb-2 group-hover:text-[#ff4d4d] transition-colors">
-                            {currentBeat.title}
-                          </h3>
-
-                          {/* Producer */}
-                          <div className="flex items-center gap-2 mb-6">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#E50914] to-[#B20710] flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
-                              {currentBeat.producer.avatar ? (
-                                <Image
-                                  src={currentBeat.producer.avatar}
-                                  alt={currentBeat.producer.name}
-                                  width={24}
-                                  height={24}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                currentBeat.producer.name[0].toUpperCase()
-                              )}
-                            </div>
-                            <span className="text-sm text-gray-400 font-semibold">
-                              {currentBeat.producer.name}
-                            </span>
-                            <BadgeCheck size={14} className="text-[#E50914]" />
-                          </div>
-
-                          {/* Timer + Price — only if auction exists */}
-                          {hasAuction && currentBeat.auction ? (
-                            <>
-                              <div className="bg-black/40 rounded-2xl border border-[#E50914]/10 p-5 mb-6">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <Timer size={14} className="text-[#E50914]" />
-                                  <span className="text-xs font-bold text-[#E50914] uppercase tracking-wider">
+                        {/* Timer + Price — only if auction exists */}
+                        {hasAuction && currentBeat.auction ? (
+                          <>
+                            <div className="mb-5 grid grid-cols-2 overflow-hidden rounded-2xl border border-white/[0.08] bg-black/25">
+                              <div className="border-r border-white/[0.08] p-4">
+                                <div className="mb-2 flex items-center gap-2">
+                                  <Timer size={13} className="text-[#ff4d5f]" />
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
                                     {t('weeklySelection.timeRemaining')}
                                   </span>
                                 </div>
-                                <div className="text-2xl font-black text-white">
+                                <div className="text-lg font-black text-white md:text-xl">
                                   <CountdownTimer
                                     endTime={currentBeat.auction.endTime}
                                     size="lg"
@@ -1270,70 +1282,64 @@ export default function Home() {
                                   />
                                 </div>
                               </div>
-
-                              <div className="flex items-end justify-between mb-6 pb-5 border-b border-[#222]">
-                                <div>
-                                  <span className="text-[10px] text-gray-600 uppercase tracking-wider font-bold block mb-1">
-                                    {t('weeklySelection.currentBid')}
-                                  </span>
-                                  <div className="text-3xl md:text-4xl font-black text-white">
-                                    {currentBeat.auction.currentBid}&euro;
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-1">
-                                    <Gavel size={14} /> {currentBeat.auction.totalBids}{' '}
-                                    {currentBeat.auction.totalBids > 1
-                                      ? t('liveAuctions.bids')
-                                      : t('liveAuctions.bid')}
-                                  </div>
-                                  <div className="text-xs text-gray-600">
-                                    {t('weeklySelection.startPrice')} :{' '}
-                                    {currentBeat.auction.startPrice}&euro;
-                                  </div>
+                              <div className="p-4">
+                                <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                                  {t('weeklySelection.currentBid')}
+                                </span>
+                                <div className="text-2xl font-black text-white">
+                                  {currentBeat.auction.currentBid}&euro;
                                 </div>
                               </div>
+                            </div>
 
-                              <Link
-                                href={`/auction/${currentBeat.auction.id}`}
-                                className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
-                                <span className="relative z-10 flex items-center justify-center gap-2">
-                                  {t('weeklySelection.placeBid')} <ArrowRight size={18} />
-                                </span>
-                              </Link>
-                            </>
-                          ) : (
-                            <>
-                              <div className="bg-black/40 rounded-2xl border border-[#E50914]/10 p-5 mb-6">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Music size={14} className="text-[#E50914]" />
-                                  <span className="text-xs font-bold text-[#E50914] uppercase tracking-wider">
-                                    Beat en vedette
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-400">
-                                  Ce beat a été sélectionné par l&apos;équipe 318 LEGAACY
-                                </p>
+                            <div className="mb-6 flex items-center justify-between border-b border-[#222] pb-5">
+                              <div className="flex items-center gap-1.5 text-sm text-gray-400">
+                                <Gavel size={14} className="text-[#ff4d5f]" />{' '}
+                                {currentBeat.auction.totalBids}{' '}
+                                {currentBeat.auction.totalBids > 1
+                                  ? t('liveAuctions.bids')
+                                  : t('liveAuctions.bid')}
                               </div>
+                              <div className="text-xs text-gray-600">
+                                {t('weeklySelection.startPrice')} : {currentBeat.auction.startPrice}
+                                &euro;
+                              </div>
+                            </div>
 
-                              <Link
-                                href={
-                                  currentBeat.auction?.id
-                                    ? `/auction/${currentBeat.auction.id}`
-                                    : `/nouveautes?beat=${currentBeat.id}`
-                                }
-                                className="group/btn relative w-full py-4 rounded-2xl font-extrabold text-white text-center text-lg transition-all hover:scale-[1.02] overflow-hidden block"
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#E50914] to-[#B20710] rounded-2xl" />
-                                <span className="relative z-10 flex items-center justify-center gap-2">
-                                  Acheter ce beat <ArrowRight size={18} />
+                            <Link
+                              href={`/auction/${currentBeat.auction.id}`}
+                              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-[#dc2626] py-3.5 text-center text-sm font-extrabold text-white shadow-lg shadow-red-950/20 transition-all hover:brightness-110"
+                            >
+                              {t('weeklySelection.placeBid')} <ArrowRight size={17} />
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            <div className="mb-6 rounded-2xl border border-white/[0.08] bg-black/25 p-5">
+                              <div className="mb-2 flex items-center gap-2">
+                                <Music size={14} className="text-[#ff4d5f]" />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">
+                                  Sélection éditoriale
                                 </span>
-                              </Link>
-                            </>
-                          )}
-                        </div>
+                              </div>
+                              <p className="text-sm leading-relaxed text-gray-400">
+                                Ce beat a été sélectionné par l&apos;équipe 318 LEGAACY pour sa
+                                qualité et son potentiel artistique.
+                              </p>
+                            </div>
+
+                            <Link
+                              href={
+                                currentBeat.auction?.id
+                                  ? `/auction/${currentBeat.auction.id}`
+                                  : `/nouveautes?beat=${currentBeat.id}`
+                              }
+                              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-[#dc2626] py-3.5 text-center text-sm font-extrabold text-white shadow-lg shadow-red-950/20 transition-all hover:brightness-110"
+                            >
+                              Acheter ce beat <ArrowRight size={17} />
+                            </Link>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
