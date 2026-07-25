@@ -4,7 +4,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { createBeatPurchaseIntent, isConnectAccountReady, calculateFinalPrice, calculatePaymentSplit, stripe } from '@/lib/stripe'
+import {
+  createBeatPurchaseIntent,
+  isConnectAccountReady,
+  calculateFinalPrice,
+  calculatePaymentSplit,
+  stripe,
+} from '@/lib/stripe'
 import { randomBytes } from 'crypto'
 
 // POST /api/beats/[id]/purchase — Achat direct d'un beat (hors enchères)
@@ -63,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Récupérer le beat avec le producteur
-    const beat = await prisma.beat.findUnique({
+    const beat = (await prisma.beat.findUnique({
       where: { id: params.id },
       include: {
         producer: {
@@ -82,7 +88,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           select: { id: true },
         },
       },
-    }) as any // Cast to any to access new fields before prisma generate
+    })) as any // Cast to any to access new fields before prisma generate
 
     if (!beat) {
       return NextResponse.json({ error: 'Beat introuvable' }, { status: 404 })
@@ -104,6 +110,28 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // L'acheteur ne peut pas etre le producteur
     if (beat.producerId === userId) {
       return NextResponse.json({ error: 'Tu ne peux pas acheter ton propre beat' }, { status: 400 })
+    }
+
+    const normalizedLicenseType =
+      licenseType === 'BASIC'
+        ? 'MP3'
+        : licenseType === 'PREMIUM'
+          ? 'WAV'
+          : licenseType === 'EXCLUSIVE'
+            ? 'STEMS'
+            : licenseType
+
+    if (normalizedLicenseType === 'MP3' && !beat.audioOriginal) {
+      return NextResponse.json({ error: 'Ce beat n’est pas disponible en MP3' }, { status: 400 })
+    }
+    if (normalizedLicenseType === 'WAV' && !beat.audioWav) {
+      return NextResponse.json({ error: 'Ce beat n’est pas disponible en WAV' }, { status: 400 })
+    }
+    if (normalizedLicenseType === 'STEMS' && !beat.stemsUrl && !beat.stemsFiles) {
+      return NextResponse.json(
+        { error: 'Les stems ne sont pas disponibles pour ce beat' },
+        { status: 400 }
+      )
     }
 
     // Vérifier si le producteur a un compte Stripe Connect actif
