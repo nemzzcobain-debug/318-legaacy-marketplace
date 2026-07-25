@@ -7,6 +7,7 @@ import { authOptions } from '@/lib/auth'
 import { placeBidSchema } from '@/lib/validations'
 import { calculateFinalPrice } from '@/lib/stripe'
 import { sendOutbidEmail, sendAdminNewBidEmail } from '@/lib/emails/resend'
+import { sendPushToUser } from '@/lib/web-push'
 import { randomBytes } from 'crypto'
 
 // POST /api/auctions/bid?auctionId=xxx - Placer une enchère
@@ -254,7 +255,14 @@ export async function POST(request: Request) {
             }
           : null
 
-      return { bid, auction: updatedAuction, outbidEmailData }
+      const outbidUserId =
+        previousBid &&
+        previousBid.userId !== userId &&
+        previousBid.user.notifBid
+          ? previousBid.userId
+          : null
+
+      return { bid, auction: updatedAuction, outbidEmailData, outbidUserId }
     })
 
     // Envoyer l'email hors transaction, mais l'attendre : Vercel peut couper
@@ -274,6 +282,23 @@ export async function POST(request: Request) {
         }
       } catch (error) {
         console.warn('[BID] Erreur envoi email de surenchère:', String(error))
+      }
+    }
+
+    // Push téléphone : même si l'envoi échoue, la mise reste validée.
+    if (result.outbidUserId) {
+      try {
+        const pushResult = await sendPushToUser(result.outbidUserId, {
+          title: 'Ton enchère a été dépassée',
+          body: `${amount} EUR est maintenant l’offre la plus élevée sur « ${auction.beat.title} ».`,
+          url: `/auction/${auctionId}`,
+          tag: `outbid-${auctionId}`,
+        })
+        if (pushResult.failed > 0) {
+          console.warn('[BID] Certains push de surenchère ont échoué:', pushResult)
+        }
+      } catch (error) {
+        console.warn('[BID] Erreur notification push de surenchère:', String(error))
       }
     }
 
