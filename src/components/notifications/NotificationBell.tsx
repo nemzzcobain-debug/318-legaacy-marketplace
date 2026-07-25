@@ -7,6 +7,7 @@ import {
   Bell, Check, CheckCheck, Gavel, TrendingUp, CreditCard,
   Shield, AlertCircle, X, Trash2, ChevronRight, Volume2, Music
 } from 'lucide-react'
+import PushNotificationToggle from './PushNotificationToggle'
 
 interface Notification {
   id: string
@@ -204,7 +205,7 @@ export default function NotificationBell() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-12 w-[380px] max-h-[520px] bg-[#111111] border border-[#222222] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden z-50" id="notifications-dropdown" role="dialog" aria-label="Notifications" aria-modal="true">
+        <div className="absolute right-0 top-12 w-[min(380px,calc(100vw-1rem))] max-h-[620px] bg-[#111111] border border-[#222222] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden z-50" id="notifications-dropdown" role="dialog" aria-label="Notifications" aria-modal="true">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#222222]">
             <div className="flex items-center gap-2">
@@ -227,8 +228,10 @@ export default function NotificationBell() {
             </div>
           </div>
 
+          <PushNotificationToggle />
+
           {/* List */}
-          <div className="overflow-y-auto max-h-[400px]" role="log" aria-live="polite" aria-label="Liste des notifications">
+          <div className="overflow-y-auto max-h-[360px]" role="log" aria-live="polite" aria-label="Liste des notifications">
             {notifications.length > 0 ? (
               notifications.map((notif) => {
                 const Icon = NOTIFICATION_ICONS[notif.type] || Bell
