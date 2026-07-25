@@ -33,7 +33,10 @@ export const authOptions: NextAuthOptions = {
   // SECURITY FIX L4: Configuration explicite des cookies de session
   cookies: {
     sessionToken: {
-      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      name:
+        process.env.NODE_ENV === 'production'
+          ? '__Secure-next-auth.session-token'
+          : 'next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
@@ -155,9 +158,25 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
+      // La base de données reste la source de vérité pour les permissions.
+      // Cela évite qu'un ancien JWT conserve un rôle ADMIN après un changement.
+      if (!user && token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true },
+          })
+
+          if (dbUser) {
+            token.role = dbUser.role
+          }
+        } catch (error) {
+          console.error('[Auth] Impossible de rafraîchir le rôle depuis la base:', error)
+        }
+      }
+
       // Handle session update (from onboarding page)
       if (trigger === 'update' && session) {
-        if (session.role) token.role = session.role
         if (session.needsOnboarding === false) token.needsOnboarding = false
       }
 
@@ -165,8 +184,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string | undefined ?? ''
-        session.user.role = token.role as string | undefined ?? ''
+        session.user.id = (token.id as string | undefined) ?? ''
+        session.user.role = (token.role as string | undefined) ?? ''
         if (token.needsOnboarding) {
           session.user.needsOnboarding = true
         }
