@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { sendBeatUploadConfirmationEmail, sendAdminNewBeatEmail } from '@/lib/emails/resend'
+import {
+  sendAdminNewBeatEmail,
+  sendBeatUploadConfirmationEmail,
+  sendNtfy,
+} from '@/lib/emails/resend'
 
 const MAX_PUBLIC_PREVIEW_SECONDS = 60.5
 
@@ -39,8 +43,7 @@ async function validatePublicWavPreview(url: string): Promise<boolean> {
     const bytes = new Uint8Array(await response.arrayBuffer())
     if (bytes.byteLength < 44) return false
 
-    const ascii = (start: number, end: number) =>
-      String.fromCharCode(...bytes.slice(start, end))
+    const ascii = (start: number, end: number) => String.fromCharCode(...bytes.slice(start, end))
     if (ascii(0, 4) !== 'RIFF' || ascii(8, 12) !== 'WAVE' || ascii(36, 40) !== 'data') {
       return false
     }
@@ -54,8 +57,7 @@ async function validatePublicWavPreview(url: string): Promise<boolean> {
 
     // Empêche d'ajouter un morceau complet après un faux en-tête de 60 secondes.
     const contentRange = response.headers.get('content-range')
-    const totalSize =
-      contentRange?.match(/\/(\d+)$/)?.[1] || response.headers.get('content-length')
+    const totalSize = contentRange?.match(/\/(\d+)$/)?.[1] || response.headers.get('content-length')
     return Boolean(totalSize) && Number(totalSize) === 44 + dataSize
   } catch {
     return false
@@ -130,9 +132,9 @@ export async function POST(req: NextRequest) {
     } = body
 
     // Validations des champs requis
-    if (!title || !genre || !bpm || !audioUrl || !audioOriginalUrl) {
+    if (!title || !genre || !bpm || !audioUrl || (!audioOriginalUrl && !wavUrl)) {
       return NextResponse.json(
-        { error: 'Champs requis: titre, genre, BPM, aperçu audio et MP3 original' },
+        { error: 'Champs requis: titre, genre, BPM, aperçu audio et fichier MP3 ou WAV' },
         { status: 400 }
       )
     }
@@ -151,7 +153,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!isExpectedStorageUrl(audioOriginalUrl, 'beat-files', user.id, false)) {
+    if (audioOriginalUrl && !isExpectedStorageUrl(audioOriginalUrl, 'beat-files', user.id, false)) {
       return NextResponse.json(
         { error: 'Le MP3 complet doit provenir du stockage privé sécurisé' },
         { status: 400 }
@@ -174,14 +176,16 @@ export async function POST(req: NextRequest) {
 
     const parsedAudioDuration = Number(audioDuration)
     const duration =
-      Number.isFinite(parsedAudioDuration) && parsedAudioDuration > 0 && parsedAudioDuration <= 60 * 60
+      Number.isFinite(parsedAudioDuration) &&
+      parsedAudioDuration > 0 &&
+      parsedAudioDuration <= 60 * 60
         ? Math.round(parsedAudioDuration)
         : audioSize
           ? Math.round(audioSize / 16000)
           : 0
 
     // Validation des stems (si fournis)
-    let parsedStems: Array<{name: string; url: string; size: number}> | null = null
+    let parsedStems: Array<{ name: string; url: string; size: number }> | null = null
     if (stemsFiles && Array.isArray(stemsFiles) && stemsFiles.length > 0) {
       // Valider que chaque stem a un URL Supabase valide
       for (const stem of stemsFiles) {
@@ -206,6 +210,12 @@ export async function POST(req: NextRequest) {
     if (enableAuction) {
       if (!['BASIC', 'PREMIUM', 'EXCLUSIVE'].includes(licenseType)) {
         return NextResponse.json({ error: 'Licence d’enchère invalide' }, { status: 400 })
+      }
+      if (licenseType === 'BASIC' && !audioOriginalUrl) {
+        return NextResponse.json(
+          { error: 'Ajoute le fichier MP3 pour une enchère Basic' },
+          { status: 400 }
+        )
       }
       if (licenseType === 'PREMIUM' && !wavUrl) {
         return NextResponse.json(
@@ -238,27 +248,27 @@ export async function POST(req: NextRequest) {
     }
 
     const beatData = {
-        title,
-        description: description || null,
-        audioUrl,
-        audioOriginal: audioOriginalUrl,
-        audioWav: wavUrl || null,
-        stemsFiles: parsedStems ? JSON.stringify(parsedStems) : null,
-        genre,
-        bpm: typeof bpm === 'number' ? bpm : parseInt(bpm),
-        key: key || null,
-        mood: mood || null,
-        tags: Array.isArray(tags) ? JSON.stringify(tags) : tags || '[]',
-        coverImage: coverUrl || null,
-        duration,
-        priceMp3: priceMp3 ? parseFloat(priceMp3) : null,
-        priceWav: priceWav ? parseFloat(priceWav) : null,
-        priceStems: priceStems ? parseFloat(priceStems) : null,
-        status: 'PENDING',
-        producerId: user.id,
-        rejectionType: null,
-        rejectionReason: null,
-        rejectedAt: null,
+      title,
+      description: description || null,
+      audioUrl,
+      audioOriginal: audioOriginalUrl || null,
+      audioWav: wavUrl || null,
+      stemsFiles: parsedStems ? JSON.stringify(parsedStems) : null,
+      genre,
+      bpm: typeof bpm === 'number' ? bpm : parseInt(bpm),
+      key: key || null,
+      mood: mood || null,
+      tags: Array.isArray(tags) ? JSON.stringify(tags) : tags || '[]',
+      coverImage: coverUrl || null,
+      duration,
+      priceMp3: audioOriginalUrl && priceMp3 ? parseFloat(priceMp3) : null,
+      priceWav: wavUrl && priceWav ? parseFloat(priceWav) : null,
+      priceStems: priceStems ? parseFloat(priceStems) : null,
+      status: 'PENDING',
+      producerId: user.id,
+      rejectionType: null,
+      rejectionReason: null,
+      rejectedAt: null,
     }
 
     // Un renvoi remplace le beat refusé afin de conserver son historique.
@@ -294,14 +304,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Le prix de départ doit être >= 1€' }, { status: 400 })
       }
       if (buyNowPrice && (typeof buyNowPrice !== 'number' || buyNowPrice <= startPrice)) {
-        return NextResponse.json({ error: 'Le prix buy-now doit être supérieur au prix de départ' }, { status: 400 })
+        return NextResponse.json(
+          { error: 'Le prix buy-now doit être supérieur au prix de départ' },
+          { status: 400 }
+        )
       }
       const now = new Date()
       const durationHours = auctionDuration || 24
       // Enchere programmee : demarrage differe si une date future est fournie
       const requestedStart = auctionStartAt ? new Date(auctionStartAt) : null
       const startTime =
-        requestedStart && !isNaN(requestedStart.getTime()) && requestedStart.getTime() > now.getTime()
+        requestedStart &&
+        !isNaN(requestedStart.getTime()) &&
+        requestedStart.getTime() > now.getTime()
           ? requestedStart
           : now
       const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000)
@@ -356,20 +371,41 @@ export async function POST(req: NextRequest) {
         await prisma.notification.createMany({ data: notifications })
       }
 
-      // Email admin pour chaque admin (nouveau beat)
-      for (const a of admins) {
-        if (a.email) {
-          sendAdminNewBeatEmail({ adminEmail: a.email, producerName: producerName || 'Producteur', beatTitle: title, genre, bpm }).catch((err) => console.error('Email admin beat echoue:', err))
-        }
+      if (admins.length === 0) {
+        console.error(`[UPLOAD] Aucun compte ADMIN trouvé pour alerter sur le beat ${beat.id}`)
       }
+
+      // Sur Vercel, les tâches lancées sans await peuvent être interrompues dès
+      // que la réponse HTTP est renvoyée. On attend donc réellement l'email et
+      // la notification téléphone avant de terminer la requête.
+      const adminEmailResults = await Promise.all(
+        admins
+          .filter((admin) => Boolean(admin.email))
+          .map((admin) =>
+            sendAdminNewBeatEmail({
+              adminEmail: admin.email,
+              producerName: producerName || 'Producteur',
+              beatTitle: title,
+              genre,
+              bpm,
+            })
+          )
+      )
+      const failedAdminEmails = adminEmailResults.filter((result) => !result.success)
+      if (failedAdminEmails.length > 0) {
+        console.error(
+          `[UPLOAD] ${failedAdminEmails.length}/${adminEmailResults.length} email(s) admin non livré(s) pour le beat ${beat.id}`
+        )
+      }
+
+      await sendNtfy('Beat à valider', `${producerName || 'Un producteur'} a envoyé « ${title} »`)
     } catch (notifErr) {
-      // SECURITY FIX M1: Logger les erreurs de notification au lieu de les ignorer
-      console.warn('[UPLOAD] Erreur notification fan-out:', String(notifErr))
+      console.error('[UPLOAD] Erreur notification admin:', String(notifErr))
     }
 
     // Envoyer email de confirmation d'upload au producteur
     if (user.email) {
-      sendBeatUploadConfirmationEmail({
+      const confirmationResult = await sendBeatUploadConfirmationEmail({
         to: user.email,
         producerName: user.displayName || user.name || 'Producteur',
         beatTitle: title,
@@ -378,7 +414,10 @@ export async function POST(req: NextRequest) {
         hasAuction: !!auction,
         auctionStartPrice: startPrice,
         auctionDuration: auctionDuration,
-      }).catch((err) => console.warn('[UPLOAD] Email confirmation échoué:', String(err)))
+      })
+      if (!confirmationResult.success) {
+        console.warn(`[UPLOAD] Email de confirmation non livré pour le beat ${beat.id}`)
+      }
     }
 
     return NextResponse.json(
