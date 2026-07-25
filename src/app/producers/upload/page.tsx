@@ -21,7 +21,8 @@ import {
   FileAudio,
   Layers,
   Plus,
-  Trash2,  Info,
+  Trash2,
+  Info,
 } from 'lucide-react'
 import { GENRES, MOODS } from '@/types'
 import CoverGenerator from '@/components/ai/CoverGenerator'
@@ -89,7 +90,8 @@ export default function UploadBeatPage() {
   const [buyNowPrice, setBuyNowPrice] = useState('')
   const [auctionDuration, setAuctionDuration] = useState('24')
   const [licenseType, setLicenseType] = useState('BASIC')
-  const [bidIncrement, setBidIncrement] = useState('5'); const [auctionStartAt, setAuctionStartAt] = useState('')
+  const [bidIncrement, setBidIncrement] = useState('5')
+  const [auctionStartAt, setAuctionStartAt] = useState('')
 
   const [uploading, setUploading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -159,11 +161,6 @@ export default function UploadBeatPage() {
     }
 
     setAudioFile(file)
-    // Auto-remplir WAV si l'audio principal est déjà un WAV (évite de le redemander)
-    const audioExt = file.name.split('.').pop()?.toLowerCase()
-    if (audioExt === 'wav') {
-      setWavFile(file)
-    }
     setAudioPreview(URL.createObjectURL(file))
     setError('')
 
@@ -194,13 +191,25 @@ export default function UploadBeatPage() {
       return
     }
     setWavFile(file)
+    // Un WAV peut être le seul fichier source du beat. Il sert alors aussi à
+    // fabriquer l'aperçu public de 60 secondes.
+    if (!audioFile) {
+      setAudioPreview(URL.createObjectURL(file))
+      if (!title) {
+        const name = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+        setTitle(name)
+      }
+      if (licenseType === 'BASIC') {
+        setLicenseType('PREMIUM')
+      }
+    }
     setError('')
   }
 
   const handleStemsSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
-    const invalidFiles = files.filter(f => {
+    const invalidFiles = files.filter((f) => {
       const ext = f.name.split('.').pop()?.toLowerCase()
       return ext !== 'wav' && ext !== 'zip'
     })
@@ -210,7 +219,7 @@ export default function UploadBeatPage() {
     }
 
     const combinedFiles = [...stemFiles, ...files]
-    const zipFiles = combinedFiles.filter(f => f.name.toLowerCase().endsWith('.zip'))
+    const zipFiles = combinedFiles.filter((f) => f.name.toLowerCase().endsWith('.zip'))
     if (zipFiles.length > 0 && combinedFiles.length > 1) {
       setError('Choisis soit un seul fichier ZIP, soit jusqu’à 30 fichiers WAV')
       return
@@ -230,13 +239,18 @@ export default function UploadBeatPage() {
   }
 
   const removeStem = (index: number) => {
-    setStemFiles(prev => prev.filter((_, i) => i !== index))
+    setStemFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!audioFile || !title || !genre || !bpm) {
-      setError('Remplis tous les champs obligatoires (audio, titre, genre, BPM)')
+    const primaryAudioFile = audioFile || wavFile
+    if (!primaryAudioFile || !title || !genre || !bpm) {
+      setError('Ajoute au moins un MP3 ou un WAV, puis remplis le titre, le genre et le BPM')
+      return
+    }
+    if (enableAuction && licenseType === 'BASIC' && !audioFile) {
+      setError('Une enchère Basic nécessite un MP3. Choisis Premium pour un upload WAV seul.')
       return
     }
 
@@ -246,7 +260,7 @@ export default function UploadBeatPage() {
     try {
       const timestamp = Date.now()
       const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-')
-      const audioExt = audioFile.name.split('.').pop() || 'mp3'
+      const audioExt = primaryAudioFile.name.split('.').pop() || (audioFile ? 'mp3' : 'wav')
       const audioFileName = `${timestamp}-${slug}.${audioExt}`
 
       let coverFileName: string | null = null
@@ -255,14 +269,19 @@ export default function UploadBeatPage() {
         coverFileName = `${timestamp}-cover.${coverExt}`
       }
 
-      const wavFileName = wavFile ? `${timestamp}-${slug}.wav` : null
+      // Si le WAV est l'unique source, il est déjà envoyé dans le slot principal :
+      // inutile de transférer deux fois le même fichier lourd.
+      const wavFileName = audioFile && wavFile ? `${timestamp}-${slug}.wav` : null
 
       // Généré localement : seules les 60 premières secondes seront publiques.
       setUploadProgress("Création de l'aperçu sécurisé (60 secondes)...")
-      const audioPreviewFile = await createAudioPreview(audioFile)
+      const audioPreviewFile = await createAudioPreview(primaryAudioFile)
 
       // Préparer les stems pour signed URLs
-      const stemsForSigning = stemFiles.map(f => ({ name: f.name, contentType: f.name.toLowerCase().endsWith('.zip') ? 'application/zip' : 'audio/wav' }))
+      const stemsForSigning = stemFiles.map((f) => ({
+        name: f.name,
+        contentType: f.name.toLowerCase().endsWith('.zip') ? 'application/zip' : 'audio/wav',
+      }))
 
       // 1. Obtenir les signed URLs depuis l'API
       setUploadProgress("Préparation de l'upload...")
@@ -271,11 +290,11 @@ export default function UploadBeatPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           audioFileName,
-          audioContentType: audioFile.type || 'audio/mpeg',
+          audioContentType: primaryAudioFile.type || (audioFile ? 'audio/mpeg' : 'audio/wav'),
           coverFileName,
           coverContentType: coverFile?.type || null,
           wavFileName,
-          wavContentType: wavFile ? 'audio/wav' : null,
+          wavContentType: wavFileName ? 'audio/wav' : null,
           stems: stemsForSigning.length > 0 ? stemsForSigning : null,
         }),
       })
@@ -301,26 +320,29 @@ export default function UploadBeatPage() {
         return
       }
 
-      // 3. Upload du MP3 complet dans le bucket privé
-      setUploadProgress('Stockage privé du MP3 complet...')
+      // 3. Upload du fichier source complet dans le bucket privé
+      setUploadProgress(`Stockage privé du ${audioFile ? 'MP3' : 'WAV'} complet...`)
       const audioUploadRes = await fetch(signedData.audioOriginal.signedUrl, {
         method: 'PUT',
-        headers: { 'Content-Type': audioFile.type || 'audio/mpeg' },
-        body: audioFile,
+        headers: {
+          'Content-Type': primaryAudioFile.type || (audioFile ? 'audio/mpeg' : 'audio/wav'),
+        },
+        body: primaryAudioFile,
       })
 
       if (!audioUploadRes.ok) {
-        setError("Erreur lors de l'upload du fichier MP3")
+        setError(`Erreur lors de l'upload du fichier ${audioFile ? 'MP3' : 'WAV'}`)
         setUploading(false)
         return
       }
 
       const audioUrl = signedData.preview.publicUrl
-      const audioOriginalUrl = signedData.audioOriginal.privateUrl
+      const primaryPrivateUrl = signedData.audioOriginal.privateUrl
+      const audioOriginalUrl = audioFile ? primaryPrivateUrl : null
 
       // 4. Upload WAV privé si fourni
-      let wavUrl: string | null = null
-      if (wavFile && signedData.wav) {
+      let wavUrl: string | null = !audioFile && wavFile ? primaryPrivateUrl : null
+      if (audioFile && wavFile && signedData.wav) {
         setUploadProgress('Upload du WAV...')
         const wavUploadRes = await fetch(signedData.wav.signedUrl, {
           method: 'PUT',
@@ -333,7 +355,7 @@ export default function UploadBeatPage() {
       }
 
       // 5. Upload stems privés
-      let uploadedStems: Array<{name: string; url: string; size: number}> = []
+      let uploadedStems: Array<{ name: string; url: string; size: number }> = []
       if (stemFiles.length > 0 && signedData.stems) {
         for (let i = 0; i < stemFiles.length; i++) {
           const stemFile = stemFiles[i]
@@ -399,18 +421,30 @@ export default function UploadBeatPage() {
           coverUrl,
           wavUrl,
           stemsFiles: uploadedStems.length > 0 ? uploadedStems : null,
-          priceMp3: priceMp3 || null,
-          priceWav: priceWav || null,
+          priceMp3: audioFile ? priceMp3 || null : null,
+          priceWav: wavFile ? priceWav || null : null,
           priceStems: priceStems || null,
-          audioFileName: audioFile.name,
-          audioSize: audioFile.size,
+          audioFileName: primaryAudioFile.name,
+          audioSize: primaryAudioFile.size,
           // Auction data
           enableAuction,
-          startPrice: enableAuction ? parseFloat(startPrice || priceMp3 || '10') : null,
+          startPrice: enableAuction
+            ? parseFloat(
+                startPrice ||
+                  (licenseType === 'BASIC'
+                    ? priceMp3
+                    : licenseType === 'PREMIUM'
+                      ? priceWav
+                      : priceStems) ||
+                  '10'
+              )
+            : null,
           premiumPrice: enableAuction && priceWav ? parseFloat(priceWav) : null,
           exclusivePrice: enableAuction && priceStems ? parseFloat(priceStems) : null,
           buyNowPrice: enableAuction && buyNowPrice ? parseFloat(buyNowPrice) : null,
-          auctionDuration: enableAuction ? parseFloat(auctionDuration) : null, auctionStartAt: enableAuction && auctionStartAt ? new Date(auctionStartAt).toISOString() : null,
+          auctionDuration: enableAuction ? parseFloat(auctionDuration) : null,
+          auctionStartAt:
+            enableAuction && auctionStartAt ? new Date(auctionStartAt).toISOString() : null,
           licenseType: enableAuction ? licenseType : null,
           bidIncrement: enableAuction ? 5 : null, // Incrément fixe 5 EUR
         }),
@@ -461,9 +495,26 @@ export default function UploadBeatPage() {
 
   const removeAudio = () => {
     setAudioFile(null)
-    setAudioPreview(null)
+    setPriceMp3('')
+    setAudioPreview(wavFile ? URL.createObjectURL(wavFile) : null)
     setIsPlaying(false)
+    if (wavFile && licenseType === 'BASIC') {
+      setLicenseType('PREMIUM')
+    }
     if (audioInputRef.current) audioInputRef.current.value = ''
+  }
+
+  const removeWav = () => {
+    setWavFile(null)
+    setPriceWav('')
+    if (!audioFile) {
+      setAudioPreview(null)
+      setIsPlaying(false)
+    }
+    if (licenseType === 'PREMIUM') {
+      setLicenseType(audioFile ? 'BASIC' : stemFiles.length > 0 ? 'EXCLUSIVE' : 'BASIC')
+    }
+    if (wavInputRef.current) wavInputRef.current.value = ''
   }
 
   const removeCover = () => {
@@ -564,17 +615,22 @@ export default function UploadBeatPage() {
               <p className="font-bold text-amber-300">Modifications demandées</p>
               <p className="mt-1 text-sm text-amber-100">{rejectionReason}</p>
               <p className="mt-2 text-xs text-amber-200/70">
-                Corrige les informations et sélectionne de nouveau les fichiers avant de renvoyer le beat.
+                Corrige les informations et sélectionne de nouveau les fichiers avant de renvoyer le
+                beat.
               </p>
             </div>
           )}
           {/* Audio Upload */}
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">
-              Fichier audio MP3 <span className="text-red-400">*</span>
+              Fichier MP3{' '}
+              <span className="text-gray-500 text-xs font-normal">
+                (optionnel si tu ajoutes un WAV)
+              </span>
             </label>
             <p className="mb-3 text-xs text-emerald-400/80">
-              Un aperçu public de 60 secondes sera créé automatiquement. Le fichier complet restera privé.
+              Ajoute au minimum un MP3 ou un WAV. Un aperçu public de 60 secondes sera créé
+              automatiquement et le fichier complet restera privé.
             </p>
             {!audioFile ? (
               <div
@@ -636,7 +692,10 @@ export default function UploadBeatPage() {
           {/* WAV Upload */}
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">
-              Fichier WAV <span className="text-gray-500 text-xs font-normal">(haute qualité — accessible à l&apos;achat)</span>
+              Fichier WAV{' '}
+              <span className="text-gray-500 text-xs font-normal">
+                (peut être envoyé seul — accessible à l&apos;achat Premium)
+              </span>
             </label>
             {!wavFile ? (
               <div
@@ -660,13 +719,17 @@ export default function UploadBeatPage() {
                     <FileAudio size={18} className="text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-sm text-white font-medium truncate max-w-[250px]">{wavFile.name}</p>
-                    <p className="text-xs text-gray-500">{(wavFile.size / 1024 / 1024).toFixed(1)} MB</p>
+                    <p className="text-sm text-white font-medium truncate max-w-[250px]">
+                      {wavFile.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {(wavFile.size / 1024 / 1024).toFixed(1)} MB
+                    </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => { setWavFile(null); if (wavInputRef.current) wavInputRef.current.value = '' }}
+                  onClick={removeWav}
                   className="text-gray-500 hover:text-red-400 transition"
                 >
                   <X size={18} />
@@ -685,17 +748,27 @@ export default function UploadBeatPage() {
           {/* Stems Upload */}
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">
-              Stems <span className="text-gray-500 text-xs font-normal">(pistes séparées — accessibles à l&apos;achat Stems)</span>
+              Stems{' '}
+              <span className="text-gray-500 text-xs font-normal">
+                (pistes séparées — accessibles à l&apos;achat Stems)
+              </span>
             </label>
             <div className="space-y-2">
               {stemFiles.length > 0 && (
                 <div className="bg-[#13131a] border border-purple-500/30 rounded-2xl p-4 space-y-2">
                   {stemFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-white/[0.02]">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-white/[0.02]"
+                    >
                       <div className="flex items-center gap-2">
                         <Layers size={14} className="text-purple-400" />
-                        <span className="text-sm text-white truncate max-w-[200px]">{file.name}</span>
-                        <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+                        <span className="text-sm text-white truncate max-w-[200px]">
+                          {file.name}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                        </span>
                       </div>
                       <button
                         type="button"
@@ -707,7 +780,8 @@ export default function UploadBeatPage() {
                     </div>
                   ))}
                   <p className="text-xs text-gray-500 pt-1">
-                    {stemFiles.length}/30 stems — {(stemFiles.reduce((s, f) => s + f.size, 0) / 1024 / 1024).toFixed(1)} MB total
+                    {stemFiles.length}/30 stems —{' '}
+                    {(stemFiles.reduce((s, f) => s + f.size, 0) / 1024 / 1024).toFixed(1)} MB total
                   </p>
                 </div>
               )}
@@ -721,10 +795,11 @@ export default function UploadBeatPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-purple-300 text-sm font-semibold">
-                      {stemFiles.length > 0 ? 'Ajouter d\'autres stems' : 'Ajouter les stems'}
+                      {stemFiles.length > 0 ? "Ajouter d'autres stems" : 'Ajouter les stems'}
                     </p>
                     <p className="text-gray-500 text-xs">
-                      Jusqu&apos;à 30 fichiers WAV ou un fichier ZIP contenant tous les stems — 5 GB maximum.
+                      Jusqu&apos;à 30 fichiers WAV ou un fichier ZIP contenant tous les stems — 5 GB
+                      maximum.
                     </p>
                   </div>
                 </div>
@@ -776,7 +851,14 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <DollarSign size={14} className="text-green-400" />
-                      Prix de la mise de départ (EUR) <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/50 cursor-help hover:bg-blue-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Montant auquel démarre l&apos;enchère. Les acheteurs placeront leurs offres à partir de ce prix. Surenchère minimum : +5€.</span></span>
+                      Prix de la mise de départ (EUR){' '}
+                      <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/50 cursor-help hover:bg-blue-500/40 transition">
+                        <Info size={11} />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">
+                          Montant auquel démarre l&apos;enchère. Les acheteurs placeront leurs
+                          offres à partir de ce prix. Surenchère minimum : +5€.
+                        </span>
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -791,7 +873,15 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <Tag size={14} className="text-amber-400" />
-                      Achat immédiat <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/50 cursor-help hover:bg-amber-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Prix auquel un acheteur peut clore l&apos;enchère instantanément sans attendre la fin. Optionnel : laisse vide pour laisser l&apos;enchère aller jusqu&apos;au bout.</span></span>
+                      Achat immédiat{' '}
+                      <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/50 cursor-help hover:bg-amber-500/40 transition">
+                        <Info size={11} />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">
+                          Prix auquel un acheteur peut clore l&apos;enchère instantanément sans
+                          attendre la fin. Optionnel : laisse vide pour laisser l&apos;enchère aller
+                          jusqu&apos;au bout.
+                        </span>
+                      </span>
                       <span className="text-gray-500 text-xs font-normal ml-1">optionnel</span>
                     </label>
                     <input
@@ -807,7 +897,14 @@ export default function UploadBeatPage() {
                   <div>
                     <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
                       <Clock size={14} className="text-blue-400" />
-                      Durée de l&apos;enchère <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/50 cursor-help hover:bg-blue-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Temps pendant lequel les acheteurs peuvent enchérir. À la fin, le plus offrant remporte le beat.</span></span>
+                      Durée de l&apos;enchère{' '}
+                      <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/50 cursor-help hover:bg-blue-500/40 transition">
+                        <Info size={11} />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">
+                          Temps pendant lequel les acheteurs peuvent enchérir. À la fin, le plus
+                          offrant remporte le beat.
+                        </span>
+                      </span>
                     </label>
                     <select
                       value={auctionDuration}
@@ -847,7 +944,29 @@ export default function UploadBeatPage() {
                   </div>
                 </div>
 
-                <div><label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5"><Clock size={14} className="text-purple-400" />Date et heure de démarrage<span className="text-gray-500 text-xs font-normal ml-1">optionnel</span><span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/50 cursor-help hover:bg-purple-500/40 transition"><Info size={11} /><span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">Laisse vide pour démarrer dès l&apos;approbation. Si tu choisis une date future, ton beat restera masqué jusqu&apos;à cette date après sa validation.</span></span></label><input type="datetime-local" value={auctionStartAt} onChange={(e) => setAuctionStartAt(e.target.value)} className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition" /><p className="text-xs text-gray-500 mt-2">Vide = l&apos;enchère démarrera dès que le beat aura été approuvé.</p></div>
+                <div>
+                  <label className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
+                    <Clock size={14} className="text-purple-400" />
+                    Date et heure de démarrage
+                    <span className="text-gray-500 text-xs font-normal ml-1">optionnel</span>
+                    <span className="relative group/tip ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/50 cursor-help hover:bg-purple-500/40 transition">
+                      <Info size={11} />
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:block w-64 p-3 rounded-xl bg-[#1a1a24] border border-[#2a2a3a] text-[11px] text-gray-200 font-normal leading-relaxed z-50 shadow-2xl normal-case">
+                        Laisse vide pour démarrer dès l&apos;approbation. Si tu choisis une date
+                        future, ton beat restera masqué jusqu&apos;à cette date après sa validation.
+                      </span>
+                    </span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={auctionStartAt}
+                    onChange={(e) => setAuctionStartAt(e.target.value)}
+                    className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Vide = l&apos;enchère démarrera dès que le beat aura été approuvé.
+                  </p>
+                </div>
 
                 <div>
                   <label className="text-sm font-semibold text-white mb-2 block">
@@ -858,28 +977,41 @@ export default function UploadBeatPage() {
                     onChange={(e) => setLicenseType(e.target.value)}
                     className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
                   >
-                    <option value="BASIC">Basic — MP3</option>
-                    <option value="PREMIUM" disabled={!wavFile}>Premium — WAV + MP3</option>
-                    <option value="EXCLUSIVE" disabled={stemFiles.length === 0}>Exclusive — WAV + Stems</option>
+                    <option value="BASIC" disabled={!audioFile}>
+                      Basic — MP3
+                    </option>
+                    <option value="PREMIUM" disabled={!wavFile}>
+                      Premium — WAV
+                    </option>
+                    <option value="EXCLUSIVE" disabled={stemFiles.length === 0}>
+                      Exclusive — WAV + Stems
+                    </option>
                   </select>
                   <p className="text-xs text-gray-500 mt-2">
-                    Cette licence sera clairement affichée aux artistes et restera identique pendant toute l&apos;enchère.
+                    Cette licence sera clairement affichée aux artistes et restera identique pendant
+                    toute l&apos;enchère.
                   </p>
                 </div>
               </div>
             )}
           </div>
 
-                    {/* Prix par licence */}
+          {/* Prix par licence */}
           <div className="border border-[#1e1e2e] rounded-2xl p-5 bg-[#0d0d14]">
             <label className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
               <DollarSign size={16} className="text-green-400" />
               Prix des licences (achat direct et enchère)
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className={`p-3 rounded-xl border ${audioFile ? 'border-blue-500/30 bg-blue-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
-                <p className="text-sm font-bold text-blue-400">MP3 <span className="text-[9px] font-normal opacity-60 ml-1">(Basic)</span></p>
-                <p className="text-[11px] text-blue-400/70 mb-2 leading-snug min-h-[34px]">Non-commercial · 5K streams max · Crédits requis</p>
+              <div
+                className={`p-3 rounded-xl border ${audioFile ? 'border-blue-500/30 bg-blue-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}
+              >
+                <p className="text-sm font-bold text-blue-400">
+                  MP3 <span className="text-[9px] font-normal opacity-60 ml-1">(Basic)</span>
+                </p>
+                <p className="text-[11px] text-blue-400/70 mb-2 leading-snug min-h-[34px]">
+                  Non-commercial · 5K streams max · Crédits requis
+                </p>
                 <div className="relative">
                   <input
                     type="number"
@@ -890,12 +1022,20 @@ export default function UploadBeatPage() {
                     disabled={!audioFile}
                     className="w-full bg-[#0a0a12] border border-blue-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500/50 transition disabled:opacity-50"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">€</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                    €
+                  </span>
                 </div>
               </div>
-              <div className={`p-3 rounded-xl border ${wavFile ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
-                <p className="text-sm font-bold text-emerald-400">WAV <span className="text-[9px] font-normal opacity-60 ml-1">(Premium)</span></p>
-                <p className="text-[11px] text-emerald-400/70 mb-2 leading-snug min-h-[34px]">Commercial · 50K streams · Crédits requis</p>
+              <div
+                className={`p-3 rounded-xl border ${wavFile ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}
+              >
+                <p className="text-sm font-bold text-emerald-400">
+                  WAV <span className="text-[9px] font-normal opacity-60 ml-1">(Premium)</span>
+                </p>
+                <p className="text-[11px] text-emerald-400/70 mb-2 leading-snug min-h-[34px]">
+                  Commercial · 50K streams · Crédits requis
+                </p>
                 <div className="relative">
                   <input
                     type="number"
@@ -906,12 +1046,20 @@ export default function UploadBeatPage() {
                     disabled={!wavFile}
                     className="w-full bg-[#0a0a12] border border-emerald-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-emerald-500/50 transition disabled:opacity-50"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">€</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                    €
+                  </span>
                 </div>
               </div>
-              <div className={`p-3 rounded-xl border ${stemFiles.length > 0 ? 'border-amber-500/30 bg-amber-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}>
-                <p className="text-sm font-bold text-amber-400">Stems <span className="text-[9px] font-normal opacity-60 ml-1">(Exclusive)</span></p>
-                <p className="text-[11px] text-amber-400/70 mb-2 leading-snug min-h-[34px]">WAV + MP3 + Stems · Droits exclusifs</p>
+              <div
+                className={`p-3 rounded-xl border ${stemFiles.length > 0 ? 'border-amber-500/30 bg-amber-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}
+              >
+                <p className="text-sm font-bold text-amber-400">
+                  Stems <span className="text-[9px] font-normal opacity-60 ml-1">(Exclusive)</span>
+                </p>
+                <p className="text-[11px] text-amber-400/70 mb-2 leading-snug min-h-[34px]">
+                  WAV + Stems · Droits exclusifs
+                </p>
                 <div className="relative">
                   <input
                     type="number"
@@ -922,12 +1070,15 @@ export default function UploadBeatPage() {
                     disabled={stemFiles.length === 0}
                     className="w-full bg-[#0a0a12] border border-amber-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-500/50 transition disabled:opacity-50"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">€</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                    €
+                  </span>
                 </div>
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-3">
-              Les fichiers WAV et Stems ne seront accessibles qu&apos;après achat de la licence correspondante.
+              Les fichiers WAV et Stems ne seront accessibles qu&apos;après achat de la licence
+              correspondante.
             </p>
           </div>
 
@@ -1136,7 +1287,12 @@ export default function UploadBeatPage() {
           <button
             type="submit"
             disabled={
-              uploading || !audioFile || !title || !genre || !bpm || (enableAuction && !startPrice)
+              uploading ||
+              (!audioFile && !wavFile) ||
+              !title ||
+              !genre ||
+              !bpm ||
+              (enableAuction && !startPrice)
             }
             className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
