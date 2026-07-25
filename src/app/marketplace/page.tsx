@@ -8,6 +8,7 @@ import Header from '@/components/layout/Header'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import LikeButton from '@/components/ui/LikeButton'
+import { useExclusiveAudioPlayer } from '@/hooks/useExclusiveAudioPlayer'
 import {
   Search, X, Gavel, Clock, Play, Pause,
   SlidersHorizontal, ArrowUpDown,
@@ -107,8 +108,7 @@ function MarketplaceExplorerContent() {
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
-  const [playingId, setPlayingId] = useState<string | null>(null)
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const { playingId, togglePlay } = useExclusiveAudioPlayer()
 
   const doSearch = useCallback(async (resetPage = false) => {
     setLoading(true)
@@ -166,14 +166,6 @@ function MarketplaceExplorerContent() {
 
   const activeFilterCount = [genre, bpmMin, bpmMax, key, mood, priceMin, priceMax, licenseType]
     .filter(Boolean).length
-
-  const togglePlay = (id: string, url: string) => {
-    if (playingId === id) { audio?.pause(); setPlayingId(null); return }
-    audio?.pause()
-    const a = new Audio(url)
-    a.play(); a.onended = () => setPlayingId(null)
-    setAudio(a); setPlayingId(id)
-  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#08080a] text-white">
