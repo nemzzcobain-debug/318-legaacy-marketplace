@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import CountdownTimer from '@/components/ui/CountdownTimer'
+import { useExclusiveAudioPlayer } from '@/hooks/useExclusiveAudioPlayer'
 import {
   Gavel, Clock, Trophy, XCircle, CreditCard, TrendingUp, Music,
   Play, Pause, AlertTriangle, CheckCircle, ArrowRight, Loader2,
@@ -74,8 +75,7 @@ export default function MyAuctionsPage() {
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabId>('active')
-  const [playingId, setPlayingId] = useState<string | null>(null)
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const { playingId, togglePlay } = useExclusiveAudioPlayer()
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -103,20 +103,6 @@ export default function MyAuctionsPage() {
     }
     if (status === 'authenticated') fetchData()
   }, [status])
-
-  const togglePlay = (auctionId: string, audioUrl: string) => {
-    if (playingId === auctionId) {
-      audio?.pause()
-      setPlayingId(null)
-      return
-    }
-    audio?.pause()
-    const newAudio = new Audio(audioUrl)
-    newAudio.play()
-    newAudio.onended = () => setPlayingId(null)
-    setAudio(newAudio)
-    setPlayingId(auctionId)
-  }
 
   if (status === 'loading' || loading) {
     return (
