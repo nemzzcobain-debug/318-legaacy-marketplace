@@ -86,7 +86,8 @@ export async function GET(req: NextRequest) {
       paidAt: p.updatedAt,
       beat: {
         ...p.beat,
-        hasMp3: !!(p.beat.audioOriginal || p.beat.audioUrl),
+        // L'aperçu public ne doit jamais être présenté comme un MP3 achetable.
+        hasMp3: !!p.beat.audioOriginal,
         hasWav: !!p.beat.audioWav,
         hasStems: !!(p.beat.stemsUrl || p.beat.stemsFiles),
         audioOriginal: undefined,
