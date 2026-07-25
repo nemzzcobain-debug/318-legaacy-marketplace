@@ -9,6 +9,7 @@ import CreateAuctionForm from '@/components/dashboard/CreateAuctionForm'
 import AnalyticsTab from '@/components/dashboard/AnalyticsTab'
 import { BadgesFullView } from '@/components/badges/BadgeDisplay'
 import CountdownTimer from '@/components/ui/CountdownTimer'
+import { useExclusiveAudioPlayer } from '@/hooks/useExclusiveAudioPlayer'
 import {
   BarChart3,
   DollarSign,
@@ -136,8 +137,7 @@ function ArtistDashboard({ session }: { session: any }) {
   const [auctionData, setAuctionData] = useState<ArtistAuctionData | null>(null)
   const [purchaseData, setPurchaseData] = useState<ArtistPurchaseData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [playingId, setPlayingId] = useState<string | null>(null)
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const { playingId, togglePlay } = useExclusiveAudioPlayer()
 
   const userName = session?.user?.name || 'Artiste'
 
@@ -159,20 +159,6 @@ function ArtistDashboard({ session }: { session: any }) {
   useEffect(() => {
     fetchData()
   }, [fetchData])
-
-  const togglePlay = (id: string, url: string) => {
-    if (playingId === id) {
-      audio?.pause()
-      setPlayingId(null)
-      return
-    }
-    audio?.pause()
-    const newAudio = new Audio(url)
-    newAudio.play()
-    newAudio.onended = () => setPlayingId(null)
-    setAudio(newAudio)
-    setPlayingId(id)
-  }
 
   const tabs: { id: ArtistTab; label: string; icon: any }[] = [
     { id: 'overview', label: "Vue d'ensemble", icon: BarChart3 },
@@ -859,8 +845,7 @@ function ProducerDashboard({ session }: { session: any }) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [playingId, setPlayingId] = useState<string | null>(null)
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const { playingId, togglePlay } = useExclusiveAudioPlayer()
   const [extensionAuctionId, setExtensionAuctionId] = useState<string | null>(null)
   const [extensionHours, setExtensionHours] = useState(24)
   const [extendingAuctionId, setExtendingAuctionId] = useState<string | null>(null)
@@ -890,20 +875,6 @@ function ProducerDashboard({ session }: { session: any }) {
   useEffect(() => {
     fetchData()
   }, [fetchData])
-
-  const togglePlay = (id: string, url: string) => {
-    if (playingId === id) {
-      audio?.pause()
-      setPlayingId(null)
-      return
-    }
-    audio?.pause()
-    const newAudio = new Audio(url)
-    newAudio.play()
-    newAudio.onended = () => setPlayingId(null)
-    setAudio(newAudio)
-    setPlayingId(id)
-  }
 
   const extendAuction = async (auctionId: string) => {
     setExtendingAuctionId(auctionId)
