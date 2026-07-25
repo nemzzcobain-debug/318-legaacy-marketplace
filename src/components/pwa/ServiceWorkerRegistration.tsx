@@ -8,7 +8,7 @@ export default function ServiceWorkerRegistration() {
       navigator.serviceWorker
         // Le paramètre de version force les anciens appareils à récupérer le
         // service worker corrigé au lieu de garder un cache obsolète.
-        .register('/sw.js?v=3', { updateViaCache: 'none' })
+        .register('/sw.js?v=4', { updateViaCache: 'none' })
         .then((reg) => {
           console.log('SW registered:', reg.scope)
 
