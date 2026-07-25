@@ -85,11 +85,6 @@ export async function POST(request: Request) {
       where: { id: auctionId },
       include: {
         beat: { select: { producerId: true, title: true } },
-        bids: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: { userId: true },
-        },
       },
     })
 
@@ -155,6 +150,27 @@ export async function POST(request: Request) {
         throw new Error(`BID_TOO_LOW:${freshAuction.currentBid + freshAuction.bidIncrement}`)
       }
 
+      // Lire le leader actuel dans la même transaction que la nouvelle mise.
+      // Ainsi, même avec deux enchères presque simultanées, seule la personne
+      // réellement dépassée reçoit l'alerte.
+      const previousBid = await tx.bid.findFirst({
+        where: { auctionId },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        select: {
+          amount: true,
+          userId: true,
+          user: {
+            select: {
+              email: true,
+              name: true,
+              displayName: true,
+              notifEmail: true,
+              notifBid: true,
+            },
+          },
+        },
+      })
+
       // Creer le bid
       const bid = await tx.bid.create({
         data: {
@@ -201,14 +217,13 @@ export async function POST(request: Request) {
       })
 
       // Notifier le précédent enchérisseur qu'il a été surenchéri
-      const previousBidder = auction.bids[0]
-      if (previousBidder && previousBidder.userId !== userId) {
+      if (previousBid && previousBid.userId !== userId && previousBid.user.notifBid) {
         await tx.notification.create({
           data: {
-            userId: previousBidder.userId,
+            userId: previousBid.userId,
             type: 'OUTBID',
-            title: 'Surenchère !',
-            message: `Quelqu'un a encherit ${amount}EUR sur "${auction.beat.title}"`,
+            title: 'Ton enchère a été dépassée',
+            message: `Ton offre de ${previousBid.amount} EUR sur "${auction.beat.title}" a été dépassée par une enchère de ${amount} EUR.`,
             link: `/auction/${auctionId}`,
           },
         })
@@ -226,33 +241,40 @@ export async function POST(request: Request) {
       })
 
       // SECURITY FIX M7: Collecter les infos pour email hors transaction
-      let outbidEmailData: { email: string; name: string } | null = null
-      if (previousBidder && previousBidder.userId !== userId) {
-        const prevUser = await tx.user.findUnique({
-          where: { id: previousBidder.userId },
-          select: { email: true, name: true, displayName: true },
-        })
-        if (prevUser?.email) {
-          outbidEmailData = {
-            email: prevUser.email,
-            name: prevUser.displayName || prevUser.name || '',
-          }
-        }
-      }
+      const outbidEmailData =
+        previousBid &&
+        previousBid.userId !== userId &&
+        previousBid.user.notifBid &&
+        previousBid.user.notifEmail &&
+        previousBid.user.email
+          ? {
+              email: previousBid.user.email,
+              name: previousBid.user.displayName || previousBid.user.name || '',
+              yourBid: previousBid.amount,
+            }
+          : null
 
       return { bid, auction: updatedAuction, outbidEmailData }
     })
 
-    // SECURITY FIX M7: Envoyer l'email HORS de la transaction avec logging
+    // Envoyer l'email hors transaction, mais l'attendre : Vercel peut couper
+    // une promesse laissée en arrière-plan dès que la réponse HTTP est partie.
     if (result.outbidEmailData) {
-      sendOutbidEmail({
-        to: result.outbidEmailData.email,
-        userName: result.outbidEmailData.name,
-        beatTitle: auction.beat.title,
-        yourBid: auction.currentBid,
-        newBid: amount,
-        auctionId,
-      }).catch((err) => console.warn('[BID] Erreur envoi email outbid:', String(err)))
+      try {
+        const emailResult = await sendOutbidEmail({
+          to: result.outbidEmailData.email,
+          userName: result.outbidEmailData.name,
+          beatTitle: auction.beat.title,
+          yourBid: result.outbidEmailData.yourBid,
+          newBid: amount,
+          auctionId,
+        })
+        if (!emailResult.success) {
+          console.warn('[BID] Email de surenchère non envoyé:', emailResult)
+        }
+      } catch (error) {
+        console.warn('[BID] Erreur envoi email de surenchère:', String(error))
+      }
     }
 
     // Email admin pour chaque nouvelle enchere
