@@ -118,7 +118,16 @@ export async function getConnectAccountReadiness(
   try {
     const account = await stripe.accounts.retrieve(accountId)
     return account.charges_enabled && account.payouts_enabled ? 'ready' : 'pending'
-  } catch (error) {
+  } catch (error: any) {
+    const message = error?.message || error?.raw?.message || ''
+    const code = error?.code || error?.raw?.code || ''
+    if (
+      code === 'resource_missing' ||
+      message.includes('No such account') ||
+      message.includes('does not have access')
+    ) {
+      return 'pending'
+    }
     console.error('[Stripe Connect] Vérification temporairement indisponible:', error)
     return 'unavailable'
   }
