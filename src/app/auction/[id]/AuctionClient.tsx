@@ -106,18 +106,23 @@ const LICENSE_INFO: Record<
   string,
   { name: string; color: string; multiplier: number; rights: string }
 > = {
-  BASIC: { name: 'Basic', color: '#8a8a9a', multiplier: 1, rights: 'MP3 - 5000 streams' },
+  BASIC: {
+    name: 'Basique',
+    color: '#8a8a9a',
+    multiplier: 1,
+    rights: "MP3 uniquement · jusqu'à 5 000 écoutes",
+  },
   PREMIUM: {
     name: 'Premium',
     color: '#e11d48',
     multiplier: 2.5,
-    rights: 'WAV + MP3 - 50K streams',
+    rights: "MP3 + WAV · jusqu'à 100 000 écoutes",
   },
   EXCLUSIVE: {
     name: 'Exclusive',
     color: '#ff0033',
     multiplier: 10,
-    rights: 'WAV + Stems - Illimité',
+    rights: 'MP3 + WAV + stems · droits exclusifs',
   },
 }
 
@@ -758,13 +763,21 @@ export default function AuctionClient({ auctionId }: AuctionClientProps) {
               {isActive && (
                 <>
                   {/* Licence définie par le beatmaker */}
-                  <div className="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3.5">
+                  <div className="mb-4 flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/[0.06] p-3.5">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-400">
                       <Shield size={17} />
                     </span>
                     <div>
-                      <p className="text-xs font-black text-white">Licence {license.name}</p>
+                      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-red-400">
+                        Licence fixée avant ton enchère
+                      </p>
+                      <p className="mt-1 text-xs font-black text-white">
+                        Licence {license.name}
+                      </p>
                       <p className="mt-0.5 text-[10px] leading-4 text-zinc-500">{license.rights}</p>
+                      <p className="mt-1 text-[9px] leading-4 text-zinc-600">
+                        Elle est définie par le beatmaker et ne change pas après ta mise.
+                      </p>
                     </div>
                   </div>
 

@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { randomBytes } from 'crypto'
+import { reportOperationalIssue } from '@/lib/monitoring'
 
 // Initialize Resend client (conditionnel — ne crashe pas si la clé est absente)
 // Set RESEND_API_KEY in your .env
@@ -746,9 +747,20 @@ export async function sendGuestPurchaseEmail(params: {
 // ─── Core Send Function ───
 // Auto-fetches unsubscribe token from DB based on recipient email
 async function sendEmail(to: string, subject: string, html: string) {
+  const recipientDomain = to.includes('@') ? to.split('@').pop() : 'inconnu'
+
   // F19 FIX: Vérifier que toutes les config sont présentes
   if (!FROM_EMAIL || !PLATFORM_URL) {
-    console.error('[Email] Missing EMAIL_FROM or NEXTAUTH_URL env var')
+    await reportOperationalIssue({
+      area: 'email',
+      severity: 'critical',
+      message: 'Configuration email incomplète',
+      context: {
+        emailFromConfigured: Boolean(FROM_EMAIL),
+        platformUrlConfigured: Boolean(PLATFORM_URL),
+        subject,
+      },
+    })
     return { success: false, reason: 'missing_config' }
   }
 
@@ -756,6 +768,14 @@ async function sendEmail(to: string, subject: string, html: string) {
   if (!resend || !process.env.RESEND_API_KEY) {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Email] Skipped (no API key): "${subject}"`)
+    }
+    if (process.env.NODE_ENV === 'production') {
+      await reportOperationalIssue({
+        area: 'email',
+        severity: 'critical',
+        message: 'RESEND_API_KEY non configurée',
+        context: { subject },
+      })
     }
     return { success: false, reason: 'no_api_key' }
   }
@@ -811,16 +831,43 @@ async function sendEmail(to: string, subject: string, html: string) {
     })
 
     if (error) {
-      console.error(`[Email] Error sending "${subject}":`, error)
+      await reportOperationalIssue({
+        area: 'email',
+        severity: 'error',
+        message: `Échec d'envoi Resend : ${subject}`,
+        context: {
+          recipientDomain,
+          error: String(error),
+        },
+      })
       return { success: false, error }
     }
 
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Email] Sent "${subject}" (id: ${data?.id})`)
     }
+    console.info(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        area: 'email',
+        message: 'Email transactionnel accepté par Resend',
+        emailId: data?.id,
+        recipientDomain,
+        subject,
+      })
+    )
     return { success: true, id: data?.id }
   } catch (error) {
-    console.error(`[Email] Exception sending "${subject}":`, error)
+    await reportOperationalIssue({
+      area: 'email',
+      severity: 'error',
+      message: `Exception pendant l'envoi : ${subject}`,
+      context: {
+        recipientDomain,
+        error: String(error),
+      },
+    })
     return { success: false, error }
   }
 }

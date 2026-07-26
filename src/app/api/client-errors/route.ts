@@ -1,6 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
+import { reportOperationalIssue } from '@/lib/monitoring'
+import { checkDistributedRateLimit } from '@/lib/rate-limit-redis'
 
 const MAX_BODY_SIZE = 10_000
 
@@ -12,6 +14,18 @@ function cleanText(value: unknown, maxLength: number): string {
 // Aucun champ de formulaire ni paramètre d'URL n'est collecté.
 export async function POST(request: Request) {
   try {
+    const identifier =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown'
+    const rateLimit = await checkDistributedRateLimit(
+      `client-error:${identifier}`,
+      'clientError'
+    )
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: 'Trop de rapports' }, { status: 429 })
+    }
+
     const rawBody = await request.text()
 
     if (rawBody.length > MAX_BODY_SIZE) {
@@ -28,7 +42,12 @@ export async function POST(request: Request) {
       occurredAt: cleanText(body.occurredAt, 100),
     }
 
-    console.error('[CLIENT_ERROR]', JSON.stringify(report))
+    await reportOperationalIssue({
+      area: 'client',
+      severity: 'error',
+      message: report.message || 'Erreur navigateur sans message',
+      context: report,
+    })
 
     return NextResponse.json({ received: true }, { status: 202 })
   } catch {
