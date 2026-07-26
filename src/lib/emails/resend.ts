@@ -477,10 +477,42 @@ export async function sendProducerApprovedEmail(params: { to: string; name: stri
       <p style="color:#999;font-size:12px;margin:0;">💰 <strong style="color:#fff;">Encaisse</strong> tes ventes directement via Stripe</p>
     </div>
 
-    ${button('Commencer à vendre', `${PLATFORM_URL}/producers/upload`)}
+    <div style="background:#ffb02012;border:1px solid #ffb02045;border-radius:12px;padding:16px;margin-bottom:24px;">
+      <p style="color:#ffcc66;font-size:13px;font-weight:700;margin:0 0 6px;">⏳ Stripe Connect à compléter sous 24 heures</p>
+      <p style="color:#999;font-size:12px;margin:0;">
+        Tu peux publier pendant ce délai. Après 24 heures, les fonctions beatmaker seront suspendues jusqu’à la validation de ton compte Stripe.
+      </p>
+    </div>
+
+    ${button('Configurer Stripe Connect', `${PLATFORM_URL}/dashboard?tab=settings`)}
   `)
 
   return sendEmail(to, `🎉 Candidature approuvée — Bienvenue producteur 318 LEGAACY !`, html)
+}
+
+export async function sendStripeConnectSuspensionEmail(params: {
+  to: string
+  name: string
+}) {
+  const { to, name } = params
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Compte beatmaker temporairement suspendu</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      <strong style="color:#fff;">${name}</strong>, le délai de 24 heures pour terminer ton inscription Stripe Connect est arrivé à expiration.
+    </p>
+
+    <div style="background:#ff475712;border:1px solid #ff475745;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="color:#ff6b78;font-size:13px;font-weight:700;margin:0 0 8px;">Publication temporairement bloquée</p>
+      <p style="color:#999;font-size:12px;margin:0;">
+        Tes fonctions beatmaker seront automatiquement réactivées dès que Stripe aura validé ton inscription. Ton compte artiste et l’accès à ton dashboard restent disponibles.
+      </p>
+    </div>
+
+    ${button('Terminer mon inscription Stripe', `${PLATFORM_URL}/dashboard?tab=settings`)}
+  `)
+
+  return sendEmail(to, `Action requise — termine ton inscription Stripe Connect`, html)
 }
 
 export async function sendProducerRejectedEmail(params: {
