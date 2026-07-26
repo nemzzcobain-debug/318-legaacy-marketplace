@@ -123,11 +123,96 @@ export async function sendAuctionWonEmail(params: {
     </div>
 
     <p style="color:#999;font-size:13px;margin:0 0 8px;">Finalise ton achat pour télécharger les fichiers :</p>
-    ${button('Payer maintenant', `${PLATFORM_URL}/auction/${auctionId}`)}
-    <p style="color:#555;font-size:11px;text-align:center;margin:0;">Le paiement est sécurisé via Stripe</p>
+    ${button('Payer maintenant', `${PLATFORM_URL}/checkout/${auctionId}`)}
+    <p style="color:#555;font-size:11px;text-align:center;margin:0;">Tu disposes de 48 heures. Le paiement est sécurisé via Stripe.</p>
   `)
 
   return sendEmail(to, `🏆 Tu as gagné l'enchère sur "${beatTitle}" !`, html)
+}
+
+export async function sendProducerAuctionEndedEmail(params: {
+  to: string
+  producerName: string
+  beatTitle: string
+  auctionId: string
+  outcome: 'WINNING_BID' | 'RESERVE_NOT_MET' | 'NO_BIDS' | 'PAYMENT_EXPIRED'
+  finalPrice?: number
+  expectedPayout?: number
+  highestBid?: number
+}) {
+  const {
+    to,
+    producerName,
+    beatTitle,
+    auctionId,
+    outcome,
+    finalPrice,
+    expectedPayout,
+    highestBid,
+  } = params
+
+  let heading = 'Enchère terminée'
+  let message = ''
+  let subject = `Enchère terminée — "${beatTitle}"`
+  let details = ''
+
+  if (outcome === 'WINNING_BID') {
+    heading = 'Une offre a remporté ton enchère ! 🏁'
+    message = `L’enchère de <strong style="color:#fff;">${beatTitle}</strong> est terminée. Le gagnant dispose maintenant de 48 heures pour finaliser son paiement.`
+    subject = `🏁 Offre gagnante sur "${beatTitle}" — paiement en attente`
+    details = `
+      <tr>
+        <td style="color:#666;font-size:12px;padding:6px 0;">Prix final</td>
+        <td style="color:#fff;font-size:12px;padding:6px 0;text-align:right;font-weight:700;">${finalPrice ?? 0} EUR</td>
+      </tr>
+      <tr>
+        <td style="color:#666;font-size:12px;padding:6px 0;border-top:1px solid #1e1e2e;">Ta part après paiement</td>
+        <td style="color:#2ed573;font-size:18px;padding:6px 0;text-align:right;font-weight:800;border-top:1px solid #1e1e2e;">${expectedPayout ?? 0} EUR</td>
+      </tr>`
+  } else if (outcome === 'RESERVE_NOT_MET') {
+    heading = 'Enchère terminée sans vente'
+    message = `Le prix de réserve de <strong style="color:#fff;">${beatTitle}</strong> n’a pas été atteint.`
+    subject = `Enchère sans vente — réserve non atteinte pour "${beatTitle}"`
+    details = `
+      <tr>
+        <td style="color:#666;font-size:12px;padding:6px 0;">Meilleure offre</td>
+        <td style="color:#fff;font-size:12px;padding:6px 0;text-align:right;font-weight:700;">${highestBid ?? 0} EUR</td>
+      </tr>`
+  } else if (outcome === 'PAYMENT_EXPIRED') {
+    heading = 'Le gagnant n’a pas payé'
+    message = `Le délai de paiement de <strong style="color:#fff;">${beatTitle}</strong> a expiré. Le beat est de nouveau disponible.`
+    subject = `Paiement expiré — "${beatTitle}" est remis en vente`
+  } else {
+    heading = 'Enchère terminée sans offre'
+    message = `Aucune offre n’a été placée sur <strong style="color:#fff;">${beatTitle}</strong>. Le beat reste disponible.`
+    subject = `Aucune offre sur "${beatTitle}"`
+  }
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">${heading}</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      Bonjour <strong style="color:#fff;">${producerName}</strong>, ${message}
+    </p>
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Beat</td>
+          <td style="color:#fff;font-size:12px;padding:6px 0;text-align:right;font-weight:600;">${beatTitle}</td>
+        </tr>
+        ${details}
+      </table>
+    </div>
+
+    ${button("Voir l'enchère", `${PLATFORM_URL}/auction/${auctionId}`)}
+    ${
+      outcome === 'WINNING_BID'
+        ? '<p style="color:#666;font-size:11px;text-align:center;margin:0;">Tu recevras une nouvelle confirmation dès que le paiement sera validé.</p>'
+        : ''
+    }
+  `)
+
+  return sendEmail(to, subject, html)
 }
 
 export async function sendPaymentReceivedEmail(params: {
