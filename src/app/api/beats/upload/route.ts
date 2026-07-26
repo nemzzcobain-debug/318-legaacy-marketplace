@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { enforceProducerStripeAccess } from '@/lib/producer-stripe-access'
 import {
   sendAdminNewBeatEmail,
   sendBeatUploadConfirmationEmail,
@@ -89,9 +90,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (user.role === 'PRODUCER' && user.producerStatus !== 'APPROVED') {
+    const producerAccess = await enforceProducerStripeAccess(user)
+    if (!producerAccess.allowed) {
       return NextResponse.json(
-        { error: 'Votre compte producteur doit être approuvé' },
+        {
+          error: producerAccess.message,
+          code: producerAccess.status,
+          actionUrl:
+            producerAccess.status === 'stripe_suspended'
+              ? '/dashboard?tab=settings'
+              : undefined,
+        },
         { status: 403 }
       )
     }
