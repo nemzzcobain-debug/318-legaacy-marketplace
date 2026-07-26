@@ -143,6 +143,15 @@ export default function BeatCheckoutPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+      return
+    }
+
+    router.push('/nouveautes')
+  }
+
   const licenseMeta = LICENSE_META[licenseType] || LICENSE_META.BASIC
   const LicenseIcon = licenseMeta.icon
 
@@ -221,10 +230,12 @@ export default function BeatCheckoutPage() {
       <div className="max-w-lg mx-auto">
         {/* Back */}
         <button
-          onClick={() => router.push('/nouveautes')}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-8 transition"
+          type="button"
+          onClick={handleBack}
+          className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-gray-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+          aria-label="Retour à la page précédente"
         >
-          <ArrowLeft size={16} /> Retour
+          <ArrowLeft size={17} /> Retour
         </button>
 
         {/* Order Summary */}
