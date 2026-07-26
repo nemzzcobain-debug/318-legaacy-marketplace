@@ -12,6 +12,11 @@ import {
   stripe,
 } from '@/lib/stripe'
 import { randomBytes } from 'crypto'
+import {
+  getConfiguredLicensePrice,
+  normalizeLicenseType,
+  toPublicLicenseType,
+} from '@/lib/beat-pricing'
 
 // POST /api/beats/[id]/purchase — Achat direct d'un beat (hors enchères)
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -112,14 +117,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Tu ne peux pas acheter ton propre beat' }, { status: 400 })
     }
 
-    const normalizedLicenseType =
-      licenseType === 'BASIC'
-        ? 'MP3'
-        : licenseType === 'PREMIUM'
-          ? 'WAV'
-          : licenseType === 'EXCLUSIVE'
-            ? 'STEMS'
-            : licenseType
+    const normalizedLicenseType = normalizeLicenseType(licenseType)
+    if (!normalizedLicenseType) {
+      return NextResponse.json({ error: 'Type de licence invalide' }, { status: 400 })
+    }
 
     if (normalizedLicenseType === 'MP3' && !beat.audioOriginal) {
       return NextResponse.json({ error: 'Ce beat n’est pas disponible en MP3' }, { status: 400 })
@@ -147,18 +148,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Déterminer le prix selon la licence choisie
     let finalPrice: number
-    let basePrice: number = 0
+    let basePrice = 0
 
     // Nouveau système de prix par licence (défini par le producteur)
-    if (licenseType === 'MP3' && beat.priceMp3) {
-      finalPrice = beat.priceMp3
-      basePrice = beat.priceMp3
-    } else if (licenseType === 'WAV' && beat.priceWav) {
-      finalPrice = beat.priceWav
-      basePrice = beat.priceWav
-    } else if (licenseType === 'STEMS' && beat.priceStems) {
-      finalPrice = beat.priceStems
-      basePrice = beat.priceStems
+    const configuredPrice = getConfiguredLicensePrice(beat, normalizedLicenseType)
+    if (configuredPrice) {
+      finalPrice = configuredPrice
+      basePrice = configuredPrice
     } else {
       // Fallback: ancien système avec multiplicateur
       const lastAuction = await prisma.auction.findFirst({
@@ -170,7 +166,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         select: { startPrice: true },
       })
       basePrice = lastAuction?.startPrice || 20
-      finalPrice = calculateFinalPrice(basePrice, licenseType)
+      finalPrice = calculateFinalPrice(
+        basePrice,
+        toPublicLicenseType(normalizedLicenseType) || licenseType
+      )
     }
 
     // Creer le PaymentIntent
@@ -213,6 +212,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         licenseType,
       })
       paymentIntent = result.paymentIntent
+      if (!result.clientSecret) {
+        throw new Error('Stripe n’a pas retourné de client secret')
+      }
       clientSecret = result.clientSecret
       commission = result.commission
       producerPayout = result.producerPayout
