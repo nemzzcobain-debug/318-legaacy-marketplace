@@ -134,7 +134,7 @@ export default async function ProducerPage({ params }: ProducerPageProps) {
           totalFollowers={jsonLdData.totalFollowers}
         />
       )}
-      <ProducerClient />
+      <ProducerClient producerId={id} />
     </>
   )
 }

@@ -115,7 +115,7 @@ export default async function PlaylistPage({ params }: PlaylistPageProps) {
   return (
     <>
       <BreadcrumbJsonLd items={breadcrumbItems} />
-      <PlaylistClient />
+      <PlaylistClient playlistId={id} />
     </>
   )
 }

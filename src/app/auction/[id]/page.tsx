@@ -159,7 +159,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
           producer={jsonLdData.producer}
         />
       )}
-      <AuctionClient />
+      <AuctionClient auctionId={id} />
     </>
   )
 }

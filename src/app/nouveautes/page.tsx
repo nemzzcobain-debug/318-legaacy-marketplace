@@ -7,6 +7,11 @@ export const metadata: Metadata = {
     "Découvre les derniers beats disponibles à l'achat direct avec licence BASIC, PREMIUM ou EXCLUSIVE sur 318 LEGAACY Marketplace.",
 }
 
-export default function NouveautesPage() {
-  return <NouveautesClient />
+interface NouveautesPageProps {
+  searchParams: Promise<{ beat?: string }>
+}
+
+export default async function NouveautesPage({ searchParams }: NouveautesPageProps) {
+  const { beat } = await searchParams
+  return <NouveautesClient preselectedBeatId={beat ?? null} />
 }
