@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
+import { getConfiguredLicensePrices, getLowestConfiguredPrice } from '@/lib/beat-pricing'
+import { PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
 
 /**
  * Lazy finalization: auto-finalize expired auctions that the daily cron
@@ -305,6 +307,9 @@ export async function GET() {
       where: { id: playlist.id },
       include: {
         beats: {
+          where: {
+            beat: PUBLIC_BEAT_WHERE,
+          },
           orderBy: { addedAt: 'desc' },
           include: {
             beat: {
@@ -334,10 +339,10 @@ export async function GET() {
       return NextResponse.json({ beats: [] })
     }
 
-    // Filtrer: exclure les beats en enchères actives ou déjà vendus
-    const availableBeats = fullPlaylist.beats.filter(
-      (pb) => pb.beat.auctions.length === 0 && pb.beat.status !== 'SOLD'
-    )
+    // Exclure les beats déjà engagés dans une enchère active ou programmée.
+    // La visibilité publique et l'approbation du producteur sont filtrées
+    // directement dans la requête ci-dessus.
+    const availableBeats = fullPlaylist.beats.filter((pb) => pb.beat.auctions.length === 0)
 
     // Récupérer les prix de base pour chaque beat (startPrice de la dernière enchère)
     const beatsWithPrices = await Promise.all(
@@ -360,6 +365,8 @@ export async function GET() {
           }
         }
 
+        const legacyBasePrice = lastAuction?.buyNowPrice || lastAuction?.startPrice || 20
+
         return {
           id: pb.beat.id,
           title: pb.beat.title,
@@ -372,7 +379,13 @@ export async function GET() {
           audioUrl: streamUrl,
           plays: (pb.beat as any).plays || 0,
           producer: pb.beat.producer,
-          basePrice: lastAuction?.buyNowPrice || lastAuction?.startPrice || 20,
+          basePrice: getLowestConfiguredPrice(pb.beat) ?? legacyBasePrice,
+          licensePrices: getConfiguredLicensePrices(pb.beat),
+          licenseAvailability: {
+            BASIC: Boolean(pb.beat.audioOriginal),
+            PREMIUM: Boolean(pb.beat.audioWav),
+            EXCLUSIVE: Boolean(pb.beat.stemsUrl || pb.beat.stemsFiles),
+          },
           addedAt: pb.addedAt,
         }
       })
