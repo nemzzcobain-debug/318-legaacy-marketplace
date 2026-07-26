@@ -9,6 +9,7 @@ import { calculateFinalPrice } from '@/lib/stripe'
 import { sendOutbidEmail, sendAdminNewBidEmail } from '@/lib/emails/resend'
 import { sendPushToUser } from '@/lib/web-push'
 import { randomBytes } from 'crypto'
+import { enforceProducerStripeAccess } from '@/lib/producer-stripe-access'
 
 // POST /api/auctions/bid?auctionId=xxx - Placer une enchère
 export async function POST(request: Request) {
@@ -85,7 +86,13 @@ export async function POST(request: Request) {
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
       include: {
-        beat: { select: { producerId: true, title: true } },
+        beat: {
+          select: {
+            producerId: true,
+            title: true,
+            producer: true,
+          },
+        },
       },
     })
 
@@ -108,6 +115,18 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Tu ne peux pas encherir sur ton propre beat' },
         { status: 400 }
+      )
+    }
+
+    const producerAccess = await enforceProducerStripeAccess(auction.beat.producer)
+    if (!producerAccess.allowed) {
+      return NextResponse.json(
+        {
+          error:
+            'Cette enchère est temporairement indisponible pendant la régularisation Stripe du beatmaker.',
+          code: 'PRODUCER_STRIPE_SUSPENDED',
+        },
+        { status: 409 }
       )
     }
 
@@ -138,6 +157,11 @@ export async function POST(request: Request) {
           endTime: true,
           antiSnipeMinutes: true,
           antiSnipeExtension: true,
+          beat: {
+            select: {
+              producer: { select: { producerStatus: true } },
+            },
+          },
         },
       })
       if (!freshAuction) throw new Error('Enchere introuvable')
@@ -146,6 +170,9 @@ export async function POST(request: Request) {
       }
       if (freshAuction.endTime < new Date()) {
         throw new Error('Cette enchère est terminée')
+      }
+      if (freshAuction.beat.producer.producerStatus !== 'APPROVED') {
+        throw new Error('PRODUCER_STRIPE_SUSPENDED')
       }
       if (amount < freshAuction.currentBid + freshAuction.bidIncrement) {
         throw new Error(`BID_TOO_LOW:${freshAuction.currentBid + freshAuction.bidIncrement}`)
@@ -353,6 +380,16 @@ export async function POST(request: Request) {
         {
           error: "L'enchère vient d'être mise à jour. Réessaie avec le nouveau montant.",
           code: 'AUCTION_CHANGED',
+        },
+        { status: 409 }
+      )
+    }
+    if (msg.includes('PRODUCER_STRIPE_SUSPENDED')) {
+      return NextResponse.json(
+        {
+          error:
+            'Cette enchère est temporairement indisponible pendant la régularisation Stripe du beatmaker.',
+          code: 'PRODUCER_STRIPE_SUSPENDED',
         },
         { status: 409 }
       )
