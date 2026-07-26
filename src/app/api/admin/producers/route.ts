@@ -37,6 +37,9 @@ export async function GET(req: NextRequest) {
         producerStatus: true,
         producerBio: true,
         portfolio: true,
+        producerApprovedAt: true,
+        stripeGraceSuspendedAt: true,
+        stripeAccountId: true,
         totalSales: true,
         rating: true,
         createdAt: true,
@@ -66,7 +69,20 @@ export async function PATCH(req: NextRequest) {
 
     const producer = await prisma.user.update({
       where: { id: producerId },
-      data: { producerStatus: status },
+      data:
+        status === 'APPROVED'
+          ? {
+              producerStatus: status,
+              producerApprovedAt: new Date(),
+              stripeGraceSuspendedAt: null,
+            }
+          : status === 'SUSPENDED'
+            ? {
+                producerStatus: status,
+                // Une suspension admin ne doit pas être levée automatiquement par Stripe.
+                stripeGraceSuspendedAt: null,
+              }
+            : { producerStatus: status },
       select: { id: true, name: true, email: true, role: true, producerStatus: true },
     })
 
@@ -74,9 +90,9 @@ export async function PATCH(req: NextRequest) {
       APPROVED: {
         title: 'Compte approuvé!',
         message:
-          'Votre compte producteur a été approuvé. Vous pouvez maintenant mettre vos beats aux enchères!',
+          'Ton compte beatmaker est approuvé. Tu peux publier dès maintenant et tu as 24 h pour terminer Stripe Connect.',
         type: 'PRODUCER_APPROVED',
-        link: `/producer/${producerId}`,
+        link: '/dashboard?tab=settings',
       },
       REJECTED: {
         title: 'Compte refusé',
