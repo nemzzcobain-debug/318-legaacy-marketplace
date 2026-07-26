@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
 import { getStreamUrl, parseSupabaseUrl } from '@/lib/supabase'
+import { getLowestConfiguredPrice } from '@/lib/beat-pricing'
 
 export async function GET() {
   try {
@@ -70,7 +71,7 @@ export async function GET() {
             key: beat.key,
             coverImage: beat.coverImage,
             audioUrl,
-            directPrice: beat.priceMp3 ?? beat.priceWav ?? beat.priceStems,
+            directPrice: getLowestConfiguredPrice(beat),
             producer: {
               id: beat.producer.id,
               name: beat.producer.displayName || beat.producer.name,
