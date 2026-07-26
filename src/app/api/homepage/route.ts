@@ -6,6 +6,8 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
+import { getLowestConfiguredPrice } from '@/lib/beat-pricing'
+import { getPublicLiveAuctionWhere, PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
 
 async function getNouveautesPreview() {
   try {
@@ -16,7 +18,10 @@ async function getNouveautesPreview() {
     if (!playlist) return []
 
     const playlistBeats = await prisma.playlistBeat.findMany({
-      where: { playlistId: playlist.id },
+      where: {
+        playlistId: playlist.id,
+        beat: PUBLIC_BEAT_WHERE,
+      },
       orderBy: { addedAt: 'desc' },
       take: 4,
       include: {
@@ -34,28 +39,30 @@ async function getNouveautesPreview() {
       },
     })
 
-    const results = playlistBeats
-      .filter(pb => pb.beat.status !== 'SOLD')
-      .map((pb) => {
-        let streamUrl = pb.beat.audioUrl
-        if (streamUrl) {
-          const parsed = parseSupabaseUrl(streamUrl)
-          if (parsed) {
-            streamUrl = getStreamUrl(parsed.bucket, parsed.path)
-          }
+    const results = playlistBeats.map((pb) => {
+      let streamUrl = pb.beat.audioUrl
+      if (streamUrl) {
+        const parsed = parseSupabaseUrl(streamUrl)
+        if (parsed) {
+          streamUrl = getStreamUrl(parsed.bucket, parsed.path)
         }
-        const lastAuction = pb.beat.auctions[0]
-        return {
-          id: pb.beat.id,
-          title: pb.beat.title,
-          genre: (pb.beat as any).genre || 'Trap',
-          bpm: (pb.beat as any).bpm || 140,
-          coverImage: (pb.beat as any).coverImage || null,
-          audioUrl: streamUrl,
-          producer: pb.beat.producer.displayName || pb.beat.producer.name,
-          price: lastAuction?.buyNowPrice || lastAuction?.startPrice || 20,
-        }
-      })
+      }
+      const lastAuction = pb.beat.auctions[0]
+      return {
+        id: pb.beat.id,
+        title: pb.beat.title,
+        genre: (pb.beat as any).genre || 'Trap',
+        bpm: (pb.beat as any).bpm || 140,
+        coverImage: (pb.beat as any).coverImage || null,
+        audioUrl: streamUrl,
+        producer: pb.beat.producer.displayName || pb.beat.producer.name,
+        price:
+          getLowestConfiguredPrice(pb.beat) ??
+          lastAuction?.buyNowPrice ??
+          lastAuction?.startPrice ??
+          20,
+      }
+    })
     return results
   } catch {
     return []
@@ -64,6 +71,8 @@ async function getNouveautesPreview() {
 
 export async function GET() {
   try {
+    const now = new Date()
+
     // Run all queries in parallel
     const [
       totalBeats,
@@ -77,11 +86,11 @@ export async function GET() {
       featuredBeats,
     ] = await Promise.all([
       // Total beats
-      prisma.beat.count(),
+      prisma.beat.count({ where: PUBLIC_BEAT_WHERE }),
 
       // Total active auctions
       prisma.auction.count({
-        where: { status: { in: ['ACTIVE', 'ENDING_SOON'] } },
+        where: getPublicLiveAuctionWhere(now),
       }),
 
       // Total verified producers
@@ -129,7 +138,7 @@ export async function GET() {
       // Top genres from active beats
       prisma.beat.groupBy({
         by: ['genre'],
-        where: { status: 'ACTIVE' },
+        where: PUBLIC_BEAT_WHERE,
         _count: true,
         orderBy: { _count: { genre: 'desc' } },
         take: 8,
@@ -137,7 +146,9 @@ export async function GET() {
 
       // Featured beats (admin-selected)
       prisma.beat.findMany({
-        where: { isFeatured: true, status: 'ACTIVE' },
+        where: {
+          AND: [PUBLIC_BEAT_WHERE, { isFeatured: true }],
+        },
         orderBy: { featuredOrder: 'asc' },
         select: {
           id: true,
@@ -147,11 +158,18 @@ export async function GET() {
           key: true,
           coverImage: true,
           audioUrl: true,
+          priceMp3: true,
+          priceWav: true,
+          priceStems: true,
           producer: {
             select: { id: true, name: true, displayName: true, avatar: true },
           },
           auctions: {
-            where: { status: { in: ['ACTIVE', 'ENDING_SOON'] } },
+            where: {
+              status: { in: ['ACTIVE', 'ENDING_SOON'] },
+              startTime: { lte: now },
+              endTime: { gt: now },
+            },
             select: {
               id: true,
               currentBid: true,
@@ -178,7 +196,7 @@ export async function GET() {
         totalCompleted,
         totalRevenue: totalRevenue._sum.finalPrice || 0,
       },
-      featuredProducers: featuredProducers.map(p => ({
+      featuredProducers: featuredProducers.map((p) => ({
         id: p.id,
         name: p.displayName || p.name,
         avatar: p.avatar,
@@ -187,7 +205,7 @@ export async function GET() {
         totalBeats: p._count.beats,
         totalFollowers: 0,
       })),
-      topGenres: topGenres.map(g => ({
+      topGenres: topGenres.map((g) => ({
         name: g.genre,
         count: g._count,
       })),
@@ -207,6 +225,7 @@ export async function GET() {
           key: b.key,
           coverImage: b.coverImage,
           audioUrl: streamUrl,
+          directPrice: getLowestConfiguredPrice(b),
           producer: {
             id: b.producer.id,
             name: b.producer.displayName || b.producer.name,
