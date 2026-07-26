@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { enforceProducerStripeAccess } from '@/lib/producer-stripe-access'
 import { authOptions } from '@/lib/auth'
 import { createAuctionSchema } from '@/lib/validations'
 import { logger } from '@/lib/logger'
@@ -95,8 +96,23 @@ export async function POST(request: Request) {
     const userId = session.user.id
     const user = await prisma.user.findUnique({ where: { id: userId } })
 
-    if (!user || user.role !== 'PRODUCER' || user.producerStatus !== 'APPROVED') {
+    if (!user || user.role !== 'PRODUCER') {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    }
+
+    const producerAccess = await enforceProducerStripeAccess(user)
+    if (!producerAccess.allowed) {
+      return NextResponse.json(
+        {
+          error: producerAccess.message,
+          code: producerAccess.status,
+          actionUrl:
+            producerAccess.status === 'stripe_suspended'
+              ? '/dashboard?tab=settings'
+              : undefined,
+        },
+        { status: 403 }
+      )
     }
 
     // F18 FIX: Limiter la taille du payload
