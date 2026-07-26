@@ -92,6 +92,13 @@ interface ArtistPurchaseData {
   }
 }
 
+interface StripeGraceInfo {
+  stripeStatus: 'not_connected' | 'pending' | 'active'
+  graceStatus: 'grace_period' | 'suspended' | null
+  graceDeadline: string | null
+  graceRemainingMs: number
+}
+
 // ═══════════════════════════════════════════════
 // MAIN DASHBOARD — Role Router
 // ═══════════════════════════════════════════════
@@ -850,6 +857,7 @@ function ProducerDashboard({ session }: { session: any }) {
   const [extensionHours, setExtensionHours] = useState(24)
   const [extendingAuctionId, setExtendingAuctionId] = useState<string | null>(null)
   const [extensionMessage, setExtensionMessage] = useState('')
+  const [stripeGrace, setStripeGrace] = useState<StripeGraceInfo | null>(null)
 
   // Sync tab when URL params change (e.g. from notification click)
   useEffect(() => {
@@ -875,6 +883,25 @@ function ProducerDashboard({ session }: { session: any }) {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  useEffect(() => {
+    async function fetchStripeGrace() {
+      try {
+        const res = await fetch('/api/stripe/connect')
+        if (!res.ok) return
+        const json = await res.json()
+        setStripeGrace({
+          stripeStatus: json.status || 'not_connected',
+          graceStatus: json.graceStatus || null,
+          graceDeadline: json.graceDeadline || null,
+          graceRemainingMs: json.graceRemainingMs || 0,
+        })
+      } catch {
+        // Ne pas gêner le dashboard si Stripe est temporairement indisponible.
+      }
+    }
+    fetchStripeGrace()
+  }, [])
 
   const extendAuction = async (auctionId: string) => {
     setExtendingAuctionId(auctionId)
@@ -971,13 +998,77 @@ function ProducerDashboard({ session }: { session: any }) {
             <p className="text-sm text-gray-400 mt-1">Bienvenue, {userName}</p>
           </div>
           <Link
-            href="/producers/upload"
+            href={
+              stripeGrace?.graceStatus === 'suspended'
+                ? '/dashboard?tab=settings'
+                : '/producers/upload'
+            }
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-black"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}
           >
-            <Plus size={16} /> Nouveau Beat
+            {stripeGrace?.graceStatus === 'suspended' ? (
+              <>
+                <CreditCard size={16} /> Activer Stripe
+              </>
+            ) : (
+              <>
+                <Plus size={16} /> Nouveau Beat
+              </>
+            )}
           </Link>
         </div>
+
+        {stripeGrace?.stripeStatus !== 'active' &&
+          stripeGrace?.graceStatus === 'grace_period' &&
+          stripeGrace.graceDeadline && (
+            <div className="mb-6 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 md:flex md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
+                <Clock size={20} className="mt-0.5 shrink-0 text-yellow-400" />
+                <div>
+                  <p className="text-sm font-bold text-yellow-300">
+                    Termine Stripe Connect sous 24 heures
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Tu peux publier pendant ce délai. Ensuite, tes fonctions beatmaker seront
+                    suspendues jusqu’à la validation Stripe.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-3 md:mt-0">
+                <CountdownTimer endTime={stripeGrace.graceDeadline} size="sm" />
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className="rounded-lg bg-yellow-400 px-3 py-2 text-xs font-bold text-black"
+                >
+                  Configurer
+                </button>
+              </div>
+            </div>
+          )}
+
+        {stripeGrace?.stripeStatus !== 'active' &&
+          stripeGrace?.graceStatus === 'suspended' && (
+            <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/10 p-4 md:flex md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
+                <AlertCircle size={20} className="mt-0.5 shrink-0 text-red-400" />
+                <div>
+                  <p className="text-sm font-bold text-red-300">
+                    Fonctions beatmaker temporairement suspendues
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Termine Stripe Connect pour réactiver automatiquement les uploads et les
+                    nouvelles enchères.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className="mt-3 rounded-lg bg-red-500 px-4 py-2 text-xs font-bold text-white md:mt-0"
+              >
+                Terminer l’inscription
+              </button>
+            </div>
+          )}
 
         {error && (
           <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-[#ff475715] border border-[#ff475730] text-[#ff4757] text-sm">
@@ -1623,6 +1714,10 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
   >('loading')
   const [stripeDashboard, setStripeDashboard] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
+  const [graceStatus, setGraceStatus] = useState<
+    'grace_period' | 'suspended' | null
+  >(null)
+  const [graceDeadline, setGraceDeadline] = useState<string | null>(null)
 
   useEffect(() => {
     async function checkStripe() {
@@ -1631,6 +1726,8 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
         const data = await res.json()
         setStripeStatus(data.status || 'not_connected')
         if (data.dashboardUrl) setStripeDashboard(data.dashboardUrl)
+        setGraceStatus(data.graceStatus || null)
+        setGraceDeadline(data.graceDeadline || null)
       } catch {
         setStripeStatus('not_connected')
       }
@@ -1696,6 +1793,19 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
           </div>
         ) : stripeStatus === 'pending' ? (
           <div className="space-y-3">
+            {graceStatus === 'suspended' ? (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+                <p className="text-sm font-bold text-red-300">Compte beatmaker suspendu</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  La réactivation sera automatique dès que Stripe aura validé ton inscription.
+                </p>
+              </div>
+            ) : graceStatus === 'grace_period' && graceDeadline ? (
+              <div className="flex items-center justify-between rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+                <span className="text-xs font-semibold text-yellow-300">Délai restant</span>
+                <CountdownTimer endTime={graceDeadline} size="sm" />
+              </div>
+            ) : null}
             <div className="flex items-center gap-2">
               <AlertCircle size={18} className="text-yellow-400" />
               <span className="text-sm font-semibold text-yellow-400">Configuration en cours</span>
@@ -1722,6 +1832,19 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
           </div>
         ) : (
           <div className="space-y-3">
+            {graceStatus === 'suspended' ? (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+                <p className="text-sm font-bold text-red-300">Compte beatmaker suspendu</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  Termine Stripe Connect pour réactiver immédiatement les publications.
+                </p>
+              </div>
+            ) : graceStatus === 'grace_period' && graceDeadline ? (
+              <div className="flex items-center justify-between rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+                <span className="text-xs font-semibold text-yellow-300">Délai restant</span>
+                <CountdownTimer endTime={graceDeadline} size="sm" />
+              </div>
+            ) : null}
             <p className="text-sm text-gray-400">
               Connecte ton compte Stripe pour commencer à recevoir tes paiements quand tes beats
               sont vendus.
