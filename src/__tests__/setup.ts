@@ -1,5 +1,4 @@
-import { expect, afterEach, vi } from 'vitest'
-import '@testing-library/jest-dom'
+import { afterEach, vi } from 'vitest'
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
