@@ -6,6 +6,10 @@
     {
       "path": "/api/auctions/finalize",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/monitoring/check",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

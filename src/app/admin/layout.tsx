@@ -1,6 +1,9 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { privatePageMetadata } from '@/lib/seo'
+
+export const metadata = privatePageMetadata('Administration')
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions)
@@ -9,4 +12,4 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/')
   }
   return children
-}  
+}

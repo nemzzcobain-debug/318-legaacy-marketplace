@@ -2,7 +2,13 @@
 // To enable: npm install @upstash/ratelimit @upstash/redis
 // Then set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in .env
 
-export type RateLimitType = 'login' | 'register' | 'bid' | 'api' | 'upload'
+export type RateLimitType =
+  | 'login'
+  | 'register'
+  | 'bid'
+  | 'api'
+  | 'upload'
+  | 'clientError'
 
 const RATE_LIMITS: Record<RateLimitType, { requests: number; window: string }> = {
   login: { requests: 5, window: '15m' },
@@ -10,6 +16,7 @@ const RATE_LIMITS: Record<RateLimitType, { requests: number; window: string }> =
   bid: { requests: 20, window: '1m' },
   api: { requests: 100, window: '1m' },
   upload: { requests: 10, window: '1h' },
+  clientError: { requests: 5, window: '1m' },
 }
 
 /**

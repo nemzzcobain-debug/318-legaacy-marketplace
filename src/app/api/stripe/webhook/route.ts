@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { reportOperationalIssue } from '@/lib/monitoring'
 import Stripe from 'stripe'
 import {
   sendAuctionWonEmail,
@@ -44,6 +45,7 @@ async function markEventProcessed(eventId: string, eventType: string): Promise<b
 }
 
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now()
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
 
@@ -55,13 +57,22 @@ export async function POST(req: NextRequest) {
 
   try {
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      logger.error('[WEBHOOK] STRIPE_WEBHOOK_SECRET non configuré')
+      await reportOperationalIssue({
+        area: 'webhook',
+        severity: 'critical',
+        message: 'STRIPE_WEBHOOK_SECRET non configuré',
+      })
       return NextResponse.json({ error: 'Webhook non configuré' }, { status: 500 })
     }
 
     event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err: any) {
-    logger.error('[WEBHOOK] Erreur de vérification:', { error: err.message })
+    await reportOperationalIssue({
+      area: 'webhook',
+      severity: 'warning',
+      message: 'Signature Stripe invalide',
+      context: { error: err.message },
+    })
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 400 })
   }
 
@@ -110,9 +121,23 @@ export async function POST(req: NextRequest) {
         if (isDev) logger.debug(`[WEBHOOK] Événement non géré: ${event.type}`)
     }
 
+    logger.info('[WEBHOOK] Événement Stripe traité', {
+      eventId: event.id,
+      eventType: event.type,
+      durationMs: Date.now() - startedAt,
+    })
     return NextResponse.json({ received: true })
   } catch (err: any) {
-    logger.error('[WEBHOOK] Erreur traitement:', { error: err.message })
+    await reportOperationalIssue({
+      area: 'webhook',
+      severity: 'critical',
+      message: `Échec du traitement Stripe ${event.type}`,
+      context: {
+        eventId: event.id,
+        eventType: event.type,
+        error: err.message,
+      },
+    })
     // Retourner 500 pour que Stripe réessaye l'événement
     return NextResponse.json({ error: 'Erreur de traitement' }, { status: 500 })
   }
@@ -230,11 +255,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     const commissionAmount = commission ? parseFloat(commission) : auction.commissionAmount || 0
     const finalPrice = auction.finalPrice || auction.currentBid
 
-    sendNtfy(
-      'Vente finalisee',
-      `${auction.beat.title} vendu pour ${finalPrice} EUR`,
-      'high'
-    ).catch(() => {})
+    sendNtfy('Vente finalisee', `${auction.beat.title} vendu pour ${finalPrice} EUR`, 'high').catch(
+      () => {}
+    )
 
     if (auction.beat.producer?.email) {
       sendPaymentReceivedEmail({
@@ -483,10 +506,10 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
 
     // Envoyer email guest si c'est un compte auto-créé (pas de passwordHash)
     if (buyerEmail) {
-      const buyerFull = await prisma.user.findFirst({
+      const buyerFull = (await prisma.user.findFirst({
         where: { email: buyerEmail },
         select: { id: true, passwordHash: true, magicToken: true },
-      }) as any
+      })) as any
 
       if (buyerFull && !buyerFull.passwordHash) {
         // C'est un compte invité — générer un magic token si pas déjà fait
@@ -615,11 +638,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
 
     const isReady = account.charges_enabled && account.payouts_enabled
 
-    if (
-      isReady &&
-      user.producerStatus === 'SUSPENDED' &&
-      user.stripeGraceSuspendedAt
-    ) {
+    if (isReady && user.producerStatus === 'SUSPENDED' && user.stripeGraceSuspendedAt) {
       await prisma.user.update({
         where: { id: user.id },
         data: {

@@ -9,6 +9,7 @@ import CountdownTimer from '@/components/ui/CountdownTimer'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import LikeButton from '@/components/ui/LikeButton'
 import { useExclusiveAudioPlayer } from '@/hooks/useExclusiveAudioPlayer'
+import { getLicenseDetails } from '@/lib/licenses'
 import {
   Search, X, Gavel, Clock, Play, Pause,
   SlidersHorizontal, ArrowUpDown,
@@ -428,7 +429,7 @@ function MarketplaceExplorerContent() {
                         licenseType === lt ? 'text-red-500 bg-red-500/10 font-bold' : 'text-gray-400 hover:text-white hover:bg-white/5'
                       }`}
                     >
-                      {lt || 'Toutes'}
+                      {lt ? getLicenseDetails(lt).label : 'Toutes'}
                     </button>
                   ))}
                 </div>
@@ -504,7 +505,7 @@ function MarketplaceExplorerContent() {
                 )}
                 {licenseType && (
                   <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                    {licenseType}
+                    Licence {getLicenseDetails(licenseType).label}
                     <button onClick={() => setLicenseType('')}><X size={12} /></button>
                   </span>
                 )}
@@ -564,6 +565,7 @@ function MarketplaceExplorerContent() {
                   const { beat } = auction
                   const producerName = beat.producer.displayName || beat.producer.name
                   const isPlaying = playingId === auction.id
+                  const license = getLicenseDetails(auction.licenseType)
 
                   return (
                     <div
@@ -585,8 +587,8 @@ function MarketplaceExplorerContent() {
 
                         {/* License badge */}
                         <div className="absolute right-3 top-3">
-                          <span className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-wide backdrop-blur-md ${LICENSE_COLORS[auction.licenseType]}`}>
-                            {auction.licenseType}
+                          <span className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-wide backdrop-blur-md ${LICENSE_COLORS[auction.licenseType] || LICENSE_COLORS.BASIC}`}>
+                            Licence {license.label}
                           </span>
                         </div>
 
@@ -634,6 +636,15 @@ function MarketplaceExplorerContent() {
                           <span className="rounded-full border border-white/5 bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-zinc-500">{beat.genre}</span>
                           <span className="rounded-full border border-white/5 bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-zinc-500">{beat.bpm} BPM</span>
                           {beat.key && <span className="rounded-full border border-white/5 bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-zinc-500">{beat.key}</span>}
+                        </div>
+
+                        <div className="mt-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
+                          <p className="text-[9px] font-black uppercase tracking-[0.14em] text-zinc-600">
+                            Licence fixée pour cette enchère
+                          </p>
+                          <p className="mt-1 text-[11px] font-bold text-zinc-300">
+                            {license.label} · {license.shortDescription}
+                          </p>
                         </div>
 
                         {/* Bid info */}

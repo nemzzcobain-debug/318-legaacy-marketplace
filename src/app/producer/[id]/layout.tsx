@@ -20,12 +20,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         bio: true,
         totalSales: true,
         rating: true,
+        producerStatus: true,
         _count: { select: { beats: true, followers: true } },
       },
     })
 
-    if (!producer) {
-      return { title: 'Producteur non trouve' }
+    if (!producer || producer.producerStatus !== 'APPROVED') {
+      return {
+        title: 'Producteur non trouvé',
+        robots: { index: false, follow: false },
+      }
     }
 
     const name = producer.displayName || producer.name
@@ -57,7 +61,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     }
   } catch {
-    return { title: '318 LEGAACY — Producteur' }
+    return {
+      title: '318 LEGAACY — Producteur',
+      robots: { index: false, follow: false },
+    }
   }
 }
 

@@ -189,55 +189,64 @@ export async function GET() {
       }),
     ])
 
-    return NextResponse.json({
-      stats: {
-        totalBeats,
-        totalAuctions,
-        totalProducers,
-        totalBids,
-        totalCompleted,
-        totalRevenue: totalRevenue._sum.finalPrice || 0,
-      },
-      featuredProducers: featuredProducers.map((p) => ({
-        id: p.id,
-        name: p.displayName || p.name,
-        avatar: p.avatar,
-        bio: p.producerBio,
-        totalSales: p.totalSales,
-        totalBeats: p._count.beats,
-        totalFollowers: 0,
-      })),
-      topGenres: topGenres.map((g) => ({
-        name: g.genre,
-        count: g._count,
-      })),
-      featuredBeats: featuredBeats.map((b) => {
-        let streamUrl = b.audioUrl
-        if (streamUrl) {
-          const parsed = parseSupabaseUrl(streamUrl)
-          if (parsed) {
-            streamUrl = getStreamUrl(parsed.bucket, parsed.path)
+    return NextResponse.json(
+      {
+        stats: {
+          totalBeats,
+          totalAuctions,
+          totalProducers,
+          totalBids,
+          totalCompleted,
+          totalRevenue: totalRevenue._sum.finalPrice || 0,
+        },
+        featuredProducers: featuredProducers.map((p) => ({
+          id: p.id,
+          name: p.displayName || p.name,
+          avatar: p.avatar,
+          bio: p.producerBio,
+          totalSales: p.totalSales,
+          totalBeats: p._count.beats,
+          totalFollowers: 0,
+        })),
+        topGenres: topGenres.map((g) => ({
+          name: g.genre,
+          count: g._count,
+        })),
+        featuredBeats: featuredBeats.map((b) => {
+          let streamUrl = b.audioUrl
+          if (streamUrl) {
+            const parsed = parseSupabaseUrl(streamUrl)
+            if (parsed) {
+              streamUrl = getStreamUrl(parsed.bucket, parsed.path)
+            }
           }
-        }
-        return {
-          id: b.id,
-          title: b.title,
-          genre: b.genre,
-          bpm: b.bpm,
-          key: b.key,
-          coverImage: b.coverImage,
-          audioUrl: streamUrl,
-          directPrice: getLowestConfiguredPrice(b),
-          producer: {
-            id: b.producer.id,
-            name: b.producer.displayName || b.producer.name,
-            avatar: b.producer.avatar,
-          },
-          auction: b.auctions[0] || null,
-        }
-      }),
-      nouveautesBeats: await getNouveautesPreview(),
-    })
+          return {
+            id: b.id,
+            title: b.title,
+            genre: b.genre,
+            bpm: b.bpm,
+            key: b.key,
+            coverImage: b.coverImage,
+            audioUrl: streamUrl,
+            directPrice: getLowestConfiguredPrice(b),
+            producer: {
+              id: b.producer.id,
+              name: b.producer.displayName || b.producer.name,
+              avatar: b.producer.avatar,
+            },
+            auction: b.auctions[0] || null,
+          }
+        }),
+        nouveautesBeats: await getNouveautesPreview(),
+      },
+      {
+        headers: {
+          // Les données publiques restent fraîches tout en évitant de refaire
+          // toutes les requêtes SQL à chaque ouverture mobile de l'accueil.
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
+        },
+      }
+    )
   } catch (error) {
     console.error('Homepage API error:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

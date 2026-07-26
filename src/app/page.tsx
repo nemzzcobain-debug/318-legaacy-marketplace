@@ -40,6 +40,7 @@ import Header from '@/components/layout/Header'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 import { useTranslation } from '@/i18n/LanguageContext'
 import { configurePlaybackAudioSession } from '@/lib/audio/session'
+import { getLicenseDetails } from '@/lib/licenses'
 
 interface LiveAuction {
   id: string
@@ -181,17 +182,28 @@ function AnimatedCounter({
 
 // ─── Floating Particle ───
 function FloatingParticles() {
+  const particles = [
+    { left: 8, top: 18, duration: 12, delay: 0 },
+    { left: 21, top: 67, duration: 15, delay: 2 },
+    { left: 36, top: 31, duration: 10, delay: 1 },
+    { left: 52, top: 74, duration: 17, delay: 4 },
+    { left: 66, top: 22, duration: 13, delay: 3 },
+    { left: 78, top: 58, duration: 18, delay: 1 },
+    { left: 89, top: 34, duration: 11, delay: 5 },
+    { left: 95, top: 82, duration: 16, delay: 2 },
+  ]
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {Array.from({ length: 20 }).map((_, i) => (
+      {particles.map((particle, i) => (
         <div
           key={i}
           className="absolute w-1 h-1 rounded-full bg-red-500/20"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animation: `float-particle ${8 + Math.random() * 12}s ease-in-out infinite`,
-            animationDelay: `${Math.random() * 5}s`,
+            left: `${particle.left}%`,
+            top: `${particle.top}%`,
+            animation: `float-particle ${particle.duration}s ease-in-out infinite`,
+            animationDelay: `${particle.delay}s`,
           }}
         />
       ))}
@@ -662,7 +674,7 @@ export default function Home() {
       <Header />
       {/* Audio via Web Audio API — pas d'element <audio> nécessaire */}
 
-      <main id="main-content">
+      <main id="main-content" className="home-render-optimized">
         {/* ═══════════ HERO ═══════════ */}
         <section className="relative overflow-hidden pt-10 pb-16 px-4 md:pt-24 md:pb-32">
           <FloatingParticles />
@@ -790,6 +802,8 @@ export default function Home() {
                 alt="318 LEGAACY Marketplace"
                 width={180}
                 height={180}
+                priority
+                sizes="(max-width: 767px) 112px, 176px"
                 className="mx-auto w-28 h-28 md:w-44 md:h-44 drop-shadow-[0_0_50px_rgba(225,29,72,0.5)]"
                 style={{
                   maskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
@@ -984,6 +998,7 @@ export default function Home() {
                             src={auction.beat.coverImage}
                             alt={auction.beat.title}
                             fill
+                            sizes="76px"
                             className="absolute inset-0 object-cover opacity-75 transition duration-500 group-hover:scale-105 group-hover:opacity-90"
                           />
                         )}
@@ -1039,9 +1054,12 @@ export default function Home() {
                           <span
                             className={`rounded-full border px-2 py-1 text-[9px] font-black ${licenseColors[auction.licenseType] || licenseColors.BASIC}`}
                           >
-                            {auction.licenseType}
+                            Licence {getLicenseDetails(auction.licenseType).label}
                           </span>
                         </div>
+                        <p className="mt-1.5 text-[9px] font-semibold text-gray-600">
+                          {getLicenseDetails(auction.licenseType).shortDescription}
+                        </p>
                       </div>
                     </div>
 
@@ -1185,6 +1203,7 @@ export default function Home() {
                                 src={currentBeat.coverImage}
                                 alt={currentBeat.title}
                                 fill
+                                sizes="76px"
                                 className="absolute inset-0 object-cover opacity-75 transition duration-500 group-hover:scale-105 group-hover:opacity-90"
                               />
                             )}
@@ -1239,10 +1258,15 @@ export default function Home() {
                                 <span
                                   className={`rounded-full border px-2 py-1 text-[9px] font-black ${licenseColors[auction.licenseType] || licenseColors.BASIC}`}
                                 >
-                                  {auction.licenseType}
+                                  Licence {getLicenseDetails(auction.licenseType).label}
                                 </span>
                               )}
                             </div>
+                            {auction && (
+                              <p className="mt-1.5 text-[9px] font-semibold text-gray-600">
+                                {getLicenseDetails(auction.licenseType).shortDescription}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -1441,6 +1465,7 @@ export default function Home() {
                                     src={beat.coverImage}
                                     alt={beat.title}
                                     fill
+                                    sizes="36px"
                                     className="object-cover"
                                   />
                                 ) : (
@@ -2021,6 +2046,20 @@ export default function Home() {
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        .home-render-optimized > section:not(:first-child),
+        .home-render-optimized > footer {
+          content-visibility: auto;
+          contain-intrinsic-size: auto 720px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .home-render-optimized *,
+          .home-render-optimized *::before,
+          .home-render-optimized *::after {
+            scroll-behavior: auto !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+          }
         }
       `}</style>
     </div>
