@@ -92,7 +92,11 @@ export async function POST(request: Request) {
     const fullPrompt = `Album cover art for a music beat: ${prompt.trim()}. ${stylePrompt}. Square format, high quality, professional music artwork, no text, no letters, no words, no watermark.`
 
     const openai = getOpenAI()
-    if (!openai) return NextResponse.json({ error: 'Génération de cover AI indisponible (OPENAI_API_KEY manquante)' }, { status: 503 })
+    if (!openai)
+      return NextResponse.json(
+        { error: 'Génération de cover AI indisponible (OPENAI_API_KEY manquante)' },
+        { status: 503 }
+      )
     const response = await openai.images.generate({
       model: 'dall-e-3',
       prompt: fullPrompt,
@@ -101,7 +105,7 @@ export async function POST(request: Request) {
       quality: 'standard',
     })
 
-    const imageUrl = response.data[0]?.url
+    const imageUrl = response.data?.[0]?.url
 
     if (!imageUrl) {
       return NextResponse.json({ error: 'Erreur lors de la génération' }, { status: 500 })
