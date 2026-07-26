@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/layout/Header'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import AudioPlayer from '@/components/audio/AudioPlayer'
 import {
   Upload,
@@ -23,6 +25,7 @@ import {
   Plus,
   Trash2,
   Info,
+  ArrowLeft,
 } from 'lucide-react'
 import { GENRES, MOODS } from '@/types'
 import CoverGenerator from '@/components/ai/CoverGenerator'
@@ -355,7 +358,7 @@ export default function UploadBeatPage() {
       }
 
       // 5. Upload stems privés
-      let uploadedStems: Array<{ name: string; url: string; size: number }> = []
+      const uploadedStems: Array<{ name: string; url: string; size: number }> = []
       if (stemFiles.length > 0 && signedData.stems) {
         for (let i = 0; i < stemFiles.length; i++) {
           const stemFile = stemFiles[i]
@@ -604,6 +607,20 @@ export default function UploadBeatPage() {
       <Header />
 
       <main className="max-w-3xl mx-auto px-4 py-10">
+        <Breadcrumbs
+          items={[
+            { label: 'Tableau de bord', href: '/dashboard' },
+            { label: editBeatId ? 'Corriger le beat' : 'Upload' },
+          ]}
+        />
+        <Link
+          href="/dashboard"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-sm font-semibold text-gray-300 transition hover:border-red-500/30 hover:bg-red-500/[0.07] hover:text-white"
+        >
+          <ArrowLeft size={15} />
+          Retour au tableau de bord
+        </Link>
+
         <div className="mb-8">
           <h1 className="text-3xl font-black text-white mb-2">Upload un beat</h1>
           <p className="text-gray-400">Partage ton instrumentale et mets-la aux enchères</p>
