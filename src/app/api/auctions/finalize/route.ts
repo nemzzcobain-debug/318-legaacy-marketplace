@@ -2,6 +2,115 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import {
+  sendAuctionWonEmail,
+  sendProducerAuctionEndedEmail,
+} from '@/lib/emails/resend'
+import { sendPushToUser } from '@/lib/web-push'
+
+type ProducerAuctionAlert = {
+  userId: string
+  email: string | null
+  producerName: string
+  beatTitle: string
+  auctionId: string
+  outcome: 'WINNING_BID' | 'RESERVE_NOT_MET' | 'NO_BIDS' | 'PAYMENT_EXPIRED'
+  finalPrice?: number
+  expectedPayout?: number
+  highestBid?: number
+}
+
+type WinnerAuctionAlert = {
+  userId: string
+  email: string | null
+  winnerName: string
+  beatTitle: string
+  producerName: string
+  finalPrice: number
+  license: string
+  auctionId: string
+}
+
+async function deliverProducerAuctionAlert(alert: ProducerAuctionAlert) {
+  const isWinningBid = alert.outcome === 'WINNING_BID'
+  const title = isWinningBid
+    ? 'Ton enchère a reçu une offre gagnante'
+    : alert.outcome === 'RESERVE_NOT_MET'
+      ? 'Enchère terminée sans vente'
+      : alert.outcome === 'PAYMENT_EXPIRED'
+        ? 'Le paiement du gagnant a expiré'
+        : 'Enchère terminée sans offre'
+  const body = isWinningBid
+    ? `« ${alert.beatTitle} » s’est terminé à ${alert.finalPrice} EUR. Paiement du gagnant en attente.`
+    : alert.outcome === 'RESERVE_NOT_MET'
+      ? `Le prix de réserve de « ${alert.beatTitle} » n’a pas été atteint.`
+      : alert.outcome === 'PAYMENT_EXPIRED'
+        ? `Le gagnant n’a pas payé « ${alert.beatTitle} ». Le beat est remis en vente.`
+        : `Aucune offre n’a été placée sur « ${alert.beatTitle} ».`
+
+  const deliveries: Promise<unknown>[] = [
+    sendPushToUser(alert.userId, {
+      title,
+      body,
+      url: `/auction/${alert.auctionId}`,
+      tag: `producer-auction-ended-${alert.auctionId}`,
+    }),
+  ]
+
+  if (alert.email) {
+    deliveries.push(
+      sendProducerAuctionEndedEmail({
+        to: alert.email,
+        producerName: alert.producerName,
+        beatTitle: alert.beatTitle,
+        auctionId: alert.auctionId,
+        outcome: alert.outcome,
+        finalPrice: alert.finalPrice,
+        expectedPayout: alert.expectedPayout,
+        highestBid: alert.highestBid,
+      })
+    )
+  }
+
+  const results = await Promise.allSettled(deliveries)
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.warn('[FINALIZE] Alerte producteur non envoyée:', String(result.reason))
+    }
+  }
+}
+
+async function deliverWinnerAuctionAlert(alert: WinnerAuctionAlert) {
+  const deliveries: Promise<unknown>[] = [
+    sendPushToUser(alert.userId, {
+      title: 'Tu as gagné une enchère !',
+      body: `Tu as remporté « ${alert.beatTitle} » pour ${alert.finalPrice} EUR. Finalise le paiement sous 48 heures.`,
+      url: `/checkout/${alert.auctionId}`,
+      tag: `auction-won-${alert.auctionId}`,
+    }),
+  ]
+
+  if (alert.email) {
+    deliveries.push(
+      sendAuctionWonEmail({
+        to: alert.email,
+        winnerName: alert.winnerName,
+        beatTitle: alert.beatTitle,
+        producerName: alert.producerName,
+        finalPrice: alert.finalPrice,
+        license: alert.license,
+        auctionId: alert.auctionId,
+      })
+    )
+  }
+
+  const results = await Promise.allSettled(deliveries)
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.warn('[FINALIZE] Alerte gagnant non envoyée:', String(result.reason))
+    }
+  }
+}
 
 // GET — Appele par Vercel Cron toutes les minutes
 export async function GET(req: NextRequest) {
@@ -229,7 +338,16 @@ async function handleFinalize(req: NextRequest) {
         paymentDeadline: { lte: now },
       },
       include: {
-        beat: { select: { id: true, title: true, producerId: true } },
+        beat: {
+          select: {
+            id: true,
+            title: true,
+            producerId: true,
+            producer: {
+              select: { email: true, name: true, displayName: true },
+            },
+          },
+        },
       },
     })
 
@@ -305,7 +423,18 @@ async function handleFinalize(req: NextRequest) {
           }
         })
 
-        if (didExpirePayment) results.expiredPayments++
+        if (didExpirePayment) {
+          results.expiredPayments++
+          await deliverProducerAuctionAlert({
+            userId: expired.beat.producerId,
+            email: expired.beat.producer.email,
+            producerName:
+              expired.beat.producer.displayName || expired.beat.producer.name,
+            beatTitle: expired.beat.title,
+            auctionId: expired.id,
+            outcome: 'PAYMENT_EXPIRED',
+          })
+        }
       } catch (err) {
         console.error(`Erreur expiration deadline ${expired.id}:`, String(err))
         results.errors++
@@ -316,6 +445,8 @@ async function handleFinalize(req: NextRequest) {
       try {
         const topBid = auction.bids[0]
         let didFinalize = false
+        let producerAlert: ProducerAuctionAlert | null = null
+        let winnerAlert: WinnerAuctionAlert | null = null
 
         await prisma.$transaction(async (tx) => {
           if (topBid) {
@@ -372,6 +503,34 @@ async function handleFinalize(req: NextRequest) {
                 },
               })
 
+              producerAlert = {
+                userId: auction.beat.producerId,
+                email: auction.beat.producer.email,
+                producerName:
+                  auction.beat.producer.displayName || auction.beat.producer.name,
+                beatTitle: auction.beat.title,
+                auctionId: auction.id,
+                outcome: 'WINNING_BID',
+                finalPrice: topBid.finalAmount,
+                expectedPayout:
+                  Math.round(
+                    topBid.finalAmount *
+                      (1 - auction.commissionPercent / 100) *
+                      100
+                  ) / 100,
+              }
+              winnerAlert = {
+                userId: topBid.userId,
+                email: topBid.user.email,
+                winnerName: topBid.user.displayName || topBid.user.name,
+                beatTitle: auction.beat.title,
+                producerName:
+                  auction.beat.producer.displayName || auction.beat.producer.name,
+                finalPrice: topBid.finalAmount,
+                license: topBid.licenseType,
+                auctionId: auction.id,
+              }
+
               results.withWinner++
             } else {
               // Reserve non atteinte
@@ -397,6 +556,17 @@ async function handleFinalize(req: NextRequest) {
                   userId: auction.beat.producerId,
                 },
               })
+
+              producerAlert = {
+                userId: auction.beat.producerId,
+                email: auction.beat.producer.email,
+                producerName:
+                  auction.beat.producer.displayName || auction.beat.producer.name,
+                beatTitle: auction.beat.title,
+                auctionId: auction.id,
+                outcome: 'RESERVE_NOT_MET',
+                highestBid: topBid.finalAmount,
+              }
 
               // Ajouter le beat à la playlist "Nouveautés"
               if (nouveautesPlaylist) {
@@ -445,6 +615,16 @@ async function handleFinalize(req: NextRequest) {
               },
             })
 
+            producerAlert = {
+              userId: auction.beat.producerId,
+              email: auction.beat.producer.email,
+              producerName:
+                auction.beat.producer.displayName || auction.beat.producer.name,
+              beatTitle: auction.beat.title,
+              auctionId: auction.id,
+              outcome: 'NO_BIDS',
+            }
+
             // Ajouter le beat à la playlist "Nouveautés"
             if (nouveautesPlaylist) {
               const alreadyInPlaylist = await tx.playlistBeat.findFirst({
@@ -470,7 +650,17 @@ async function handleFinalize(req: NextRequest) {
           }
         })
 
-        if (didFinalize) results.processed++
+        if (didFinalize) {
+          results.processed++
+          const deliveries: Promise<unknown>[] = []
+          if (producerAlert) {
+            deliveries.push(deliverProducerAuctionAlert(producerAlert))
+          }
+          if (winnerAlert) {
+            deliveries.push(deliverWinnerAuctionAlert(winnerAlert))
+          }
+          await Promise.allSettled(deliveries)
+        }
       } catch (err) {
         console.error(`Erreur finalisation enchère ${auction.id}:`, err)
         results.errors++
