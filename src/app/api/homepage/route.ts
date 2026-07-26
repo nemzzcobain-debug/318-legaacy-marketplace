@@ -7,7 +7,11 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
 import { getLowestConfiguredPrice } from '@/lib/beat-pricing'
-import { getPublicLiveAuctionWhere, PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
+import {
+  getActionableFeaturedBeatWhere,
+  getPublicLiveAuctionWhere,
+  PUBLIC_BEAT_WHERE,
+} from '@/lib/public-catalog'
 
 async function getNouveautesPreview() {
   try {
@@ -146,9 +150,7 @@ export async function GET() {
 
       // Featured beats (admin-selected)
       prisma.beat.findMany({
-        where: {
-          AND: [PUBLIC_BEAT_WHERE, { isFeatured: true }],
-        },
+        where: getActionableFeaturedBeatWhere(now),
         orderBy: { featuredOrder: 'asc' },
         select: {
           id: true,
