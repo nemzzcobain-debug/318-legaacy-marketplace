@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { enforceProducerStripeAccess } from '@/lib/producer-stripe-access'
 
 const ALLOWED_EXTENSION_HOURS = [1, 3, 6, 12, 24, 48]
 
@@ -48,6 +49,24 @@ export async function POST(
         { error: 'Seul le propriétaire du beat peut prolonger cette enchère' },
         { status: 403 }
       )
+    }
+
+    if (role !== 'ADMIN') {
+      const producer = await prisma.user.findUnique({ where: { id: userId } })
+      if (!producer) {
+        return NextResponse.json({ error: 'Beatmaker introuvable' }, { status: 404 })
+      }
+      const producerAccess = await enforceProducerStripeAccess(producer)
+      if (!producerAccess.allowed) {
+        return NextResponse.json(
+          {
+            error: producerAccess.message,
+            code: producerAccess.status,
+            actionUrl: '/dashboard?tab=settings',
+          },
+          { status: 403 }
+        )
+      }
     }
 
     const now = new Date()
