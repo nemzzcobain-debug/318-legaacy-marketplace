@@ -13,8 +13,8 @@
 - validation des beats et des enchères ;
 - inscription artiste et beatmaker ;
 - refus des doublons et des données invalides ;
-- placement d'une enchère ;
-- montant minimal de surenchère ;
+- validation d'une tentative d'enchère ;
+- montant minimal de surenchère et montant minimum renvoyé au client ;
 - blocage d'une enchère sur son propre beat ;
 - enchères terminées ou inactives ;
 - gestion des erreurs serveur.
