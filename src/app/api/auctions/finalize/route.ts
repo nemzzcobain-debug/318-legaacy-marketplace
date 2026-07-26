@@ -7,6 +7,7 @@ import {
   sendProducerAuctionEndedEmail,
 } from '@/lib/emails/resend'
 import { sendPushToUser } from '@/lib/web-push'
+import { suspendExpiredStripeGraceProducers } from '@/lib/producer-stripe-access'
 
 type ProducerAuctionAlert = {
   userId: string
@@ -162,6 +163,13 @@ async function handleFinalize(req: NextRequest) {
     }
 
     const now = new Date()
+    let stripeGraceEnforcement = { checked: 0, suspended: 0 }
+    try {
+      stripeGraceEnforcement = await suspendExpiredStripeGraceProducers(now)
+    } catch (error) {
+      // La finalisation des enchères ne doit jamais être interrompue par Stripe.
+      console.error('[CRON] Contrôle du délai Stripe impossible:', error)
+    }
     let repairedPrematureFinalizations = 0
 
     // Réparer une éventuelle course entre une mise anti-snipe et le cron :
@@ -672,6 +680,7 @@ async function handleFinalize(req: NextRequest) {
       ...results,
       activated,
       repairedPrematureFinalizations,
+      stripeGraceEnforcement,
       timestamp: now.toISOString(),
     })
   } catch (error: any) {
