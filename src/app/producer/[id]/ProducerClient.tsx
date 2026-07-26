@@ -11,7 +11,7 @@ import Link from 'next/link'
 import {
   Shield, Star, Play, Heart, Music, Gavel, TrendingUp,
   Clock, DollarSign, Users, Calendar, Loader2, ExternalLink,
-  Disc, Headphones, Award, BarChart3, MessageCircle
+  Disc, Headphones, Award, BarChart3, MessageCircle, ArrowLeft
 } from 'lucide-react'
 import LikeButton from '@/components/ui/LikeButton'
 import FollowButton from '@/components/ui/FollowButton'
@@ -152,6 +152,14 @@ export default function ProducerClient() {
           { label: 'Producteurs', href: '/producers' },
           { label: producer.displayName || producer.name }
         ]} />
+
+        <Link
+          href="/producers"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-sm font-semibold text-gray-300 transition hover:border-red-500/30 hover:bg-red-500/[0.07] hover:text-white"
+        >
+          <ArrowLeft size={15} />
+          Retour aux producteurs
+        </Link>
 
         {/* Profile Header */}
         <div className="bg-[#111111] border border-[#222222] rounded-2xl overflow-hidden mb-6">
