@@ -5,6 +5,29 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createConnectAccount, createOnboardingLink, isConnectAccountReady, createDashboardLink } from '@/lib/stripe'
+import {
+  enforceProducerStripeAccess,
+  getStripeGraceDeadline,
+} from '@/lib/producer-stripe-access'
+
+function buildGracePayload(user: {
+  producerApprovedAt: Date | null
+  stripeGraceSuspendedAt: Date | null
+  producerStatus: string | null
+}) {
+  const deadline = getStripeGraceDeadline(user.producerApprovedAt)
+  const remainingMs = deadline ? Math.max(0, deadline.getTime() - Date.now()) : 0
+
+  return {
+    graceStatus: user.stripeGraceSuspendedAt
+      ? 'suspended'
+      : user.producerStatus === 'APPROVED' && remainingMs > 0
+        ? 'grace_period'
+        : null,
+    graceDeadline: deadline?.toISOString() || null,
+    graceRemainingMs: remainingMs,
+  }
+}
 
 // POST — Creer un compte Stripe Connect et générer le lien d'onboarding
 export async function POST(req: NextRequest) {
@@ -27,9 +50,11 @@ export async function POST(req: NextRequest) {
       try {
         const isReady = await isConnectAccountReady(user.stripeAccountId)
         if (isReady) {
+          await enforceProducerStripeAccess(user)
           return NextResponse.json({
             status: 'active',
             message: 'Votre compte Stripe est déjà actif',
+            ...buildGracePayload(user),
           })
         }
         // Sinon regénérer un lien d'onboarding
@@ -37,6 +62,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           status: 'pending',
           onboardingUrl: accountLink.url,
+          ...buildGracePayload(user),
         })
       } catch (err: any) {
         // Le compte Stripe sauvegardé n'existe plus / a été supprimé / appartient
@@ -80,6 +106,7 @@ export async function POST(req: NextRequest) {
       status: 'created',
       onboardingUrl: accountLink.url,
       accountId: account.id,
+      ...buildGracePayload(user),
     })
   } catch (error: any) {
     console.error('Erreur Stripe Connect:', error)
@@ -119,23 +146,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         status: 'not_connected',
         message: 'Aucun compte Stripe connecté',
+        ...buildGracePayload(user),
       })
     }
 
     const isReady = await isConnectAccountReady(user.stripeAccountId)
 
     if (isReady) {
+      await enforceProducerStripeAccess(user)
       // Générer un lien vers le dashboard Stripe Express
       try {
         const dashboardLink = await createDashboardLink(user.stripeAccountId)
         return NextResponse.json({
           status: 'active',
           dashboardUrl: dashboardLink.url,
+          ...buildGracePayload(user),
         })
       } catch {
         return NextResponse.json({
           status: 'active',
           dashboardUrl: null,
+          ...buildGracePayload(user),
         })
       }
     }
@@ -143,6 +174,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       status: 'pending',
       message: 'Onboarding Stripe en cours. Completez votre inscription.',
+      ...buildGracePayload(user),
     })
   } catch (error: any) {
     console.error('Erreur vérification Stripe:', error)
