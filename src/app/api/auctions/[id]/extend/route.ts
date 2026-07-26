@@ -10,9 +10,10 @@ const ALLOWED_EXTENSION_HOURS = [1, 3, 6, 12, 24, 48]
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
@@ -31,7 +32,7 @@ export async function POST(
     }
 
     const auction = await prisma.auction.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         endTime: true,

@@ -8,7 +8,7 @@ import { getSignedUrl, parseSupabaseUrl } from '@/lib/supabase'
 
 // GET /api/beats/[id]/download?type=mp3|wav|stems
 // Retourne une signed URL temporaire (1h) si l'utilisateur a achete le beat
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     const userId = session.user.id
-    const beatId = params.id
+    const { id: beatId } = await params
     const fileType = req.nextUrl.searchParams.get('type') || 'mp3'
 
     if (!['mp3', 'wav', 'stems'].includes(fileType)) {

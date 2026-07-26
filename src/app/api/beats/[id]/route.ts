@@ -5,14 +5,15 @@ import { prisma } from '@/lib/prisma'
 import { deleteFile, parseSupabaseUrl } from '@/lib/supabase'
 
 // GET /api/beats/[id] — Charger un beat à corriger
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   }
 
+  const { id } = await params
   const beat = await prisma.beat.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       producerId: true,
@@ -43,14 +44,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE /api/beats/[id] — Supprimer un beat (producteur uniquement)
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    const beatId = params.id
+    const { id: beatId } = await params
 
     // Récupérer le beat avec ses relations
     const beat = await prisma.beat.findUnique({

@@ -7,13 +7,14 @@ import { prisma } from '@/lib/prisma'
 import { updatePlaylistSchema } from '@/lib/validations'
 
 // GET /api/playlists/[id] - Get playlist detail
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id
 
     const playlist = await prisma.playlist.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: { select: { id: true, name: true, displayName: true, avatar: true } },
         beats: {
@@ -54,13 +55,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 // PUT /api/playlists/[id] - Update playlist
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
     const userId = (session.user as any).id
-    const playlist = await prisma.playlist.findUnique({ where: { id: params.id } })
+    const playlist = await prisma.playlist.findUnique({ where: { id } })
 
     if (!playlist) return NextResponse.json({ error: 'Playlist non trouvée' }, { status: 404 })
     if (playlist.userId !== userId) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
@@ -81,7 +83,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     if (coverImage !== undefined) updateData.coverImage = coverImage || null
 
     const updated = await prisma.playlist.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     })
 
@@ -93,18 +95,19 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 // DELETE /api/playlists/[id] - Delete playlist
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
     const userId = (session.user as any).id
-    const playlist = await prisma.playlist.findUnique({ where: { id: params.id } })
+    const playlist = await prisma.playlist.findUnique({ where: { id } })
 
     if (!playlist) return NextResponse.json({ error: 'Playlist non trouvée' }, { status: 404 })
     if (playlist.userId !== userId) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
 
-    await prisma.playlist.delete({ where: { id: params.id } })
+    await prisma.playlist.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

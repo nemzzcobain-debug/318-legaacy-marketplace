@@ -2,16 +2,17 @@ import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
   children: React.ReactNode
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.318marketplace.com'
 
   try {
     const auction = await prisma.auction.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         beat: {
           select: {
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const producerName = auction.beat.producer.displayName || auction.beat.producer.name
     const title = `${auction.beat.title} — Enchere ${auction.status === 'ACTIVE' ? 'en cours' : 'terminée'}`
     const description = `Encheris sur "${auction.beat.title}" par ${producerName}. ${auction.beat.genre} · ${auction.beat.bpm} BPM. Enchere actuelle: ${auction.currentBid}€`
-    const ogUrl = `${siteUrl}/api/og?auction=${params.id}&title=${encodeURIComponent(auction.beat.title)}&producer=${encodeURIComponent(producerName)}&bid=${auction.currentBid}&genre=${encodeURIComponent(auction.beat.genre)}&bpm=${auction.beat.bpm}`
+    const ogUrl = `${siteUrl}/api/og?auction=${id}&title=${encodeURIComponent(auction.beat.title)}&producer=${encodeURIComponent(producerName)}&bid=${auction.currentBid}&genre=${encodeURIComponent(auction.beat.genre)}&bpm=${auction.beat.bpm}`
 
     return {
       title,
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title,
         description,
-        url: `${siteUrl}/auction/${params.id}`,
+        url: `${siteUrl}/auction/${id}`,
         siteName: '318 LEGAACY Marketplace',
         type: 'website',
         locale: 'fr_FR',
@@ -60,7 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         images: [ogUrl],
       },
       alternates: {
-        canonical: `${siteUrl}/auction/${params.id}`,
+        canonical: `${siteUrl}/auction/${id}`,
       },
       other: {
         'product:price:amount': String(auction.currentBid),

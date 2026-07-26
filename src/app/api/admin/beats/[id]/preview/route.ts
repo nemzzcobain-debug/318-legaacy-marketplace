@@ -15,7 +15,7 @@ import { getSignedUrl, parseSupabaseUrl } from '@/lib/supabase'
  */
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -23,7 +23,7 @@ export async function GET(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
-    const { id } = params
+    const { id } = await params
     const beat = await prisma.beat.findUnique({
       where: { id },
       select: {
