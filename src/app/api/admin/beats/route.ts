@@ -105,7 +105,15 @@ export async function PATCH(request: Request) {
     const beat = await prisma.beat.findUnique({
       where: { id: beatId },
       include: {
-        producer: { select: { id: true, email: true, name: true, displayName: true } },
+        producer: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            displayName: true,
+            producerStatus: true,
+          },
+        },
         auctions: { where: { status: 'PENDING_APPROVAL' } },
       },
     })
@@ -115,6 +123,17 @@ export async function PATCH(request: Request) {
     }
     if (beat.status !== 'PENDING') {
       return NextResponse.json({ error: 'Ce beat a déjà été examiné' }, { status: 409 })
+    }
+
+    if (action === 'APPROVE' && beat.producer.producerStatus !== 'APPROVED') {
+      return NextResponse.json(
+        {
+          error:
+            'Ce beatmaker doit terminer Stripe Connect avant que son beat puisse être mis en ligne.',
+          code: 'PRODUCER_STRIPE_SUSPENDED',
+        },
+        { status: 409 }
+      )
     }
 
     const approved = action === 'APPROVE'
