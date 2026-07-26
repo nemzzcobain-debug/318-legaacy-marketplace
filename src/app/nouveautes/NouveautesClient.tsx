@@ -44,6 +44,8 @@ interface Beat {
     avatar: string | null
   }
   basePrice: number // Prix de base (startPrice de la dernière enchère)
+  licensePrices: Record<'BASIC' | 'PREMIUM' | 'EXCLUSIVE', number | null>
+  licenseAvailability: Record<'BASIC' | 'PREMIUM' | 'EXCLUSIVE', boolean>
 }
 
 const BPM_PRESETS = [
@@ -91,7 +93,12 @@ const LICENSES = [
     text: 'text-gray-400',
     multiplier: 1,
     rights: 'MP3 uniquement - 5000 streams - Non-commercial',
-    features: ['Format MP3 uniquement', '5 000 streams max', 'Usage non-commercial', 'Credit obligatoire'],
+    features: [
+      'Format MP3 uniquement',
+      '5 000 streams max',
+      'Usage non-commercial',
+      'Credit obligatoire',
+    ],
   },
   {
     id: 'PREMIUM',
@@ -212,7 +219,7 @@ export default function NouveautesClient() {
     const beat = beats[beatIndex]
     if (!beat) return
     if (!beat.audioUrl) {
-      console.warn('Pas d\'audio disponible pour ce beat:', beat.title)
+      console.warn("Pas d'audio disponible pour ce beat:", beat.title)
       return
     }
 
@@ -232,7 +239,12 @@ export default function NouveautesClient() {
     const playPromise = audioRef.current.play()
     if (playPromise !== undefined) {
       playPromise.catch((err) => {
-        console.error('Erreur lecture audio:', err.message, 'URL:', beat.audioUrl?.substring(0, 100))
+        console.error(
+          'Erreur lecture audio:',
+          err.message,
+          'URL:',
+          beat.audioUrl?.substring(0, 100)
+        )
         setIsPlaying(false)
       })
     }
@@ -328,6 +340,26 @@ export default function NouveautesClient() {
 
   const currentBeat = currentTrack >= 0 ? beats[currentTrack] : null
   const currentLicenseInfo = LICENSES.find((l) => l.id === selectedLicense)!
+  const selectedBeatData = beats.find((beat) => beat.id === selectedBeat)
+
+  function getLicensePrice(beat: Beat, license: (typeof LICENSES)[number]) {
+    const configuredPrice = beat.licensePrices[license.id as keyof Beat['licensePrices']]
+    return configuredPrice ?? Math.round(beat.basePrice * license.multiplier * 100) / 100
+  }
+
+  useEffect(() => {
+    if (!selectedBeatData) return
+
+    const currentAvailable =
+      selectedBeatData.licenseAvailability[selectedLicense as keyof Beat['licenseAvailability']]
+    if (currentAvailable) return
+
+    const firstAvailable = LICENSES.find(
+      (license) =>
+        selectedBeatData.licenseAvailability[license.id as keyof Beat['licenseAvailability']]
+    )
+    if (firstAvailable) setSelectedLicense(firstAvailable.id)
+  }, [selectedBeatData, selectedLicense])
 
   if (loading) {
     return (
@@ -522,7 +554,9 @@ export default function NouveautesClient() {
                 return (
                   <div
                     key={beat.id}
-                    ref={(el) => { beatRefs.current[beat.id] = el }}
+                    ref={(el) => {
+                      beatRefs.current[beat.id] = el
+                    }}
                     className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                       selectedBeat === beat.id
                         ? 'border-[#e11d48] bg-[#e11d48]/5'
@@ -605,7 +639,7 @@ export default function NouveautesClient() {
                     {/* Price */}
                     <div className="text-right shrink-0">
                       <div className="text-sm font-bold text-white">{beat.basePrice} EUR</div>
-                      <div className="text-[10px] text-gray-600">prix de base</div>
+                      <div className="text-[10px] text-gray-600">à partir de</div>
                     </div>
                   </div>
                 )
@@ -623,19 +657,31 @@ export default function NouveautesClient() {
                     {LICENSES.map((license) => {
                       const Icon = license.icon
                       const isSelected = selectedLicense === license.id
-                      const selectedBeatData = beats.find((b) => b.id === selectedBeat)
                       const price = selectedBeatData
-                        ? Math.round(selectedBeatData.basePrice * license.multiplier * 100) / 100
+                        ? getLicensePrice(selectedBeatData, license)
                         : null
+                      const isAvailable = selectedBeatData
+                        ? selectedBeatData.licenseAvailability[
+                            license.id as keyof Beat['licenseAvailability']
+                          ]
+                        : true
+                      const isConfigured = selectedBeatData
+                        ? selectedBeatData.licensePrices[
+                            license.id as keyof Beat['licensePrices']
+                          ] !== null
+                        : false
 
                       return (
                         <button
                           key={license.id}
                           onClick={() => setSelectedLicense(license.id)}
+                          disabled={!isAvailable}
                           className={`w-full p-4 rounded-xl border text-left transition-all ${
-                            isSelected
-                              ? `${license.border} ${license.bg}`
-                              : 'border-[#1e1e2e] hover:border-[#2e2e3e]'
+                            !isAvailable
+                              ? 'cursor-not-allowed border-[#1e1e2e] opacity-40'
+                              : isSelected
+                                ? `${license.border} ${license.bg}`
+                                : 'border-[#1e1e2e] hover:border-[#2e2e3e]'
                           }`}
                         >
                           <div className="flex items-center gap-3 mb-2">
@@ -651,14 +697,20 @@ export default function NouveautesClient() {
                                 >
                                   {license.name}
                                 </span>
-                                {price !== null && (
+                                {isAvailable && price !== null ? (
                                   <span className={`text-sm font-bold ${license.text}`}>
                                     {price} EUR
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-bold text-gray-600">
+                                    Indisponible
                                   </span>
                                 )}
                               </div>
                               <span className="text-[10px] text-gray-500">
-                                x{license.multiplier}
+                                {isConfigured
+                                  ? 'Prix fixé par le beatmaker'
+                                  : `Tarif standard x${license.multiplier}`}
                               </span>
                             </div>
                           </div>
@@ -688,8 +740,11 @@ export default function NouveautesClient() {
                     {(() => {
                       const beatData = beats.find((b) => b.id === selectedBeat)
                       if (!beatData) return null
-                      const finalPrice =
-                        Math.round(beatData.basePrice * currentLicenseInfo.multiplier * 100) / 100
+                      const finalPrice = getLicensePrice(beatData, currentLicenseInfo)
+                      const licenseAvailable =
+                        beatData.licenseAvailability[
+                          currentLicenseInfo.id as keyof Beat['licenseAvailability']
+                        ]
 
                       return (
                         <>
@@ -720,13 +775,8 @@ export default function NouveautesClient() {
                           </div>
 
                           <div className="flex items-center justify-between mb-1 text-xs text-gray-400">
-                            <span>Prix de base</span>
-                            <span>{beatData.basePrice} EUR</span>
-                          </div>
-                          <div className="flex items-center justify-between mb-1 text-xs text-gray-400">
-                            <span>
-                              Licence {currentLicenseInfo.name} (x{currentLicenseInfo.multiplier})
-                            </span>
+                            <span>Licence {currentLicenseInfo.name}</span>
+                            <span>{finalPrice} EUR</span>
                           </div>
                           <div className="border-t border-[#1e1e2e] my-3" />
                           <div className="flex items-center justify-between mb-4">
@@ -744,7 +794,9 @@ export default function NouveautesClient() {
                           {/* Formulaire email invité */}
                           {!session?.user && showGuestForm && selectedBeat && (
                             <div className="mb-3 p-3 rounded-xl bg-[#1a1a2e] border border-[#2e2e4e]">
-                              <p className="text-xs text-gray-400 mb-2">Entre ton email pour acheter en tant qu&apos;invité :</p>
+                              <p className="text-xs text-gray-400 mb-2">
+                                Entre ton email pour acheter en tant qu&apos;invité :
+                              </p>
                               <input
                                 type="email"
                                 value={guestEmail}
@@ -752,7 +804,9 @@ export default function NouveautesClient() {
                                 placeholder="ton@email.com"
                                 className="w-full px-3 py-2 rounded-lg bg-[#0a0a0f] border border-[#2e2e4e] text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#e11d48] mb-2"
                               />
-                              <p className="text-[10px] text-gray-500">Un compte sera cree automatiquement. Tu recevras ton beat par email.</p>
+                              <p className="text-[10px] text-gray-500">
+                                Un compte sera cree automatiquement. Tu recevras ton beat par email.
+                              </p>
                             </div>
                           )}
 
@@ -766,7 +820,7 @@ export default function NouveautesClient() {
                           ) : (
                             <button
                               onClick={() => handlePurchase(selectedBeat)}
-                              disabled={purchasing}
+                              disabled={purchasing || !licenseAvailable}
                               className="w-full py-3 rounded-xl font-bold text-sm text-black flex items-center justify-center gap-2 transition disabled:opacity-50"
                               style={{
                                 background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)',
@@ -776,9 +830,12 @@ export default function NouveautesClient() {
                                 <>
                                   <Loader2 size={16} className="animate-spin" /> Traitement...
                                 </>
+                              ) : !licenseAvailable ? (
+                                <>Licence indisponible</>
                               ) : !session?.user && !showGuestForm ? (
                                 <>
-                                  <ShoppingCart size={16} /> Acheter en tant qu&apos;invite - {finalPrice} EUR
+                                  <ShoppingCart size={16} /> Acheter en tant qu&apos;invite -{' '}
+                                  {finalPrice} EUR
                                 </>
                               ) : (
                                 <>
