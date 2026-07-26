@@ -1,0 +1,32 @@
+name: Corriger le lockfile Next.js 15
+
+on:
+  push:
+    branches:
+      - preview/next-15-5-21
+
+permissions:
+  contents: write
+
+jobs:
+  update-lockfile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Mettre a jour uniquement Next.js
+        run: |
+          git checkout origin/main -- package-lock.json
+          npm install --package-lock-only --ignore-scripts --save-exact next@15.5.21 eslint-config-next@15.5.21
+          rm -f .github/workflows/fix-next15-lock.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json .github/workflows/fix-next15-lock.yml
+          git commit -m "fix: limite le lockfile aux paquets Next.js"
+          git push
