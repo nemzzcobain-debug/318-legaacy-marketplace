@@ -1,4 +1,3 @@
-// @ts-expect-error - resend is optional
 import { Resend } from 'resend'
 import { randomBytes } from 'crypto'
 
@@ -490,10 +489,7 @@ export async function sendProducerApprovedEmail(params: { to: string; name: stri
   return sendEmail(to, `🎉 Candidature approuvée — Bienvenue producteur 318 LEGAACY !`, html)
 }
 
-export async function sendStripeConnectSuspensionEmail(params: {
-  to: string
-  name: string
-}) {
+export async function sendStripeConnectSuspensionEmail(params: { to: string; name: string }) {
   const { to, name } = params
 
   const html = emailLayout(`
