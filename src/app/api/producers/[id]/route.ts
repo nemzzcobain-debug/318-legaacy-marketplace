@@ -8,12 +8,13 @@ import { authOptions } from '@/lib/auth'
 // GET — Récupérer le profil public d'un producteur
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     const producer = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -77,29 +78,29 @@ export async function GET(
 
     // Stats supplementaires
     const totalAuctions = await prisma.auction.count({
-      where: { beat: { producerId: params.id } },
+      where: { beat: { producerId: id } },
     })
 
     const completedAuctions = await prisma.auction.count({
       where: {
-        beat: { producerId: params.id },
+        beat: { producerId: id },
         status: 'COMPLETED',
       },
     })
 
     const totalPlays = await prisma.beat.aggregate({
-      where: { producerId: params.id },
+      where: { producerId: id },
       _sum: { plays: true },
     })
 
     const totalLikes = await prisma.like.count({
-      where: { beat: { producerId: params.id } },
+      where: { beat: { producerId: id } },
     })
 
     let totalFollowers = 0
     try {
       totalFollowers = await prisma.follow.count({
-        where: { followingId: params.id },
+        where: { followingId: id },
       })
     } catch {}
 
@@ -115,10 +116,10 @@ export async function GET(
     }
 
     // Only include revenue data if the requesting user IS the producer
-    if (session?.user?.id === params.id) {
+    if (session?.user?.id === id) {
       const revenue = await prisma.auction.aggregate({
         where: {
-          beat: { producerId: params.id },
+          beat: { producerId: id },
           status: 'COMPLETED',
         },
         _sum: { producerPayout: true },

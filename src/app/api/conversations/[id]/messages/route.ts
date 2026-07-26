@@ -33,7 +33,7 @@ setInterval(() => {
 // GET — Messages d'une conversation
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -42,7 +42,7 @@ export async function GET(
     }
 
     const userId = session.user.id
-    const conversationId = params.id
+    const { id: conversationId } = await params
 
     // Vérifier que l'utilisateur fait partie de la conversation
     const conversation = await prisma.conversation.findUnique({
@@ -107,7 +107,7 @@ export async function GET(
 // POST — Envoyer un message
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -125,7 +125,7 @@ export async function POST(
       )
     }
 
-    const conversationId = params.id
+    const { id: conversationId } = await params
     const { content } = await req.json()
 
     if (!content || content.trim().length === 0) {

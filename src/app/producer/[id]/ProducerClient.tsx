@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Header from '@/components/layout/Header'
 import AudioPlayer from '@/components/audio/AudioPlayer'
@@ -72,9 +71,11 @@ function memberSince(dateStr: string): string {
   return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 }
 
-export default function ProducerClient() {
-  const params = useParams()
-  const producerId = params.id as string
+interface ProducerClientProps {
+  producerId: string
+}
+
+export default function ProducerClient({ producerId }: ProducerClientProps) {
 
   const [producer, setProducer] = useState<ProducerProfile | null>(null)
   const [loading, setLoading] = useState(true)

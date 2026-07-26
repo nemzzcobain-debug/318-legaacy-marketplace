@@ -9,9 +9,10 @@ import { withoutPrivateAuctionFiles } from '@/lib/public-beat-files';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     // BUG FIX 3: Rendre l'enchère publique (données de base) mais protéger les details sensibles
     const session = await getServerSession(authOptions);
     const isAuthenticated = !!session?.user;
@@ -19,7 +20,7 @@ export async function GET(
     const auction = await prisma.auction.findFirst({
       where: {
         AND: [
-          { id: params.id },
+          { id },
           PUBLIC_AUCTION_VISIBILITY_WHERE,
         ],
       },

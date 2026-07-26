@@ -6,13 +6,14 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // POST /api/playlists/[id]/beats - Add beat to playlist
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
     const userId = (session.user as any).id
-    const playlist = await prisma.playlist.findUnique({ where: { id: params.id } })
+    const playlist = await prisma.playlist.findUnique({ where: { id } })
 
     if (!playlist) return NextResponse.json({ error: 'Playlist non trouvée' }, { status: 404 })
     if (playlist.userId !== userId) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
@@ -26,23 +27,23 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // Check if already in playlist
     const existing = await prisma.playlistBeat.findUnique({
-      where: { playlistId_beatId: { playlistId: params.id, beatId } },
+      where: { playlistId_beatId: { playlistId: id, beatId } },
     })
     if (existing) return NextResponse.json({ error: 'Beat déjà dans la playlist' }, { status: 409 })
 
     // Limit beats per playlist (max 200)
-    const count = await prisma.playlistBeat.count({ where: { playlistId: params.id } })
+    const count = await prisma.playlistBeat.count({ where: { playlistId: id } })
     if (count >= 200) return NextResponse.json({ error: 'Limite de 200 beats par playlist' }, { status: 400 })
 
     // Get next position
     const lastBeat = await prisma.playlistBeat.findFirst({
-      where: { playlistId: params.id },
+      where: { playlistId: id },
       orderBy: { position: 'desc' },
     })
     const position = (lastBeat?.position ?? -1) + 1
 
     const playlistBeat = await prisma.playlistBeat.create({
-      data: { playlistId: params.id, beatId, position },
+      data: { playlistId: id, beatId, position },
       include: {
         beat: {
           select: { id: true, title: true, coverImage: true, genre: true, bpm: true, audioUrl: true }
@@ -51,7 +52,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     })
 
     // Update playlist updatedAt
-    await prisma.playlist.update({ where: { id: params.id }, data: { updatedAt: new Date() } })
+    await prisma.playlist.update({ where: { id }, data: { updatedAt: new Date() } })
 
     return NextResponse.json(playlistBeat, { status: 201 })
   } catch (error) {
@@ -61,13 +62,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
 }
 
 // DELETE /api/playlists/[id]/beats - Remove beat from playlist
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
     const userId = (session.user as any).id
-    const playlist = await prisma.playlist.findUnique({ where: { id: params.id } })
+    const playlist = await prisma.playlist.findUnique({ where: { id } })
 
     if (!playlist) return NextResponse.json({ error: 'Playlist non trouvée' }, { status: 404 })
     if (playlist.userId !== userId) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
@@ -76,7 +78,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     if (!beatId) return NextResponse.json({ error: 'beatId requis' }, { status: 400 })
 
     await prisma.playlistBeat.delete({
-      where: { playlistId_beatId: { playlistId: params.id, beatId } },
+      where: { playlistId_beatId: { playlistId: id, beatId } },
     })
 
     return NextResponse.json({ success: true })

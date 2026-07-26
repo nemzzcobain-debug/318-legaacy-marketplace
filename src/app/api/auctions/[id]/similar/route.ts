@@ -3,10 +3,10 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auctionId = params.id
+    const { id: auctionId } = await params
 
     // Get the current auction's beat details
     const auction = await prisma.auction.findUnique({

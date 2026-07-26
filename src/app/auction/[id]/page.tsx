@@ -4,13 +4,14 @@ import AuctionClient from './AuctionClient'
 import { AuctionJsonLd } from '@/components/seo/JsonLd'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
+    const { id } = await params
     const auction = await prisma.auction.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         beat: {
@@ -57,7 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title,
         description,
-        url: `/auction/${params.id}`,
+        url: `/auction/${id}`,
         type: 'website',
         images: beat.coverImage
           ? [
@@ -87,15 +88,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 interface AuctionPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function AuctionPage({ params }: AuctionPageProps) {
+  const { id } = await params
   let jsonLdData = null
 
   try {
     const auction = await prisma.auction.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         currentBid: true,
@@ -157,7 +159,7 @@ export default async function AuctionPage({ params }: AuctionPageProps) {
           producer={jsonLdData.producer}
         />
       )}
-      <AuctionClient />
+      <AuctionClient auctionId={id} />
     </>
   )
 }

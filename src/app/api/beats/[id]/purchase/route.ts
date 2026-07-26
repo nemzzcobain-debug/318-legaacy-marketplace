@@ -19,8 +19,9 @@ import {
 } from '@/lib/beat-pricing'
 
 // POST /api/beats/[id]/purchase — Achat direct d'un beat (hors enchères)
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
 
     const body = await req.json()
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Récupérer le beat avec le producteur
     const beat = (await prisma.beat.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         producer: {
           select: {

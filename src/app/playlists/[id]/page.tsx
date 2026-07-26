@@ -4,13 +4,14 @@ import PlaylistClient from './PlaylistClient'
 import { BreadcrumbJsonLd } from '@/components/seo/JsonLd'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
+    const { id } = await params
     const playlist = await prisma.playlist.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         name: true,
         description: true,
@@ -58,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title,
         description,
-        url: `/playlists/${params.id}`,
+        url: `/playlists/${id}`,
         type: 'music.playlist',
         images: playlist.beats[0]?.beat.coverImage
           ? [
@@ -88,15 +89,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 interface PlaylistPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function PlaylistPage({ params }: PlaylistPageProps) {
+  const { id } = await params
   let playlistName = ''
 
   try {
     const playlist = await prisma.playlist.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { name: true, visibility: true },
     })
     if (playlist && playlist.visibility === 'PUBLIC') {
@@ -107,13 +109,13 @@ export default async function PlaylistPage({ params }: PlaylistPageProps) {
   const breadcrumbItems = [
     { name: 'Accueil', url: 'https://www.318marketplace.com' },
     { name: 'Playlists', url: 'https://www.318marketplace.com/playlists' },
-    ...(playlistName ? [{ name: playlistName, url: `https://www.318marketplace.com/playlists/${params.id}` }] : []),
+    ...(playlistName ? [{ name: playlistName, url: `https://www.318marketplace.com/playlists/${id}` }] : []),
   ]
 
   return (
     <>
       <BreadcrumbJsonLd items={breadcrumbItems} />
-      <PlaylistClient />
+      <PlaylistClient playlistId={id} />
     </>
   )
 }

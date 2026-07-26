@@ -2,16 +2,17 @@ import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
   children: React.ReactNode
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.318marketplace.com'
 
   try {
     const producer = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         name: true,
         displayName: true,
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title,
         description,
-        url: `${siteUrl}/producer/${params.id}`,
+        url: `${siteUrl}/producer/${id}`,
         siteName: '318 LEGAACY Marketplace',
         type: 'profile',
         locale: 'fr_FR',
@@ -52,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         images: [ogUrl],
       },
       alternates: {
-        canonical: `${siteUrl}/producer/${params.id}`,
+        canonical: `${siteUrl}/producer/${id}`,
       },
     }
   } catch {

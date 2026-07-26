@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 
 // POST /api/auctions/[id]/buy-now/confirm — Finaliser apres paiement réussi
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     const userId = session.user.id
-    const auctionId = params.id
+    const { id: auctionId } = await params
 
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import {
@@ -30,8 +30,11 @@ interface PlaylistDetail {
   _count: { beats: number }
 }
 
-export default function PlaylistClient() {
-  const params = useParams()
+interface PlaylistClientProps {
+  playlistId: string
+}
+
+export default function PlaylistClient({ playlistId }: PlaylistClientProps) {
   const router = useRouter()
   const { data: session } = useSession()
   const userId = session?.user?.id
@@ -45,11 +48,11 @@ export default function PlaylistClient() {
 
   useEffect(() => {
     fetchPlaylist()
-  }, [params.id])
+  }, [playlistId])
 
   async function fetchPlaylist() {
     try {
-      const res = await fetch(`/api/playlists/${params.id}`)
+      const res = await fetch(`/api/playlists/${playlistId}`)
       if (!res.ok) { router.push('/playlists'); return }
       const data = await res.json()
       setPlaylist(data)

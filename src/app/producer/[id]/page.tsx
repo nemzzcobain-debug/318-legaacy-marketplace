@@ -4,13 +4,14 @@ import ProducerClient from './ProducerClient'
 import { ProducerJsonLd } from '@/components/seo/JsonLd'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
+    const { id } = await params
     const producer = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -49,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title,
         description,
-        url: `/producer/${params.id}`,
+        url: `/producer/${id}`,
         type: 'profile',
         images: producer.avatar
           ? [
@@ -79,15 +80,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 interface ProducerPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function ProducerPage({ params }: ProducerPageProps) {
+  const { id } = await params
   let jsonLdData = null
 
   try {
     const producer = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -132,7 +134,7 @@ export default async function ProducerPage({ params }: ProducerPageProps) {
           totalFollowers={jsonLdData.totalFollowers}
         />
       )}
-      <ProducerClient />
+      <ProducerClient producerId={id} />
     </>
   )
 }

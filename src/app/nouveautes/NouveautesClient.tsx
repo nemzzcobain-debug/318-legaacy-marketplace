@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -126,11 +126,13 @@ const LICENSES = [
   },
 ]
 
-export default function NouveautesClient() {
+interface NouveautesClientProps {
+  preselectedBeatId: string | null
+}
+
+export default function NouveautesClient({ preselectedBeatId }: NouveautesClientProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const preselectedBeatId = searchParams.get('beat')
   const audioRef = useRef<HTMLAudioElement>(null)
   const beatRefs = useRef<Record<string, HTMLDivElement | null>>({})
 

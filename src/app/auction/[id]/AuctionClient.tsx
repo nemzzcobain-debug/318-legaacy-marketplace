@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import Image from 'next/image'
@@ -196,8 +196,11 @@ function BuyNowPaymentForm({
   )
 }
 
-export default function AuctionClient() {
-  const { id } = useParams()
+interface AuctionClientProps {
+  auctionId: string
+}
+
+export default function AuctionClient({ auctionId }: AuctionClientProps) {
   const { data: session } = useSession()
   const router = useRouter()
 
@@ -219,8 +222,8 @@ export default function AuctionClient() {
   const [showGuestBidForm, setShowGuestBidForm] = useState(false)
 
   // Realtime hooks
-  const realtimeState = useRealtimeAuction(id as string)
-  const realtimeBids = useRealtimeBids(id as string, (newBid) => {
+  const realtimeState = useRealtimeAuction(auctionId)
+  const realtimeBids = useRealtimeBids(auctionId, (newBid) => {
     // Flash animation on new bid
     setBidSuccess(
       `Nouvelle enchère : ${newBid.amount} EUR par ${newBid.user?.displayName || 'Anonyme'}`
@@ -261,7 +264,7 @@ export default function AuctionClient() {
   // Fetch auction data
   const fetchAuction = useCallback(async () => {
     try {
-      const res = await fetch(`/api/auctions/${id}`)
+      const res = await fetch(`/api/auctions/${auctionId}`)
       if (res.ok) {
         const data = await res.json()
         setAuction(data)
@@ -278,7 +281,7 @@ export default function AuctionClient() {
       setLoading(false)
     }
     return null
-  }, [id])
+  }, [auctionId])
 
   // Auto-finalize when timer reaches 0 (client-side trigger since Hobby cron is daily)
   const [finalizeCalled, setFinalizeCalled] = useState(false)
@@ -341,7 +344,7 @@ export default function AuctionClient() {
       }
 
       // BUG FIX 6: Utiliser la route transactionnelle au lieu de la legacy
-      const res = await fetch(`/api/auctions/bid?auctionId=${id}`, {
+      const res = await fetch(`/api/auctions/bid?auctionId=${auctionId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bidBody),
@@ -429,7 +432,7 @@ export default function AuctionClient() {
     setBidError('')
 
     try {
-      const res = await fetch(`/api/auctions/${id}/buy-now`, {
+      const res = await fetch(`/api/auctions/${auctionId}/buy-now`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
