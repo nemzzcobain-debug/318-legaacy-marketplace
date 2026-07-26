@@ -45,14 +45,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         },
         select: { winningLicense: true, licenseType: true },
       })
-      licenseType = wonAuction?.winningLicense || wonAuction?.licenseType || null
+      licenseType = wonAuction?.winningLicense || wonAuction?.licenseType || undefined
     }
 
     if (!licenseType) {
-      return NextResponse.json(
-        { error: "Vous n'avez pas achete ce beat" },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: "Vous n'avez pas achete ce beat" }, { status: 403 })
     }
 
     // Vérifier les droits selon la licence achetée
@@ -63,7 +60,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     if (fileType === 'wav' && !hasWavAccess) {
       return NextResponse.json(
-        { error: 'Votre licence ne donne pas accès au fichier WAV. Passez à la licence WAV ou Stems.' },
+        {
+          error:
+            'Votre licence ne donne pas accès au fichier WAV. Passez à la licence WAV ou Stems.',
+        },
         { status: 403 }
       )
     }
@@ -100,7 +100,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Pour les stems: si pas de ZIP mais des fichiers individuels, générer les signed URLs
     if (fileType === 'stems' && !fileUrl && beat.stemsFiles) {
       try {
-        const stems = JSON.parse(beat.stemsFiles) as Array<{name: string; url: string; size: number}>
+        const stems = JSON.parse(beat.stemsFiles) as Array<{
+          name: string
+          url: string
+          size: number
+        }>
         if (stems.length > 0) {
           const signedStems = await Promise.all(
             stems.map(async (stem) => {
@@ -143,7 +147,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const signedUrl = await getSignedUrl(parsed.bucket, parsed.path, 3600)
     if (!signedUrl) {
-      return NextResponse.json({ error: 'Impossible de générer le lien de téléchargement' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Impossible de générer le lien de téléchargement' },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({
