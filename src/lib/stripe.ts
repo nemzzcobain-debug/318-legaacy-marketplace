@@ -105,11 +105,22 @@ export async function createOnboardingLink(accountId: string) {
  * Verifie si un compte Connect est actif et peut recevoir des paiements
  */
 export async function isConnectAccountReady(accountId: string): Promise<boolean> {
+  return (await getConnectAccountReadiness(accountId)) === 'ready'
+}
+
+/**
+ * Vérifie Stripe sans confondre un onboarding incomplet avec une panne Stripe.
+ * Une indisponibilité temporaire ne doit jamais suspendre un beatmaker.
+ */
+export async function getConnectAccountReadiness(
+  accountId: string
+): Promise<'ready' | 'pending' | 'unavailable'> {
   try {
     const account = await stripe.accounts.retrieve(accountId)
-    return account.charges_enabled && account.payouts_enabled
-  } catch {
-    return false
+    return account.charges_enabled && account.payouts_enabled ? 'ready' : 'pending'
+  } catch (error) {
+    console.error('[Stripe Connect] Vérification temporairement indisponible:', error)
+    return 'unavailable'
   }
 }
 
