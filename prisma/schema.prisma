@@ -17,29 +17,29 @@ datasource db {
 // producerStatus: PENDING | APPROVED | REJECTED | SUSPENDED
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  emailVerified  DateTime?
-  passwordHash   String?
-  name           String
-  displayName    String?
-  avatar         String?
-  image          String?
-  bio            String?
-  role           String    @default("ARTIST")
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  name          String
+  displayName   String?
+  avatar        String?
+  image         String?
+  bio           String?
+  role          String    @default("ARTIST")
 
   // Social links
-  website        String?
-  instagram      String?
-  twitter        String?
-  youtube        String?
-  soundcloud     String?
-  spotify        String?
+  website    String?
+  instagram  String?
+  twitter    String?
+  youtube    String?
+  soundcloud String?
+  spotify    String?
 
   // Preferences
-  notifEmail     Boolean   @default(true)
-  notifBid       Boolean   @default(true)
-  notifMessage   Boolean   @default(true)
+  notifEmail   Boolean @default(true)
+  notifBid     Boolean @default(true)
+  notifMessage Boolean @default(true)
 
   // Account deletion (soft delete)
   deletedAt        DateTime?
@@ -50,57 +50,60 @@ model User {
   magicTokenExpiry DateTime?
 
   // Producer specific
-  producerStatus String?
-  producerBio    String?
-  portfolio      String?
-  stripeAccountId String?
+  producerStatus         String?
+  producerBio            String?
+  portfolio              String?
+  stripeAccountId        String?
+  // Délai de 24 h accordé après l'approbation pour terminer Stripe Connect.
+  producerApprovedAt     DateTime?
+  stripeGraceSuspendedAt DateTime?
 
   // Two-Factor Authentication
-  twoFactorEnabled  Boolean  @default(false)
-  twoFactorSecret   String?
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
 
   // Stats
-  totalSales     Int       @default(0)
-  totalPurchases Int       @default(0)
-  rating         Float     @default(0)
+  totalSales     Int   @default(0)
+  totalPurchases Int   @default(0)
+  rating         Float @default(0)
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  beats          Beat[]
-  bids           Bid[]
-  wonAuctions    Auction[] @relation("AuctionWinner")
-  notifications  Notification[]
+  beats             Beat[]
+  bids              Bid[]
+  wonAuctions       Auction[]          @relation("AuctionWinner")
+  notifications     Notification[]
   pushSubscriptions PushSubscription[]
-  likes          Like[]
-  accounts       Account[]
-  sessions       Session[]
+  likes             Like[]
+  accounts          Account[]
+  sessions          Session[]
 
   // Follows
-  followers             Follow[] @relation("Following")
-  following             Follow[] @relation("Followers")
+  followers Follow[] @relation("Following")
+  following Follow[] @relation("Followers")
 
   // Reviews
-  reviewsGiven          Review[] @relation("ReviewAuthor")
-  reviewsReceived       Review[] @relation("ReviewProducer")
+  reviewsGiven    Review[] @relation("ReviewAuthor")
+  reviewsReceived Review[] @relation("ReviewProducer")
 
   // Chat
-  conversationsAsUser1  Conversation[] @relation("ConvUser1")
-  conversationsAsUser2  Conversation[] @relation("ConvUser2")
-  sentMessages          Message[]
+  conversationsAsUser1 Conversation[] @relation("ConvUser1")
+  conversationsAsUser2 Conversation[] @relation("ConvUser2")
+  sentMessages         Message[]
 
   // Reports
-  reportsGiven          Report[] @relation("ReportsGiven")
+  reportsGiven Report[] @relation("ReportsGiven")
 
   // Watchlist
-  watchlist             Watchlist[]
+  watchlist Watchlist[]
 
   // Playlists
-  playlists             Playlist[]
+  playlists Playlist[]
 
   // Achats directs
-  purchases             Purchase[]
+  purchases Purchase[]
 
   @@index([role])
   @@index([producerStatus])
@@ -158,60 +161,60 @@ model PasswordResetToken {
 // status: DRAFT | PENDING | ACTIVE | SOLD | ARCHIVED
 
 model Beat {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   title       String
   description String?
 
   // Audio files
-  audioUrl      String   // Aperçu public — 60 secondes maximum pour les nouveaux uploads
-  audioOriginal String?  // MP3 complet privé — téléchargeable uniquement après achat
-  audioWav      String?  // WAV complet privé — téléchargeable à l'achat WAV+
-  stemsUrl      String?  // ZIP privé des stems
+  audioUrl      String // Aperçu public — 60 secondes maximum pour les nouveaux uploads
+  audioOriginal String? // MP3 complet privé — téléchargeable uniquement après achat
+  audioWav      String? // WAV complet privé — téléchargeable à l'achat WAV+
+  stemsUrl      String? // ZIP privé des stems
   duration      Int?
   waveform      String?
 
   // Stems individuels (JSON array of {name, url, size})
-  stemsFiles  String?  // JSON: [{name: "kick.wav", url: "...", size: 1234}, ...]
+  stemsFiles String? // JSON: [{name: "kick.wav", url: "...", size: 1234}, ...]
 
   // Metadata
-  genre       String
-  mood        String?
-  bpm         Int
-  key         String?
-  tags        String   @default("") // JSON string array
+  genre String
+  mood  String?
+  bpm   Int
+  key   String?
+  tags  String  @default("") // JSON string array
 
   // Cover art
-  coverImage  String?
+  coverImage String?
 
   // Pricing par licence (EUR)
-  priceMp3    Float?   // Prix licence MP3
-  priceWav    Float?   // Prix licence WAV
-  priceStems  Float?   // Prix licence Stems (inclut WAV + MP3)
+  priceMp3   Float? // Prix licence MP3
+  priceWav   Float? // Prix licence WAV
+  priceStems Float? // Prix licence Stems (inclut WAV + MP3)
 
   // Status
-  status          String   @default("DRAFT")
-  rejectionType   String?  // CHANGES_REQUESTED | FINAL
+  status          String    @default("DRAFT")
+  rejectionType   String? // CHANGES_REQUESTED | FINAL
   rejectionReason String?
   rejectedAt      DateTime?
-  plays           Int      @default(0)
+  plays           Int       @default(0)
 
   // Featured (admin selection)
-  isFeatured    Boolean  @default(false)
-  featuredOrder Int      @default(0)
+  isFeatured    Boolean   @default(false)
+  featuredOrder Int       @default(0)
   featuredAt    DateTime?
 
   // Producer
-  producerId  String
-  producer    User     @relation(fields: [producerId], references: [id])
+  producerId String
+  producer   User   @relation(fields: [producerId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  auctions    Auction[]
-  likes       Like[]
-  playlists   PlaylistBeat[]
-  purchases   Purchase[]
+  auctions  Auction[]
+  likes     Like[]
+  playlists PlaylistBeat[]
+  purchases Purchase[]
 
   @@index([producerId])
   @@index([status])
@@ -223,61 +226,61 @@ model Beat {
 // licenseType: BASIC | PREMIUM | EXCLUSIVE
 
 model Auction {
-  id             String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  beatId         String
-  beat           Beat     @relation(fields: [beatId], references: [id])
+  beatId String
+  beat   Beat   @relation(fields: [beatId], references: [id])
 
   // Prix
-  startPrice     Float
-  currentBid     Float
-  reservePrice   Float?
-  buyNowPrice    Float?
-  bidIncrement   Float    @default(5)
+  startPrice   Float
+  currentBid   Float
+  reservePrice Float?
+  buyNowPrice  Float?
+  bidIncrement Float  @default(5)
 
   // Licence
-  licenseType    String   @default("BASIC")
+  licenseType String @default("BASIC")
 
   // Multiplicateurs
-  premiumMultiplier  Float @default(2.5)
+  premiumMultiplier   Float @default(2.5)
   exclusiveMultiplier Float @default(10)
 
   // Timing
-  startTime      DateTime
-  endTime        DateTime
+  startTime DateTime
+  endTime   DateTime
 
   // Anti-snipe
-  antiSnipeMinutes Int    @default(2)
-  antiSnipeExtension Int  @default(2)
+  antiSnipeMinutes   Int @default(2)
+  antiSnipeExtension Int @default(2)
 
   // Status
-  status         String   @default("SCHEDULED")
-  totalBids      Int      @default(0)
+  status    String @default("SCHEDULED")
+  totalBids Int    @default(0)
 
   // Winner
   winnerId       String?
-  winner         User?    @relation("AuctionWinner", fields: [winnerId], references: [id])
+  winner         User?   @relation("AuctionWinner", fields: [winnerId], references: [id])
   winningLicense String?
   finalPrice     Float?
 
   // Commission
-  commissionPercent Float @default(15)
+  commissionPercent Float  @default(15)
   commissionAmount  Float?
   producerPayout    Float?
 
   // Payment
-  stripePaymentId   String?
-  paypalPaymentId   String?
-  paidAt            DateTime?
-  paymentDeadline   DateTime?  // Deadline pour le gagnant (48h apres finalisation)
+  stripePaymentId String?
+  paypalPaymentId String?
+  paidAt          DateTime?
+  paymentDeadline DateTime? // Deadline pour le gagnant (48h apres finalisation)
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  bids           Bid[]
-  review         Review?
-  watchlist      Watchlist[]
+  bids      Bid[]
+  review    Review?
+  watchlist Watchlist[]
 
   @@index([beatId])
   @@index([status, endTime])
@@ -288,21 +291,21 @@ model Auction {
 // ─── BIDS ───
 
 model Bid {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
   amount      Float
-  licenseType String   @default("BASIC")
+  licenseType String @default("BASIC")
   finalAmount Float
 
-  isAutoBid   Boolean  @default(false)
-  maxAutoBid  Float?
+  isAutoBid  Boolean @default(false)
+  maxAutoBid Float?
 
-  auctionId   String
-  auction     Auction  @relation(fields: [auctionId], references: [id])
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  auctionId String
+  auction   Auction @relation(fields: [auctionId], references: [id])
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([auctionId])
   @@index([userId])
@@ -328,25 +331,25 @@ model Like {
 // ─── REVIEWS ───
 
 model Review {
-  id          String   @id @default(cuid())
-  rating      Int      // 1-5
-  comment     String?
+  id      String  @id @default(cuid())
+  rating  Int // 1-5
+  comment String?
 
   // Author (buyer who won an auction)
   // SECURITY FIX M5: SetNull au lieu de Cascade pour preserver l'historique des reviews
-  authorId    String?
-  author      User?    @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  authorId String?
+  author   User?   @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 
   // Producer being reviewed
-  producerId  String?
-  producer    User?    @relation("ReviewProducer", fields: [producerId], references: [id], onDelete: SetNull)
+  producerId String?
+  producer   User?   @relation("ReviewProducer", fields: [producerId], references: [id], onDelete: SetNull)
 
   // Linked auction (proof of purchase)
-  auctionId   String   @unique
-  auction     Auction  @relation(fields: [auctionId], references: [id])
+  auctionId String  @unique
+  auction   Auction @relation(fields: [auctionId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([authorId, auctionId])
   @@index([producerId])
@@ -370,15 +373,15 @@ model Follow {
 // type: BID_PLACED | OUTBID | AUCTION_WON | AUCTION_ENDING | AUCTION_ENDED | PAYMENT_RECEIVED | PRODUCER_APPROVED | PRODUCER_REJECTED | SYSTEM
 
 model Notification {
-  id        String   @id @default(cuid())
-  type      String
-  title     String
-  message   String
-  link      String?
-  read      Boolean  @default(false)
+  id      String  @id @default(cuid())
+  type    String
+  title   String
+  message String
+  link    String?
+  read    Boolean @default(false)
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
 
@@ -390,14 +393,14 @@ model Notification {
 // Un utilisateur peut activer plusieurs appareils/navigateurs.
 
 model PushSubscription {
-  id        String   @id @default(cuid())
-  endpoint  String   @unique
+  id        String  @id @default(cuid())
+  endpoint  String  @unique
   p256dh    String
   auth      String
   userAgent String?
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -408,20 +411,20 @@ model PushSubscription {
 // ─── CONVERSATIONS ───
 
 model Conversation {
-  id            String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  user1Id       String
-  user1         User     @relation("ConvUser1", fields: [user1Id], references: [id])
-  user2Id       String
-  user2         User     @relation("ConvUser2", fields: [user2Id], references: [id])
+  user1Id String
+  user1   User   @relation("ConvUser1", fields: [user1Id], references: [id])
+  user2Id String
+  user2   User   @relation("ConvUser2", fields: [user2Id], references: [id])
 
   lastMessage   String?
   lastMessageAt DateTime?
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  messages      Message[]
+  messages Message[]
 
   @@unique([user1Id, user2Id])
   @@index([user1Id])
@@ -432,18 +435,18 @@ model Conversation {
 // ─── MESSAGES ───
 
 model Message {
-  id             String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  content        String
-  read           Boolean  @default(false)
+  content String
+  read    Boolean @default(false)
 
-  senderId       String
-  sender         User     @relation(fields: [senderId], references: [id])
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id])
 
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([conversationId, createdAt])
   @@index([senderId])
@@ -454,15 +457,15 @@ model Message {
 // status: PENDING | REVIEWED | RESOLVED | DISMISSED
 
 model Report {
-  id          String   @id @default(cuid())
-  type        String   // BEAT, AUCTION, USER, MESSAGE
-  reason      String   // SPAM, INAPPROPRIATE, FRAUD, COPYRIGHT, OTHER
+  id          String  @id @default(cuid())
+  type        String // BEAT, AUCTION, USER, MESSAGE
+  reason      String // SPAM, INAPPROPRIATE, FRAUD, COPYRIGHT, OTHER
   description String?
-  status      String   @default("PENDING")
+  status      String  @default("PENDING")
 
   // Reporter
-  reporterId  String
-  reporter    User     @relation("ReportsGiven", fields: [reporterId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User   @relation("ReportsGiven", fields: [reporterId], references: [id], onDelete: Cascade)
 
   // Target (one of these will be set)
   targetUserId    String?
@@ -470,11 +473,11 @@ model Report {
   targetBeatId    String?
 
   // Admin response
-  adminNote   String?
-  reviewedAt  DateTime?
+  adminNote  String?
+  reviewedAt DateTime?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([reporterId])
   @@index([status])
@@ -487,13 +490,13 @@ model Report {
 // ─── WATCHLIST (FAVORIS ENCHERES) ───
 
 model Watchlist {
-  id        String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   auctionId String
-  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  auction   Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -505,31 +508,31 @@ model Watchlist {
 // status: ACTIVE | EXPIRED | DISABLED
 
 model PromoCode {
-  id             String   @id @default(cuid())
-  code           String   @unique
-  type           String   @default("PERCENTAGE") // PERCENTAGE ou FIXED
-  value          Float    // ex: 15 pour 15% ou 10 pour 10 EUR
-  minPrice       Float?   // prix minimum pour appliquer
-  maxUses        Int?     // nombre max d'utilisations (null = illimite)
-  currentUses    Int      @default(0)
-  expiresAt      DateTime?
-  status         String   @default("ACTIVE")
+  id          String    @id @default(cuid())
+  code        String    @unique
+  type        String    @default("PERCENTAGE") // PERCENTAGE ou FIXED
+  value       Float // ex: 15 pour 15% ou 10 pour 10 EUR
+  minPrice    Float? // prix minimum pour appliquer
+  maxUses     Int? // nombre max d'utilisations (null = illimite)
+  currentUses Int       @default(0)
+  expiresAt   DateTime?
+  status      String    @default("ACTIVE")
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Utilisations
-  usages         PromoUsage[]
+  usages PromoUsage[]
 }
 
 model PromoUsage {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   promoCodeId String
   promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
   userId      String
   auctionId   String
-  discount    Float    // montant de la reduction appliquee
-  createdAt   DateTime @default(now())
+  discount    Float // montant de la reduction appliquee
+  createdAt   DateTime  @default(now())
 
   @@unique([promoCodeId, userId, auctionId])
 }
@@ -538,35 +541,35 @@ model PromoUsage {
 // visibility: PUBLIC | PRIVATE
 
 model Playlist {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
   coverImage  String?
-  visibility  String   @default("PUBLIC") // PUBLIC ou PRIVATE
+  visibility  String  @default("PUBLIC") // PUBLIC ou PRIVATE
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  beats       PlaylistBeat[]
+  beats PlaylistBeat[]
 
   @@index([userId])
   @@index([visibility])
 }
 
 model PlaylistBeat {
-  id         String   @id @default(cuid())
-  position   Int      @default(0)
+  id       String @id @default(cuid())
+  position Int    @default(0)
 
   playlistId String
   playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
 
-  beatId     String
-  beat       Beat     @relation(fields: [beatId], references: [id], onDelete: Cascade)
+  beatId String
+  beat   Beat   @relation(fields: [beatId], references: [id], onDelete: Cascade)
 
-  addedAt    DateTime @default(now())
+  addedAt DateTime @default(now())
 
   @@unique([playlistId, beatId])
 }
@@ -576,34 +579,34 @@ model PlaylistBeat {
 // status: PENDING | COMPLETED | REFUNDED
 
 model Purchase {
-  id             String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Acheteur
-  buyerId        String
-  buyer          User     @relation(fields: [buyerId], references: [id])
+  buyerId String
+  buyer   User   @relation(fields: [buyerId], references: [id])
 
   // Beat achete
-  beatId         String
-  beat           Beat     @relation(fields: [beatId], references: [id])
+  beatId String
+  beat   Beat   @relation(fields: [beatId], references: [id])
 
   // Type d'achat
-  type           String   @default("DIRECT") // DIRECT ou AUCTION
-  licenseType    String   // BASIC, PREMIUM, EXCLUSIVE
+  type        String @default("DIRECT") // DIRECT ou AUCTION
+  licenseType String // BASIC, PREMIUM, EXCLUSIVE
 
   // Prix
-  amount         Float    // Prix paye
-  commission     Float    // Commission plateforme
-  producerPayout Float    // Part du producteur
+  amount         Float // Prix paye
+  commission     Float // Commission plateforme
+  producerPayout Float // Part du producteur
 
   // Stripe
   stripePaymentId String?
   status          String  @default("PENDING") // PENDING, COMPLETED, REFUNDED
 
   // Lien optionnel vers l'enchere (si achat via enchère)
-  auctionId      String?
+  auctionId String?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([buyerId])
   @@index([beatId])
@@ -616,7 +619,7 @@ model Purchase {
 
 model StripeEvent {
   id          String   @id // = Stripe event ID (evt_xxx)
-  type        String   // ex: payment_intent.succeeded
+  type        String // ex: payment_intent.succeeded
   processedAt DateTime @default(now())
 
   @@index([processedAt])
