@@ -1330,6 +1330,18 @@ export default function Home() {
                 </div>
               )
             })()}
+
+            {(homepage?.featuredBeats || []).length > 0 && (
+              <div className="mt-8 text-center">
+                <Link
+                  href="/selection-semaine"
+                  className="inline-flex items-center gap-2 rounded-xl border border-red-500/25 bg-red-500/[0.06] px-6 py-3 text-sm font-bold text-red-300 transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-white"
+                >
+                  Voir tous les beats de la semaine
+                  <ArrowRight size={16} />
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
