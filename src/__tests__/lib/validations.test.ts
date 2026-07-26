@@ -187,7 +187,6 @@ describe('Zod Schemas Validation', () => {
     it('should validate correct bid placement', () => {
       const validData = {
         amount: 150,
-        licenseType: 'BASIC',
         isAutoBid: false,
       }
 
@@ -195,56 +194,25 @@ describe('Zod Schemas Validation', () => {
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.amount).toBe(150)
-        expect(result.data.licenseType).toBe('BASIC')
+        expect(result.data.isAutoBid).toBe(false)
       }
     })
 
-    it('should set default licenseType to BASIC', () => {
+    it('should disable auto bid by default', () => {
       const validData = {
         amount: 150,
-        isAutoBid: false,
       }
 
       const result = placeBidSchema.safeParse(validData)
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.licenseType).toBe('BASIC')
-      }
-    })
-
-    it('should accept PREMIUM license type', () => {
-      const validData = {
-        amount: 150,
-        licenseType: 'PREMIUM',
-        isAutoBid: false,
-      }
-
-      const result = placeBidSchema.safeParse(validData)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.licenseType).toBe('PREMIUM')
-      }
-    })
-
-    it('should accept EXCLUSIVE license type', () => {
-      const validData = {
-        amount: 150,
-        licenseType: 'EXCLUSIVE',
-        isAutoBid: true,
-        maxAutoBid: 500,
-      }
-
-      const result = placeBidSchema.safeParse(validData)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.licenseType).toBe('EXCLUSIVE')
+        expect(result.data.isAutoBid).toBe(false)
       }
     })
 
     it('should reject negative amount', () => {
       const invalidData = {
         amount: -100,
-        licenseType: 'BASIC',
       }
 
       const result = placeBidSchema.safeParse(invalidData)
@@ -254,7 +222,6 @@ describe('Zod Schemas Validation', () => {
     it('should reject zero amount', () => {
       const invalidData = {
         amount: 0,
-        licenseType: 'BASIC',
       }
 
       const result = placeBidSchema.safeParse(invalidData)
@@ -264,7 +231,6 @@ describe('Zod Schemas Validation', () => {
     it('should accept auto bid with maxAutoBid', () => {
       const validData = {
         amount: 150,
-        licenseType: 'PREMIUM',
         isAutoBid: true,
         maxAutoBid: 500,
       }
@@ -277,25 +243,29 @@ describe('Zod Schemas Validation', () => {
       }
     })
 
-    it('should allow missing maxAutoBid if isAutoBid is false', () => {
-      const validData = {
-        amount: 150,
-        licenseType: 'BASIC',
-        isAutoBid: false,
-      }
-
-      const result = placeBidSchema.safeParse(validData)
-      expect(result.success).toBe(true)
-    })
-
-    it('should reject invalid license type', () => {
+    it('should reject a negative maxAutoBid', () => {
       const invalidData = {
         amount: 150,
-        licenseType: 'INVALID',
+        isAutoBid: true,
+        maxAutoBid: -500,
       }
 
       const result = placeBidSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
+    })
+
+    it('should ignore a license type sent by the client', () => {
+      const clientData = {
+        amount: 150,
+        licenseType: 'INVALID',
+      }
+
+      const result = placeBidSchema.safeParse(clientData)
+      expect(result.success).toBe(true)
+      if (result.success) {
+        // La licence est toujours lue depuis l'enchère côté serveur.
+        expect(result.data).not.toHaveProperty('licenseType')
+      }
     })
   })
 
@@ -551,9 +521,9 @@ describe('Zod Schemas Validation', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should reject bio shorter than 20 characters', () => {
+    it('should reject bio shorter than 6 characters', () => {
       const invalidData = {
-        producerBio: 'Short bio',
+        producerBio: 'court',
         genres: ['Hip-Hop'],
       }
 
@@ -577,7 +547,7 @@ describe('Zod Schemas Validation', () => {
     it('should reject invalid portfolio URL', () => {
       const invalidData = {
         producerBio: 'I am a professional beat maker with 10 years of experience in creating music.',
-        portfolio: 'not-a-valid-url',
+        portfolio: 'https://',
         genres: ['Hip-Hop'],
       }
 
