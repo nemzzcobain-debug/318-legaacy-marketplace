@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { enforceProducerStripeAccess } from '@/lib/producer-stripe-access';
 import { createClient } from '@supabase/supabase-js';
 
 const PRIVATE_BEAT_BUCKET = 'beat-files';
@@ -44,9 +45,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (user.role === 'PRODUCER' && user.producerStatus !== 'APPROVED') {
+    const producerAccess = await enforceProducerStripeAccess(user);
+    if (!producerAccess.allowed) {
       return NextResponse.json(
-        { error: 'Votre compte producteur doit être approuvé' },
+        {
+          error: producerAccess.message,
+          code: producerAccess.status,
+          actionUrl:
+            producerAccess.status === 'stripe_suspended'
+              ? '/dashboard?tab=settings'
+              : undefined,
+        },
         { status: 403 }
       );
     }
@@ -157,7 +166,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Générer signed URLs pour les stems individuels
-    let stemsSignedUrls: Array<{ name: string; signedUrl: string; path: string; privateUrl: string }> = [];
+    const stemsSignedUrls: Array<{ name: string; signedUrl: string; path: string; privateUrl: string }> = [];
     if (stems && Array.isArray(stems) && stems.length > 0) {
       const allowedStemMimes = ['audio/wav', 'audio/x-wav', 'audio/wave', 'application/zip'];
       const zipCount = stems.filter((stem) => stem.contentType === 'application/zip').length;
