@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
+  ArrowLeft,
   ArrowRight,
   BadgeCheck,
   Clock,
@@ -85,6 +86,13 @@ export default function WeeklySelectionPage() {
       <Header />
 
       <main className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-12">
+        <Link
+          href="/"
+          className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-sm font-semibold text-gray-300 transition hover:border-red-500/30 hover:bg-red-500/[0.07] hover:text-white"
+        >
+          <ArrowLeft size={15} />
+          Retour à l’accueil
+        </Link>
         <Breadcrumbs items={[{ label: 'Beats de la semaine' }]} />
 
         <div className="relative mb-8 overflow-hidden rounded-3xl border border-red-500/15 bg-gradient-to-br from-red-950/25 via-[#111116] to-[#0b0b0e] p-6 md:p-9">
@@ -305,6 +313,14 @@ export default function WeeklySelectionPage() {
             })}
           </div>
         )}
+
+        <Link
+          href="/"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-bold text-gray-200 transition hover:border-red-500/30 hover:bg-red-500/[0.08] sm:hidden"
+        >
+          <ArrowLeft size={16} />
+          Retour à l’accueil
+        </Link>
       </main>
     </div>
   )
