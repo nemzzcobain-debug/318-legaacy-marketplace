@@ -17,10 +17,11 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
     <nav aria-label="Fil d'Ariane" className="flex items-center gap-1.5 text-sm text-gray-400 mb-6 flex-wrap">
       <Link
         href="/"
-        className="flex items-center gap-1 hover:text-white transition-colors"
+        className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 hover:bg-white/5 hover:text-white transition-colors"
         aria-label="Accueil"
       >
         <Home className="w-4 h-4" />
+        <span className="font-medium">Accueil</span>
       </Link>
       {items.map((item, index) => (
         <span key={index} className="flex items-center gap-1.5">
