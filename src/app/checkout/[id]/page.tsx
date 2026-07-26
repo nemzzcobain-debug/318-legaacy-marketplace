@@ -8,7 +8,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import Header from '@/components/layout/Header'
 import {
   CreditCard, Shield, Lock, Check, AlertCircle, Loader2,
-  Music, Award, ArrowRight, ChevronDown, ChevronUp
+  Music, Award, ArrowLeft, ArrowRight, ChevronDown, ChevronUp
 } from 'lucide-react'
 import PromoCodeInput from '@/components/ui/PromoCodeInput'
 
@@ -107,6 +107,17 @@ export default function CheckoutPage() {
   const [showDetails, setShowDetails] = useState(false)
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [promoCode, setPromoCode] = useState<string | null>(null)
+
+  const handleBack = () => {
+    // Dans l'app installée sur iPhone, il n'y a pas de barre de navigation.
+    // Si la page vient d'une notification, on revient au dashboard par sécurité.
+    if (window.history.length > 1) {
+      router.back()
+      return
+    }
+
+    router.push('/dashboard')
+  }
 
   // Charger l'enchère
   useEffect(() => {
@@ -243,6 +254,16 @@ export default function CheckoutPage() {
       <Header />
 
       <main className="max-w-2xl mx-auto px-4 py-10">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-gray-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+          aria-label="Retour à la page précédente"
+        >
+          <ArrowLeft size={17} />
+          Retour à mes achats
+        </button>
+
         {/* Titre */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/25 rounded-full px-4 py-1.5 text-xs font-semibold text-red-500 mb-4">
