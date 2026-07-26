@@ -74,6 +74,7 @@ interface FeaturedBeat {
   key: string | null
   coverImage: string | null
   audioUrl: string
+  directPrice: number | null
   producer: {
     id: string
     name: string
@@ -542,6 +543,7 @@ export default function Home() {
             featuredProducers: [],
             topGenres: [],
             featuredBeats: [],
+            nouveautesBeats: [],
           })
         }
       })
@@ -1167,9 +1169,6 @@ export default function Home() {
 
                   {featured.map((currentBeat, beatIndex) => {
                     const auction = currentBeat.auction
-                    const directBeat = homepage?.nouveautesBeats.find(
-                      (beat) => beat.id === currentBeat.id
-                    )
                     const actionHref = auction
                       ? `/auction/${auction.id}`
                       : `/nouveautes?beat=${currentBeat.id}`
@@ -1265,7 +1264,9 @@ export default function Home() {
                             ) : (
                               <>
                                 <div className="mt-0.5 text-xl font-black text-white lg:mt-0">
-                                  {directBeat?.price ? `${directBeat.price}€` : 'Fixe'}
+                                  {currentBeat.directPrice
+                                    ? `${currentBeat.directPrice}€`
+                                    : 'Prix à choisir'}
                                 </div>
                                 <span className="text-[9px] text-gray-600">Achat direct</span>
                               </>
