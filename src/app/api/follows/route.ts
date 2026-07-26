@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     // Check if producer exists
     const producer = await prisma.user.findUnique({
       where: { id: producerId },
-      select: { id: true, role: true, producerStatus: true }
+      select: { id: true, role: true, producerStatus: true },
     })
 
     if (!producer) {
@@ -43,19 +43,19 @@ export async function POST(req: NextRequest) {
       where: {
         followerId_followingId: {
           followerId: session.user.id,
-          followingId: producerId
-        }
-      }
+          followingId: producerId,
+        },
+      },
     })
 
     if (existingFollow) {
       // Unfollow
       await prisma.follow.delete({
-        where: { id: existingFollow.id }
+        where: { id: existingFollow.id },
       })
 
       const count = await prisma.follow.count({
-        where: { followingId: producerId }
+        where: { followingId: producerId },
       })
 
       return NextResponse.json({ followed: false, count })
@@ -71,40 +71,36 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      const txOps = [
-        prisma.follow.create({
+      await prisma.$transaction(async (tx) => {
+        await tx.follow.create({
           data: {
             followerId: session.user.id,
-            followingId: producerId
-          }
-        }),
-      ]
+            followingId: producerId,
+          },
+        })
 
-      // Ne créer la notification que si pas de doublon récent
-      if (!recentNotif) {
-        txOps.push(
-          prisma.notification.create({
+        // Ne créer la notification que si pas de doublon récent
+        if (!recentNotif) {
+          await tx.notification.create({
             data: {
               type: 'NEW_FOLLOWER',
               title: 'Nouveau follower',
               message: `${session.user.name || 'Utilisateur'} vous suit maintenant !`,
               link: `/producer/${session.user.id}`,
-              userId: producerId
-            }
+              userId: producerId,
+            },
           })
-        )
-      }
-
-      await prisma.$transaction(txOps)
+        }
+      })
 
       const count = await prisma.follow.count({
-        where: { followingId: producerId }
+        where: { followingId: producerId },
       })
 
       // Send email notification (non-blocking)
       const producerData = await prisma.user.findUnique({
         where: { id: producerId },
-        select: { email: true, displayName: true, name: true }
+        select: { email: true, displayName: true, name: true },
       })
       if (producerData?.email) {
         sendNewFollowerEmail({
@@ -141,7 +137,7 @@ export async function GET(req: NextRequest) {
     // ─── Single producer check ───
     if (producerId) {
       const count = await prisma.follow.count({
-        where: { followingId: producerId }
+        where: { followingId: producerId },
       })
 
       let isFollowing = false
@@ -150,9 +146,9 @@ export async function GET(req: NextRequest) {
           where: {
             followerId_followingId: {
               followerId: session.user.id,
-              followingId: producerId
-            }
-          }
+              followingId: producerId,
+            },
+          },
         })
         isFollowing = !!follow
       }
@@ -167,7 +163,7 @@ export async function GET(req: NextRequest) {
       const counts = await prisma.follow.groupBy({
         by: ['followingId'],
         where: { followingId: { in: ids } },
-        _count: true
+        _count: true,
       })
 
       let userFollows: string[] = []
@@ -175,21 +171,24 @@ export async function GET(req: NextRequest) {
         const follows = await prisma.follow.findMany({
           where: {
             followerId: session.user.id,
-            followingId: { in: ids }
+            followingId: { in: ids },
           },
-          select: { followingId: true }
+          select: { followingId: true },
         })
-        userFollows = follows.map(f => f.followingId)
+        userFollows = follows.map((f) => f.followingId)
       }
 
-      const result = ids.reduce((acc, id) => {
-        const countEntry = counts.find(c => c.followingId === id)
-        acc[id] = {
-          count: countEntry?._count || 0,
-          isFollowing: userFollows.includes(id)
-        }
-        return acc
-      }, {} as Record<string, { count: number; isFollowing: boolean }>)
+      const result = ids.reduce(
+        (acc, id) => {
+          const countEntry = counts.find((c) => c.followingId === id)
+          acc[id] = {
+            count: countEntry?._count || 0,
+            isFollowing: userFollows.includes(id),
+          }
+          return acc
+        },
+        {} as Record<string, { count: number; isFollowing: boolean }>
+      )
 
       return NextResponse.json(result)
     }
@@ -205,21 +204,21 @@ export async function GET(req: NextRequest) {
               name: true,
               displayName: true,
               avatar: true,
-              role: true
-            }
-          }
+              role: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
-        take: 50
+        take: 50,
       })
 
       const count = await prisma.follow.count({
-        where: { followingId: followersOf }
+        where: { followingId: followersOf },
       })
 
       return NextResponse.json({
-        followers: followers.map(f => f.follower),
-        count
+        followers: followers.map((f) => f.follower),
+        count,
       })
     }
 
@@ -235,25 +234,28 @@ export async function GET(req: NextRequest) {
               displayName: true,
               avatar: true,
               role: true,
-              producerStatus: true
-            }
-          }
+              producerStatus: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
-        take: 50
+        take: 50,
       })
 
       const count = await prisma.follow.count({
-        where: { followerId: followingOf }
+        where: { followerId: followingOf },
       })
 
       return NextResponse.json({
-        following: following.map(f => f.following),
-        count
+        following: following.map((f) => f.following),
+        count,
       })
     }
 
-    return NextResponse.json({ error: 'Paramètre requis: producerId, producerIds, followers ou following' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Paramètre requis: producerId, producerIds, followers ou following' },
+      { status: 400 }
+    )
   } catch (error) {
     console.error('Follow GET error:', String(error))
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
