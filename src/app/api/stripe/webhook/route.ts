@@ -615,24 +615,31 @@ async function handleAccountUpdated(account: Stripe.Account) {
 
     const isReady = account.charges_enabled && account.payouts_enabled
 
-    if (isReady && user.producerStatus === 'PENDING') {
+    if (
+      isReady &&
+      user.producerStatus === 'SUSPENDED' &&
+      user.stripeGraceSuspendedAt
+    ) {
       await prisma.user.update({
         where: { id: user.id },
-        data: { producerStatus: 'APPROVED' },
+        data: {
+          producerStatus: 'APPROVED',
+          stripeGraceSuspendedAt: null,
+        },
       })
 
       await prisma.notification.create({
         data: {
           type: 'SYSTEM',
-          title: 'Compte approuvé !',
+          title: 'Compte beatmaker réactivé !',
           message:
-            'Votre compte Stripe a été approuvé. Vous pouvez maintenant recevoir des paiements.',
+            'Ton compte Stripe est validé. Tu peux de nouveau publier et recevoir des paiements.',
           link: '/dashboard?tab=settings',
           userId: user.id,
         },
       })
 
-      if (isDev) logger.debug(`[WEBHOOK] ✓ Producteur ${user.id} approuvé`)
+      if (isDev) logger.debug(`[WEBHOOK] ✓ Producteur ${user.id} réactivé`)
     }
   } catch (err: any) {
     logger.error('[WEBHOOK] Erreur AccountUpdated:', { error: err.message })
