@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
+import { getActionableFeaturedBeatWhere } from '@/lib/public-catalog'
 import { getStreamUrl, parseSupabaseUrl } from '@/lib/supabase'
 import { getLowestConfiguredPrice } from '@/lib/beat-pricing'
 
@@ -10,9 +10,7 @@ export async function GET() {
   try {
     const now = new Date()
     const beats = await prisma.beat.findMany({
-      where: {
-        AND: [PUBLIC_BEAT_WHERE, { isFeatured: true }],
-      },
+      where: getActionableFeaturedBeatWhere(now),
       orderBy: [{ featuredOrder: 'asc' }, { featuredAt: 'desc' }],
       select: {
         id: true,
