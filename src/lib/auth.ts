@@ -156,6 +156,12 @@ export const authOptions: NextAuthOptions = {
             token.needsOnboarding = true
           }
         }
+
+        // Un administrateur ne doit jamais être bloqué par l'onboarding,
+        // notamment lorsqu'il se reconnecte avec Google.
+        if (dbUser?.role === 'ADMIN') {
+          token.needsOnboarding = false
+        }
       }
 
       // La base de données reste la source de vérité pour les permissions.
@@ -169,6 +175,9 @@ export const authOptions: NextAuthOptions = {
 
           if (dbUser) {
             token.role = dbUser.role
+            if (dbUser.role === 'ADMIN') {
+              token.needsOnboarding = false
+            }
           }
         } catch (error) {
           console.error('[Auth] Impossible de rafraîchir le rôle depuis la base:', error)
@@ -186,9 +195,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = (token.id as string | undefined) ?? ''
         session.user.role = (token.role as string | undefined) ?? ''
-        if (token.needsOnboarding) {
-          session.user.needsOnboarding = true
-        }
+        session.user.needsOnboarding =
+          token.role !== 'ADMIN' && Boolean(token.needsOnboarding)
       }
       return session
     },
