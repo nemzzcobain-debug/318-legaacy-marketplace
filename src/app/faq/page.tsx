@@ -302,7 +302,7 @@ export default function FAQPage() {
               <AccordionItem
                 question="Comment payer après avoir gagné une enchère ?"
                 answer={
-                  <p>Après avoir gagné une enchère, un bouton &quot;Payer&quot; apparaît sur la page de l'enchère et sur ta page &quot;Mes Enchères&quot;. Clique dessus pour être redirigé vers le paiement sécurisé Stripe. Une fois le paiement confirmé, tu peux télécharger tes fichiers dans &quot;Mes Achats&quot;.</p>
+                  <p>Après avoir gagné une enchère, un bouton &quot;Payer&quot; apparaît sur la page de l'enchère et sur ta page &quot;Mes Enchères&quot;. Clique dessus pour être redirigé vers le paiement sécurisé Stripe. Une fois le paiement confirmé, tu peux télécharger tes fichiers et ton contrat de licence PDF dans &quot;Mes Achats&quot;. Le contrat est également joint à l&apos;email de confirmation.</p>
                 }
                 defaultOpen
               />

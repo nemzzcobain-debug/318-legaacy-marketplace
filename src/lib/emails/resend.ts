@@ -11,6 +11,11 @@ const FROM_EMAIL = process.env.EMAIL_FROM
 const PLATFORM_NAME = '318 LEGAACY Marketplace'
 const PLATFORM_URL = process.env.NEXTAUTH_URL
 
+interface EmailAttachment {
+  filename: string
+  content: Buffer
+}
+
 /**
  * Génère l'URL de désabonnement pour un utilisateur
  */
@@ -697,9 +702,20 @@ export async function sendGuestPurchaseEmail(params: {
   finalPrice: number
   downloadUrl: string
   magicLoginUrl: string
+  contractUrl?: string
+  contractAttachment?: EmailAttachment
 }) {
-  const { to, beatTitle, producerName, licenseType, finalPrice, downloadUrl, magicLoginUrl } =
-    params
+  const {
+    to,
+    beatTitle,
+    producerName,
+    licenseType,
+    finalPrice,
+    downloadUrl,
+    magicLoginUrl,
+    contractUrl,
+    contractAttachment,
+  } = params
 
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Ton beat est prêt ! 🎵</h1>
@@ -729,6 +745,7 @@ export async function sendGuestPurchaseEmail(params: {
     </div>
 
     ${button('Télécharger mon beat', downloadUrl)}
+    ${contractUrl ? button('Télécharger mon contrat PDF', contractUrl) : ''}
 
     <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:16px;margin:24px 0;">
       <p style="color:#fff;font-size:13px;font-weight:600;margin:0 0 8px;">🔑 Ton compte a été créé automatiquement</p>
@@ -741,12 +758,80 @@ export async function sendGuestPurchaseEmail(params: {
     <p style="color:#555;font-size:11px;text-align:center;margin:0;">Ce lien de connexion expire dans 24 heures. Tu pourras toujours te connecter avec ton email.</p>
   `)
 
-  return sendEmail(to, `Ton beat est prêt ! 🎵 — "${beatTitle}"`, html)
+  return sendEmail(
+    to,
+    `Ton beat est prêt ! 🎵 — "${beatTitle}"`,
+    html,
+    contractAttachment ? [contractAttachment] : undefined
+  )
+}
+
+export async function sendPurchaseConfirmedEmail(params: {
+  to: string
+  buyerName: string
+  beatTitle: string
+  producerName: string
+  licenseType: string
+  finalPrice: number
+  purchaseId: string
+  contractAttachment: EmailAttachment
+}) {
+  const {
+    to,
+    buyerName,
+    beatTitle,
+    producerName,
+    licenseType,
+    finalPrice,
+    purchaseId,
+    contractAttachment,
+  } = params
+  const contractUrl = `${PLATFORM_URL}/api/purchases/${purchaseId}/contract`
+  const purchasesUrl = `${PLATFORM_URL}/purchases`
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Achat confirmé ! ✅</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      Bonjour <strong style="color:#fff;">${buyerName}</strong>, ton paiement pour
+      <strong style="color:#fff;">${beatTitle}</strong> a été confirmé.
+    </p>
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Producteur</td>
+          <td style="color:#fff;font-size:12px;padding:6px 0;text-align:right;">${producerName}</td>
+        </tr>
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;">Licence</td>
+          <td style="color:#e11d48;font-size:12px;padding:6px 0;text-align:right;font-weight:600;">${licenseType}</td>
+        </tr>
+        <tr>
+          <td style="color:#666;font-size:12px;padding:6px 0;border-top:1px solid #1e1e2e;">Prix payé</td>
+          <td style="color:#2ed573;font-size:18px;padding:6px 0;text-align:right;font-weight:800;border-top:1px solid #1e1e2e;">${finalPrice} EUR</td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="color:#999;font-size:13px;margin:0 0 8px;">
+      Ton contrat de licence est joint à cet email. Il restera aussi disponible dans « Mes Achats ».
+    </p>
+    ${button('Télécharger mes fichiers', purchasesUrl)}
+    ${button('Télécharger mon contrat PDF', contractUrl)}
+  `)
+
+  return sendEmail(to, `✅ Achat confirmé — "${beatTitle}" et contrat de licence`, html, [
+    contractAttachment,
+  ])
 }
 
 // ─── Core Send Function ───
 // Auto-fetches unsubscribe token from DB based on recipient email
-async function sendEmail(to: string, subject: string, html: string) {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  attachments?: EmailAttachment[]
+) {
   const recipientDomain = to.includes('@') ? to.split('@').pop() : 'inconnu'
 
   // F19 FIX: Vérifier que toutes les config sont présentes
@@ -828,6 +913,7 @@ async function sendEmail(to: string, subject: string, html: string) {
       subject,
       html: finalHtml,
       headers: unsubscribeToken ? headers : undefined,
+      attachments,
     })
 
     if (error) {

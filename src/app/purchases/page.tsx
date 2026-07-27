@@ -8,7 +8,7 @@ import Header from '@/components/layout/Header'
 import { useExclusiveAudioPlayer } from '@/hooks/useExclusiveAudioPlayer'
 import {
   Download, Music, Play, Pause, CreditCard, Clock, Check,
-  Loader2, ShoppingBag, AlertCircle, FileAudio, Archive, ExternalLink
+  Loader2, ShoppingBag, AlertCircle, FileAudio, Archive, ExternalLink, FileText
 } from 'lucide-react'
 
 interface Purchase {
@@ -211,7 +211,7 @@ export default function PurchasesPage() {
                   key={purchase.id}
                   className="bg-[#111111] border border-[#222222] rounded-xl p-5"
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                     {/* Play / Cover */}
                     <button
                       onClick={() => togglePlay(beat.id, beat.audioUrl)}
@@ -249,7 +249,17 @@ export default function PurchasesPage() {
                     </div>
 
                     {/* Download buttons */}
-                    <div className="flex flex-col gap-2 shrink-0">
+                    <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-col sm:shrink-0">
+                      <a
+                        href={`/api/purchases/${purchase.id}/contract`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#e11d48]/10 border border-[#e11d48]/25 text-xs font-semibold text-[#ff4d6d] hover:bg-[#e11d48]/20 transition"
+                        aria-label={`Télécharger le contrat PDF pour ${beat.title}`}
+                      >
+                        <FileText size={14} /> Contrat PDF
+                      </a>
+
                       {/* MP3 — always available */}
                       <button
                         type="button"

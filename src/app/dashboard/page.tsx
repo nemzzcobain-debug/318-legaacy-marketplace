@@ -37,6 +37,7 @@ import {
   Target,
   Download,
   FileAudio,
+  FileText,
   Headphones,
   Trash2,
   X,
@@ -744,11 +745,20 @@ function ArtistPurchasesTab({
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#1e1e2e]">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mt-3 pt-3 border-t border-[#1e1e2e]">
                   <span className="text-[10px] text-gray-500">
                     {LICENSE_RIGHTS[purchase.winningLicense] || ''}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a
+                      href={`/api/purchases/${purchase.id}/contract`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[10px] text-[#ff4d6d] px-2 py-1 rounded bg-[#e11d48]/10 hover:bg-[#e11d48]/20 transition"
+                      aria-label={`Télécharger le contrat PDF pour ${purchase.beat?.title}`}
+                    >
+                      <FileText size={10} /> Contrat PDF
+                    </a>
                     {purchase.beat?.audioUrl && (
                       <span className="flex items-center gap-1 text-[10px] text-gray-500 px-2 py-1 rounded bg-white/5">
                         <FileAudio size={10} /> MP3
