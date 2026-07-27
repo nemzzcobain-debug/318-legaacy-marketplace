@@ -42,6 +42,7 @@ import {
   Trash2,
   X,
   Sparkles,
+  ArrowLeft,
 } from 'lucide-react'
 
 // ─── Types ───
@@ -232,6 +233,22 @@ function ArtistDashboard({ session }: { session: any }) {
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        <button
+          type="button"
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back()
+            } else {
+              router.push('/')
+            }
+          }}
+          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-950/20 transition hover:border-red-500 hover:bg-red-500/20 active:scale-[0.98] md:hidden"
+          aria-label="Revenir à la page précédente"
+        >
+          <ArrowLeft size={19} className="text-red-400" />
+          Retour
+        </button>
+
         {/* Welcome */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -1001,6 +1018,22 @@ function ProducerDashboard({ session }: { session: any }) {
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        <button
+          type="button"
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back()
+            } else {
+              router.push('/')
+            }
+          }}
+          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-950/20 transition hover:border-red-500 hover:bg-red-500/20 active:scale-[0.98] md:hidden"
+          aria-label="Revenir à la page précédente"
+        >
+          <ArrowLeft size={19} className="text-red-400" />
+          Retour
+        </button>
+
         {/* Welcome */}
         <div className="flex items-center justify-between mb-8">
           <div>
