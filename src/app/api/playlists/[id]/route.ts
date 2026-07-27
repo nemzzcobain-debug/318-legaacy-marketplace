@@ -25,7 +25,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                 key: true, mood: true, duration: true, audioUrl: true, plays: true,
                 producer: { select: { id: true, name: true, displayName: true, avatar: true } },
                 auctions: {
-                  where: { status: { in: ['ACTIVE', 'ENDING_SOON'] } },
+                  where: { status: { in: ['ACTIVE', 'ENDING_SOON', 'SCHEDULED'] } },
                   select: { id: true, currentBid: true, endTime: true, status: true },
                   take: 1,
                 },

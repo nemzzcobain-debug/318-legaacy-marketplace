@@ -17,6 +17,7 @@ import {
   normalizeLicenseType,
   toPublicLicenseType,
 } from '@/lib/beat-pricing'
+import { getLegacyBeatFileType } from '@/lib/legacy-beat-files'
 
 // POST /api/beats/[id]/purchase — Achat direct d'un beat (hors enchères)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -123,10 +124,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Type de licence invalide' }, { status: 400 })
     }
 
-    if (normalizedLicenseType === 'MP3' && !beat.audioOriginal) {
+    const legacyFileType = getLegacyBeatFileType(beat.audioUrl)
+
+    if (normalizedLicenseType === 'MP3' && !beat.audioOriginal && legacyFileType !== 'mp3') {
       return NextResponse.json({ error: 'Ce beat n’est pas disponible en MP3' }, { status: 400 })
     }
-    if (normalizedLicenseType === 'WAV' && !beat.audioWav) {
+    if (normalizedLicenseType === 'WAV' && !beat.audioWav && legacyFileType !== 'wav') {
       return NextResponse.json({ error: 'Ce beat n’est pas disponible en WAV' }, { status: 400 })
     }
     if (normalizedLicenseType === 'STEMS' && !beat.stemsUrl && !beat.stemsFiles) {

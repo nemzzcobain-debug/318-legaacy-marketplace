@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getSignedUrl, parseSupabaseUrl } from '@/lib/supabase'
+import { getLegacyBeatFileUrl } from '@/lib/legacy-beat-files'
 
 // GET /api/beats/[id]/download?type=mp3|wav|stems
 // Retourne une signed URL temporaire (1h) si l'utilisateur a achete le beat
@@ -92,10 +93,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     let fileUrl: string | null = null
-    // Compatibilité : les anciens beats n'ont pas encore audioOriginal.
-    if (fileType === 'mp3') fileUrl = beat.audioOriginal || beat.audioUrl
-    else if (fileType === 'wav') fileUrl = beat.audioWav || null
-    else if (fileType === 'stems') fileUrl = beat.stemsUrl || null
+    // Compatibilité : les anciens beats stockaient le fichier complet dans audioUrl.
+    if (fileType === 'mp3') {
+      fileUrl = beat.audioOriginal || getLegacyBeatFileUrl(beat.audioUrl, 'mp3')
+    } else if (fileType === 'wav') {
+      fileUrl = beat.audioWav || getLegacyBeatFileUrl(beat.audioUrl, 'wav')
+    } else if (fileType === 'stems') {
+      fileUrl = beat.stemsUrl || null
+    }
 
     // Pour les stems: si pas de ZIP mais des fichiers individuels, générer les signed URLs
     if (fileType === 'stems' && !fileUrl && beat.stemsFiles) {
