@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
       setTimeout(() => {
         router.push('/login?reset=true')
       }, 2000)
-    } catch (err) {
+    } catch {
       setError('Erreur de connexion')
     } finally {
       setLoading(false)
@@ -166,6 +166,7 @@ export default function ResetPasswordPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -212,6 +213,7 @@ export default function ResetPasswordPage() {
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    aria-label={showConfirm ? 'Masquer la confirmation' : 'Afficher la confirmation'}
                   >
                     {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>

@@ -109,7 +109,7 @@ function PaymentForm({
 }
 
 export default function BeatCheckoutPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
@@ -157,7 +157,7 @@ export default function BeatCheckoutPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/signin')
+      router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`)
     }
   }, [status, router])
 

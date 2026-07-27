@@ -1,10 +1,12 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import {
+  ArrowLeft,
   Gavel,
   Users,
   LogIn,
@@ -17,6 +19,9 @@ import {
   ShoppingBag,
   Eye,
   ListMusic,
+  Menu,
+  X,
+  User,
 } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import ThemeToggle from '@/components/ui/ThemeToggle'
@@ -49,11 +54,25 @@ function HeaderTooltip({
 
 export default function Header() {
   const pathname = usePathname()
+  const router = useRouter()
   const { data: session } = useSession()
   const { t } = useTranslation()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const user = session?.user as any
   const isProducer = user?.role === 'PRODUCER' || user?.role === 'ADMIN'
+
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [pathname])
+
+  const goBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+      return
+    }
+    router.push('/')
+  }
 
   const navItems = [
     { href: '/marketplace', label: t('nav.auctions'), icon: Gavel },
@@ -80,26 +99,39 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 glass overflow-visible">
       <div className="max-w-7xl mx-auto h-16 flex items-center justify-between px-4 md:px-6">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/logo-318-marketplace.png"
-            alt="318 LEGAACY Marketplace"
-            width={56}
-            height={56}
-            className="rounded-lg"
-            style={{
-              maskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
-              WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
-            }}
-          />
-          <div className="hidden sm:block">
-            <span className="font-extrabold text-sm tracking-tight">318 LEGAACY</span>
-            <span className="block text-[10px] text-red-500 -mt-0.5 tracking-[3px] font-semibold">
-              MARKETPLACE
-            </span>
-          </div>
-        </Link>
+        <div className="flex min-w-0 items-center gap-1">
+          {pathname !== '/' && (
+            <button
+              type="button"
+              onClick={goBack}
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-gray-300 transition hover:bg-white/5 hover:text-white md:hidden"
+              aria-label="Revenir à la page précédente"
+            >
+              <ArrowLeft size={22} />
+            </button>
+          )}
+
+          {/* Logo */}
+          <Link href="/" className="flex min-w-0 items-center gap-2" aria-label="Accueil 318 LEGAACY">
+            <Image
+              src="/logo-318-marketplace.png"
+              alt=""
+              width={56}
+              height={56}
+              className="h-11 w-11 shrink-0 rounded-lg md:h-14 md:w-14"
+              style={{
+                maskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
+                WebkitMaskImage: 'radial-gradient(circle, white 40%, transparent 75%)',
+              }}
+            />
+            <div className="hidden sm:block">
+              <span className="font-extrabold text-sm tracking-tight">318 LEGAACY</span>
+              <span className="block text-[10px] text-red-500 -mt-0.5 tracking-[3px] font-semibold">
+                MARKETPLACE
+              </span>
+            </div>
+          </Link>
+        </div>
 
         {/* Nav Desktop */}
         <nav
@@ -125,7 +157,7 @@ export default function Header() {
         </nav>
 
         {/* Auth / User */}
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 md:flex">
           {session ? (
             <>
               {/* Upload Button for Producers/Admin */}
@@ -242,7 +274,128 @@ export default function Header() {
             </>
           )}
         </div>
+
+        {/* Navigation mobile : commandes essentielles visibles, le reste dans un menu. */}
+        <div className="flex items-center gap-1 md:hidden">
+          {session && <NotificationBell />}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-gray-300 transition hover:bg-white/5 hover:text-white"
+            aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
+
+      {mobileMenuOpen && (
+        <nav
+          id="mobile-navigation"
+          className="absolute inset-x-3 top-[calc(100%+0.5rem)] max-h-[calc(100dvh-5.5rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#111111]/98 p-3 shadow-2xl backdrop-blur-xl md:hidden"
+          aria-label="Navigation mobile"
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`flex min-h-12 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  pathname === href
+                    ? 'bg-red-500/15 text-red-400'
+                    : 'bg-white/[0.03] text-gray-300 hover:bg-white/[0.07] hover:text-white'
+                }`}
+                aria-current={pathname === href ? 'page' : undefined}
+              >
+                <Icon size={18} />
+                {label}
+              </Link>
+            ))}
+
+            {session ? (
+              <>
+                {isProducer && (
+                  <Link
+                    href="/producers/upload"
+                    className="flex min-h-12 items-center gap-2 rounded-xl bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-300"
+                  >
+                    <Upload size={18} />
+                    {t('nav.upload')}
+                  </Link>
+                )}
+                {user?.role === 'ADMIN' && (
+                  <Link
+                    href="/admin"
+                    className="flex min-h-12 items-center gap-2 rounded-xl bg-white/[0.03] px-3 py-2 text-sm font-semibold text-gray-300"
+                  >
+                    <Shield size={18} className="text-orange-400" />
+                    Administration
+                  </Link>
+                )}
+                {[
+                  { href: '/playlists', label: 'Playlists', icon: ListMusic },
+                  { href: '/watchlist', label: 'Watchlist', icon: Eye },
+                  { href: '/purchases', label: 'Mes achats', icon: ShoppingBag },
+                  { href: '/my-auctions', label: 'Mes enchères', icon: Gavel },
+                  { href: '/messages', label: 'Messages', icon: MessageCircle },
+                  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+                  { href: '/profile/edit', label: 'Mon profil', icon: User },
+                ].map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex min-h-12 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                      pathname === href
+                        ? 'bg-red-500/15 text-red-400'
+                        : 'bg-white/[0.03] text-gray-300 hover:bg-white/[0.07] hover:text-white'
+                    }`}
+                    aria-current={pathname === href ? 'page' : undefined}
+                  >
+                    <Icon size={18} />
+                    {label}
+                  </Link>
+                ))}
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="flex min-h-12 items-center gap-2 rounded-xl bg-white/[0.03] px-3 py-2 text-sm font-semibold text-gray-300"
+                >
+                  <LogIn size={18} />
+                  {t('nav.login')}
+                </Link>
+                <Link
+                  href="/register"
+                  className="flex min-h-12 items-center gap-2 rounded-xl bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-300"
+                >
+                  <UserPlus size={18} />
+                  {t('nav.register')}
+                </Link>
+              </>
+            )}
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-3">
+            <div className="flex items-center gap-1">
+              <LanguageSelector />
+              <ThemeToggle />
+            </div>
+            {session && (
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-gray-400 transition hover:bg-white/5 hover:text-white"
+              >
+                <LogOut size={17} />
+                Se déconnecter
+              </button>
+            )}
+          </div>
+        </nav>
+      )}
     </header>
   )
 }

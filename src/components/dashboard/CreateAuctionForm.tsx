@@ -36,7 +36,6 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
   const [buyNowPrice, setBuyNowPrice] = useState('')
   const [licenseType, setLicenseType] = useState('BASIC')
   const [durationHours, setDurationHours] = useState('24')
-  const [bidIncrement, setBidIncrement] = useState('5')
 
   useEffect(() => {
     fetchBeats()
@@ -77,7 +76,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
           buyNowPrice: buyNowPrice ? parseFloat(buyNowPrice) : undefined,
           licenseType,
           durationHours: parseInt(durationHours),
-          bidIncrement: parseFloat(bidIncrement),
+          bidIncrement: 5,
         }),
       })
 
@@ -94,7 +93,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
         setShowForm(false)
         onCreated?.()
       }, 2000)
-    } catch (err) {
+    } catch {
       setError('Erreur de connexion')
     } finally {
       setSubmitting(false)
@@ -183,7 +182,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
         </div>
 
         {/* Price row */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <label htmlFor="startPrice" className="text-sm font-semibold text-white mb-2 block">
               Prix de depart <span className="text-red-400">*</span>
@@ -264,8 +263,8 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
           </p>
         </div>
 
-        {/* Duration + Increment */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Duration + fixed increment */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="text-sm font-semibold text-white mb-2 block">Durée</label>
             <select
@@ -281,19 +280,11 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
             </select>
           </div>
           <div>
-            <label className="text-sm font-semibold text-white mb-2 block">Incrément minimum</label>
-            <div className="relative">
-              <input
-                type="number"
-                value={bidIncrement}
-                onChange={(e) => setBidIncrement(e.target.value)}
-                min="1"
-                step="0.01"
-                className="w-full bg-[#0a0a0a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] pr-8"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                &euro;
-              </span>
+            <label className="text-sm font-semibold text-white mb-2 block">
+              Incrément des enchères
+            </label>
+            <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0a] px-4 py-3 text-sm text-gray-300">
+              5 &euro; — fixé automatiquement
             </div>
           </div>
         </div>
