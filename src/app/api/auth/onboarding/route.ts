@@ -21,12 +21,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Compte introuvable' }, { status: 404 })
     }
 
-    // L'onboarding ne doit jamais pouvoir rétrograder un compte administrateur.
+    // Un administrateur arrivé ici via un callback OAuth contourne l'onboarding.
+    // On renvoie un succès sans toucher à son rôle afin d'éviter tout blocage.
     if (currentUser.role === 'ADMIN') {
-      return NextResponse.json(
-        { error: "Le rôle administrateur ne peut pas être modifié depuis l'onboarding" },
-        { status: 403 }
-      )
+      return NextResponse.json({
+        success: true,
+        redirectTo: '/admin',
+        user: {
+          id: session.user.id,
+          name: session.user.name,
+          role: 'ADMIN',
+        },
+      })
     }
 
     const { role, name } = await req.json()

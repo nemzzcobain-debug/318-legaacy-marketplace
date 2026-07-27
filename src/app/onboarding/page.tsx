@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
@@ -9,12 +9,44 @@ import { Music, Mic2, ArrowRight, AlertCircle, Sparkles } from 'lucide-react'
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { data: session, update } = useSession()
+  const { data: session, status, update } = useSession()
   const [role, setRole] = useState<'ARTIST' | 'PRODUCER' | null>(null)
   const [name, setName] = useState(session?.user?.name ?? '')
   const [loading, setLoading] = useState(false)
+  const [checkingAccess, setCheckingAccess] = useState(true)
   const [error, setError] = useState('')
   const [submitted, setSubmitted] = useState(false)
+
+  useEffect(() => {
+    if (status === 'loading') return
+
+    if (status === 'unauthenticated') {
+      router.replace('/login')
+      return
+    }
+
+    if (session?.user?.role === 'ADMIN') {
+      const adminUser = session.user
+      const redirectAdmin = async () => {
+        if (adminUser.needsOnboarding) {
+          await update({ needsOnboarding: false })
+        }
+        router.replace('/admin')
+        router.refresh()
+      }
+
+      void redirectAdmin()
+      return
+    }
+
+    setCheckingAccess(false)
+  }, [
+    router,
+    session?.user?.needsOnboarding,
+    session?.user?.role,
+    status,
+    update,
+  ])
 
   const handleSubmit = async () => {
     if (!role) return
@@ -38,6 +70,12 @@ export default function OnboardingPage() {
       // Update the session with new role
       await update({ role: data.user.role, needsOnboarding: false })
 
+      if (data.redirectTo) {
+        router.replace(data.redirectTo)
+        router.refresh()
+        return
+      }
+
       if (role === 'PRODUCER') {
         setSubmitted(true)
         setLoading(false)
@@ -52,6 +90,18 @@ export default function OnboardingPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checkingAccess || status === 'loading' || session?.user?.role === 'ADMIN') {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div
+          className="h-10 w-10 animate-spin rounded-full border-2 border-[#e11d48]/30 border-t-[#e11d48]"
+          role="status"
+          aria-label="Redirection en cours"
+        />
+      </div>
+    )
   }
 
   if (submitted && role === 'PRODUCER') {
