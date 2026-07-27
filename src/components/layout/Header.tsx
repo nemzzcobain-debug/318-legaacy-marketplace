@@ -294,7 +294,7 @@ export default function Header() {
       {mobileMenuOpen && (
         <nav
           id="mobile-navigation"
-          className="absolute inset-x-3 top-[calc(100%+0.5rem)] max-h-[calc(100dvh-5.5rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#111111]/98 p-3 shadow-2xl backdrop-blur-xl md:hidden"
+          className="absolute inset-x-3 top-[calc(100%+0.5rem)] z-[100] max-h-[calc(100dvh-5.5rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#111111] p-3 shadow-2xl md:hidden"
           aria-label="Navigation mobile"
         >
           <div className="grid grid-cols-2 gap-2">
