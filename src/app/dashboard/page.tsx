@@ -242,7 +242,7 @@ function ArtistDashboard({ session }: { session: any }) {
               router.push('/')
             }
           }}
-          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-950/20 transition hover:border-red-500 hover:bg-red-500/20 active:scale-[0.98]"
+          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-950/20 transition hover:border-red-500 hover:bg-red-500/20 active:scale-[0.98] md:hidden"
           aria-label="Revenir à la page précédente"
         >
           <ArrowLeft size={19} className="text-red-400" />
@@ -1027,7 +1027,7 @@ function ProducerDashboard({ session }: { session: any }) {
               router.push('/')
             }
           }}
-          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-950/20 transition hover:border-red-500 hover:bg-red-500/20 active:scale-[0.98]"
+          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-950/20 transition hover:border-red-500 hover:bg-red-500/20 active:scale-[0.98] md:hidden"
           aria-label="Revenir à la page précédente"
         >
           <ArrowLeft size={19} className="text-red-400" />
