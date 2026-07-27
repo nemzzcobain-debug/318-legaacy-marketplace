@@ -13,7 +13,7 @@ import { getLicenseDetails } from '@/lib/licenses'
 import {
   Search, X, Gavel, Clock, Play, Pause,
   SlidersHorizontal, ArrowUpDown,
-  Loader2, Shield, RotateCcw
+  Loader2, Shield, RotateCcw, ArrowLeft
 } from 'lucide-react'
 
 interface SearchAuction {
@@ -177,6 +177,15 @@ function MarketplaceExplorerContent() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 pb-16 pt-5 sm:px-6 sm:pt-8">
+        <Link
+          href="/"
+          aria-label="Retour à l'accueil"
+          className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-zinc-300 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+        >
+          <ArrowLeft size={18} aria-hidden="true" />
+          Retour à l&apos;accueil
+        </Link>
+
         <div className="hidden sm:block">
           <Breadcrumbs items={[{ label: 'Enchères' }]} />
         </div>
