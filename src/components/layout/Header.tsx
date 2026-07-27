@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -10,8 +9,6 @@ import {
   Users,
   LogIn,
   UserPlus,
-  Menu,
-  X,
   LayoutDashboard,
   Upload,
   Shield,
@@ -19,9 +16,7 @@ import {
   MessageCircle,
   ShoppingBag,
   Eye,
-  User,
   ListMusic,
-  Sparkles,
 } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import ThemeToggle from '@/components/ui/ThemeToggle'
@@ -54,7 +49,6 @@ function HeaderTooltip({
 
 export default function Header() {
   const pathname = usePathname()
-  const [mobileOpen, setMobileOpen] = useState(false)
   const { data: session } = useSession()
   const { t } = useTranslation()
 
@@ -247,77 +241,8 @@ export default function Header() {
               </Link>
             </>
           )}
-
-          {/* Mobile menu toggle */}
-          <button
-            className="md:hidden p-2 ml-1"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? t('nav.closeMenu') : t('nav.openMenu')}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-nav"
-          >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
         </div>
       </div>
-
-      {/* Mobile Nav */}
-      {mobileOpen && (
-        <div
-          className="md:hidden border-t border-[#1e1e2e] px-4 py-3 flex flex-col gap-2"
-          id="mobile-nav"
-        >
-          {navItems.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                pathname === href
-                  ? 'text-red-500 bg-red-500/10'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Icon size={16} /> {label}
-            </Link>
-          ))}
-          {session && (
-            <Link
-              href="/profile/edit"
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                pathname === '/profile/edit'
-                  ? 'text-red-500 bg-red-500/10'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <User size={16} /> {t('nav.profile')}
-            </Link>
-          )}
-          {session && isProducer && (
-            <Link
-              href="/producers/upload"
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors"
-            >
-              <Upload size={16} /> Upload un beat
-            </Link>
-          )}
-          {session && user?.role === 'ADMIN' && (
-            <Link
-              href="/admin"
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-orange-400 hover:bg-orange-500/10 transition-colors"
-            >
-              <Shield size={16} /> Administration
-            </Link>
-          )}
-          {/* Language selector mobile */}
-          <div className="border-t border-[#1e1e2e] pt-2 mt-1">
-            <LanguageSelector />
-          </div>
-        </div>
-      )}
     </header>
   )
 }
