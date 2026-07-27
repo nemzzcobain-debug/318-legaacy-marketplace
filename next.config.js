@@ -44,7 +44,7 @@ const nextConfig = {
             // parser-inserted <script> tags, breaking the entire app.
             // TODO: Re-enable strict-dynamic once nonce-based CSP middleware is implemented
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://onfwowxfflnijuvpspkq.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://oaidalleapiprodscus.blob.core.windows.net; font-src 'self'; connect-src 'self' blob: https://onfwowxfflnijuvpspkq.supabase.co wss://onfwowxfflnijuvpspkq.supabase.co https://api.stripe.com https://oaidalleapiprodscus.blob.core.windows.net; frame-src https://js.stripe.com https://hooks.stripe.com; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://onfwowxfflnijuvpspkq.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://oaidalleapiprodscus.blob.core.windows.net; media-src 'self' blob: https://onfwowxfflnijuvpspkq.supabase.co; font-src 'self'; connect-src 'self' blob: https://onfwowxfflnijuvpspkq.supabase.co wss://onfwowxfflnijuvpspkq.supabase.co https://api.stripe.com https://oaidalleapiprodscus.blob.core.windows.net; frame-src https://js.stripe.com https://hooks.stripe.com; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests",
           },
           {
             key: 'X-Frame-Options',

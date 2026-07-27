@@ -8,7 +8,7 @@ import Link from 'next/link'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import {
   ArrowLeft, Play, Pause, SkipForward, SkipBack, Music, Globe, Lock,
-  Trash2, Share2, Loader2, Gavel, Clock, ListMusic, Volume2
+  Trash2, Share2, Loader2, Gavel, ListMusic, ShoppingCart
 } from 'lucide-react'
 
 interface BeatInPlaylist {
@@ -45,6 +45,7 @@ export default function PlaylistClient({ playlistId }: PlaylistClientProps) {
   const [currentTrack, setCurrentTrack] = useState<number>(-1)
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [audioError, setAudioError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchPlaylist()
@@ -60,10 +61,13 @@ export default function PlaylistClient({ playlistId }: PlaylistClientProps) {
     finally { setLoading(false) }
   }
 
-  function playTrack(index: number) {
+  async function playTrack(index: number) {
     if (!playlist || !audioRef.current) return
     const beat = playlist.beats[index]?.beat
-    if (!beat) return
+    if (!beat?.audioUrl) {
+      setAudioError("L'extrait audio de ce beat n'est pas disponible.")
+      return
+    }
 
     if (currentTrack === index && isPlaying) {
       audioRef.current.pause()
@@ -71,10 +75,20 @@ export default function PlaylistClient({ playlistId }: PlaylistClientProps) {
       return
     }
 
+    setAudioError(null)
+    audioRef.current.pause()
     audioRef.current.src = beat.audioUrl
-    audioRef.current.play().catch(() => {})
+    audioRef.current.load()
     setCurrentTrack(index)
-    setIsPlaying(true)
+
+    try {
+      await audioRef.current.play()
+      setIsPlaying(true)
+    } catch (error) {
+      console.error('Erreur lecture playlist:', error)
+      setIsPlaying(false)
+      setAudioError("Impossible de lire cet extrait pour le moment. Réessaie dans quelques secondes.")
+    }
   }
 
   function nextTrack() {
@@ -122,13 +136,28 @@ export default function PlaylistClient({ playlistId }: PlaylistClientProps) {
     const updateProgress = () => {
       if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100)
     }
-    const handleEnded = () => nextTrack()
+    const handleEnded = () => {
+      setIsPlaying(false)
+      nextTrack()
+    }
+    const handlePause = () => setIsPlaying(false)
+    const handlePlay = () => setIsPlaying(true)
+    const handleError = () => {
+      setIsPlaying(false)
+      setAudioError("Impossible de lire cet extrait pour le moment. Réessaie dans quelques secondes.")
+    }
 
     audio.addEventListener('timeupdate', updateProgress)
     audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('pause', handlePause)
+    audio.addEventListener('play', handlePlay)
+    audio.addEventListener('error', handleError)
     return () => {
       audio.removeEventListener('timeupdate', updateProgress)
       audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('pause', handlePause)
+      audio.removeEventListener('play', handlePlay)
+      audio.removeEventListener('error', handleError)
     }
   }, [currentTrack, playlist])
 
@@ -218,6 +247,11 @@ export default function PlaylistClient({ playlistId }: PlaylistClientProps) {
                   <Share2 size={18} className="text-gray-400" />
                 </button>
               </div>
+              {audioError && (
+                <p role="alert" className="mt-3 text-sm text-red-400">
+                  {audioError}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -234,11 +268,11 @@ export default function PlaylistClient({ playlistId }: PlaylistClientProps) {
         ) : (
           <div className="space-y-1">
             {/* Header row */}
-            <div className="grid grid-cols-[40px_1fr_100px_80px_60px] gap-3 px-4 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <div className="grid grid-cols-[40px_minmax(0,1fr)_48px] sm:grid-cols-[40px_minmax(0,1fr)_100px_80px_96px] gap-3 px-4 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">
               <span>#</span>
               <span>Titre</span>
-              <span>Genre</span>
-              <span>BPM</span>
+              <span className="hidden sm:block">Genre</span>
+              <span className="hidden sm:block">BPM</span>
               <span></span>
             </div>
 
@@ -246,24 +280,47 @@ export default function PlaylistClient({ playlistId }: PlaylistClientProps) {
               const beat = item.beat
               const isActive = currentTrack === index
               const activeAuction = beat.auctions[0]
+              const destination = activeAuction
+                ? `/auction/${activeAuction.id}`
+                : `/nouveautes?beat=${beat.id}`
+              const destinationLabel = activeAuction ? "Voir l'enchère" : 'Choisir une licence'
 
               return (
                 <div
                   key={item.id}
-                  className={`grid grid-cols-[40px_1fr_100px_80px_60px] gap-3 items-center px-4 py-3 rounded-xl transition-colors cursor-pointer group ${
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`${destinationLabel} pour ${beat.title}`}
+                  className={`grid grid-cols-[40px_minmax(0,1fr)_48px] sm:grid-cols-[40px_minmax(0,1fr)_100px_80px_96px] gap-3 items-center px-4 py-3 rounded-xl transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
                     isActive ? 'bg-red-500/10 border border-red-500/20' : 'hover:bg-white/5'
                   }`}
-                  onClick={() => playTrack(index)}
+                  onClick={() => router.push(destination)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      router.push(destination)
+                    }
+                  }}
                 >
                   {/* # / Play */}
-                  <div className="flex items-center justify-center">
+                  <button
+                    type="button"
+                    className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                    aria-label={isActive && isPlaying ? `Mettre ${beat.title} en pause` : `Écouter ${beat.title}`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      playTrack(index)
+                    }}
+                  >
                     {isActive && isPlaying ? (
-                      <Volume2 size={16} className="text-red-500 animate-pulse" />
+                      <Pause size={16} className="text-red-500" fill="currentColor" />
                     ) : (
-                      <span className="text-sm text-gray-500 group-hover:hidden">{index + 1}</span>
+                      <>
+                        <span className="text-sm text-gray-500 group-hover:hidden">{index + 1}</span>
+                        <Play size={14} className="text-white hidden group-hover:block" fill="white" />
+                      </>
                     )}
-                    <Play size={14} className="text-white hidden group-hover:block" fill="white" />
-                  </div>
+                  </button>
 
                   {/* Title + Producer */}
                   <div className="flex items-center gap-3 min-w-0">
@@ -283,20 +340,26 @@ export default function PlaylistClient({ playlistId }: PlaylistClientProps) {
                   </div>
 
                   {/* Genre */}
-                  <span className={`text-xs px-2 py-0.5 rounded-full w-fit ${genreColors[beat.genre] || 'bg-gray-500/20 text-gray-400'}`}>
+                  <span className={`hidden sm:block text-xs px-2 py-0.5 rounded-full w-fit ${genreColors[beat.genre] || 'bg-gray-500/20 text-gray-400'}`}>
                     {beat.genre}
                   </span>
 
                   {/* BPM */}
-                  <span className="text-xs text-gray-500">{beat.bpm} BPM</span>
+                  <span className="hidden sm:block text-xs text-gray-500">{beat.bpm} BPM</span>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    {activeAuction && (
-                      <Link href={`/auction/${activeAuction.id}`} className="p-1 hover:bg-white/10 rounded-lg" title="Voir l'enchère">
-                        <Gavel size={14} className="text-red-400" />
-                      </Link>
-                    )}
+                  <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+                    <Link
+                      href={destination}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-500/10 p-2 text-red-400 transition-colors hover:bg-red-500/20"
+                      title={destinationLabel}
+                      aria-label={`${destinationLabel} pour ${beat.title}`}
+                    >
+                      {activeAuction ? <Gavel size={15} /> : <ShoppingCart size={15} />}
+                      <span className="hidden lg:inline text-[11px] font-bold">
+                        {activeAuction ? 'Enchérir' : 'Acheter'}
+                      </span>
+                    </Link>
                     {isOwner && (
                       <button onClick={() => removeBeat(beat.id)} className="p-1 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                         <Trash2 size={14} className="text-gray-600 hover:text-red-400" />
