@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { parseSupabaseUrl, getStreamUrl } from '@/lib/supabase'
 import { getConfiguredLicensePrices, getLowestConfiguredPrice } from '@/lib/beat-pricing'
+import { getLegacyBeatFileType } from '@/lib/legacy-beat-files'
 import { PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
 
 /**
@@ -366,6 +367,7 @@ export async function GET() {
         }
 
         const legacyBasePrice = lastAuction?.buyNowPrice || lastAuction?.startPrice || 20
+        const legacyFileType = getLegacyBeatFileType(pb.beat.audioUrl)
 
         return {
           id: pb.beat.id,
@@ -382,8 +384,8 @@ export async function GET() {
           basePrice: getLowestConfiguredPrice(pb.beat) ?? legacyBasePrice,
           licensePrices: getConfiguredLicensePrices(pb.beat),
           licenseAvailability: {
-            BASIC: Boolean(pb.beat.audioOriginal),
-            PREMIUM: Boolean(pb.beat.audioWav),
+            BASIC: Boolean(pb.beat.audioOriginal || legacyFileType === 'mp3'),
+            PREMIUM: Boolean(pb.beat.audioWav || legacyFileType === 'wav'),
             EXCLUSIVE: Boolean(pb.beat.stemsUrl || pb.beat.stemsFiles),
           },
           addedAt: pb.addedAt,

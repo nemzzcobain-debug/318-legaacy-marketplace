@@ -9,6 +9,7 @@ import { authOptions } from '@/lib/auth'
 import { createAuctionSchema } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import { withoutPrivateAuctionFiles } from '@/lib/public-beat-files'
+import { getLegacyBeatFileType } from '@/lib/legacy-beat-files'
 import {
   parsePagination,
   parseAuctionSort,
@@ -143,27 +144,30 @@ export async function POST(request: Request) {
       select: {
         id: true,
         title: true,
+        audioUrl: true,
         audioOriginal: true,
         audioWav: true,
+        stemsUrl: true,
         stemsFiles: true,
       },
     })
     if (!beat) {
       return NextResponse.json({ error: 'Beat introuvable' }, { status: 404 })
     }
-    if (licenseType === 'BASIC' && !beat.audioOriginal) {
+    const legacyFileType = getLegacyBeatFileType(beat.audioUrl)
+    if (licenseType === 'BASIC' && !beat.audioOriginal && legacyFileType !== 'mp3') {
       return NextResponse.json(
         { error: 'Ajoute le fichier MP3 avant de créer une enchère Basic' },
         { status: 400 }
       )
     }
-    if (licenseType === 'PREMIUM' && !beat.audioWav) {
+    if (licenseType === 'PREMIUM' && !beat.audioWav && legacyFileType !== 'wav') {
       return NextResponse.json(
         { error: 'Ajoute le fichier WAV avant de créer une enchère Premium' },
         { status: 400 }
       )
     }
-    if (licenseType === 'EXCLUSIVE' && !beat.stemsFiles) {
+    if (licenseType === 'EXCLUSIVE' && !beat.stemsUrl && !beat.stemsFiles) {
       return NextResponse.json(
         { error: 'Ajoute les stems avant de créer une enchère Exclusive' },
         { status: 400 }
