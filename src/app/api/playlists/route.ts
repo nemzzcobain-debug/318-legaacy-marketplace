@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
 
 // GET /api/playlists - List playlists (user's own + public)
 export async function GET(request: Request) {
@@ -29,11 +30,15 @@ export async function GET(request: Request) {
       }
     }
 
+    const onlyPublicBeats =
+      mode === 'public' || (mode === 'user' && Boolean(targetUserId) && targetUserId !== userId)
+
     const playlists = await prisma.playlist.findMany({
       where,
       include: {
         user: { select: { id: true, name: true, displayName: true, avatar: true } },
         beats: {
+          where: onlyPublicBeats ? { beat: PUBLIC_BEAT_WHERE } : undefined,
           include: {
             beat: {
               select: { id: true, title: true, coverImage: true, genre: true, bpm: true, audioUrl: true, producer: { select: { id: true, name: true, displayName: true } } }
@@ -42,7 +47,11 @@ export async function GET(request: Request) {
           orderBy: { position: 'asc' },
           take: 4, // Preview: first 4 beats
         },
-        _count: { select: { beats: true } },
+        _count: {
+          select: {
+            beats: onlyPublicBeats ? { where: { beat: PUBLIC_BEAT_WHERE } } : true,
+          },
+        },
       },
       orderBy: { updatedAt: 'desc' },
     })

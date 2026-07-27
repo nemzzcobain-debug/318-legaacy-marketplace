@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updatePlaylistSchema } from '@/lib/validations'
+import { PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
 
 // GET /api/playlists/[id] - Get playlist detail
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -13,11 +14,24 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id
 
+    const playlistAccess = await prisma.playlist.findUnique({
+      where: { id },
+      select: { userId: true, visibility: true },
+    })
+
+    if (!playlistAccess) {
+      return NextResponse.json({ error: 'Playlist non trouvée' }, { status: 404 })
+    }
+    if (playlistAccess.visibility === 'PRIVATE' && playlistAccess.userId !== userId) {
+      return NextResponse.json({ error: 'Playlist privée' }, { status: 403 })
+    }
+
     const playlist = await prisma.playlist.findUnique({
       where: { id },
       include: {
         user: { select: { id: true, name: true, displayName: true, avatar: true } },
         beats: {
+          where: playlistAccess.visibility === 'PUBLIC' ? { beat: PUBLIC_BEAT_WHERE } : undefined,
           include: {
             beat: {
               select: {
@@ -34,18 +48,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           },
           orderBy: { position: 'asc' },
         },
-        _count: { select: { beats: true } },
+        _count: {
+          select: {
+            beats:
+              playlistAccess.visibility === 'PUBLIC'
+                ? { where: { beat: PUBLIC_BEAT_WHERE } }
+                : true,
+          },
+        },
       },
     })
 
-    if (!playlist) {
-      return NextResponse.json({ error: 'Playlist non trouvée' }, { status: 404 })
-    }
-
-    // Check visibility
-    if (playlist.visibility === 'PRIVATE' && playlist.userId !== userId) {
-      return NextResponse.json({ error: 'Playlist privée' }, { status: 403 })
-    }
+    if (!playlist) return NextResponse.json({ error: 'Playlist non trouvée' }, { status: 404 })
 
     return NextResponse.json(playlist)
   } catch (error) {

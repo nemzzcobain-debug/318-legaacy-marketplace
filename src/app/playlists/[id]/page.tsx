@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import PlaylistClient from './PlaylistClient'
 import { BreadcrumbJsonLd } from '@/components/seo/JsonLd'
+import { PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -23,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           },
         },
         beats: {
+          where: { beat: PUBLIC_BEAT_WHERE },
           take: 1,
           select: {
             beat: {
@@ -34,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
         _count: {
           select: {
-            beats: true,
+            beats: { where: { beat: PUBLIC_BEAT_WHERE } },
           },
         },
       },
