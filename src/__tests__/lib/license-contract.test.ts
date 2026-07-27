@@ -39,7 +39,7 @@ describe('contrat de licence PDF', () => {
     expect(content).toContain('Contrat de licence musicale')
     expect(content).toContain('Artiste Test')
     expect(content).toContain('Beatmaker Test')
-    expect(content).toContain('Licence Premium')
+    expect(content).toContain('LICENCE PREMIUM')
     expect(content).toContain('startxref')
     expect(content.endsWith('%%EOF\n')).toBe(true)
   })
