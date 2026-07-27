@@ -71,6 +71,7 @@ export default function CGVPage() {
           <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-[#1e1e2e]">Article 5 — Licences et droits d&apos;utilisation</h2>
           <div className="space-y-2 text-sm text-gray-400 leading-relaxed">
             <p>L&apos;achat d&apos;un beat via une enchère confère à l&apos;acheteur une <strong className="text-white">licence d&apos;utilisation</strong> dont les termes sont définis par le producteur (type de licence choisi lors de la mise en vente).</p>
+            <p>Après confirmation du paiement, un contrat de licence individuel est généré au format PDF. Il reprend les parties, le beat, le prix, la transaction, les fichiers remis, les droits concédés et leurs limites. Ce document est joint à l&apos;email de confirmation et reste disponible dans l&apos;espace « Mes Achats ».</p>
             <p>Sauf licence exclusive mentionnant expressément le transfert de propriété, le producteur reste titulaire des droits d&apos;auteur sur ses compositions.</p>
             <p>L&apos;acheteur s&apos;engage a respecter les conditions de la licence acquise.</p>
           </div>

@@ -7,11 +7,16 @@ import { logger } from '@/lib/logger'
 import { reportOperationalIssue } from '@/lib/monitoring'
 import Stripe from 'stripe'
 import {
-  sendAuctionWonEmail,
   sendPaymentReceivedEmail,
   sendGuestPurchaseEmail,
+  sendPurchaseConfirmedEmail,
   sendNtfy,
 } from '@/lib/emails/resend'
+import {
+  generateLicenseContractPdf,
+  getContractFileName,
+  type LicenseContractData,
+} from '@/lib/license-contract'
 
 /**
  * WEBHOOK CONSOLIDÉ STRIPE
@@ -192,9 +197,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     const purchaseAmount = auction.finalPrice || auction.currentBid
     const commissionAmt = commission ? parseFloat(commission) : auction.commissionAmount || 0
     const payoutAmt = producerPayout ? parseFloat(producerPayout) : auction.producerPayout || 0
+    let completedPurchase: Awaited<ReturnType<typeof prisma.purchase.create>> | null = null
 
     if (buyerId) {
-      await prisma.purchase.create({
+      completedPurchase = await prisma.purchase.create({
         data: {
           buyerId,
           beatId: auction.beatId,
@@ -272,17 +278,54 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       }).catch((e) => logger.error('[WEBHOOK] Erreur envoi email:', { error: e?.message }))
     }
 
-    if (auction.winner?.email) {
-      sendAuctionWonEmail({
-        to: auction.winner.email,
-        winnerName: auction.winner.displayName || auction.winner.name,
-        beatTitle: auction.beat.title,
-        producerName:
-          auction.beat.producer?.displayName || auction.beat.producer?.name || 'Producteur',
-        finalPrice,
-        license: auction.winningLicense || auction.licenseType,
-        auctionId,
-      }).catch((e) => logger.error('[WEBHOOK] Erreur envoi email:', { error: e?.message }))
+    if (completedPurchase && buyerId) {
+      const buyer =
+        auction.winner?.id === buyerId
+          ? auction.winner
+          : await prisma.user.findUnique({ where: { id: buyerId } })
+
+      if (buyer?.email) {
+        const contractData: LicenseContractData = {
+          purchaseId: completedPurchase.id,
+          purchaseType: completedPurchase.type,
+          transactionId: completedPurchase.stripePaymentId,
+          purchasedAt: completedPurchase.createdAt,
+          amount: completedPurchase.amount,
+          licenseType: completedPurchase.licenseType,
+          buyer: {
+            name: buyer.displayName || buyer.name,
+            email: buyer.email,
+          },
+          producer: {
+            name: auction.beat.producer?.displayName || auction.beat.producer?.name || 'Producteur',
+            email: auction.beat.producer?.email || '',
+          },
+          beat: {
+            id: auction.beat.id,
+            title: auction.beat.title,
+            genre: auction.beat.genre,
+            bpm: auction.beat.bpm,
+            key: auction.beat.key,
+          },
+        }
+        const contractPdf = generateLicenseContractPdf(contractData)
+        sendPurchaseConfirmedEmail({
+          to: buyer.email,
+          buyerName: buyer.displayName || buyer.name,
+          beatTitle: auction.beat.title,
+          producerName:
+            auction.beat.producer?.displayName || auction.beat.producer?.name || 'Producteur',
+          licenseType: completedPurchase.licenseType,
+          finalPrice: completedPurchase.amount,
+          purchaseId: completedPurchase.id,
+          contractAttachment: {
+            filename: getContractFileName(contractData),
+            content: contractPdf,
+          },
+        }).catch((e) =>
+          logger.error('[WEBHOOK] Erreur envoi contrat acheteur:', { error: e?.message })
+        )
+      }
     }
 
     if (isDev) logger.debug(`[WEBHOOK] ✓ Enchère ${auctionId} complétée`)
@@ -348,6 +391,41 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       })
     }
 
+    const purchaseAmount = auction.finalPrice || auction.currentBid
+    const commissionAmount = metadata.commission
+      ? parseFloat(metadata.commission)
+      : auction.commissionAmount || 0
+    const payoutAmount = metadata.producerPayout
+      ? parseFloat(metadata.producerPayout)
+      : auction.producerPayout || 0
+    let completedPurchase: Awaited<ReturnType<typeof prisma.purchase.create>> | null = null
+
+    if (auction.winnerId) {
+      const existingPurchase = await prisma.purchase.findFirst({
+        where: {
+          auctionId,
+          buyerId: auction.winnerId,
+          status: 'COMPLETED',
+        },
+      })
+      completedPurchase =
+        existingPurchase ||
+        (await prisma.purchase.create({
+          data: {
+            buyerId: auction.winnerId,
+            beatId: auction.beatId,
+            type: 'AUCTION',
+            licenseType: auction.winningLicense || auction.licenseType,
+            amount: purchaseAmount,
+            commission: commissionAmount,
+            producerPayout: payoutAmount,
+            stripePaymentId: paymentIntent.id,
+            status: 'COMPLETED',
+            auctionId,
+          },
+        }))
+    }
+
     await prisma.notification.create({
       data: {
         type: 'PAYMENT_RECEIVED',
@@ -372,9 +450,66 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
     sendNtfy(
       'Vente finalisee',
-      `${auction.beat.title} vendu pour ${auction.finalPrice || auction.currentBid} EUR`,
+      `${auction.beat.title} vendu pour ${purchaseAmount} EUR`,
       'high'
     ).catch(() => {})
+
+    if (auction.beat.producer?.email) {
+      sendPaymentReceivedEmail({
+        to: auction.beat.producer.email,
+        producerName: auction.beat.producer.displayName || auction.beat.producer.name,
+        beatTitle: auction.beat.title,
+        buyerName: auction.winner?.displayName || auction.winner?.name || 'Acheteur',
+        finalPrice: purchaseAmount,
+        commission: commissionAmount,
+        payout: payoutAmount,
+        license: auction.winningLicense || auction.licenseType,
+      }).catch((e) =>
+        logger.error('[WEBHOOK] Erreur envoi email producteur:', { error: e?.message })
+      )
+    }
+
+    if (completedPurchase && auction.winner?.email) {
+      const contractData: LicenseContractData = {
+        purchaseId: completedPurchase.id,
+        purchaseType: completedPurchase.type,
+        transactionId: completedPurchase.stripePaymentId,
+        purchasedAt: completedPurchase.createdAt,
+        amount: completedPurchase.amount,
+        licenseType: completedPurchase.licenseType,
+        buyer: {
+          name: auction.winner.displayName || auction.winner.name,
+          email: auction.winner.email,
+        },
+        producer: {
+          name: auction.beat.producer.displayName || auction.beat.producer.name,
+          email: auction.beat.producer.email,
+        },
+        beat: {
+          id: auction.beat.id,
+          title: auction.beat.title,
+          genre: auction.beat.genre,
+          bpm: auction.beat.bpm,
+          key: auction.beat.key,
+        },
+      }
+      const contractPdf = generateLicenseContractPdf(contractData)
+      sendPurchaseConfirmedEmail({
+        to: auction.winner.email,
+        buyerName: auction.winner.displayName || auction.winner.name,
+        beatTitle: auction.beat.title,
+        producerName: auction.beat.producer.displayName || auction.beat.producer.name,
+        licenseType: completedPurchase.licenseType,
+        finalPrice: completedPurchase.amount,
+        purchaseId: completedPurchase.id,
+        contractAttachment: {
+          filename: getContractFileName(contractData),
+          content: contractPdf,
+        },
+      }).catch((e) =>
+        logger.error('[WEBHOOK] Erreur envoi contrat acheteur:', { error: e?.message })
+      )
+    }
 
     if (isDev) logger.debug(`[WEBHOOK] ✓ PaymentIntent ${auctionId} complété`)
   } catch (err: any) {
@@ -430,9 +565,11 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
     const finalPriceAmount = paymentIntent.amount / 100
     const commissionAmt = commission ? parseFloat(commission) : 0
     const payoutAmt = producerPayout ? parseFloat(producerPayout) : 0
+    let buyer: Awaited<ReturnType<typeof prisma.user.findFirst>> = null
+    let completedPurchase: Awaited<ReturnType<typeof prisma.purchase.create>> | null = null
 
     if (buyerEmail) {
-      const buyer = await prisma.user.findFirst({
+      buyer = await prisma.user.findFirst({
         where: { email: buyerEmail },
       })
       if (buyer) {
@@ -442,7 +579,7 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
         })
 
         // TASK48: Creer un enregistrement Purchase pour l'achat direct
-        await prisma.purchase.create({
+        completedPurchase = await prisma.purchase.create({
           data: {
             buyerId: buyer.id,
             beatId,
@@ -504,21 +641,47 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
       )
     }
 
-    // Envoyer email guest si c'est un compte auto-créé (pas de passwordHash)
-    if (buyerEmail) {
-      const buyerFull = (await prisma.user.findFirst({
-        where: { email: buyerEmail },
-        select: { id: true, passwordHash: true, magicToken: true },
-      })) as any
+    if (buyerEmail && buyer && completedPurchase) {
+      const contractData: LicenseContractData = {
+        purchaseId: completedPurchase.id,
+        purchaseType: completedPurchase.type,
+        transactionId: completedPurchase.stripePaymentId,
+        purchasedAt: completedPurchase.createdAt,
+        amount: completedPurchase.amount,
+        licenseType: completedPurchase.licenseType,
+        buyer: {
+          name: buyer.displayName || buyer.name,
+          email: buyer.email,
+        },
+        producer: {
+          name: beat.producer.displayName || beat.producer.name,
+          email: beat.producer.email,
+        },
+        beat: {
+          id: beat.id,
+          title: beat.title,
+          genre: beat.genre,
+          bpm: beat.bpm,
+          key: beat.key,
+        },
+      }
+      const contractPdf = generateLicenseContractPdf(contractData)
+      const contractAttachment = {
+        filename: getContractFileName(contractData),
+        content: contractPdf,
+      }
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      const contractUrl = `${baseUrl}/api/purchases/${completedPurchase.id}/contract`
 
-      if (buyerFull && !buyerFull.passwordHash) {
+      // Envoyer un accès magique aux comptes invités et la confirmation standard aux autres.
+      if (!buyer.passwordHash) {
         // C'est un compte invité — générer un magic token si pas déjà fait
-        let magicToken = buyerFull.magicToken
+        let magicToken = buyer.magicToken
         if (!magicToken) {
           const { randomBytes } = await import('crypto')
           magicToken = randomBytes(32).toString('hex')
           await prisma.user.update({
-            where: { id: buyerFull.id },
+            where: { id: buyer.id },
             data: {
               magicToken,
               magicTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -526,7 +689,6 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
           })
         }
 
-        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
         const magicLoginUrl = `${baseUrl}/api/auth/magic-login?token=${magicToken}&redirect=/dashboard?tab=purchases`
         const downloadUrl = `${baseUrl}/dashboard?tab=purchases`
 
@@ -538,8 +700,23 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
           finalPrice: paymentIntent.amount / 100,
           downloadUrl,
           magicLoginUrl,
+          contractUrl,
+          contractAttachment,
         }).catch((e) =>
           logger.error('[WEBHOOK] Erreur envoi email guest purchase:', { error: e?.message })
+        )
+      } else {
+        sendPurchaseConfirmedEmail({
+          to: buyerEmail,
+          buyerName: buyer.displayName || buyer.name,
+          beatTitle: beat.title,
+          producerName: beat.producer.displayName || beat.producer.name,
+          licenseType,
+          finalPrice: finalPriceAmount,
+          purchaseId: completedPurchase.id,
+          contractAttachment,
+        }).catch((e) =>
+          logger.error('[WEBHOOK] Erreur envoi contrat achat direct:', { error: e?.message })
         )
       }
     }
