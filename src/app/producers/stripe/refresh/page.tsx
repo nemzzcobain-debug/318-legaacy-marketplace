@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
-import { RefreshCw, Loader2 } from 'lucide-react'
+import { RefreshCw, Loader2, ArrowLeft } from 'lucide-react'
 
 export default function StripeRefreshPage() {
   const router = useRouter()
@@ -30,6 +30,14 @@ export default function StripeRefreshPage() {
       <Header />
 
       <main className="max-w-lg mx-auto px-4 py-20 text-center">
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard')}
+          className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-gray-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+        >
+          <ArrowLeft size={17} />
+          Retour au tableau de bord
+        </button>
         <RefreshCw size={48} className="text-yellow-400 mx-auto mb-6" />
         <h1 className="text-2xl font-bold text-white mb-3">Session expirée</h1>
         <p className="text-gray-400 mb-8">

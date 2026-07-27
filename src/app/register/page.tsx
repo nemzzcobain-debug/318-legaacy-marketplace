@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signIn } from 'next-auth/react'
 import Image from 'next/image'
 import { UserPlus, Eye, EyeOff, AlertCircle, Music, Mic2 } from 'lucide-react'
 import SocialLoginButtons from '@/components/ui/SocialLoginButtons'
@@ -176,6 +175,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  aria-label={showPassword ? 'Masquer les mots de passe' : 'Afficher les mots de passe'}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
