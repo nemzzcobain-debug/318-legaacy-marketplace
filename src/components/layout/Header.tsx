@@ -95,7 +95,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 glass overflow-visible">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:gap-5 md:px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:gap-2 md:px-6">
         <div className="flex min-w-0 items-center gap-1">
           {pathname !== '/' && (
             <button
@@ -155,7 +155,7 @@ export default function Header() {
         </nav>
 
         {/* Auth / User */}
-        <div className="ml-auto hidden items-center gap-1 md:flex">
+        <div className="hidden items-center gap-1 md:flex">
           {session ? (
             <>
               {/* Upload Button for Producers/Admin */}
