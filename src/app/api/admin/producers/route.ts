@@ -90,7 +90,7 @@ export async function PATCH(req: NextRequest) {
       APPROVED: {
         title: 'Compte approuvé!',
         message:
-          'Ton compte beatmaker est approuvé. Tu peux publier dès maintenant et tu as 24 h pour terminer Stripe Connect.',
+          'Ton compte beatmaker est approuvé. Tu peux publier dès maintenant et tu as 7 jours pour terminer Stripe Connect.',
         type: 'PRODUCER_APPROVED',
         link: '/dashboard?tab=settings',
       },
