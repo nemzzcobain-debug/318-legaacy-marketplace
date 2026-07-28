@@ -1,11 +1,16 @@
 import { prisma } from '@/lib/prisma'
 import { getConnectAccountReadiness } from '@/lib/stripe'
-import { sendStripeConnectSuspensionEmail } from '@/lib/emails/resend'
+import {
+  sendStripeConnectReminderEmail,
+  sendStripeConnectSuspensionEmail,
+} from '@/lib/emails/resend'
 import { sendPushToUser } from '@/lib/web-push'
 
 export const STRIPE_GRACE_DAYS = 7
 export const STRIPE_GRACE_HOURS = STRIPE_GRACE_DAYS * 24
+export const STRIPE_GRACE_REMINDER_HOURS = 48
 const STRIPE_GRACE_MS = STRIPE_GRACE_HOURS * 60 * 60 * 1000
+const STRIPE_GRACE_REMINDER_MS = STRIPE_GRACE_REMINDER_HOURS * 60 * 60 * 1000
 
 type ProducerAccessUser = {
   id: string
@@ -34,6 +39,11 @@ export type ProducerStripeAccess = {
 
 export function getStripeGraceDeadline(approvedAt: Date | null) {
   return approvedAt ? new Date(approvedAt.getTime() + STRIPE_GRACE_MS) : null
+}
+
+export function getStripeGraceReminderAt(approvedAt: Date | null) {
+  const deadline = getStripeGraceDeadline(approvedAt)
+  return deadline ? new Date(deadline.getTime() - STRIPE_GRACE_REMINDER_MS) : null
 }
 
 async function notifyStripeSuspension(user: ProducerAccessUser) {
@@ -294,4 +304,106 @@ export async function suspendExpiredStripeGraceProducers(now = new Date()) {
   }
 
   return { checked: producers.length, suspended }
+}
+
+/**
+ * Envoie une seule fois le rappel Stripe Connect à J-2.
+ * L'identifiant déterministe de la notification évite les doublons même si
+ * deux exécutions du cron se chevauchent.
+ */
+export async function sendStripeGraceReminders(now = new Date()) {
+  const reminderCutoff = new Date(now.getTime() - (STRIPE_GRACE_MS - STRIPE_GRACE_REMINDER_MS))
+  const expirationCutoff = new Date(now.getTime() - STRIPE_GRACE_MS)
+  const producers = await prisma.user.findMany({
+    where: {
+      role: 'PRODUCER',
+      producerStatus: 'APPROVED',
+      producerApprovedAt: {
+        gt: expirationCutoff,
+        lte: reminderCutoff,
+      },
+    },
+    select: {
+      id: true,
+      producerApprovedAt: true,
+      stripeAccountId: true,
+      email: true,
+      name: true,
+      displayName: true,
+    },
+  })
+
+  let reminded = 0
+  let alreadySent = 0
+  let stripeUnavailable = 0
+
+  for (const producer of producers) {
+    if (!producer.producerApprovedAt) continue
+
+    if (producer.stripeAccountId) {
+      const readiness = await getConnectAccountReadiness(producer.stripeAccountId)
+      if (readiness === 'ready') continue
+      if (readiness === 'unavailable') {
+        stripeUnavailable++
+        continue
+      }
+    }
+
+    const deadline = getStripeGraceDeadline(producer.producerApprovedAt)!
+    const notificationId = `stripe-connect-reminder:${producer.id}:${producer.producerApprovedAt.getTime()}`
+
+    try {
+      await prisma.notification.create({
+        data: {
+          id: notificationId,
+          userId: producer.id,
+          type: 'SYSTEM',
+          title: 'Plus que 48 heures pour Stripe Connect',
+          message:
+            'Finalise ton inscription Stripe Connect sous 48 heures pour éviter la suspension temporaire de tes fonctions beatmaker.',
+          link: '/dashboard?tab=settings',
+        },
+      })
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        alreadySent++
+        continue
+      }
+      throw error
+    }
+
+    const deliveries: Promise<unknown>[] = [
+      sendPushToUser(producer.id, {
+        title: 'Stripe Connect : plus que 48 heures',
+        body: 'Finalise ton inscription pour continuer à publier et lancer des enchères sans interruption.',
+        url: '/dashboard?tab=settings',
+        tag: notificationId,
+      }),
+    ]
+
+    if (producer.email) {
+      deliveries.push(
+        sendStripeConnectReminderEmail({
+          to: producer.email,
+          name: producer.displayName || producer.name || 'Beatmaker',
+          deadline,
+        })
+      )
+    }
+
+    const results = await Promise.allSettled(deliveries)
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        console.warn('[STRIPE_GRACE] Rappel non envoyé:', String(result.reason))
+      }
+    }
+    reminded++
+  }
+
+  return {
+    checked: producers.length,
+    reminded,
+    alreadySent,
+    stripeUnavailable,
+  }
 }
