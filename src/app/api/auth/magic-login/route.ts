@@ -2,6 +2,17 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import {
+  createAuthSessionToken,
+  getAuthSessionCookieName,
+  getAuthSessionCookieOptions,
+  getAuthSessionExpiry,
+} from '@/lib/auth-session'
+
+function getSafeRedirect(value: string | null): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return '/dashboard'
+  return value
+}
 
 // POST /api/auth/magic-login — Vérifie un magic token et connecte l'utilisateur
 export async function POST(req: NextRequest) {
@@ -22,6 +33,8 @@ export async function POST(req: NextRequest) {
         id: true,
         email: true,
         name: true,
+        role: true,
+        avatar: true,
         emailVerified: true,
       },
     })
@@ -47,27 +60,18 @@ export async function POST(req: NextRequest) {
       data: updateData,
     })
 
-    // Créer une session NextAuth manuellement via un session token
-    const { randomBytes } = await import('crypto')
-    const sessionToken = randomBytes(32).toString('hex')
-    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 jours
-
-    await prisma.session.create({
-      data: {
-        sessionToken,
-        userId: user.id,
-        expires,
-      },
-    })
+    // L'application utilise des sessions JWT. Un token opaque stocké dans la
+    // table Session fonctionne jusqu'au premier rechargement, puis NextAuth ne
+    // peut plus le décoder. Générer ici le même JWT que la connexion normale.
+    const sessionToken = await createAuthSessionToken(user)
+    const expires = getAuthSessionExpiry()
 
     // Récupérer l'URL de redirection depuis le query param
     const { searchParams } = new URL(req.url)
-    const redirect = searchParams.get('redirect') || '/dashboard'
+    const redirect = getSafeRedirect(searchParams.get('redirect'))
 
-    // Retourner le session token — le frontend devra le stocker en cookie
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      sessionToken,
       expires: expires.toISOString(),
       redirect,
       user: {
@@ -76,6 +80,14 @@ export async function POST(req: NextRequest) {
         name: user.name,
       },
     })
+
+    response.cookies.set(
+      getAuthSessionCookieName(),
+      sessionToken,
+      getAuthSessionCookieOptions(expires)
+    )
+
+    return response
   } catch (error: any) {
     console.error('Erreur magic login:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
@@ -86,7 +98,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const token = searchParams.get('token')
-  const redirect = searchParams.get('redirect') || '/dashboard'
+  const redirect = getSafeRedirect(searchParams.get('redirect'))
 
   if (!token) {
     return NextResponse.redirect(new URL('/login?error=missing_token', req.url))
@@ -101,6 +113,9 @@ export async function GET(req: NextRequest) {
     select: {
       id: true,
       email: true,
+      name: true,
+      role: true,
+      avatar: true,
       emailVerified: true,
     },
   })
@@ -123,35 +138,19 @@ export async function GET(req: NextRequest) {
     data: updateData,
   })
 
-  // Créer une session
-  const { randomBytes } = await import('crypto')
-  const sessionToken = randomBytes(32).toString('hex')
-  const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-
-  await prisma.session.create({
-    data: {
-      sessionToken,
-      userId: user.id,
-      expires,
-    },
-  })
+  const sessionToken = await createAuthSessionToken(user)
+  const expires = getAuthSessionExpiry()
 
   // Rediriger avec le cookie de session
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
   const response = NextResponse.redirect(new URL(redirect, baseUrl))
 
   // Définir le cookie de session NextAuth
-  const cookieName = process.env.NODE_ENV === 'production'
-    ? '__Secure-next-auth.session-token'
-    : 'next-auth.session-token'
-
-  response.cookies.set(cookieName, sessionToken, {
-    expires,
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-  })
+  response.cookies.set(
+    getAuthSessionCookieName(),
+    sessionToken,
+    getAuthSessionCookieOptions(expires)
+  )
 
   return response
 }

@@ -8,7 +8,13 @@ import InstallPWA from '@/components/pwa/InstallPWA';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
+    <SessionProvider
+      // Une PWA mobile peut revenir au premier plan avant que le réseau soit
+      // totalement disponible. Éviter une revérification immédiate empêche
+      // NextAuth de remplacer temporairement une session valide par `null`.
+      refetchOnWindowFocus={false}
+      refetchWhenOffline={false}
+    >
       <ThemeProvider>
         <LanguageProvider>
           {children}
