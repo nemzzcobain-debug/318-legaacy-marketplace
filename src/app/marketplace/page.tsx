@@ -212,7 +212,7 @@ function MarketplaceExplorerContent() {
 
           {canCreateAuction && (
             <Link
-              href="/dashboard?tab=auctions"
+              href="/auctions/new"
               className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#f20d46] to-[#c70b35] px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-950/30 transition hover:-translate-y-0.5 hover:brightness-110 sm:w-auto"
             >
               <Plus size={18} aria-hidden="true" />

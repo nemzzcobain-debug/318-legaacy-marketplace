@@ -17,6 +17,7 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')
     const producerId = searchParams.get('producerId')
     const mine = searchParams.get('mine')
+    const eligibleForAuction = searchParams.get('eligibleForAuction') === 'true'
     const page = Number(searchParams.get('page') || 1)
     const limit = Number(searchParams.get('limit') || 20)
 
@@ -31,6 +32,14 @@ export async function GET(request: Request) {
       }
       where.producerId = (session.user as any).id
       isOwnerView = true
+      if (eligibleForAuction) {
+        where.status = 'ACTIVE'
+        where.auctions = {
+          none: {
+            status: { in: ['ACTIVE', 'SCHEDULED', 'ENDING_SOON', 'PENDING_APPROVAL'] },
+          },
+        }
+      }
     } else {
       Object.assign(where, PUBLIC_BEAT_WHERE)
     }

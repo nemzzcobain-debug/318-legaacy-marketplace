@@ -13,6 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/api/',
           '/admin/',
+          '/auctions/new',
           '/checkout/',
           '/dashboard/',
           '/forgot-password',

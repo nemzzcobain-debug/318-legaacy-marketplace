@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Gavel, Music, Loader2, Check, Plus } from 'lucide-react'
 
 interface Beat {
@@ -21,13 +22,19 @@ const DURATIONS = [
   { value: 168, label: '7 jours' },
 ]
 
-export default function CreateAuctionForm({ onCreated }: { onCreated?: () => void }) {
+export default function CreateAuctionForm({
+  onCreated,
+  initiallyOpen = false,
+}: {
+  onCreated?: () => void
+  initiallyOpen?: boolean
+}) {
   const [beats, setBeats] = useState<Beat[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
-  const [showForm, setShowForm] = useState(false)
+  const [showForm, setShowForm] = useState(initiallyOpen)
 
   // Form fields
   const [beatId, setBeatId] = useState('')
@@ -43,7 +50,7 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
 
   const fetchBeats = async () => {
     try {
-      const res = await fetch('/api/beats?mine=true')
+      const res = await fetch('/api/beats?mine=true&eligibleForAuction=true&limit=100')
       if (res.ok) {
         const data = await res.json()
         setBeats(data.beats || [])
@@ -150,9 +157,18 @@ export default function CreateAuctionForm({ onCreated }: { onCreated?: () => voi
               <Loader2 size={16} className="animate-spin" /> Chargement des beats...
             </div>
           ) : beats.length === 0 ? (
-            <p className="text-sm text-gray-400">
-              Aucun beat disponible. Uploade un beat d&apos;abord.
-            </p>
+            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+              <p className="text-sm text-gray-400">
+                Aucun beat validé n&apos;est disponible pour une nouvelle enchère.
+              </p>
+              <Link
+                href="/producers/upload"
+                className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-xs font-bold text-red-400"
+              >
+                <Plus size={14} />
+                Envoyer un nouveau beat
+              </Link>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {beats.map((beat) => (
