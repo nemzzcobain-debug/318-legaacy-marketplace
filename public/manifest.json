@@ -63,15 +63,9 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "Enchères",
+      "name": "Enchères en direct",
       "short_name": "Enchères",
       "url": "/marketplace",
-      "icons": [{ "src": "/icons/icon-318-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Recherche",
-      "short_name": "Recherche",
-      "url": "/search",
       "icons": [{ "src": "/icons/icon-318-96x96.png", "sizes": "96x96" }]
     },
     {

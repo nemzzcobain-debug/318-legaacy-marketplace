@@ -197,11 +197,11 @@ function MarketplaceExplorerContent() {
             Enchères en direct
           </div>
           <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-            Trouve le beat qui fera la différence.
+            Place tes enchères sur les beats en direct.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base">
-            Écoute les instrumentales, compare les licences et place ta mise avant la fin du
-            compte à rebours.
+            Choisis une instrumentale ci-dessous, ouvre sa fiche et place ta mise avant la fin du
+            compte à rebours. Retrouve ensuite toutes tes participations dans « Mes enchères ».
           </p>
         </div>
 
