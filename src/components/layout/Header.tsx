@@ -243,11 +243,13 @@ export default function Header() {
                   {user?.name?.[0] || 'U'}
                 </Link>
                 <button
+                  type="button"
                   onClick={() => signOut({ callbackUrl: '/' })}
-                  className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-3 text-sm font-bold text-red-300 transition hover:border-red-400 hover:bg-red-500/20 hover:text-white"
                   aria-label={t('nav.logout')}
                 >
-                  <LogOut size={18} className="text-gray-400" />
+                  <LogOut size={18} />
+                  <span className="hidden xl:inline">Déconnexion</span>
                 </button>
               </div>
             </>
@@ -385,7 +387,7 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: '/' })}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-gray-400 transition hover:bg-white/5 hover:text-white"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm font-bold text-red-300 transition hover:border-red-400 hover:bg-red-500/20 hover:text-white"
               >
                 <LogOut size={17} />
                 Se déconnecter
