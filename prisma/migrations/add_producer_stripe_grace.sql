@@ -5,7 +5,7 @@ ALTER TABLE "User"
   ADD COLUMN IF NOT EXISTS "producerApprovedAt" TIMESTAMP(3),
   ADD COLUMN IF NOT EXISTS "stripeGraceSuspendedAt" TIMESTAMP(3);
 
--- Les beatmakers déjà approuvés disposent eux aussi de 24 h à partir
+-- Les beatmakers déjà approuvés disposent eux aussi de 7 jours à partir
 -- de l'installation de cette règle pour finaliser Stripe Connect.
 UPDATE "User"
 SET "producerApprovedAt" = CURRENT_TIMESTAMP

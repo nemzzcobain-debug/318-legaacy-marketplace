@@ -54,7 +54,7 @@ model User {
   producerBio            String?
   portfolio              String?
   stripeAccountId        String?
-  // Délai de 24 h accordé après l'approbation pour terminer Stripe Connect.
+  // Délai de 7 jours accordé après l'approbation pour terminer Stripe Connect.
   producerApprovedAt     DateTime?
   stripeGraceSuspendedAt DateTime?
 

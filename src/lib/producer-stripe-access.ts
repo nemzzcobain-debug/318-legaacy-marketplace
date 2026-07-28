@@ -3,7 +3,8 @@ import { getConnectAccountReadiness } from '@/lib/stripe'
 import { sendStripeConnectSuspensionEmail } from '@/lib/emails/resend'
 import { sendPushToUser } from '@/lib/web-push'
 
-export const STRIPE_GRACE_HOURS = 24
+export const STRIPE_GRACE_DAYS = 7
+export const STRIPE_GRACE_HOURS = STRIPE_GRACE_DAYS * 24
 const STRIPE_GRACE_MS = STRIPE_GRACE_HOURS * 60 * 60 * 1000
 
 type ProducerAccessUser = {
@@ -43,13 +44,13 @@ async function notifyStripeSuspension(user: ProducerAccessUser) {
         type: 'SYSTEM',
         title: 'Compte beatmaker temporairement suspendu',
         message:
-          'Le délai de 24 h est terminé. Termine ton inscription Stripe Connect pour réactiver automatiquement tes publications.',
+          'Le délai de 7 jours est terminé. Termine ton inscription Stripe Connect pour réactiver automatiquement tes publications.',
         link: '/dashboard?tab=settings',
       },
     }),
     sendPushToUser(user.id, {
       title: 'Inscription Stripe requise',
-      body: 'Ton délai de 24 h est terminé. Termine Stripe Connect pour réactiver ton compte beatmaker.',
+      body: 'Ton délai de 7 jours est terminé. Termine Stripe Connect pour réactiver ton compte beatmaker.',
       url: '/dashboard?tab=settings',
       tag: `stripe-grace-suspended-${user.id}`,
     }),
@@ -91,6 +92,44 @@ async function restoreStripeSuspendedProducer(user: ProducerAccessUser) {
         link: '/dashboard',
       },
     })
+  }
+}
+
+async function restoreExtendedStripeGraceProducer(
+  user: ProducerAccessUser,
+  deadline: Date,
+  now: Date
+) {
+  const restored = await prisma.user.updateMany({
+    where: {
+      id: user.id,
+      producerStatus: 'SUSPENDED',
+      stripeGraceSuspendedAt: { not: null },
+    },
+    data: {
+      producerStatus: 'APPROVED',
+      stripeGraceSuspendedAt: null,
+    },
+  })
+
+  if (restored.count > 0) {
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        type: 'SYSTEM',
+        title: 'Délai Stripe Connect prolongé',
+        message:
+          'Ton délai Stripe Connect passe à 7 jours. Ton compte beatmaker est réactivé jusqu’à la nouvelle échéance.',
+        link: '/dashboard?tab=settings',
+      },
+    })
+  }
+
+  return {
+    allowed: true,
+    status: 'grace_period' as const,
+    deadline,
+    remainingMs: Math.max(0, deadline.getTime() - now.getTime()),
   }
 }
 
@@ -136,12 +175,17 @@ export async function enforceProducerStripeAccess(
       }
     }
 
+    const extendedDeadline = getStripeGraceDeadline(user.producerApprovedAt)
+    if (extendedDeadline && extendedDeadline > now) {
+      return restoreExtendedStripeGraceProducer(user, extendedDeadline, now)
+    }
+
     return {
       allowed: false,
       status: 'stripe_suspended',
       message:
-        'Ton délai de 24 h est terminé. Termine ton inscription Stripe Connect pour réactiver ton compte beatmaker.',
-      deadline: getStripeGraceDeadline(user.producerApprovedAt),
+        'Ton délai de 7 jours est terminé. Termine ton inscription Stripe Connect pour réactiver ton compte beatmaker.',
+      deadline: extendedDeadline,
       remainingMs: 0,
     }
   }
@@ -213,7 +257,7 @@ export async function enforceProducerStripeAccess(
     allowed: false,
     status: 'stripe_suspended',
     message:
-      'Ton délai de 24 h est terminé. Termine ton inscription Stripe Connect pour réactiver ton compte beatmaker.',
+      'Ton délai de 7 jours est terminé. Termine ton inscription Stripe Connect pour réactiver ton compte beatmaker.',
     deadline,
     remainingMs: 0,
   }

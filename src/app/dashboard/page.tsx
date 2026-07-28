@@ -1069,7 +1069,7 @@ function ProducerDashboard({ session }: { session: any }) {
                 <Clock size={20} className="mt-0.5 shrink-0 text-yellow-400" />
                 <div>
                   <p className="text-sm font-bold text-yellow-300">
-                    Termine Stripe Connect sous 24 heures
+                    Termine Stripe Connect sous 7 jours
                   </p>
                   <p className="mt-1 text-xs text-gray-400">
                     Tu peux publier pendant ce délai. Ensuite, tes fonctions beatmaker seront
