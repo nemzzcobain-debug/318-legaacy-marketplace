@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import CountdownTimer from '@/components/ui/CountdownTimer'
@@ -13,7 +14,7 @@ import { getLicenseDetails } from '@/lib/licenses'
 import {
   Search, X, Gavel, Clock, Play, Pause,
   SlidersHorizontal, ArrowUpDown,
-  Loader2, Shield, RotateCcw, ArrowLeft
+  Loader2, Shield, RotateCcw, ArrowLeft, Plus
 } from 'lucide-react'
 
 interface SearchAuction {
@@ -88,6 +89,9 @@ export default function MarketplaceExplorer() {
 
 function MarketplaceExplorerContent() {
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
+  const userRole = (session?.user as { role?: string } | undefined)?.role
+  const canCreateAuction = userRole === 'PRODUCER' || userRole === 'ADMIN'
 
   // State from URL params
   const [query, setQuery] = useState(searchParams.get('q') || '')
@@ -191,18 +195,30 @@ function MarketplaceExplorerContent() {
         </div>
 
         {/* Page introduction */}
-        <div className="mb-6 max-w-3xl sm:mb-8">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-red-400">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
-            Enchères en direct
+        <div className="mb-6 flex flex-col gap-5 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-3xl">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-red-400">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+              Enchères en direct
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Place tes enchères sur les beats en direct.
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base">
+              Choisis une instrumentale ci-dessous, ouvre sa fiche et place ta mise avant la fin du
+              compte à rebours. Retrouve ensuite toutes tes participations dans « Mes enchères ».
+            </p>
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-            Place tes enchères sur les beats en direct.
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base">
-            Choisis une instrumentale ci-dessous, ouvre sa fiche et place ta mise avant la fin du
-            compte à rebours. Retrouve ensuite toutes tes participations dans « Mes enchères ».
-          </p>
+
+          {canCreateAuction && (
+            <Link
+              href="/dashboard?tab=auctions"
+              className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#f20d46] to-[#c70b35] px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-950/30 transition hover:-translate-y-0.5 hover:brightness-110 sm:w-auto"
+            >
+              <Plus size={18} aria-hidden="true" />
+              Ajouter une enchère
+            </Link>
+          )}
         </div>
 
         {/* Search Bar */}
