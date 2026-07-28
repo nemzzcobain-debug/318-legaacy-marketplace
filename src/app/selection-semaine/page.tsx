@@ -253,7 +253,11 @@ export default function WeeklySelectionPage() {
                             : '—'}
                       </div>
                       <span className="text-[9px] text-gray-600">
-                        {beat.auction ? `Départ ${beat.auction.startPrice}€` : 'Achat direct'}
+                        {beat.auction
+                          ? `Départ ${beat.auction.startPrice}€`
+                          : beat.directPrice
+                            ? 'Achat direct'
+                            : 'En attente'}
                       </span>
                     </div>
 
@@ -270,7 +274,7 @@ export default function WeeklySelectionPage() {
                         ) : (
                           <>
                             <Music size={13} className="text-red-400" />
-                            Direct
+                            {beat.directPrice ? 'Direct' : 'À venir'}
                           </>
                         )}
                       </div>
@@ -289,9 +293,14 @@ export default function WeeklySelectionPage() {
                             showIcon={false}
                           />
                         </div>
-                      ) : (
+                      ) : beat.directPrice ? (
                         <span className="mt-1 inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-300 lg:mt-0">
                           Disponible
+                        </span>
+                      ) : (
+                        <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black text-gray-400 lg:mt-0">
+                          <Clock size={11} />
+                          Sélectionné
                         </span>
                       )}
                     </div>
