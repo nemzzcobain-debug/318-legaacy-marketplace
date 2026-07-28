@@ -74,14 +74,7 @@ export default function Header() {
     router.push('/')
   }
 
-  const navItems = [
-    {
-      href: isProducer ? '/producers/upload' : '/marketplace',
-      label: t('nav.auctions'),
-      icon: Gavel,
-    },
-    { href: '/producers', label: t('nav.producers'), icon: Users },
-  ]
+  const navItems = [{ href: '/producers', label: t('nav.producers'), icon: Users }]
 
   // Tooltip data for icon-only header links
   const iconTooltips: Record<string, { name: string; description: string; indicator?: string }> = {
