@@ -1189,7 +1189,9 @@ export default function Home() {
                     const auction = currentBeat.auction
                     const actionHref = auction
                       ? `/auction/${auction.id}`
-                      : `/nouveautes?beat=${currentBeat.id}`
+                      : currentBeat.directPrice
+                        ? `/nouveautes?beat=${currentBeat.id}`
+                        : `/producer/${currentBeat.producer.id}`
 
                     return (
                       <div
@@ -1290,9 +1292,11 @@ export default function Home() {
                                 <div className="mt-0.5 text-xl font-black text-white lg:mt-0">
                                   {currentBeat.directPrice
                                     ? `${currentBeat.directPrice}€`
-                                    : 'Prix à choisir'}
+                                    : '—'}
                                 </div>
-                                <span className="text-[9px] text-gray-600">Achat direct</span>
+                                <span className="text-[9px] text-gray-600">
+                                  {currentBeat.directPrice ? 'Achat direct' : 'En attente'}
+                                </span>
                               </>
                             )}
                           </div>
@@ -1313,9 +1317,11 @@ export default function Home() {
                               <>
                                 <div className="mt-1 flex items-center gap-1 text-sm font-black text-gray-300 lg:mt-0">
                                   <Music size={13} className="text-red-400" />
-                                  Direct
+                                  {currentBeat.directPrice ? 'Direct' : 'À venir'}
                                 </div>
-                                <span className="text-[9px] text-gray-600">prix fixe</span>
+                                <span className="text-[9px] text-gray-600">
+                                  {currentBeat.directPrice ? 'prix fixe' : 'sélection'}
+                                </span>
                               </>
                             )}
                           </div>
@@ -1333,10 +1339,15 @@ export default function Home() {
                                   showIcon={false}
                                 />
                               </div>
-                            ) : (
+                            ) : currentBeat.directPrice ? (
                               <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/[0.07] px-2.5 py-1 text-[10px] font-black text-emerald-300 lg:mt-0">
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                                 Disponible
+                              </div>
+                            ) : (
+                              <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black text-gray-400 lg:mt-0">
+                                <Clock size={11} />
+                                Sélectionné
                               </div>
                             )}
                           </div>
@@ -1346,7 +1357,11 @@ export default function Home() {
                           href={actionHref}
                           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-[#dc2626] px-4 py-3 text-center text-xs font-extrabold text-white shadow-lg shadow-red-950/20 transition-all hover:brightness-110 lg:mt-0"
                         >
-                          {auction ? 'Placer mon enchère' : 'Acheter ce beat'}
+                          {auction
+                            ? 'Placer mon enchère'
+                            : currentBeat.directPrice
+                              ? 'Acheter ce beat'
+                              : 'Voir le beatmaker'}
                           <ArrowRight size={15} />
                         </Link>
                       </div>
