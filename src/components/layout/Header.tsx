@@ -75,7 +75,11 @@ export default function Header() {
   }
 
   const navItems = [
-    { href: '/marketplace', label: t('nav.auctions'), icon: Gavel },
+    {
+      href: isProducer ? '/producers/upload' : '/marketplace',
+      label: t('nav.auctions'),
+      icon: Gavel,
+    },
     { href: '/producers', label: t('nav.producers'), icon: Users },
   ]
 
