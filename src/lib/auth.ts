@@ -5,6 +5,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
+import { AUTH_SESSION_MAX_AGE } from './auth-session'
 
 /**
  * Extended User type for NextAuth session
@@ -28,7 +29,10 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 jours
+    maxAge: AUTH_SESSION_MAX_AGE,
+  },
+  jwt: {
+    maxAge: AUTH_SESSION_MAX_AGE,
   },
   // SECURITY FIX L4: Configuration explicite des cookies de session
   cookies: {
@@ -42,6 +46,7 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
+        maxAge: AUTH_SESSION_MAX_AGE,
       },
     },
   },
