@@ -37,39 +37,13 @@ export function getPublicLiveAuctionWhere(now = new Date()): Prisma.AuctionWhere
 }
 
 /**
- * Une sélection de la semaine doit toujours mener vers une action valide :
- * soit une enchère actuellement ouverte, soit un beat disponible dans la
- * playlist d'achat direct "Nouveautés".
+ * Un beat choisi par l'administration reste dans la sélection de la semaine
+ * tant qu'il est public, même entre deux enchères ou avant sa mise en achat
+ * direct.
  */
-export function getActionableFeaturedBeatWhere(now = new Date()): Prisma.BeatWhereInput {
+export function getPublicFeaturedBeatWhere(): Prisma.BeatWhereInput {
   return {
-    AND: [
-      PUBLIC_BEAT_WHERE,
-      { isFeatured: true },
-      {
-        OR: [
-          {
-            auctions: {
-              some: {
-                status: { in: ['ACTIVE', 'ENDING_SOON'] },
-                startTime: { lte: now },
-                endTime: { gt: now },
-              },
-            },
-          },
-          {
-            playlists: {
-              some: {
-                playlist: {
-                  name: 'Nouveautés',
-                  visibility: 'PUBLIC',
-                },
-              },
-            },
-          },
-        ],
-      },
-    ],
+    AND: [PUBLIC_BEAT_WHERE, { isFeatured: true }],
   }
 }
 
