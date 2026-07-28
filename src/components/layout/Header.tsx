@@ -95,7 +95,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 glass overflow-visible">
-      <div className="max-w-7xl mx-auto h-16 flex items-center justify-between px-4 md:px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:gap-5 md:px-6">
         <div className="flex min-w-0 items-center gap-1">
           {pathname !== '/' && (
             <button
@@ -133,7 +133,7 @@ export default function Header() {
 
         {/* Nav Desktop */}
         <nav
-          className="hidden md:flex items-center gap-6"
+          className="hidden items-center gap-4 md:flex"
           role="navigation"
           aria-label="Navigation principale"
         >
@@ -155,7 +155,7 @@ export default function Header() {
         </nav>
 
         {/* Auth / User */}
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="ml-auto hidden items-center gap-1 md:flex">
           {session ? (
             <>
               {/* Upload Button for Producers/Admin */}
@@ -274,7 +274,7 @@ export default function Header() {
         </div>
 
         {/* Navigation mobile : commandes essentielles visibles, le reste dans un menu. */}
-        <div className="flex items-center gap-1 md:hidden">
+        <div className="ml-auto flex items-center gap-1 md:hidden">
           {session && <NotificationBell />}
           <button
             type="button"
