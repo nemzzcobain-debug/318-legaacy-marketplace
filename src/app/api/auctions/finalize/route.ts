@@ -7,7 +7,10 @@ import {
   sendProducerAuctionEndedEmail,
 } from '@/lib/emails/resend'
 import { sendPushToUser } from '@/lib/web-push'
-import { suspendExpiredStripeGraceProducers } from '@/lib/producer-stripe-access'
+import {
+  sendStripeGraceReminders,
+  suspendExpiredStripeGraceProducers,
+} from '@/lib/producer-stripe-access'
 
 type ProducerAuctionAlert = {
   userId: string
@@ -163,6 +166,18 @@ async function handleFinalize(req: NextRequest) {
     }
 
     const now = new Date()
+    let stripeGraceReminders = {
+      checked: 0,
+      reminded: 0,
+      alreadySent: 0,
+      stripeUnavailable: 0,
+    }
+    try {
+      stripeGraceReminders = await sendStripeGraceReminders(now)
+    } catch (error) {
+      // La finalisation des enchères ne doit jamais être interrompue par un rappel.
+      console.error('[CRON] Rappels du délai Stripe impossibles:', error)
+    }
     let stripeGraceEnforcement = { checked: 0, suspended: 0 }
     try {
       stripeGraceEnforcement = await suspendExpiredStripeGraceProducers(now)
@@ -680,6 +695,7 @@ async function handleFinalize(req: NextRequest) {
       ...results,
       activated,
       repairedPrematureFinalizations,
+      stripeGraceReminders,
       stripeGraceEnforcement,
       timestamp: now.toISOString(),
     })

@@ -517,6 +517,36 @@ export async function sendStripeConnectSuspensionEmail(params: { to: string; nam
   return sendEmail(to, `Action requise — termine ton inscription Stripe Connect`, html)
 }
 
+export async function sendStripeConnectReminderEmail(params: {
+  to: string
+  name: string
+  deadline: Date
+}) {
+  const { to, name, deadline } = params
+  const formattedDeadline = new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'long',
+    timeZone: 'Europe/Paris',
+  }).format(deadline)
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Plus que 48 heures pour Stripe Connect</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      <strong style="color:#fff;">${name}</strong>, pense à terminer ton inscription Stripe Connect avant le <strong style="color:#ffcc66;">${formattedDeadline}</strong>.
+    </p>
+
+    <div style="background:#ffb02012;border:1px solid #ffb02045;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="color:#ffcc66;font-size:13px;font-weight:700;margin:0 0 8px;">Action requise sous 48 heures</p>
+      <p style="color:#999;font-size:12px;margin:0;">
+        Après cette échéance, tes fonctions beatmaker seront temporairement suspendues jusqu’à la validation de ton compte Stripe. Tes beats et ton compte ne seront pas supprimés.
+      </p>
+    </div>
+
+    ${button('Finaliser Stripe Connect', `${PLATFORM_URL}/dashboard?tab=settings`)}
+  `)
+
+  return sendEmail(to, `Rappel important — finalise Stripe Connect sous 48 heures`, html)
+}
+
 export async function sendProducerRejectedEmail(params: {
   to: string
   name: string
