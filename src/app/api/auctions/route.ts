@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     const userId = session.user.id
     const user = await prisma.user.findUnique({ where: { id: userId } })
 
-    if (!user || user.role !== 'PRODUCER') {
+    if (!user || !['PRODUCER', 'ADMIN'].includes(user.role)) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
@@ -138,9 +138,9 @@ export async function POST(request: Request) {
       bidIncrement,
     } = validated.data
 
-    // Vérifier que le beat appartient au producteur
+    // Vérifier que le beat appartient au producteur et a déjà été validé.
     const beat = await prisma.beat.findFirst({
-      where: { id: beatId, producerId: userId },
+      where: { id: beatId, producerId: userId, status: 'ACTIVE' },
       select: {
         id: true,
         title: true,
@@ -152,7 +152,10 @@ export async function POST(request: Request) {
       },
     })
     if (!beat) {
-      return NextResponse.json({ error: 'Beat introuvable' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Beat validé introuvable. Le beat doit être approuvé avant la mise aux enchères.' },
+        { status: 404 }
+      )
     }
     const legacyFileType = getLegacyBeatFileType(beat.audioUrl)
     if (licenseType === 'BASIC' && !beat.audioOriginal && legacyFileType !== 'mp3') {
