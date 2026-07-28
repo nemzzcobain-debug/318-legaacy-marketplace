@@ -104,10 +104,11 @@ export default function Header() {
             <button
               type="button"
               onClick={goBack}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-gray-300 transition hover:bg-white/5 hover:text-white md:hidden"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 text-gray-200 shadow-sm shadow-red-950/20 transition hover:border-red-500/60 hover:bg-red-500/15 hover:text-white md:w-auto md:px-3"
               aria-label="Revenir à la page précédente"
             >
-              <ArrowLeft size={22} />
+              <ArrowLeft size={20} />
+              <span className="hidden text-sm font-bold md:inline">Retour</span>
             </button>
           )}
 
