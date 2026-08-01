@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import AudioPlayer from '@/components/audio/AudioPlayer'
 import CountdownTimer from '@/components/ui/CountdownTimer'
@@ -77,6 +78,10 @@ interface ProducerClientProps {
 
 export default function ProducerClient({ producerId }: ProducerClientProps) {
 
+  const searchParams = useSearchParams()
+  const isAdminPreview = searchParams.get('from') === 'admin'
+  const backHref = isAdminPreview ? '/admin?tab=producers' : '/producers'
+  const backLabel = isAdminPreview ? 'Retour aux candidatures' : 'Retour aux producteurs'
   const [producer, setProducer] = useState<ProducerProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -121,8 +126,8 @@ export default function ProducerClient({ producerId }: ProducerClientProps) {
           <Music size={48} className="text-gray-700 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">Producteur non trouve</h1>
           <p className="text-gray-400 mb-6">{error}</p>
-          <Link href="/producers" className="px-6 py-3 rounded-xl bg-[#111111] border border-[#222222] text-white font-semibold">
-            Voir tous les producteurs
+          <Link href={backHref} className="px-6 py-3 rounded-xl bg-[#111111] border border-[#222222] text-white font-semibold">
+            {backLabel}
           </Link>
         </main>
       </div>
@@ -150,17 +155,31 @@ export default function ProducerClient({ producerId }: ProducerClientProps) {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Breadcrumbs items={[
-          { label: 'Producteurs', href: '/producers' },
+          {
+            label: isAdminPreview ? 'Candidatures' : 'Producteurs',
+            href: backHref,
+          },
           { label: producer.displayName || producer.name }
         ]} />
 
         <Link
-          href="/producers"
+          href={backHref}
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-sm font-semibold text-gray-300 transition hover:border-red-500/30 hover:bg-red-500/[0.07] hover:text-white"
         >
           <ArrowLeft size={15} />
-          Retour aux producteurs
+          {backLabel}
         </Link>
+
+        {isAdminPreview && producer.producerStatus !== 'APPROVED' && (
+          <div className="mb-4 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+            <strong>Aperçu administrateur :</strong> cette candidature est actuellement{' '}
+            {producer.producerStatus === 'REJECTED'
+              ? 'refusée'
+              : producer.producerStatus === 'SUSPENDED'
+                ? 'suspendue'
+                : 'en attente de validation'}.
+          </div>
+        )}
 
         {/* Profile Header */}
         <div className="bg-[#111111] border border-[#222222] rounded-2xl overflow-hidden mb-6">

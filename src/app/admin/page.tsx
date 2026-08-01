@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 interface Stats {
   totalUsers: number
@@ -737,7 +738,13 @@ export default function AdminPage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex-1 min-w-[250px]">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-bold text-lg">{p.displayName || p.name}</p>
+                        <Link
+                          href={`/producer/${p.id}?from=admin`}
+                          className="font-bold text-lg text-white underline decoration-transparent underline-offset-4 transition hover:text-[#fb7185] hover:decoration-[#e11d48] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e11d48] focus-visible:ring-offset-2 focus-visible:ring-offset-[#13131a] rounded"
+                          aria-label={`Voir le profil de ${p.displayName || p.name}`}
+                        >
+                          {p.displayName || p.name}
+                        </Link>
                         <span
                           className={`${statusColors[p.producerStatus || 'PENDING']} text-white text-xs px-2 py-0.5 rounded-full`}
                         >
