@@ -39,6 +39,7 @@ export async function GET() {
           plays: true,
           coverImage: true,
           audioUrl: true,
+          saleMode: true,
           createdAt: true,
           _count: { select: { auctions: true, likes: true } },
         },

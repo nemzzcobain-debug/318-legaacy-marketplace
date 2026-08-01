@@ -43,6 +43,7 @@ import {
   X,
   Sparkles,
   ArrowLeft,
+  Pencil,
 } from 'lucide-react'
 
 // ─── Types ───
@@ -1593,9 +1594,9 @@ function ProducerBeatsTab({
                 return (
                   <div
                     key={beat.id}
-                    className={`flex items-center justify-between p-3.5 rounded-lg transition-colors ${isHighlighted ? 'bg-[#e11d48]/10 border border-[#e11d48]/30 ring-1 ring-[#e11d48]/20' : 'bg-white/[0.02] hover:bg-white/[0.04]'}`}
+                    className={`flex flex-col gap-3 rounded-lg p-3.5 transition-colors sm:flex-row sm:items-center sm:justify-between ${isHighlighted ? 'bg-[#e11d48]/10 border border-[#e11d48]/30 ring-1 ring-[#e11d48]/20' : 'bg-white/[0.02] hover:bg-white/[0.04]'}`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       <button
                         onClick={() => togglePlay(beat.id, beat.audioUrl)}
                         className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
@@ -1650,7 +1651,7 @@ function ProducerBeatsTab({
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
                       <div className="text-right hidden sm:block">
                         <div className="flex items-center gap-3 text-xs text-gray-500">
                           <span className="flex items-center gap-1">
@@ -1684,6 +1685,19 @@ function ProducerBeatsTab({
                           Corriger et renvoyer
                         </Link>
                       )}
+                      {beat.status !== 'SOLD' &&
+                        !(
+                          beat.status === 'REJECTED' && beat.rejectionType !== 'CHANGES_REQUESTED'
+                        ) && (
+                          <Link
+                            href={`/producers/beats/${beat.id}/edit`}
+                            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-bold text-blue-300 transition hover:bg-blue-500/20"
+                            aria-label={`Modifier ${beat.title}`}
+                          >
+                            <Pencil size={13} />
+                            Modifier
+                          </Link>
+                        )}
                       {beat.status !== 'SOLD' && (
                         <button
                           onClick={() => setDeleteTarget({ id: beat.id, title: beat.title })}
