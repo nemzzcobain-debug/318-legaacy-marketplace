@@ -133,7 +133,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
-    const { beatId, action, reason, rejectionType } = await request.json()
+    const { beatId, action, reason, rejectionType, overrideStripeGrace } = await request.json()
     if (!beatId || !['APPROVE', 'REJECT'].includes(action)) {
       return NextResponse.json({ error: 'Action invalide' }, { status: 400 })
     }
@@ -157,6 +157,7 @@ export async function PATCH(request: Request) {
             name: true,
             displayName: true,
             producerStatus: true,
+            stripeGraceSuspendedAt: true,
           },
         },
         auctions: { where: { status: 'PENDING_APPROVAL' } },
@@ -170,13 +171,33 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Ce beat a déjà été examiné' }, { status: 409 })
     }
 
-    if (action === 'APPROVE' && beat.producer.producerStatus !== 'APPROVED') {
+    const isStripeGraceSuspension =
+      beat.producer.producerStatus === 'SUSPENDED' && Boolean(beat.producer.stripeGraceSuspendedAt)
+    const usesAdminStripeOverride =
+      action === 'APPROVE' && overrideStripeGrace === true && isStripeGraceSuspension
+
+    if (
+      action === 'APPROVE' &&
+      beat.producer.producerStatus !== 'APPROVED' &&
+      !usesAdminStripeOverride
+    ) {
       return NextResponse.json(
-        {
-          error:
-            'Ce beatmaker doit terminer Stripe Connect avant que son beat puisse être mis en ligne.',
-          code: 'PRODUCER_STRIPE_SUSPENDED',
-        },
+        isStripeGraceSuspension
+          ? {
+              error:
+                'Le délai Stripe Connect de ce beatmaker est expiré. Tu peux lui accorder 7 jours supplémentaires.',
+              code: 'PRODUCER_STRIPE_SUSPENDED',
+              canOverrideStripeGrace: true,
+              producerId: beat.producer.id,
+              producerName: beat.producer.displayName || beat.producer.name,
+            }
+          : {
+              error:
+                'Le compte de ce beatmaker doit être approuvé avant que son beat puisse être publié.',
+              code: 'PRODUCER_NOT_APPROVED',
+              canOverrideStripeGrace: false,
+              producerId: beat.producer.id,
+            },
         { status: 409 }
       )
     }
@@ -185,6 +206,30 @@ export async function PATCH(request: Request) {
     const now = new Date()
 
     await prisma.$transaction(async (tx) => {
+      if (usesAdminStripeOverride) {
+        // Dérogation volontaire et temporaire : l'admin réactive le producteur
+        // pour 7 jours, mais Stripe Connect reste obligatoire après ce délai.
+        await tx.user.update({
+          where: { id: beat.producer.id },
+          data: {
+            producerStatus: 'APPROVED',
+            producerApprovedAt: now,
+            stripeGraceSuspendedAt: null,
+          },
+        })
+
+        await tx.notification.create({
+          data: {
+            userId: beat.producer.id,
+            type: 'SYSTEM',
+            title: 'Délai Stripe Connect prolongé',
+            message:
+              '318 LEGAACY t’accorde 7 jours supplémentaires pour terminer Stripe Connect. Ton beat peut être publié, mais l’inscription Stripe reste obligatoire.',
+            link: '/dashboard?tab=settings',
+          },
+        })
+      }
+
       await tx.beat.update({
         where: { id: beat.id },
         data: approved
@@ -314,6 +359,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({
       success: true,
+      stripeGraceExtended: usesAdminStripeOverride,
       message: approved ? 'Beat approuvé et mis en ligne' : 'Beat refusé',
     })
   } catch (error) {
