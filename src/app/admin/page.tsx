@@ -78,6 +78,22 @@ interface ReportItem {
   reporter: { id: string; name: string; displayName: string | null; avatar: string | null }
 }
 
+const VALID_ADMIN_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'SUSPENDED',
+  'ACTIVE',
+  'SCHEDULED',
+  'ENDING_SOON',
+  'ENDED',
+  'COMPLETED',
+  'CANCELLED',
+  'REVIEWED',
+  'RESOLVED',
+  'DISMISSED',
+]
+
 const BEAT_STATUS_LABELS: Record<string, string> = {
   PENDING: 'En attente de validation',
   ACTIVE: 'Approuvé et en ligne',
@@ -124,6 +140,7 @@ export default function AdminPage() {
   const searchParams = useSearchParams()
   const validTabs = ['dashboard', 'producers', 'auctions', 'users', 'beats', 'featured', 'reports', 'promos']
   const initialTab = searchParams.get('tab')
+  const initialStatus = searchParams.get('status')
   const [activeTab, setActiveTab] = useState(
     initialTab && validTabs.includes(initialTab) ? initialTab : 'dashboard'
   )
@@ -158,7 +175,9 @@ export default function AdminPage() {
   })
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
+  const [filterStatus, setFilterStatus] = useState(
+    initialStatus && VALID_ADMIN_STATUSES.includes(initialStatus) ? initialStatus : ''
+  )
   const [previousTab, setPreviousTab] = useState<string | null>(null)
 
   const releaseAdminAudio = useCallback((audio: HTMLAudioElement | null) => {
@@ -247,9 +266,13 @@ export default function AdminPage() {
 
   // Synchroniser l'URL avec l'onglet actif
   useEffect(() => {
-    const url = activeTab === 'dashboard' ? '/admin' : `/admin?tab=${activeTab}`
+    const params = new URLSearchParams()
+    if (activeTab !== 'dashboard') params.set('tab', activeTab)
+    if (filterStatus) params.set('status', filterStatus)
+    const query = params.toString()
+    const url = query ? `/admin?${query}` : '/admin'
     window.history.replaceState(null, '', url)
-  }, [activeTab])
+  }, [activeTab, filterStatus])
 
   // Navigation depuis les cartes stats avec historique
   const navigateToTab = (tab: string, filter?: string) => {

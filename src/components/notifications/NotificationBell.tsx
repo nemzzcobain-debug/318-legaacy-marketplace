@@ -8,6 +8,7 @@ import {
   Shield, AlertCircle, X, Trash2, ChevronRight, Volume2, Music
 } from 'lucide-react'
 import PushNotificationToggle from './PushNotificationToggle'
+import { resolveNotificationLink } from '@/lib/notification-links'
 
 interface Notification {
   id: string
@@ -175,8 +176,9 @@ export default function NotificationBell() {
     if (!notif.read) {
       markAsRead([notif.id])
     }
-    if (notif.link) {
-      router.push(notif.link)
+    const target = resolveNotificationLink(notif)
+    if (target) {
+      router.push(target)
       setOpen(false)
     }
   }

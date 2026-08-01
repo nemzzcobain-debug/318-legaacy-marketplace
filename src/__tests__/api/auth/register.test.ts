@@ -165,6 +165,14 @@ describe('POST /api/auth/register', () => {
       })
     )
     expect(prismaMock.notification.createMany).toHaveBeenCalledOnce()
+    expect(prismaMock.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          userId: 'admin-1',
+          link: '/admin?tab=producers&status=PENDING',
+        }),
+      ],
+    })
     expect(sendAdminNewApplicationEmailMock).toHaveBeenCalledOnce()
   })
 

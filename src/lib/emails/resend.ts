@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { randomBytes } from 'crypto'
 import { reportOperationalIssue } from '@/lib/monitoring'
+import { ADMIN_PRODUCER_APPLICATIONS_URL } from '@/lib/notification-links'
 
 // Initialize Resend client (conditionnel — ne crashe pas si la clé est absente)
 // Set RESEND_API_KEY in your .env
@@ -583,7 +584,7 @@ export async function sendAdminNewApplicationEmail(params: {
   bio: string
   portfolio?: string
 }) {
-  const { adminEmail, applicantName, applicantEmail, applicantId, bio, portfolio } = params
+  const { adminEmail, applicantName, applicantEmail, bio, portfolio } = params
 
   const html = emailLayout(`
     <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouvelle candidature producteur 🔔</h1>
@@ -616,7 +617,7 @@ export async function sendAdminNewApplicationEmail(params: {
       </div>
     </div>
 
-    ${button('Examiner la candidature', `${PLATFORM_URL}/producer/${applicantId}`)}
+    ${button('Examiner la candidature', `${PLATFORM_URL}${ADMIN_PRODUCER_APPLICATIONS_URL}`)}
   `)
 
   sendNtfy('Nouvelle candidature', `${applicantName} souhaite devenir producteur`, 'high').catch(
