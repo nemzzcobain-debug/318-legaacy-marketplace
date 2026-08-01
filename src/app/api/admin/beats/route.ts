@@ -48,6 +48,22 @@ export async function GET(request: Request) {
           _count: {
             select: { likes: true },
           },
+          auctions: {
+            select: {
+              id: true,
+              startPrice: true,
+              currentBid: true,
+              reservePrice: true,
+              buyNowPrice: true,
+              bidIncrement: true,
+              licenseType: true,
+              startTime: true,
+              endTime: true,
+              status: true,
+              totalBids: true,
+            },
+            orderBy: { createdAt: 'desc' },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
@@ -58,13 +74,42 @@ export async function GET(request: Request) {
 
     // Le lecteur admin passe par un flux authentifié du même domaine.
     // Cela fonctionne avec les aperçus publics comme avec les anciens fichiers privés.
-    const beatsWithAdminPreviews = beats.map((beat) => ({
-      ...beat,
-      audioUrl:
-        beat.audioUrl || beat.audioOriginal
-          ? `/api/admin/beats/${beat.id}/preview`
-          : null,
-    }))
+    const beatsWithAdminPreviews = beats.map((beat) => {
+      let stemFiles: Array<{ name: string; size: number | null }> = []
+
+      if (beat.stemsFiles) {
+        try {
+          const parsed = JSON.parse(beat.stemsFiles) as Array<{
+            name?: string
+            size?: number
+          }>
+          stemFiles = parsed.map((stem, index) => ({
+            name: stem.name || `Stem ${index + 1}`,
+            size: typeof stem.size === 'number' ? stem.size : null,
+          }))
+        } catch {
+          stemFiles = []
+        }
+      }
+
+      // Les URL des fichiers complets restent privées. L'interface admin reçoit
+      // uniquement leur présence et les métadonnées nécessaires au contrôle.
+      const { audioOriginal, audioWav, stemsUrl, stemsFiles, ...publicBeat } = beat
+
+      return {
+        ...publicBeat,
+        audioUrl: beat.audioUrl || audioOriginal ? `/api/admin/beats/${beat.id}/preview` : null,
+        files: {
+          hasPreview: Boolean(beat.audioUrl),
+          hasMp3: Boolean(audioOriginal),
+          hasWav: Boolean(audioWav),
+          hasStems: Boolean(stemsUrl || stemsFiles),
+          stemsFormat: stemsUrl ? 'ZIP' : stemFiles ? 'FILES' : null,
+          stemsCount: stemFiles.length,
+          stems: stemFiles,
+        },
+      }
+    })
 
     return NextResponse.json({
       beats: beatsWithAdminPreviews,
