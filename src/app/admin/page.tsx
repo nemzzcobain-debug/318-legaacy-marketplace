@@ -224,7 +224,11 @@ export default function AdminPage() {
   const [allBeats, setAllBeats] = useState<any[]>([])
   const [beatsPagination, setBeatsPagination] = useState({ page: 1, total: 0, totalPages: 0 })
   const [beatsFilter, setBeatsFilter] = useState('')
-  const [beatStatusFilter, setBeatStatusFilter] = useState('')
+  const [beatStatusFilter, setBeatStatusFilter] = useState(
+    initialTab === 'beats' && initialStatus && VALID_ADMIN_STATUSES.includes(initialStatus)
+      ? initialStatus
+      : ''
+  )
   const [expandedBeatIds, setExpandedBeatIds] = useState<Set<string>>(new Set())
   const [reviewingBeatId, setReviewingBeatId] = useState<string | null>(null)
   const [playingBeatId, setPlayingBeatId] = useState<string | null>(null)
@@ -338,17 +342,21 @@ export default function AdminPage() {
   useEffect(() => {
     const params = new URLSearchParams()
     if (activeTab !== 'dashboard') params.set('tab', activeTab)
-    if (filterStatus) params.set('status', filterStatus)
+    const activeStatus = activeTab === 'beats' ? beatStatusFilter : filterStatus
+    if (activeStatus) params.set('status', activeStatus)
     const query = params.toString()
     const url = query ? `/admin?${query}` : '/admin'
     window.history.replaceState(null, '', url)
-  }, [activeTab, filterStatus])
+  }, [activeTab, beatStatusFilter, filterStatus])
 
   // Navigation depuis les cartes stats avec historique
   const navigateToTab = (tab: string, filter?: string) => {
     setPreviousTab(activeTab)
     setActiveTab(tab)
-    if (filter) setFilterStatus(filter)
+    if (filter) {
+      if (tab === 'beats') setBeatStatusFilter(filter)
+      else setFilterStatus(filter)
+    }
   }
 
   const goBack = () => {
