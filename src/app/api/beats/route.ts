@@ -34,6 +34,7 @@ export async function GET(request: Request) {
       isOwnerView = true
       if (eligibleForAuction) {
         where.status = 'ACTIVE'
+        where.saleMode = 'AUCTION'
         where.auctions = {
           none: {
             status: { in: ['ACTIVE', 'SCHEDULED', 'ENDING_SOON', 'PENDING_APPROVAL'] },

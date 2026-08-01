@@ -368,6 +368,12 @@ export async function GET() {
 
         const legacyBasePrice = lastAuction?.buyNowPrice || lastAuction?.startPrice || 20
         const legacyFileType = getLegacyBeatFileType(pb.beat.audioUrl)
+        const saleMode = pb.beat.saleMode === 'LEASING' ? 'LEASING' : 'AUCTION'
+        const configuredPrices = getConfiguredLicensePrices(pb.beat)
+        if (saleMode === 'LEASING') configuredPrices.EXCLUSIVE = null
+        const leasingPrices = [configuredPrices.BASIC, configuredPrices.PREMIUM].filter(
+          (price): price is number => price !== null
+        )
 
         return {
           id: pb.beat.id,
@@ -381,12 +387,16 @@ export async function GET() {
           audioUrl: streamUrl,
           plays: (pb.beat as any).plays || 0,
           producer: pb.beat.producer,
-          basePrice: getLowestConfiguredPrice(pb.beat) ?? legacyBasePrice,
-          licensePrices: getConfiguredLicensePrices(pb.beat),
+          saleMode,
+          basePrice:
+            saleMode === 'LEASING' && leasingPrices.length > 0
+              ? Math.min(...leasingPrices)
+              : (getLowestConfiguredPrice(pb.beat) ?? legacyBasePrice),
+          licensePrices: configuredPrices,
           licenseAvailability: {
             BASIC: Boolean(pb.beat.audioOriginal || legacyFileType === 'mp3'),
             PREMIUM: Boolean(pb.beat.audioWav || legacyFileType === 'wav'),
-            EXCLUSIVE: Boolean(pb.beat.stemsUrl || pb.beat.stemsFiles),
+            EXCLUSIVE: saleMode !== 'LEASING' && Boolean(pb.beat.stemsUrl || pb.beat.stemsFiles),
           },
           addedAt: pb.addedAt,
         }

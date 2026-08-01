@@ -9,7 +9,6 @@ import { authOptions } from '@/lib/auth'
 import { createAuctionSchema } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import { withoutPrivateAuctionFiles } from '@/lib/public-beat-files'
-import { getLegacyBeatFileType } from '@/lib/legacy-beat-files'
 import {
   parsePagination,
   parseAuctionSort,
@@ -108,9 +107,7 @@ export async function POST(request: Request) {
           error: producerAccess.message,
           code: producerAccess.status,
           actionUrl:
-            producerAccess.status === 'stripe_suspended'
-              ? '/dashboard?tab=settings'
-              : undefined,
+            producerAccess.status === 'stripe_suspended' ? '/dashboard?tab=settings' : undefined,
         },
         { status: 403 }
       )
@@ -128,15 +125,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
 
-    const {
-      beatId,
-      startPrice,
-      reservePrice,
-      buyNowPrice,
-      licenseType,
-      durationHours,
-      bidIncrement,
-    } = validated.data
+    const { beatId, startPrice, reservePrice, buyNowPrice, durationHours, bidIncrement } =
+      validated.data
 
     // Vérifier que le beat appartient au producteur et a déjà été validé.
     const beat = await prisma.beat.findFirst({
@@ -144,35 +134,28 @@ export async function POST(request: Request) {
       select: {
         id: true,
         title: true,
-        audioUrl: true,
-        audioOriginal: true,
-        audioWav: true,
+        saleMode: true,
         stemsUrl: true,
         stemsFiles: true,
       },
     })
     if (!beat) {
       return NextResponse.json(
-        { error: 'Beat validé introuvable. Le beat doit être approuvé avant la mise aux enchères.' },
+        {
+          error: 'Beat validé introuvable. Le beat doit être approuvé avant la mise aux enchères.',
+        },
         { status: 404 }
       )
     }
-    const legacyFileType = getLegacyBeatFileType(beat.audioUrl)
-    if (licenseType === 'BASIC' && !beat.audioOriginal && legacyFileType !== 'mp3') {
+    if (beat.saleMode !== 'AUCTION') {
       return NextResponse.json(
-        { error: 'Ajoute le fichier MP3 avant de créer une enchère Basic' },
-        { status: 400 }
+        { error: 'Ce beat est en leasing et ne peut pas être mis aux enchères.' },
+        { status: 409 }
       )
     }
-    if (licenseType === 'PREMIUM' && !beat.audioWav && legacyFileType !== 'wav') {
+    if (!beat.stemsUrl && !beat.stemsFiles) {
       return NextResponse.json(
-        { error: 'Ajoute le fichier WAV avant de créer une enchère Premium' },
-        { status: 400 }
-      )
-    }
-    if (licenseType === 'EXCLUSIVE' && !beat.stemsUrl && !beat.stemsFiles) {
-      return NextResponse.json(
-        { error: 'Ajoute les stems avant de créer une enchère Exclusive' },
+        { error: 'Ajoute les stems avant de créer cette enchère exclusive.' },
         { status: 400 }
       )
     }
@@ -201,7 +184,8 @@ export async function POST(request: Request) {
         currentBid: startPrice,
         reservePrice,
         buyNowPrice,
-        licenseType,
+        // Une enchère correspond toujours à la vente exclusive du beat.
+        licenseType: 'EXCLUSIVE',
         bidIncrement,
         startTime: now,
         endTime,

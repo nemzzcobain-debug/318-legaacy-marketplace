@@ -1331,6 +1331,17 @@ export default function AdminPage() {
 
                       <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                         <span
+                          className={`rounded px-2 py-1 text-xs font-bold ${
+                            beat.saleMode === 'LEASING'
+                              ? 'bg-emerald-500/15 text-emerald-400'
+                              : 'bg-[#e11d48]/15 text-[#fb7185]'
+                          }`}
+                        >
+                          {beat.saleMode === 'LEASING'
+                            ? 'Leasing non exclusif'
+                            : 'Enchère exclusive'}
+                        </span>
+                        <span
                           className={`px-2 py-1 text-xs font-bold rounded ${
                             beat.status === 'ACTIVE'
                               ? 'bg-green-500/20 text-green-400'
@@ -1389,6 +1400,25 @@ export default function AdminPage() {
                             </p>
                           </div>
                         )}
+
+                        <div
+                          className={`rounded-xl border px-4 py-3 ${
+                            beat.saleMode === 'LEASING'
+                              ? 'border-emerald-500/25 bg-emerald-500/5'
+                              : 'border-[#e11d48]/25 bg-[#e11d48]/5'
+                          }`}
+                        >
+                          <p className="text-sm font-bold text-white">
+                            {beat.saleMode === 'LEASING'
+                              ? 'Mode : leasing non exclusif'
+                              : 'Mode : enchère exclusive'}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            {beat.saleMode === 'LEASING'
+                              ? 'Le MP3 et/ou le WAV pourront être vendus plusieurs fois. Aucune enchère ni licence exclusive.'
+                              : 'Une seule vente aux enchères. Les stems doivent être fournis au gagnant.'}
+                          </p>
+                        </div>
 
                         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
                           <section className="rounded-xl border border-[#29293a] bg-[#101018] p-4">
@@ -1463,12 +1493,18 @@ export default function AdminPage() {
                           </section>
 
                           <section className="rounded-xl border border-[#29293a] bg-[#101018] p-4">
-                            <h3 className="mb-3 text-sm font-bold text-white">Prix des licences</h3>
+                            <h3 className="mb-3 text-sm font-bold text-white">
+                              {beat.saleMode === 'LEASING'
+                                ? 'Prix des licences leasing'
+                                : 'Prix des licences directes'}
+                            </h3>
                             <div className="space-y-3">
                               {[
                                 ['Licence MP3', beat.priceMp3, beat.files?.hasMp3],
                                 ['Licence WAV', beat.priceWav, beat.files?.hasWav],
-                                ['Licence Stems', beat.priceStems, beat.files?.hasStems],
+                                ...(beat.saleMode === 'LEASING'
+                                  ? []
+                                  : [['Licence Stems', beat.priceStems, beat.files?.hasStems]]),
                               ].map(([label, price, fileAvailable]) => (
                                 <div
                                   key={String(label)}
@@ -1558,8 +1594,17 @@ export default function AdminPage() {
                         </div>
 
                         <section className="rounded-xl border border-[#29293a] bg-[#101018] p-4">
-                          <h3 className="mb-3 text-sm font-bold text-white">Mise aux enchères</h3>
-                          {beat.auctions?.length > 0 ? (
+                          <h3 className="mb-3 text-sm font-bold text-white">
+                            {beat.saleMode === 'LEASING'
+                              ? 'Vente en leasing'
+                              : 'Mise aux enchères exclusive'}
+                          </h3>
+                          {beat.saleMode === 'LEASING' ? (
+                            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-sm text-emerald-300">
+                              Aucune enchère. Ce beat sera vendu à prix fixe avec des licences non
+                              exclusives.
+                            </div>
+                          ) : beat.auctions?.length > 0 ? (
                             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                               {beat.auctions.map((auction: any) => (
                                 <div
