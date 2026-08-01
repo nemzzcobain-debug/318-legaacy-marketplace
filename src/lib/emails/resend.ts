@@ -1007,7 +1007,7 @@ export async function sendAdminNewBeatEmail(params: {
       ', ' +
       bpm +
       ' BPM).</p>' +
-      button('Examiner le beat', PLATFORM_URL + '/admin?tab=beats')
+      button('Examiner le beat', PLATFORM_URL + '/admin?tab=beats&status=PENDING')
   )
   return sendEmail(adminEmail, 'Beat a valider - ' + beatTitle, html)
 }

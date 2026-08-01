@@ -97,9 +97,7 @@ export async function POST(req: NextRequest) {
           error: producerAccess.message,
           code: producerAccess.status,
           actionUrl:
-            producerAccess.status === 'stripe_suspended'
-              ? '/dashboard?tab=settings'
-              : undefined,
+            producerAccess.status === 'stripe_suspended' ? '/dashboard?tab=settings' : undefined,
         },
         { status: 403 }
       )
@@ -371,7 +369,7 @@ export async function POST(req: NextRequest) {
           type: 'NEW_BEAT',
           title: `Beat à valider`,
           message: `${producerName} demande la validation de "${title}" (${genre}, ${bpm} BPM)`,
-          link: `/admin?tab=beats`,
+          link: `/admin?tab=beats&status=PENDING`,
           userId: a.id,
         })),
       ]

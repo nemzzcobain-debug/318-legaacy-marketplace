@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ADMIN_PENDING_BEATS_URL,
   ADMIN_PRODUCER_APPLICATIONS_URL,
   resolveNotificationLink,
 } from '@/lib/notification-links'
@@ -23,5 +24,15 @@ describe('liens des notifications', () => {
         link: '/auction/auction-id',
       })
     ).toBe('/auction/auction-id')
+  })
+
+  it('envoie aussi une ancienne notification de beat vers les beats à valider', () => {
+    expect(
+      resolveNotificationLink({
+        type: 'NEW_BEAT',
+        title: 'Beat à valider',
+        link: '/admin?tab=beats',
+      })
+    ).toBe(ADMIN_PENDING_BEATS_URL)
   })
 })
