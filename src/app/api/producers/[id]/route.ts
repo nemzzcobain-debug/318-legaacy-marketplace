@@ -13,6 +13,8 @@ export async function GET(
   try {
     const { id } = await params
     const session = await getServerSession(authOptions)
+    const canPreviewPrivateProfile =
+      session?.user?.role === 'ADMIN' || session?.user?.id === id
     const producer = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -28,7 +30,11 @@ export async function GET(
         totalSales: true,
         createdAt: true,
         beats: {
-          where: { status: { in: ['ACTIVE', 'DRAFT'] } },
+          where: {
+            status: canPreviewPrivateProfile
+              ? { in: ['ACTIVE', 'DRAFT', 'PENDING', 'REJECTED'] }
+              : 'ACTIVE',
+          },
           orderBy: { createdAt: 'desc' },
           select: {
             id: true,
@@ -74,6 +80,10 @@ export async function GET(
 
     if (producer.role !== 'PRODUCER' && producer.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Cet utilisateur n\'est pas un producteur' }, { status: 404 })
+    }
+
+    if (producer.producerStatus !== 'APPROVED' && !canPreviewPrivateProfile) {
+      return NextResponse.json({ error: 'Producteur non trouve' }, { status: 404 })
     }
 
     // Stats supplementaires
