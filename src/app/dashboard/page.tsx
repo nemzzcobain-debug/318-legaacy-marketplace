@@ -321,7 +321,10 @@ function ArtistDashboard({ session }: { session: any }) {
                     >
                       <Icon size={18} style={{ color }} />
                     </div>
-                    <ChevronRight size={14} className="text-gray-700 group-hover:text-[#e11d48] transition-colors" />
+                    <ChevronRight
+                      size={14}
+                      className="text-gray-700 group-hover:text-[#e11d48] transition-colors"
+                    />
                   </div>
                   <div className="text-2xl font-extrabold text-white">{value}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{sub}</div>
@@ -1089,29 +1092,28 @@ function ProducerDashboard({ session }: { session: any }) {
             </div>
           )}
 
-        {stripeGrace?.stripeStatus !== 'active' &&
-          stripeGrace?.graceStatus === 'suspended' && (
-            <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/10 p-4 md:flex md:items-center md:justify-between">
-              <div className="flex items-start gap-3">
-                <AlertCircle size={20} className="mt-0.5 shrink-0 text-red-400" />
-                <div>
-                  <p className="text-sm font-bold text-red-300">
-                    Fonctions beatmaker temporairement suspendues
-                  </p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Termine Stripe Connect pour réactiver automatiquement les uploads et les
-                    nouvelles enchères.
-                  </p>
-                </div>
+        {stripeGrace?.stripeStatus !== 'active' && stripeGrace?.graceStatus === 'suspended' && (
+          <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/10 p-4 md:flex md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertCircle size={20} className="mt-0.5 shrink-0 text-red-400" />
+              <div>
+                <p className="text-sm font-bold text-red-300">
+                  Fonctions beatmaker temporairement suspendues
+                </p>
+                <p className="mt-1 text-xs text-gray-400">
+                  Termine Stripe Connect pour réactiver automatiquement les uploads et les nouvelles
+                  enchères.
+                </p>
               </div>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className="mt-3 rounded-lg bg-red-500 px-4 py-2 text-xs font-bold text-white md:mt-0"
-              >
-                Terminer l’inscription
-              </button>
             </div>
-          )}
+            <button
+              onClick={() => setActiveTab('settings')}
+              className="mt-3 rounded-lg bg-red-500 px-4 py-2 text-xs font-bold text-white md:mt-0"
+            >
+              Terminer l’inscription
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-[#ff475715] border border-[#ff475730] text-[#ff4757] text-sm">
@@ -1145,7 +1147,9 @@ function ProducerDashboard({ session }: { session: any }) {
               }}
               className={`h-full w-full appearance-none rounded-xl border px-1 py-2.5 text-center text-[11px] font-semibold outline-none ${['analytics', 'badges', 'settings'].includes(activeTab) ? 'border-[#e11d4830] bg-[#e11d4815] text-[#e11d48]' : 'border-transparent bg-transparent text-gray-400'}`}
             >
-              <option value="" disabled>Plus</option>
+              <option value="" disabled>
+                Plus
+              </option>
               <option value="analytics">Analytics</option>
               <option value="badges">Badges</option>
               <option value="settings">Paramètres</option>
@@ -1183,7 +1187,10 @@ function ProducerDashboard({ session }: { session: any }) {
                     >
                       <Icon size={18} style={{ color }} />
                     </div>
-                    <ChevronRight size={14} className="text-gray-700 group-hover:text-[#e11d48] transition-colors" />
+                    <ChevronRight
+                      size={14}
+                      className="text-gray-700 group-hover:text-[#e11d48] transition-colors"
+                    />
                   </div>
                   <div className="text-2xl font-extrabold text-white">{value}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{sub}</div>
@@ -1394,9 +1401,7 @@ function ProducerDashboard({ session }: { session: any }) {
 
                       {extensionAuctionId === auction.id && (
                         <div className="mt-3 flex flex-col gap-3 border-t border-[#1e1e2e] pt-3 sm:flex-row sm:items-center sm:justify-end">
-                          <label className="text-xs text-gray-400">
-                            Ajouter à la durée :
-                          </label>
+                          <label className="text-xs text-gray-400">Ajouter à la durée :</label>
                           <select
                             value={extensionHours}
                             onChange={(e) => setExtensionHours(Number(e.target.value))}
@@ -1557,7 +1562,7 @@ function ProducerBeatsTab({
             <Music size={48} className="mx-auto mb-4 text-gray-600" />
             <h3 className="text-lg font-bold text-white mb-2">Tes beats apparaitront ici</h3>
             <p className="text-sm text-gray-400 mb-5">
-              Upload ton premier beat pour commencer à le vendre aux enchères
+              Upload ton premier beat pour le vendre en leasing ou aux enchères exclusives
             </p>
             <Link
               href="/producers/upload"
@@ -1586,76 +1591,92 @@ function ProducerBeatsTab({
                 const showNewBadge = isHighlighted || isNew
 
                 return (
-                <div
-                  key={beat.id}
-                  className={`flex items-center justify-between p-3.5 rounded-lg transition-colors ${isHighlighted ? 'bg-[#e11d48]/10 border border-[#e11d48]/30 ring-1 ring-[#e11d48]/20' : 'bg-white/[0.02] hover:bg-white/[0.04]'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => togglePlay(beat.id, beat.audioUrl)}
-                      className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
-                    >
-                      {playingId === beat.id ? (
-                        <Pause size={14} className="text-white" />
-                      ) : (
-                        <Play size={14} className="text-white ml-0.5" />
-                      )}
-                    </button>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white">{beat.title}</span>
-                        {showNewBadge && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#e11d48]/15 text-[#e11d48] text-[10px] font-bold uppercase animate-pulse">
-                            <Sparkles size={10} /> Nouveau
+                  <div
+                    key={beat.id}
+                    className={`flex items-center justify-between p-3.5 rounded-lg transition-colors ${isHighlighted ? 'bg-[#e11d48]/10 border border-[#e11d48]/30 ring-1 ring-[#e11d48]/20' : 'bg-white/[0.02] hover:bg-white/[0.04]'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => togglePlay(beat.id, beat.audioUrl)}
+                        className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
+                      >
+                        {playingId === beat.id ? (
+                          <Pause size={14} className="text-white" />
+                        ) : (
+                          <Play size={14} className="text-white ml-0.5" />
+                        )}
+                      </button>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-white">{beat.title}</span>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                              beat.saleMode === 'LEASING'
+                                ? 'bg-emerald-500/15 text-emerald-400'
+                                : 'bg-[#e11d48]/15 text-[#fb7185]'
+                            }`}
+                          >
+                            {beat.saleMode === 'LEASING' ? (
+                              <>
+                                <ShoppingBag size={9} /> Leasing
+                              </>
+                            ) : (
+                              <>
+                                <Gavel size={9} /> Exclusif
+                              </>
+                            )}
                           </span>
+                          {showNewBadge && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#e11d48]/15 text-[#e11d48] text-[10px] font-bold uppercase animate-pulse">
+                              <Sparkles size={10} /> Nouveau
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {beat.genre} &middot; {beat.bpm} BPM
+                          {beat.key ? ` \u00B7 ${beat.key}` : ''}
+                        </div>
+                        {beat.status === 'REJECTED' && beat.rejectionReason && (
+                          <div className="mt-2 max-w-xl rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                            <p className="text-xs font-bold text-red-300">
+                              {beat.rejectionType === 'CHANGES_REQUESTED'
+                                ? 'Modifications demandées'
+                                : 'Refus définitif'}
+                            </p>
+                            <p className="mt-1 text-xs leading-relaxed text-gray-300">
+                              {beat.rejectionReason}
+                            </p>
+                          </div>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {beat.genre} &middot; {beat.bpm} BPM
-                        {beat.key ? ` \u00B7 ${beat.key}` : ''}
-                      </div>
-                      {beat.status === 'REJECTED' && beat.rejectionReason && (
-                        <div className="mt-2 max-w-xl rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-                          <p className="text-xs font-bold text-red-300">
-                            {beat.rejectionType === 'CHANGES_REQUESTED'
-                              ? 'Modifications demandées'
-                              : 'Refus définitif'}
-                          </p>
-                          <p className="mt-1 text-xs leading-relaxed text-gray-300">
-                            {beat.rejectionReason}
-                          </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right hidden sm:block">
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Eye size={11} /> {beat.plays}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Gavel size={11} /> {beat._count.auctions}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right hidden sm:block">
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Eye size={11} /> {beat.plays}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Gavel size={11} /> {beat._count.auctions}
-                        </span>
                       </div>
-                    </div>
-                    <span
-                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${beat.status === 'ACTIVE' ? 'bg-[#2ed57320] text-[#2ed573]' : beat.status === 'PENDING' ? 'bg-amber-500/20 text-amber-400' : beat.status === 'REJECTED' ? 'bg-red-500/20 text-red-400' : beat.status === 'SOLD' ? 'bg-[#e11d4820] text-[#e11d48]' : 'bg-[#ffffff10] text-gray-500'}`}
-                    >
-                      {beat.status === 'ACTIVE'
-                        ? 'Actif'
-                        : beat.status === 'PENDING'
-                          ? 'En validation'
-                          : beat.status === 'REJECTED'
-                            ? 'Non retenu'
-                            : beat.status === 'SOLD'
-                          ? 'Vendu'
-                          : beat.status === 'DRAFT'
-                            ? 'Brouillon'
-                            : beat.status}
-                    </span>
-                    {beat.status === 'REJECTED' &&
-                      beat.rejectionType === 'CHANGES_REQUESTED' && (
+                      <span
+                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${beat.status === 'ACTIVE' ? 'bg-[#2ed57320] text-[#2ed573]' : beat.status === 'PENDING' ? 'bg-amber-500/20 text-amber-400' : beat.status === 'REJECTED' ? 'bg-red-500/20 text-red-400' : beat.status === 'SOLD' ? 'bg-[#e11d4820] text-[#e11d48]' : 'bg-[#ffffff10] text-gray-500'}`}
+                      >
+                        {beat.status === 'ACTIVE'
+                          ? 'Actif'
+                          : beat.status === 'PENDING'
+                            ? 'En validation'
+                            : beat.status === 'REJECTED'
+                              ? 'Non retenu'
+                              : beat.status === 'SOLD'
+                                ? 'Vendu'
+                                : beat.status === 'DRAFT'
+                                  ? 'Brouillon'
+                                  : beat.status}
+                      </span>
+                      {beat.status === 'REJECTED' && beat.rejectionType === 'CHANGES_REQUESTED' && (
                         <Link
                           href={`/producers/upload?edit=${beat.id}`}
                           className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 transition hover:bg-amber-500/20"
@@ -1663,17 +1684,17 @@ function ProducerBeatsTab({
                           Corriger et renvoyer
                         </Link>
                       )}
-                    {beat.status !== 'SOLD' && (
-                      <button
-                        onClick={() => setDeleteTarget({ id: beat.id, title: beat.title })}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
-                        title="Supprimer ce beat"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
+                      {beat.status !== 'SOLD' && (
+                        <button
+                          onClick={() => setDeleteTarget({ id: beat.id, title: beat.title })}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                          title="Supprimer ce beat"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
                 )
               })}
             </div>
@@ -1757,9 +1778,7 @@ function ProducerSettingsTab({ userName }: { userName: string }) {
   >('loading')
   const [stripeDashboard, setStripeDashboard] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
-  const [graceStatus, setGraceStatus] = useState<
-    'grace_period' | 'suspended' | null
-  >(null)
+  const [graceStatus, setGraceStatus] = useState<'grace_period' | 'suspended' | null>(null)
   const [graceDeadline, setGraceDeadline] = useState<string | null>(null)
 
   useEffect(() => {
@@ -1996,7 +2015,8 @@ function DeleteAccountSection() {
           </div>
         </div>
         <p className="text-sm text-gray-400 mb-4">
-          Votre compte sera désactivé et vos données personnelles anonymisées. Vos enchères et transactions seront conservées pour l&apos;historique.
+          Votre compte sera désactivé et vos données personnelles anonymisées. Vos enchères et
+          transactions seront conservées pour l&apos;historique.
         </p>
         <button
           onClick={() => setShowModal(true)}
@@ -2042,13 +2062,15 @@ function DeleteAccountSection() {
               />
             </div>
 
-            {error && (
-              <p className="text-sm text-red-400 mb-3">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
 
             <div className="flex gap-3">
               <button
-                onClick={() => { setShowModal(false); setConfirmText(''); setError('') }}
+                onClick={() => {
+                  setShowModal(false)
+                  setConfirmText('')
+                  setError('')
+                }}
                 className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm text-gray-300 bg-white/5 hover:bg-white/10 transition"
               >
                 Annuler

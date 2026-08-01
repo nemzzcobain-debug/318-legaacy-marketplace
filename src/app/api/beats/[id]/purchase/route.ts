@@ -18,6 +18,7 @@ import {
   toPublicLicenseType,
 } from '@/lib/beat-pricing'
 import { getLegacyBeatFileType } from '@/lib/legacy-beat-files'
+import { isLeasingLicenseAllowed } from '@/lib/beat-sale-mode'
 
 // POST /api/beats/[id]/purchase — Achat direct d'un beat (hors enchères)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -113,6 +114,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (beat.status === 'SOLD') {
       return NextResponse.json({ error: 'Ce beat a déjà été vendu' }, { status: 400 })
     }
+    if (beat.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: 'Ce beat n’est pas disponible à la vente' },
+        { status: 400 }
+      )
+    }
 
     // L'acheteur ne peut pas etre le producteur
     if (beat.producerId === userId) {
@@ -122,6 +129,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const normalizedLicenseType = normalizeLicenseType(licenseType)
     if (!normalizedLicenseType) {
       return NextResponse.json({ error: 'Type de licence invalide' }, { status: 400 })
+    }
+    if (beat.saleMode === 'LEASING' && !isLeasingLicenseAllowed(licenseType)) {
+      return NextResponse.json(
+        {
+          error:
+            'Ce beat est vendu en leasing non exclusif. Seules les licences Basic MP3 et Premium WAV sont disponibles.',
+        },
+        { status: 400 }
+      )
     }
 
     const legacyFileType = getLegacyBeatFileType(beat.audioUrl)
@@ -159,6 +175,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (configuredPrice) {
       finalPrice = configuredPrice
       basePrice = configuredPrice
+    } else if (beat.saleMode === 'LEASING') {
+      return NextResponse.json(
+        { error: 'Le beatmaker n’a pas configuré le prix de cette licence leasing.' },
+        { status: 400 }
+      )
     } else {
       // Fallback: ancien système avec multiplicateur
       const lastAuction = await prisma.auction.findFirst({

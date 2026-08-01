@@ -10,6 +10,7 @@ import {
   sendBeatUploadConfirmationEmail,
   sendNtfy,
 } from '@/lib/emails/resend'
+import { normalizeBeatSaleMode } from '@/lib/beat-sale-mode'
 
 const MAX_PUBLIC_PREVIEW_SECONDS = 60.5
 
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
       // Prix licences
       priceMp3,
       priceWav,
-      priceStems,
+      saleMode,
       // Auction fields
       enableAuction,
       startPrice,
@@ -134,7 +135,6 @@ export async function POST(req: NextRequest) {
       buyNowPrice,
       auctionDuration,
       auctionStartAt,
-      licenseType,
       bidIncrement,
     } = body
 
@@ -214,25 +214,47 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (enableAuction) {
-      if (!['BASIC', 'PREMIUM', 'EXCLUSIVE'].includes(licenseType)) {
-        return NextResponse.json({ error: 'Licence d’enchère invalide' }, { status: 400 })
-      }
-      if (licenseType === 'BASIC' && !audioOriginalUrl) {
+    // Compatibilité avec les anciens formulaires : enableAuction=false devient LEASING.
+    const normalizedSaleMode = normalizeBeatSaleMode(
+      saleMode ?? (enableAuction === false ? 'LEASING' : 'AUCTION')
+    )
+    const isAuction = normalizedSaleMode === 'AUCTION'
+    const mp3Price = audioOriginalUrl && priceMp3 ? Number(priceMp3) : null
+    const wavPrice = wavUrl && priceWav ? Number(priceWav) : null
+
+    if (isAuction) {
+      if (!parsedStems || parsedStems.length === 0) {
         return NextResponse.json(
-          { error: 'Ajoute le fichier MP3 pour une enchère Basic' },
+          { error: 'Une enchère est une vente exclusive : ajoute obligatoirement les stems.' },
           { status: 400 }
         )
       }
-      if (licenseType === 'PREMIUM' && !wavUrl) {
+      if (typeof startPrice !== 'number' || !Number.isFinite(startPrice) || startPrice < 1) {
         return NextResponse.json(
-          { error: 'Ajoute le fichier WAV pour une enchère Premium' },
+          { error: 'Le prix de départ doit être supérieur à 0 €.' },
           { status: 400 }
         )
       }
-      if (licenseType === 'EXCLUSIVE' && (!parsedStems || parsedStems.length === 0)) {
+      if (
+        buyNowPrice &&
+        (typeof buyNowPrice !== 'number' ||
+          !Number.isFinite(buyNowPrice) ||
+          buyNowPrice <= startPrice)
+      ) {
         return NextResponse.json(
-          { error: 'Ajoute les stems pour une enchère Exclusive' },
+          { error: 'Le prix d’achat immédiat doit être supérieur au prix de départ.' },
+          { status: 400 }
+        )
+      }
+    } else {
+      const validMp3Offer = Boolean(audioOriginalUrl && mp3Price && mp3Price > 0)
+      const validWavOffer = Boolean(wavUrl && wavPrice && wavPrice > 0)
+      if (!validMp3Offer && !validWavOffer) {
+        return NextResponse.json(
+          {
+            error:
+              'Pour vendre en leasing, renseigne au moins un prix valide pour le fichier MP3 ou WAV fourni.',
+          },
           { status: 400 }
         )
       }
@@ -268,9 +290,11 @@ export async function POST(req: NextRequest) {
       tags: Array.isArray(tags) ? JSON.stringify(tags) : tags || '[]',
       coverImage: coverUrl || null,
       duration,
-      priceMp3: audioOriginalUrl && priceMp3 ? parseFloat(priceMp3) : null,
-      priceWav: wavUrl && priceWav ? parseFloat(priceWav) : null,
-      priceStems: priceStems ? parseFloat(priceStems) : null,
+      saleMode: normalizedSaleMode,
+      priceMp3: normalizedSaleMode === 'LEASING' && mp3Price && mp3Price > 0 ? mp3Price : null,
+      priceWav: normalizedSaleMode === 'LEASING' && wavPrice && wavPrice > 0 ? wavPrice : null,
+      // Le leasing n'accorde jamais de droits exclusifs et une enchère utilise son prix final.
+      priceStems: null,
       status: 'PENDING',
       producerId: user.id,
       rejectionType: null,
@@ -305,17 +329,7 @@ export async function POST(req: NextRequest) {
 
     // ─── Création de l'enchère si demandée ───
     let auction = null
-    if (enableAuction && startPrice) {
-      // SECURITY FIX M6: Valider que les prix sont positifs
-      if (typeof startPrice !== 'number' || startPrice < 1) {
-        return NextResponse.json({ error: 'Le prix de départ doit être >= 1€' }, { status: 400 })
-      }
-      if (buyNowPrice && (typeof buyNowPrice !== 'number' || buyNowPrice <= startPrice)) {
-        return NextResponse.json(
-          { error: 'Le prix buy-now doit être supérieur au prix de départ' },
-          { status: 400 }
-        )
-      }
+    if (isAuction) {
       const now = new Date()
       const durationHours = auctionDuration || 24
       // Enchere programmee : demarrage differe si une date future est fournie
@@ -342,7 +356,8 @@ export async function POST(req: NextRequest) {
           currentBid: startPrice,
           buyNowPrice: buyNowPrice || null,
           bidIncrement: bidIncrement || 5,
-          licenseType: licenseType || 'BASIC',
+          // Toutes les enchères 318 LEGAACY sont des ventes exclusives.
+          licenseType: 'EXCLUSIVE',
           premiumMultiplier: premMult,
           exclusiveMultiplier: exclMult,
           startTime: startTime,

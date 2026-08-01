@@ -240,14 +240,55 @@ export async function PATCH(request: Request) {
       })
 
       if (approved) {
+        // Un beat en leasing doit être achetable immédiatement après validation.
+        // Il rejoint le catalogue d'achat direct et ne reçoit jamais d'enchère.
+        if (beat.saleMode === 'LEASING') {
+          let nouveautesPlaylist = await tx.playlist.findFirst({
+            where: { name: 'Nouveautés', visibility: 'PUBLIC' },
+            select: { id: true },
+          })
+          if (!nouveautesPlaylist) {
+            nouveautesPlaylist = await tx.playlist.create({
+              data: {
+                name: 'Nouveautés',
+                description: 'Les derniers beats disponibles sur la plateforme',
+                visibility: 'PUBLIC',
+                userId: (session.user as any).id,
+              },
+              select: { id: true },
+            })
+          }
+          const maxPosition = await tx.playlistBeat.aggregate({
+            where: { playlistId: nouveautesPlaylist.id },
+            _max: { position: true },
+          })
+          await tx.playlistBeat.upsert({
+            where: {
+              playlistId_beatId: {
+                playlistId: nouveautesPlaylist.id,
+                beatId: beat.id,
+              },
+            },
+            update: {},
+            create: {
+              playlistId: nouveautesPlaylist.id,
+              beatId: beat.id,
+              position: (maxPosition._max.position ?? -1) + 1,
+            },
+          })
+        }
+
         const followers = await tx.follow.findMany({
           where: { followingId: beat.producer.id },
           select: { followerId: true },
         })
         if (followers.length > 0) {
-          const publicLink = beat.auctions[0]
-            ? `/auction/${beat.auctions[0].id}`
-            : `/producer/${beat.producer.id}`
+          const publicLink =
+            beat.saleMode === 'LEASING'
+              ? `/nouveautes?beat=${beat.id}`
+              : beat.auctions[0]
+                ? `/auction/${beat.auctions[0].id}`
+                : `/producer/${beat.producer.id}`
           await tx.notification.createMany({
             data: followers.map((f) => ({
               type: 'NEW_BEAT',

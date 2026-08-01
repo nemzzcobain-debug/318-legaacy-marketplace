@@ -26,6 +26,7 @@ import {
   Trash2,
   Info,
   ArrowLeft,
+  ShoppingBag,
 } from 'lucide-react'
 import { GENRES, MOODS } from '@/types'
 import CoverGenerator from '@/components/ai/CoverGenerator'
@@ -75,7 +76,6 @@ export default function UploadBeatPage() {
   // Prix licences
   const [priceMp3, setPriceMp3] = useState('')
   const [priceWav, setPriceWav] = useState('')
-  const [priceStems, setPriceStems] = useState('')
 
   const [title, setTitle] = useState('')
   const [genre, setGenre] = useState('')
@@ -85,15 +85,12 @@ export default function UploadBeatPage() {
   const [description, setDescription] = useState('')
   const [tags, setTags] = useState('')
 
-  // Auction fields
-  const [enableAuction, setEnableAuction] = useState(true)
+  // Mode de vente : une enchère est toujours exclusive, le leasing ne l'est jamais.
+  const [saleMode, setSaleMode] = useState<'AUCTION' | 'LEASING'>('AUCTION')
+  const enableAuction = saleMode === 'AUCTION'
   const [startPrice, setStartPrice] = useState('10')
-  const [premiumPrice, setPremiumPrice] = useState('25')
-  const [exclusivePrice, setExclusivePrice] = useState('100')
   const [buyNowPrice, setBuyNowPrice] = useState('')
   const [auctionDuration, setAuctionDuration] = useState('24')
-  const [licenseType, setLicenseType] = useState('BASIC')
-  const [bidIncrement, setBidIncrement] = useState('5')
   const [auctionStartAt, setAuctionStartAt] = useState('')
 
   const [uploading, setUploading] = useState(false)
@@ -135,7 +132,7 @@ export default function UploadBeatPage() {
         }
         setPriceMp3(beat.priceMp3 ? String(beat.priceMp3) : '')
         setPriceWav(beat.priceWav ? String(beat.priceWav) : '')
-        setPriceStems(beat.priceStems ? String(beat.priceStems) : '')
+        setSaleMode(beat.saleMode === 'LEASING' ? 'LEASING' : 'AUCTION')
         setRejectionReason(beat.rejectionReason || '')
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erreur de chargement'))
@@ -202,9 +199,6 @@ export default function UploadBeatPage() {
         const name = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
         setTitle(name)
       }
-      if (licenseType === 'BASIC') {
-        setLicenseType('PREMIUM')
-      }
     }
     setError('')
   }
@@ -252,8 +246,15 @@ export default function UploadBeatPage() {
       setError('Ajoute au moins un MP3 ou un WAV, puis remplis le titre, le genre et le BPM')
       return
     }
-    if (enableAuction && licenseType === 'BASIC' && !audioFile) {
-      setError('Une enchère Basic nécessite un MP3. Choisis Premium pour un upload WAV seul.')
+    if (enableAuction && stemFiles.length === 0) {
+      setError('Une enchère vend le beat en exclusif : ajoute les stems (WAV ou ZIP).')
+      return
+    }
+    if (
+      saleMode === 'LEASING' &&
+      !((audioFile && Number(priceMp3) > 0) || (wavFile && Number(priceWav) > 0))
+    ) {
+      setError('En leasing, renseigne au moins un prix pour le MP3 ou le WAV fourni.')
       return
     }
 
@@ -424,31 +425,20 @@ export default function UploadBeatPage() {
           coverUrl,
           wavUrl,
           stemsFiles: uploadedStems.length > 0 ? uploadedStems : null,
-          priceMp3: audioFile ? priceMp3 || null : null,
-          priceWav: wavFile ? priceWav || null : null,
-          priceStems: priceStems || null,
+          saleMode,
+          priceMp3: saleMode === 'LEASING' && audioFile ? priceMp3 || null : null,
+          priceWav: saleMode === 'LEASING' && wavFile ? priceWav || null : null,
           audioFileName: primaryAudioFile.name,
           audioSize: primaryAudioFile.size,
           // Auction data
           enableAuction,
-          startPrice: enableAuction
-            ? parseFloat(
-                startPrice ||
-                  (licenseType === 'BASIC'
-                    ? priceMp3
-                    : licenseType === 'PREMIUM'
-                      ? priceWav
-                      : priceStems) ||
-                  '10'
-              )
-            : null,
-          premiumPrice: enableAuction && priceWav ? parseFloat(priceWav) : null,
-          exclusivePrice: enableAuction && priceStems ? parseFloat(priceStems) : null,
+          startPrice: enableAuction ? parseFloat(startPrice || '10') : null,
+          premiumPrice: null,
+          exclusivePrice: null,
           buyNowPrice: enableAuction && buyNowPrice ? parseFloat(buyNowPrice) : null,
           auctionDuration: enableAuction ? parseFloat(auctionDuration) : null,
           auctionStartAt:
             enableAuction && auctionStartAt ? new Date(auctionStartAt).toISOString() : null,
-          licenseType: enableAuction ? licenseType : null,
           bidIncrement: enableAuction ? 5 : null, // Incrément fixe 5 EUR
         }),
       })
@@ -501,9 +491,6 @@ export default function UploadBeatPage() {
     setPriceMp3('')
     setAudioPreview(wavFile ? URL.createObjectURL(wavFile) : null)
     setIsPlaying(false)
-    if (wavFile && licenseType === 'BASIC') {
-      setLicenseType('PREMIUM')
-    }
     if (audioInputRef.current) audioInputRef.current.value = ''
   }
 
@@ -513,9 +500,6 @@ export default function UploadBeatPage() {
     if (!audioFile) {
       setAudioPreview(null)
       setIsPlaying(false)
-    }
-    if (licenseType === 'PREMIUM') {
-      setLicenseType(audioFile ? 'BASIC' : stemFiles.length > 0 ? 'EXCLUSIVE' : 'BASIC')
     }
     if (wavInputRef.current) wavInputRef.current.value = ''
   }
@@ -832,37 +816,67 @@ export default function UploadBeatPage() {
             />
           </div>
 
-          {/* ─── MISE AUX ENCHÈRES ─── */}
-          <div className="border border-[#1e1e2e] rounded-2xl">
-            <button
-              type="button"
-              onClick={() => setEnableAuction(!enableAuction)}
-              className="w-full flex items-center justify-between px-5 py-4 bg-[#13131a] hover:bg-[#1a1a25] transition rounded-t-2xl"
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${enableAuction ? 'bg-[#e11d4820]' : 'bg-white/5'}`}
-                >
-                  <Gavel size={20} className={enableAuction ? 'text-[#e11d48]' : 'text-gray-500'} />
-                </div>
-                <div className="text-left">
-                  <p className="text-white font-semibold text-sm">Mettre aux enchères</p>
-                  <p className="text-gray-500 text-xs">
-                    Configure les paramètres de l&apos;enchère
-                  </p>
-                </div>
-              </div>
-              <div
-                className={`w-11 h-6 rounded-full relative transition-colors ${enableAuction ? 'bg-[#e11d48]' : 'bg-[#2a2a3a]'}`}
+          {/* ─── MODE DE VENTE ─── */}
+          <div className="space-y-4 rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-5">
+            <div>
+              <h2 className="text-sm font-bold text-white">Choisis le mode de vente</h2>
+              <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                Ce choix détermine les droits vendus et empêche de mélanger leasing et enchère.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setSaleMode('AUCTION')}
+                className={`rounded-xl border p-4 text-left transition ${
+                  saleMode === 'AUCTION'
+                    ? 'border-[#e11d48] bg-[#e11d48]/10'
+                    : 'border-[#29293a] bg-[#13131a] hover:border-[#e11d48]/40'
+                }`}
               >
-                <div
-                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${enableAuction ? 'translate-x-[22px]' : 'translate-x-0.5'}`}
-                />
-              </div>
-            </button>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e11d48]/15">
+                    <Gavel size={20} className="text-[#fb7185]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Enchère exclusive</p>
+                    <p className="mt-1 text-xs leading-relaxed text-gray-400">
+                      Une seule vente. Le gagnant obtient les droits exclusifs et les stems.
+                    </p>
+                    <p className="mt-2 text-[11px] font-bold text-[#fb7185]">Stems obligatoires</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSaleMode('LEASING')}
+                className={`rounded-xl border p-4 text-left transition ${
+                  saleMode === 'LEASING'
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-[#29293a] bg-[#13131a] hover:border-emerald-500/40'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
+                    <ShoppingBag size={20} className="text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Leasing</p>
+                    <p className="mt-1 text-xs leading-relaxed text-gray-400">
+                      Licences Basic MP3 et Premium WAV vendables plusieurs fois, sans exclusivité.
+                    </p>
+                    <p className="mt-2 text-[11px] font-bold text-emerald-400">
+                      Aucune enchère possible
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
 
             {enableAuction && (
-              <div className="px-5 py-5 space-y-5 border-t border-[#1e1e2e] bg-[#0d0d14] rounded-b-2xl">
+              <div className="space-y-5 border-t border-[#1e1e2e] pt-5">
                 {/* Prix départ + Achat immédiat + Durée */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                   <div>
@@ -985,119 +999,86 @@ export default function UploadBeatPage() {
                   </p>
                 </div>
 
-                <div>
-                  <label className="text-sm font-semibold text-white mb-2 block">
-                    Licence mise aux enchères
-                  </label>
-                  <select
-                    value={licenseType}
-                    onChange={(e) => setLicenseType(e.target.value)}
-                    className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840] transition"
-                  >
-                    <option value="BASIC" disabled={!audioFile}>
-                      Basic — MP3
-                    </option>
-                    <option value="PREMIUM" disabled={!wavFile}>
-                      Premium — WAV
-                    </option>
-                    <option value="EXCLUSIVE" disabled={stemFiles.length === 0}>
-                      Exclusive — WAV + Stems
-                    </option>
-                  </select>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Cette licence sera clairement affichée aux artistes et restera identique pendant
-                    toute l&apos;enchère.
+                <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
+                  <p className="text-sm font-bold text-amber-300">
+                    Licence Exclusive — WAV + stems
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-amber-100/70">
+                    La licence est fixée automatiquement. Une fois payée, la prod est retirée de la
+                    vente et ne peut plus être vendue à un autre artiste.
                   </p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Prix par licence */}
-          <div className="border border-[#1e1e2e] rounded-2xl p-5 bg-[#0d0d14]">
-            <label className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <DollarSign size={16} className="text-green-400" />
-              Prix des licences (achat direct et enchère)
-            </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div
-                className={`p-3 rounded-xl border ${audioFile ? 'border-blue-500/30 bg-blue-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}
-              >
-                <p className="text-sm font-bold text-blue-400">
-                  MP3 <span className="text-[9px] font-normal opacity-60 ml-1">(Basic)</span>
-                </p>
-                <p className="text-[11px] text-blue-400/70 mb-2 leading-snug min-h-[34px]">
-                  Non-commercial · 5K streams max · Crédits requis
-                </p>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={priceMp3}
-                    onChange={(e) => setPriceMp3(e.target.value)}
-                    placeholder="19"
-                    min="1"
-                    disabled={!audioFile}
-                    className="w-full bg-[#0a0a12] border border-blue-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500/50 transition disabled:opacity-50"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                    €
-                  </span>
+          {/* Prix par licence leasing */}
+          {saleMode === 'LEASING' && (
+            <div className="border border-emerald-500/20 rounded-2xl p-5 bg-emerald-500/5">
+              <label className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+                <DollarSign size={16} className="text-green-400" />
+                Prix des licences leasing
+              </label>
+              <p className="mb-4 text-xs leading-relaxed text-gray-500">
+                Tu peux proposer le MP3, le WAV ou les deux. Chaque licence peut être vendue
+                plusieurs fois et reste non exclusive.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div
+                  className={`p-3 rounded-xl border ${audioFile ? 'border-blue-500/30 bg-blue-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}
+                >
+                  <p className="text-sm font-bold text-blue-400">
+                    MP3 <span className="text-[9px] font-normal opacity-60 ml-1">(Basic)</span>
+                  </p>
+                  <p className="text-[11px] text-blue-400/70 mb-2 leading-snug min-h-[34px]">
+                    Non-commercial · 5K streams max · Crédits requis
+                  </p>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={priceMp3}
+                      onChange={(e) => setPriceMp3(e.target.value)}
+                      placeholder="19"
+                      min="1"
+                      disabled={!audioFile}
+                      className="w-full bg-[#0a0a12] border border-blue-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500/50 transition disabled:opacity-50"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                      €
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className={`p-3 rounded-xl border ${wavFile ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}
+                >
+                  <p className="text-sm font-bold text-emerald-400">
+                    WAV <span className="text-[9px] font-normal opacity-60 ml-1">(Premium)</span>
+                  </p>
+                  <p className="text-[11px] text-emerald-400/70 mb-2 leading-snug min-h-[34px]">
+                    Commercial · 50K streams · Crédits requis
+                  </p>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={priceWav}
+                      onChange={(e) => setPriceWav(e.target.value)}
+                      placeholder="39"
+                      min="1"
+                      disabled={!wavFile}
+                      className="w-full bg-[#0a0a12] border border-emerald-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-emerald-500/50 transition disabled:opacity-50"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                      €
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div
-                className={`p-3 rounded-xl border ${wavFile ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}
-              >
-                <p className="text-sm font-bold text-emerald-400">
-                  WAV <span className="text-[9px] font-normal opacity-60 ml-1">(Premium)</span>
-                </p>
-                <p className="text-[11px] text-emerald-400/70 mb-2 leading-snug min-h-[34px]">
-                  Commercial · 50K streams · Crédits requis
-                </p>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={priceWav}
-                    onChange={(e) => setPriceWav(e.target.value)}
-                    placeholder="39"
-                    min="1"
-                    disabled={!wavFile}
-                    className="w-full bg-[#0a0a12] border border-emerald-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-emerald-500/50 transition disabled:opacity-50"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                    €
-                  </span>
-                </div>
-              </div>
-              <div
-                className={`p-3 rounded-xl border ${stemFiles.length > 0 ? 'border-amber-500/30 bg-amber-500/5' : 'border-gray-700/30 bg-gray-800/5 opacity-50'}`}
-              >
-                <p className="text-sm font-bold text-amber-400">
-                  Stems <span className="text-[9px] font-normal opacity-60 ml-1">(Exclusive)</span>
-                </p>
-                <p className="text-[11px] text-amber-400/70 mb-2 leading-snug min-h-[34px]">
-                  WAV + Stems · Droits exclusifs
-                </p>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={priceStems}
-                    onChange={(e) => setPriceStems(e.target.value)}
-                    placeholder="99"
-                    min="1"
-                    disabled={stemFiles.length === 0}
-                    className="w-full bg-[#0a0a12] border border-amber-500/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-500/50 transition disabled:opacity-50"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                    €
-                  </span>
-                </div>
-              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                Les fichiers complets ne seront accessibles qu&apos;après le paiement de la licence
+                correspondante.
+              </p>
             </div>
-            <p className="text-xs text-gray-500 mt-3">
-              Les fichiers WAV et Stems ne seront accessibles qu&apos;après achat de la licence
-              correspondante.
-            </p>
-          </div>
+          )}
 
           {/* Cover Image */}
           <div>
@@ -1295,8 +1276,9 @@ export default function UploadBeatPage() {
           <div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
             <Info size={18} className="mt-0.5 shrink-0 text-amber-400" />
             <p className="text-sm leading-relaxed text-amber-100">
-              Après validation par 318 LEGAACY, ton beat sera publié
-              {enableAuction ? ' et l’enchère démarrera à la date prévue.' : '.'}
+              {enableAuction
+                ? 'Après validation par 318 LEGAACY, ton beat sera publié et son enchère exclusive démarrera à la date prévue.'
+                : 'Après validation par 318 LEGAACY, ton beat sera disponible en leasing aux prix indiqués, sans enchère et sans exclusivité.'}
             </p>
           </div>
 
@@ -1309,7 +1291,9 @@ export default function UploadBeatPage() {
               !title ||
               !genre ||
               !bpm ||
-              (enableAuction && !startPrice)
+              (enableAuction && (!startPrice || stemFiles.length === 0)) ||
+              (saleMode === 'LEASING' &&
+                !((audioFile && Number(priceMp3) > 0) || (wavFile && Number(priceWav) > 0)))
             }
             className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}

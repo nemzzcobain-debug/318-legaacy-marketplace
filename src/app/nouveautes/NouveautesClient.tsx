@@ -37,6 +37,7 @@ interface Beat {
   coverImage: string | null
   audioUrl: string | null
   plays: number
+  saleMode: 'AUCTION' | 'LEASING'
   producer: {
     id: string
     name: string
@@ -397,8 +398,9 @@ export default function NouveautesClient({ preselectedBeatId }: NouveautesClient
             </div>
           </div>
           <p className="text-gray-500 text-sm max-w-2xl">
-            Ces beats n&apos;ont pas trouvé preneur aux enchères et sont maintenant disponibles à
-            l&apos;achat direct avec le choix de ta licence : Basic, Premium ou Exclusive.
+            Retrouve les beats proposés directement en leasing et les instrumentales restées
+            disponibles après enchère. Un beat en leasing peut être acheté en Basic MP3 ou Premium
+            WAV, sans exclusivité.
           </p>
         </div>
       </div>
@@ -607,6 +609,11 @@ export default function NouveautesClient({ preselectedBeatId }: NouveautesClient
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-white truncate">{beat.title}</span>
+                        {beat.saleMode === 'LEASING' && (
+                          <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-400">
+                            Leasing
+                          </span>
+                        )}
                         {currentTrack === index && isPlaying && (
                           <Volume2 size={12} className="text-[#e11d48] shrink-0 animate-pulse" />
                         )}

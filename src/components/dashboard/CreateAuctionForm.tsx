@@ -13,7 +13,9 @@ interface Beat {
 }
 
 const DURATIONS = [
-  { value: 0.25, label: '15 minutes' }, { value: 0.5, label: '30 minutes' }, { value: 1, label: '1 heure' },
+  { value: 0.25, label: '15 minutes' },
+  { value: 0.5, label: '30 minutes' },
+  { value: 1, label: '1 heure' },
   { value: 6, label: '6 heures' },
   { value: 12, label: '12 heures' },
   { value: 24, label: '24 heures' },
@@ -41,7 +43,6 @@ export default function CreateAuctionForm({
   const [startPrice, setStartPrice] = useState('10')
   const [reservePrice, setReservePrice] = useState('')
   const [buyNowPrice, setBuyNowPrice] = useState('')
-  const [licenseType, setLicenseType] = useState('BASIC')
   const [durationHours, setDurationHours] = useState('24')
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function CreateAuctionForm({
           startPrice: parseFloat(startPrice),
           reservePrice: reservePrice ? parseFloat(reservePrice) : undefined,
           buyNowPrice: buyNowPrice ? parseFloat(buyNowPrice) : undefined,
-          licenseType,
+          licenseType: 'EXCLUSIVE',
           durationHours: parseInt(durationHours),
           bidIncrement: 5,
         }),
@@ -265,17 +266,11 @@ export default function CreateAuctionForm({
           <label className="text-sm font-semibold text-white mb-2 block">
             Licence mise aux enchères
           </label>
-          <select
-            value={licenseType}
-            onChange={(e) => setLicenseType(e.target.value)}
-            className="w-full bg-[#13131a] border border-[#1e1e2e] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#e11d4840]"
-          >
-            <option value="BASIC">Basic — MP3</option>
-            <option value="PREMIUM">Premium — WAV + MP3</option>
-            <option value="EXCLUSIVE">Exclusive — WAV + Stems</option>
-          </select>
+          <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300">
+            Exclusive — WAV + stems
+          </div>
           <p className="text-xs text-gray-500 mt-2">
-            La licence choisie sera affichée aux artistes et ne changera pas pendant l&apos;enchère.
+            Toutes les enchères sont exclusives. Les beats en leasing ne sont jamais proposés ici.
           </p>
         </div>
 

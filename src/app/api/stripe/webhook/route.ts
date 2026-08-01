@@ -536,7 +536,7 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
     }
 
     // Si licence EXCLUSIVE, marquer le beat comme vendu
-    if (licenseType === 'EXCLUSIVE') {
+    if (licenseType === 'EXCLUSIVE' && beat.saleMode !== 'LEASING') {
       await prisma.beat.update({
         where: { id: beatId },
         data: { status: 'SOLD' },

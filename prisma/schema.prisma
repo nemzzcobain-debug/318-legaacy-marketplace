@@ -191,6 +191,9 @@ model Beat {
   priceWav   Float? // Prix licence WAV
   priceStems Float? // Prix licence Stems (inclut WAV + MP3)
 
+  // Mode de vente: AUCTION (vente exclusive) | LEASING (licences non exclusives)
+  saleMode String @default("AUCTION")
+
   // Status
   status          String    @default("DRAFT")
   rejectionType   String? // CHANGES_REQUESTED | FINAL
@@ -218,6 +221,7 @@ model Beat {
 
   @@index([producerId])
   @@index([status])
+  @@index([saleMode, status])
   @@index([genre])
 }
 
