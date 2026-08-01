@@ -102,6 +102,64 @@ const BEAT_STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Brouillon',
 }
 
+const AUCTION_STATUS_LABELS: Record<string, string> = {
+  PENDING_APPROVAL: 'En attente de validation du beat',
+  SCHEDULED: 'Programmée',
+  ACTIVE: 'En cours',
+  ENDING_SOON: 'Se termine bientôt',
+  ENDED: 'Terminée',
+  COMPLETED: 'Payée',
+  CANCELLED: 'Annulée',
+}
+
+const LICENSE_LABELS: Record<string, string> = {
+  BASIC: 'Basique — MP3',
+  PREMIUM: 'Premium — WAV',
+  EXCLUSIVE: 'Exclusive — Stems',
+}
+
+function formatPrice(value: number | null | undefined) {
+  if (value === null || value === undefined) return 'Non proposé'
+  return `${value.toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} €`
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return 'Non renseignée'
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value))
+}
+
+function formatDuration(duration: number | null | undefined) {
+  if (!duration) return 'Non renseignée'
+  const minutes = Math.floor(duration / 60)
+  const seconds = duration % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+function formatFileSize(size: number | null | undefined) {
+  if (!size) return null
+  if (size < 1024 * 1024) return `${Math.round(size / 1024)} Ko`
+  return `${(size / (1024 * 1024)).toFixed(1)} Mo`
+}
+
+function parseBeatTags(tags: unknown): string[] {
+  if (!tags || typeof tags !== 'string') return []
+  try {
+    const parsed = JSON.parse(tags)
+    return Array.isArray(parsed) ? parsed.filter((tag) => typeof tag === 'string') : []
+  } catch {
+    return tags
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+  }
+}
+
 function StatCard({
   label,
   value,
@@ -129,7 +187,9 @@ function StatCard({
     >
       <p className="text-sm opacity-80 mb-1">{label}</p>
       <p className="text-2xl font-bold">{value}</p>
-      {onClick && <p className="text-[10px] mt-2 opacity-60 uppercase tracking-wider">Cliquer pour voir →</p>}
+      {onClick && (
+        <p className="text-[10px] mt-2 opacity-60 uppercase tracking-wider">Cliquer pour voir →</p>
+      )}
     </div>
   )
 }
@@ -138,7 +198,16 @@ export default function AdminPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const validTabs = ['dashboard', 'producers', 'auctions', 'users', 'beats', 'featured', 'reports', 'promos']
+  const validTabs = [
+    'dashboard',
+    'producers',
+    'auctions',
+    'users',
+    'beats',
+    'featured',
+    'reports',
+    'promos',
+  ]
   const initialTab = searchParams.get('tab')
   const initialStatus = searchParams.get('status')
   const [activeTab, setActiveTab] = useState(
@@ -156,6 +225,7 @@ export default function AdminPage() {
   const [beatsPagination, setBeatsPagination] = useState({ page: 1, total: 0, totalPages: 0 })
   const [beatsFilter, setBeatsFilter] = useState('')
   const [beatStatusFilter, setBeatStatusFilter] = useState('')
+  const [expandedBeatIds, setExpandedBeatIds] = useState<Set<string>>(new Set())
   const [reviewingBeatId, setReviewingBeatId] = useState<string | null>(null)
   const [playingBeatId, setPlayingBeatId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -360,22 +430,29 @@ export default function AdminPage() {
     }
   }, [])
 
-  const fetchAllBeats = useCallback(async (page = 1) => {
-    try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' })
-      if (search) params.set('search', search)
-      if (beatsFilter) params.set('genre', beatsFilter)
-      if (beatStatusFilter) params.set('status', beatStatusFilter)
-      const res = await fetch(`/api/admin/beats?${params}`)
-      if (res.ok) {
-        const data = await res.json()
-        setAllBeats(data.beats || [])
-        setBeatsPagination({ page: data.pagination.page, total: data.pagination.total, totalPages: data.pagination.totalPages })
+  const fetchAllBeats = useCallback(
+    async (page = 1) => {
+      try {
+        const params = new URLSearchParams({ page: String(page), limit: '20' })
+        if (search) params.set('search', search)
+        if (beatsFilter) params.set('genre', beatsFilter)
+        if (beatStatusFilter) params.set('status', beatStatusFilter)
+        const res = await fetch(`/api/admin/beats?${params}`)
+        if (res.ok) {
+          const data = await res.json()
+          setAllBeats(data.beats || [])
+          setBeatsPagination({
+            page: data.pagination.page,
+            total: data.pagination.total,
+            totalPages: data.pagination.totalPages,
+          })
+        }
+      } catch (e) {
+        console.error(e)
       }
-    } catch (e) {
-      console.error(e)
-    }
-  }, [search, beatsFilter, beatStatusFilter])
+    },
+    [search, beatsFilter, beatStatusFilter]
+  )
 
   const reviewBeat = async (beatId: string, action: 'APPROVE' | 'REJECT') => {
     let reason = ''
@@ -453,15 +530,11 @@ export default function AdminPage() {
         fetchFeatured()
         // Update search results too
         setBeatResults((prev) =>
-          prev.map((b) =>
-            b.id === beatId ? { ...b, isFeatured: !isCurrentlyFeatured } : b
-          )
+          prev.map((b) => (b.id === beatId ? { ...b, isFeatured: !isCurrentlyFeatured } : b))
         )
         // Update beats list too
         setAllBeats((prev) =>
-          prev.map((b) =>
-            b.id === beatId ? { ...b, isFeatured: !isCurrentlyFeatured } : b
-          )
+          prev.map((b) => (b.id === beatId ? { ...b, isFeatured: !isCurrentlyFeatured } : b))
         )
       }
     } catch (e) {
@@ -490,7 +563,17 @@ export default function AdminPage() {
       if (activeTab === 'beats') fetchAllBeats()
       if (activeTab === 'featured') fetchFeatured()
     }
-  }, [activeTab, loading, fetchProducers, fetchAuctions, fetchUsers, fetchReports, fetchPromos, fetchAllBeats, fetchFeatured])
+  }, [
+    activeTab,
+    loading,
+    fetchProducers,
+    fetchAuctions,
+    fetchUsers,
+    fetchReports,
+    fetchPromos,
+    fetchAllBeats,
+    fetchFeatured,
+  ])
 
   const updateProducerStatus = async (producerId: string, newStatus: string) => {
     try {
@@ -687,13 +770,48 @@ export default function AdminPage() {
         {activeTab === 'dashboard' && stats && (
           <div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-              <StatCard label="Utilisateurs" value={stats.totalUsers} color="blue" onClick={() => navigateToTab('users')} />
-              <StatCard label="Producteurs" value={stats.totalProducers} color="purple" onClick={() => navigateToTab('producers')} />
-              <StatCard label="En attente" value={stats.pendingProducers} color="yellow" onClick={() => navigateToTab('producers', 'PENDING')} />
-              <StatCard label="Encheres actives" value={stats.activeAuctions} color="green" onClick={() => navigateToTab('auctions', 'ACTIVE')} />
-              <StatCard label="Total enchères" value={stats.totalAuctions} color="orange" onClick={() => navigateToTab('auctions')} />
-              <StatCard label="Beats" value={stats.totalBeats} color="blue" onClick={() => navigateToTab('beats')} />
-              <StatCard label="Total bids" value={stats.totalBids} color="purple" onClick={() => navigateToTab('auctions')} />
+              <StatCard
+                label="Utilisateurs"
+                value={stats.totalUsers}
+                color="blue"
+                onClick={() => navigateToTab('users')}
+              />
+              <StatCard
+                label="Producteurs"
+                value={stats.totalProducers}
+                color="purple"
+                onClick={() => navigateToTab('producers')}
+              />
+              <StatCard
+                label="En attente"
+                value={stats.pendingProducers}
+                color="yellow"
+                onClick={() => navigateToTab('producers', 'PENDING')}
+              />
+              <StatCard
+                label="Encheres actives"
+                value={stats.activeAuctions}
+                color="green"
+                onClick={() => navigateToTab('auctions', 'ACTIVE')}
+              />
+              <StatCard
+                label="Total enchères"
+                value={stats.totalAuctions}
+                color="orange"
+                onClick={() => navigateToTab('auctions')}
+              />
+              <StatCard
+                label="Beats"
+                value={stats.totalBeats}
+                color="blue"
+                onClick={() => navigateToTab('beats')}
+              />
+              <StatCard
+                label="Total bids"
+                value={stats.totalBids}
+                color="purple"
+                onClick={() => navigateToTab('auctions')}
+              />
               <StatCard
                 label="Ventes completees"
                 value={stats.completedAuctionsCount}
@@ -1096,12 +1214,28 @@ export default function AdminPage() {
               />
               <select
                 value={beatsFilter}
-                onChange={(e) => { setBeatsFilter(e.target.value); fetchAllBeats(1) }}
+                onChange={(e) => {
+                  setBeatsFilter(e.target.value)
+                  fetchAllBeats(1)
+                }}
                 className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
               >
                 <option value="">Tous les genres</option>
-                {['Hip-Hop', 'Trap', 'R&B', 'Pop', 'Drill', 'Afrobeat', 'Reggaeton', 'Cloud Rap', 'Boom Bap', 'Lo-Fi'].map(g => (
-                  <option key={g} value={g}>{g}</option>
+                {[
+                  'Hip-Hop',
+                  'Trap',
+                  'R&B',
+                  'Pop',
+                  'Drill',
+                  'Afrobeat',
+                  'Reggaeton',
+                  'Cloud Rap',
+                  'Boom Bap',
+                  'Lo-Fi',
+                ].map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
                 ))}
               </select>
               <select
@@ -1128,27 +1262,39 @@ export default function AdminPage() {
             <div className="space-y-3">
               {allBeats.map((beat: any) => {
                 const isPlaying = playingBeatId === beat.id
+                const isExpanded = beat.status === 'PENDING' || expandedBeatIds.has(beat.id)
+                const tags = parseBeatTags(beat.tags)
                 return (
                   <div
                     key={beat.id}
                     className={`p-4 bg-gray-900 border rounded-lg transition ${isPlaying ? 'border-[#e11d48]/50 bg-[#e11d48]/5' : 'border-[#1e1e2e] hover:border-[#e11d48]/30'}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex min-w-0 items-center gap-4">
                         {/* Cover + bouton play */}
                         <button
                           onClick={() => beat.audioUrl && togglePlay(beat.id, beat.audioUrl)}
                           className="relative w-14 h-14 rounded-lg overflow-hidden group flex-shrink-0"
                           disabled={!beat.audioUrl}
-                          aria-label={isPlaying ? `Mettre ${beat.title} en pause` : `Écouter ${beat.title}`}
+                          aria-label={
+                            isPlaying ? `Mettre ${beat.title} en pause` : `Écouter ${beat.title}`
+                          }
                         >
                           {beat.coverImage ? (
-                            <img src={beat.coverImage} alt={beat.title} className="w-full h-full object-cover" />
+                            <img
+                              src={beat.coverImage}
+                              alt={beat.title}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
-                            <div className="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400">&#9835;</div>
+                            <div className="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400">
+                              &#9835;
+                            </div>
                           )}
                           {beat.audioUrl && (
-                            <div className={`absolute inset-0 flex items-center justify-center bg-black/40 ${isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                            <div
+                              className={`absolute inset-0 flex items-center justify-center bg-black/40 ${isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
+                            >
                               <span className="text-white text-xl">{isPlaying ? '⏸' : '▶'}</span>
                             </div>
                           )}
@@ -1157,10 +1303,12 @@ export default function AdminPage() {
                           )}
                         </button>
 
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-sm font-bold text-white">{beat.title}</p>
                           <p className="text-xs text-gray-400">
-                            {beat.producer?.displayName || beat.producer?.name || 'Inconnu'} &middot; {beat.genre || 'N/A'} &middot; {beat.bpm || '?'} BPM &middot; {beat.key || '?'}
+                            {beat.producer?.displayName || beat.producer?.name || 'Inconnu'}{' '}
+                            &middot; {beat.genre || 'N/A'} &middot; {beat.bpm || '?'} BPM &middot;{' '}
+                            {beat.key || '?'}
                           </p>
                           {!beat.audioUrl && (
                             <p className="text-xs text-red-400 mt-0.5">Pas de fichier audio</p>
@@ -1173,35 +1321,41 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 text-xs font-bold rounded ${
-                          beat.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
-                          beat.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
-                          beat.status === 'SOLD' ? 'bg-blue-500/20 text-blue-400' :
-                          'bg-gray-500/20 text-gray-400'
-                        }`}>
+                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                        <span
+                          className={`px-2 py-1 text-xs font-bold rounded ${
+                            beat.status === 'ACTIVE'
+                              ? 'bg-green-500/20 text-green-400'
+                              : beat.status === 'PENDING'
+                                ? 'bg-yellow-500/20 text-yellow-400'
+                                : beat.status === 'SOLD'
+                                  ? 'bg-blue-500/20 text-blue-400'
+                                  : 'bg-gray-500/20 text-gray-400'
+                          }`}
+                        >
                           {BEAT_STATUS_LABELS[beat.status] || beat.status}
                         </span>
-                        {beat.status === 'PENDING' && (
-                          <>
-                            <button
-                              disabled={reviewingBeatId === beat.id}
-                              onClick={() => reviewBeat(beat.id, 'APPROVE')}
-                              className="px-3 py-1 text-xs font-bold rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 disabled:opacity-50"
-                            >
-                              Approuver
-                            </button>
-                            <button
-                              disabled={reviewingBeatId === beat.id}
-                              onClick={() => reviewBeat(beat.id, 'REJECT')}
-                              className="px-3 py-1 text-xs font-bold rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 disabled:opacity-50"
-                            >
-                              Refuser
-                            </button>
-                          </>
+                        {beat.status !== 'PENDING' && (
+                          <button
+                            onClick={() =>
+                              setExpandedBeatIds((current) => {
+                                const next = new Set(current)
+                                if (next.has(beat.id)) next.delete(beat.id)
+                                else next.add(beat.id)
+                                return next
+                              })
+                            }
+                            className="rounded-lg border border-[#343447] px-3 py-1.5 text-xs font-bold text-gray-200 hover:border-[#e11d48]/60 hover:text-white"
+                            aria-expanded={isExpanded}
+                          >
+                            {isExpanded ? 'Masquer les détails' : 'Voir tous les détails'}
+                          </button>
                         )}
                         <button
-                          onClick={(e) => { e.stopPropagation(); toggleFeatured(beat.id, beat.isFeatured) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleFeatured(beat.id, beat.isFeatured)
+                          }}
                           className={`px-3 py-1 text-xs font-bold rounded transition ${
                             beat.isFeatured
                               ? 'bg-red-500/20 text-red-400 hover:bg-red-500/40'
@@ -1210,14 +1364,276 @@ export default function AdminPage() {
                         >
                           {beat.isFeatured ? '★ Retirer vedette' : '☆ Mettre en vedette'}
                         </button>
-                        <span className="text-xs text-gray-500">
-                          {beat._count?.likes || 0} ♥
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {beat.price ? `${beat.price} EUR` : 'Gratuit'}
-                        </span>
+                        <span className="text-xs text-gray-500">{beat._count?.likes || 0} ♥</span>
                       </div>
                     </div>
+
+                    {isExpanded && (
+                      <div className="mt-5 space-y-4 border-t border-[#29293a] pt-5">
+                        {beat.status === 'PENDING' && (
+                          <div className="rounded-xl border border-yellow-500/25 bg-yellow-500/5 px-4 py-3">
+                            <p className="text-sm font-bold text-yellow-300">
+                              Fiche de contrôle avant publication
+                            </p>
+                            <p className="mt-1 text-xs text-yellow-100/70">
+                              Vérifie les fichiers, les licences, les prix et l’enchère avant
+                              d’approuver ce beat.
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                          <section className="rounded-xl border border-[#29293a] bg-[#101018] p-4">
+                            <h3 className="mb-3 text-sm font-bold text-white">Fichiers fournis</h3>
+                            <div className="space-y-2 text-sm">
+                              {[
+                                ['Aperçu audio', beat.files?.hasPreview],
+                                ['MP3 complet', beat.files?.hasMp3],
+                                ['WAV complet', beat.files?.hasWav],
+                                [
+                                  beat.files?.stemsFormat === 'ZIP'
+                                    ? 'Stems — fichier ZIP'
+                                    : beat.files?.stemsCount
+                                      ? `Stems — ${beat.files.stemsCount} fichier(s)`
+                                      : 'Stems',
+                                  beat.files?.hasStems,
+                                ],
+                              ].map(([label, available]) => (
+                                <div
+                                  key={String(label)}
+                                  className="flex items-center justify-between gap-3"
+                                >
+                                  <span className="text-gray-300">{String(label)}</span>
+                                  <span
+                                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                                      available
+                                        ? 'bg-green-500/15 text-green-400'
+                                        : 'bg-gray-500/15 text-gray-500'
+                                    }`}
+                                  >
+                                    {available ? 'Fourni' : 'Non fourni'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+
+                            {beat.files?.stems?.length > 0 && (
+                              <details className="mt-3 rounded-lg bg-[#181822] p-3">
+                                <summary className="cursor-pointer text-xs font-bold text-gray-200">
+                                  Voir la liste des stems ({beat.files.stems.length})
+                                </summary>
+                                <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs text-gray-400">
+                                  {beat.files.stems.map(
+                                    (
+                                      stem: { name: string; size: number | null },
+                                      index: number
+                                    ) => (
+                                      <li
+                                        key={`${stem.name}-${index}`}
+                                        className="flex justify-between gap-3"
+                                      >
+                                        <span className="truncate">{stem.name}</span>
+                                        {formatFileSize(stem.size) && (
+                                          <span className="shrink-0">
+                                            {formatFileSize(stem.size)}
+                                          </span>
+                                        )}
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              </details>
+                            )}
+
+                            <button
+                              onClick={() => beat.audioUrl && togglePlay(beat.id, beat.audioUrl)}
+                              disabled={!beat.audioUrl}
+                              className="mt-4 w-full rounded-lg bg-[#e11d48] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#be123c] disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-500"
+                            >
+                              {isPlaying ? '⏸ Mettre en pause' : '▶ Écouter l’aperçu'}
+                            </button>
+                          </section>
+
+                          <section className="rounded-xl border border-[#29293a] bg-[#101018] p-4">
+                            <h3 className="mb-3 text-sm font-bold text-white">Prix des licences</h3>
+                            <div className="space-y-3">
+                              {[
+                                ['Licence MP3', beat.priceMp3, beat.files?.hasMp3],
+                                ['Licence WAV', beat.priceWav, beat.files?.hasWav],
+                                ['Licence Stems', beat.priceStems, beat.files?.hasStems],
+                              ].map(([label, price, fileAvailable]) => (
+                                <div
+                                  key={String(label)}
+                                  className="rounded-lg bg-[#181822] px-3 py-2.5"
+                                >
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="text-xs text-gray-400">{String(label)}</span>
+                                    <span
+                                      className={`text-sm font-bold ${
+                                        price !== null && price !== undefined
+                                          ? 'text-white'
+                                          : 'text-gray-500'
+                                      }`}
+                                    >
+                                      {formatPrice(price as number | null)}
+                                    </span>
+                                  </div>
+                                  {!fileAvailable && price !== null && price !== undefined && (
+                                    <p className="mt-1 text-xs text-red-400">
+                                      Attention : prix renseigné sans fichier correspondant.
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </section>
+
+                          <section className="rounded-xl border border-[#29293a] bg-[#101018] p-4">
+                            <h3 className="mb-3 text-sm font-bold text-white">
+                              Informations du beat
+                            </h3>
+                            <dl className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+                              <div>
+                                <dt className="text-xs text-gray-500">Genre</dt>
+                                <dd className="text-gray-200">{beat.genre || 'Non renseigné'}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs text-gray-500">Ambiance</dt>
+                                <dd className="text-gray-200">{beat.mood || 'Non renseignée'}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs text-gray-500">BPM</dt>
+                                <dd className="text-gray-200">{beat.bpm || 'Non renseigné'}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs text-gray-500">Tonalité</dt>
+                                <dd className="text-gray-200">{beat.key || 'Non renseignée'}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs text-gray-500">Durée</dt>
+                                <dd className="text-gray-200">{formatDuration(beat.duration)}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs text-gray-500">Envoyé le</dt>
+                                <dd className="text-gray-200">{formatDate(beat.createdAt)}</dd>
+                              </div>
+                            </dl>
+                            {beat.description && (
+                              <div className="mt-4">
+                                <p className="text-xs text-gray-500">Description</p>
+                                <p className="mt-1 whitespace-pre-wrap text-sm text-gray-300">
+                                  {beat.description}
+                                </p>
+                              </div>
+                            )}
+                            {tags.length > 0 && (
+                              <div className="mt-4 flex flex-wrap gap-1.5">
+                                {tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="rounded-full bg-[#252536] px-2.5 py-1 text-xs text-gray-300"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {beat.producer?.id && (
+                              <Link
+                                href={`/producer/${beat.producer.id}`}
+                                className="mt-4 inline-flex text-xs font-bold text-[#fb7185] hover:text-[#fda4af]"
+                              >
+                                Voir le profil du beatmaker →
+                              </Link>
+                            )}
+                          </section>
+                        </div>
+
+                        <section className="rounded-xl border border-[#29293a] bg-[#101018] p-4">
+                          <h3 className="mb-3 text-sm font-bold text-white">Mise aux enchères</h3>
+                          {beat.auctions?.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                              {beat.auctions.map((auction: any) => (
+                                <div
+                                  key={auction.id}
+                                  className="rounded-lg border border-[#29293a] bg-[#181822] p-3"
+                                >
+                                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                    <span className="text-sm font-bold text-white">
+                                      {LICENSE_LABELS[auction.licenseType] || auction.licenseType}
+                                    </span>
+                                    <span className="rounded-full bg-[#e11d48]/10 px-2.5 py-1 text-xs font-bold text-[#fb7185]">
+                                      {AUCTION_STATUS_LABELS[auction.status] || auction.status}
+                                    </span>
+                                  </div>
+                                  <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                                    <div>
+                                      <dt className="text-xs text-gray-500">Prix de départ</dt>
+                                      <dd className="font-bold text-white">
+                                        {formatPrice(auction.startPrice)}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt className="text-xs text-gray-500">Achat immédiat</dt>
+                                      <dd className="text-gray-200">
+                                        {formatPrice(auction.buyNowPrice)}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt className="text-xs text-gray-500">Prix de réserve</dt>
+                                      <dd className="text-gray-200">
+                                        {formatPrice(auction.reservePrice)}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt className="text-xs text-gray-500">Incrément</dt>
+                                      <dd className="text-gray-200">
+                                        {formatPrice(auction.bidIncrement)}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt className="text-xs text-gray-500">Début</dt>
+                                      <dd className="text-gray-200">
+                                        {formatDate(auction.startTime)}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt className="text-xs text-gray-500">Fin prévue</dt>
+                                      <dd className="text-gray-200">
+                                        {formatDate(auction.endTime)}
+                                      </dd>
+                                    </div>
+                                  </dl>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500">
+                              Ce beat n’a pas été proposé aux enchères.
+                            </p>
+                          )}
+                        </section>
+
+                        {beat.status === 'PENDING' && (
+                          <div className="sticky bottom-3 z-10 flex flex-col gap-2 rounded-xl border border-[#343447] bg-[#111119]/95 p-3 shadow-2xl backdrop-blur sm:flex-row sm:justify-end">
+                            <button
+                              disabled={reviewingBeatId === beat.id}
+                              onClick={() => reviewBeat(beat.id, 'REJECT')}
+                              className="rounded-lg bg-red-500/15 px-5 py-3 text-sm font-bold text-red-400 hover:bg-red-500/25 disabled:opacity-50"
+                            >
+                              Refuser / demander des modifications
+                            </button>
+                            <button
+                              disabled={reviewingBeatId === beat.id}
+                              onClick={() => reviewBeat(beat.id, 'APPROVE')}
+                              className="rounded-lg bg-green-500 px-6 py-3 text-sm font-bold text-black hover:bg-green-400 disabled:opacity-50"
+                            >
+                              {reviewingBeatId === beat.id ? 'Traitement…' : 'Approuver et publier'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -1271,7 +1687,8 @@ export default function AdminPage() {
               {beatResults.length > 0 && (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {beatResults.map((beat: any) => {
-                    const isAlreadyFeatured = featuredBeats.some((fb) => fb.id === beat.id) || beat.isFeatured
+                    const isAlreadyFeatured =
+                      featuredBeats.some((fb) => fb.id === beat.id) || beat.isFeatured
                     return (
                       <div
                         key={beat.id}
@@ -1296,7 +1713,8 @@ export default function AdminPage() {
                           <div>
                             <p className="text-sm font-bold text-white">{beat.title}</p>
                             <p className="text-xs text-gray-400">
-                              {beat.producer?.displayName || beat.producer?.name || 'Inconnu'} &middot; {beat.genre} &middot; {beat.bpm} BPM
+                              {beat.producer?.displayName || beat.producer?.name || 'Inconnu'}{' '}
+                              &middot; {beat.genre} &middot; {beat.bpm} BPM
                             </p>
                           </div>
                         </div>
@@ -1353,7 +1771,8 @@ export default function AdminPage() {
                         <div>
                           <p className="text-sm font-bold text-white">{beat.title}</p>
                           <p className="text-xs text-gray-400">
-                            {beat.producer?.displayName || beat.producer?.name} &middot; {beat.genre} &middot; {beat.bpm} BPM
+                            {beat.producer?.displayName || beat.producer?.name} &middot;{' '}
+                            {beat.genre} &middot; {beat.bpm} BPM
                           </p>
                           {beat.auctions?.[0] && (
                             <p className="text-xs text-green-400 mt-0.5">
