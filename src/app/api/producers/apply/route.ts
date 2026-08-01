@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { producerApplicationSchema } from '@/lib/validations'
 import { sendProducerApplicationEmail, sendAdminNewApplicationEmail } from '@/lib/emails/resend'
+import { ADMIN_PRODUCER_APPLICATIONS_URL } from '@/lib/notification-links'
 
 // POST /api/producers/apply - Postuler comme producteur
 export async function POST(request: Request) {
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
           type: 'SYSTEM' as const,
           title: 'Nouvelle candidature producteur',
           message: `${user.name} souhaite devenir producteur`,
-          link: `/admin?tab=producers`,
+          link: ADMIN_PRODUCER_APPLICATIONS_URL,
         })),
       })
 

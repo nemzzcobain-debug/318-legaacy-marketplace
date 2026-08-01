@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
+import { resolveNotificationLink } from '@/lib/notification-links'
 import {
   Bell, Check, CheckCheck, Gavel, TrendingUp, CreditCard,
   Shield, AlertCircle, X, Trash2, Loader2, Filter, Music
@@ -255,7 +256,8 @@ export default function NotificationsPage() {
                     className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${colorClass}`}
                     onClick={() => {
                       if (!notif.read) markAsRead([notif.id])
-                      if (notif.link) router.push(notif.link)
+                      const target = resolveNotificationLink(notif)
+                      if (target) router.push(target)
                     }}
                   >
                     <Icon size={18} />
@@ -266,7 +268,8 @@ export default function NotificationsPage() {
                     className="flex-1 min-w-0"
                     onClick={() => {
                       if (!notif.read) markAsRead([notif.id])
-                      if (notif.link) router.push(notif.link)
+                      const target = resolveNotificationLink(notif)
+                      if (target) router.push(target)
                     }}
                   >
                     <div className="flex items-center gap-2 mb-0.5">
