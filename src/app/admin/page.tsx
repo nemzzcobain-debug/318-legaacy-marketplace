@@ -26,6 +26,9 @@ interface Producer {
   producerStatus: string | null
   producerBio: string | null
   portfolio: string | null
+  producerApprovedAt: string | null
+  stripeGraceSuspendedAt: string | null
+  stripeAccountId: string | null
   totalSales: number
   rating: number
   createdAt: string
@@ -475,17 +478,46 @@ export default function AdminPage() {
       if (!reason) return
     }
 
-    setReviewingBeatId(beatId)
-    try {
+    const submitReview = async (overrideStripeGrace = false) => {
       const res = await fetch('/api/admin/beats', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ beatId, action, reason, rejectionType }),
+        body: JSON.stringify({
+          beatId,
+          action,
+          reason,
+          rejectionType,
+          overrideStripeGrace,
+        }),
       })
-      const data = await res.json()
+      return { res, data: await res.json() }
+    }
+
+    setReviewingBeatId(beatId)
+    try {
+      let { res, data } = await submitReview()
+
+      if (!res.ok && data.code === 'PRODUCER_STRIPE_SUSPENDED' && data.canOverrideStripeGrace) {
+        const producerName = data.producerName || 'ce beatmaker'
+        const confirmed = window.confirm(
+          `${producerName} est bloqué car son délai Stripe Connect est expiré.\n\n` +
+            `Veux-tu lui accorder 7 jours supplémentaires et approuver ce beat ?\n\n` +
+            `Stripe restera obligatoire à la fin de ce nouveau délai.`
+        )
+        if (!confirmed) return
+        const overrideResult = await submitReview(true)
+        res = overrideResult.res
+        data = overrideResult.data
+      }
+
       if (!res.ok) {
         window.alert(data.error || 'Impossible de traiter ce beat')
         return
+      }
+      if (data.stripeGraceExtended) {
+        window.alert(
+          'Beat approuvé. Le beatmaker dispose maintenant de 7 jours supplémentaires pour terminer Stripe Connect.'
+        )
       }
       await fetchAllBeats(beatsPagination.page)
       fetchStats()
@@ -583,19 +615,37 @@ export default function AdminPage() {
     fetchFeatured,
   ])
 
-  const updateProducerStatus = async (producerId: string, newStatus: string) => {
+  const updateProducerStatus = async (
+    producerId: string,
+    newStatus: string,
+    options?: { isStripeGraceExtension?: boolean; producerName?: string }
+  ) => {
+    if (options?.isStripeGraceExtension) {
+      const confirmed = window.confirm(
+        `Accorder 7 jours supplémentaires à ${options.producerName || 'ce beatmaker'} pour terminer Stripe Connect ?`
+      )
+      if (!confirmed) return
+    }
+
     try {
       const res = await fetch('/api/admin/producers', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ producerId, status: newStatus }),
       })
-      if (res.ok) {
-        fetchProducers()
-        fetchStats()
+      const data = await res.json()
+      if (!res.ok) {
+        window.alert(data.error || 'Impossible de modifier ce producteur')
+        return
       }
+      if (options?.isStripeGraceExtension) {
+        window.alert('Le compte est réactivé pour 7 jours supplémentaires.')
+      }
+      fetchProducers()
+      fetchStats()
     } catch (e) {
       console.error(e)
+      window.alert('Erreur de connexion')
     }
   }
 
@@ -901,6 +951,19 @@ export default function AdminPage() {
                         </span>
                       </div>
                       <p className="text-gray-400 text-sm">{p.email}</p>
+                      {p.producerStatus === 'SUSPENDED' && p.stripeGraceSuspendedAt ? (
+                        <p className="mt-1 inline-flex rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-300">
+                          Bloqué par Stripe — délai expiré
+                        </p>
+                      ) : p.stripeAccountId ? (
+                        <p className="mt-1 text-[11px] font-semibold text-blue-300">
+                          Inscription Stripe Connect commencée
+                        </p>
+                      ) : p.producerStatus === 'APPROVED' ? (
+                        <p className="mt-1 text-[11px] font-semibold text-amber-300">
+                          Stripe Connect à terminer
+                        </p>
+                      ) : null}
                       <p className="text-gray-500 text-xs mt-1">
                         {p._count.beats} beats • Inscrit le{' '}
                         {new Date(p.createdAt).toLocaleDateString('fr-FR')}
@@ -909,10 +972,19 @@ export default function AdminPage() {
                     <div className="flex gap-2">
                       {p.producerStatus !== 'APPROVED' && (
                         <button
-                          onClick={() => updateProducerStatus(p.id, 'APPROVED')}
+                          onClick={() =>
+                            updateProducerStatus(p.id, 'APPROVED', {
+                              isStripeGraceExtension:
+                                p.producerStatus === 'SUSPENDED' &&
+                                Boolean(p.stripeGraceSuspendedAt),
+                              producerName: p.displayName || p.name,
+                            })
+                          }
                           className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg transition"
                         >
-                          Approuver
+                          {p.producerStatus === 'SUSPENDED' && p.stripeGraceSuspendedAt
+                            ? 'Accorder 7 jours'
+                            : 'Approuver'}
                         </button>
                       )}
                       {p.producerStatus !== 'REJECTED' && p.producerStatus !== 'SUSPENDED' && (
