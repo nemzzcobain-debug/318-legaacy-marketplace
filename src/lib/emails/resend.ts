@@ -2,6 +2,7 @@ import { Resend } from 'resend'
 import { randomBytes } from 'crypto'
 import { reportOperationalIssue } from '@/lib/monitoring'
 import { ADMIN_PRODUCER_APPLICATIONS_URL } from '@/lib/notification-links'
+import { escapeHtml } from '@/lib/sanitize'
 
 // Initialize Resend client (conditionnel — ne crashe pas si la clé est absente)
 // Set RESEND_API_KEY in your .env
@@ -307,6 +308,43 @@ export async function sendNewFollowerEmail(params: {
   `)
 
   return sendEmail(to, `👥 ${followerName} te suit sur 318 LEGAACY`, html)
+}
+
+export async function sendNewMessageEmail(params: {
+  to: string
+  recipientName: string
+  senderName: string
+  messagePreview: string
+  conversationId: string
+}) {
+  const { to, recipientName, senderName, messagePreview, conversationId } = params
+  const plainSenderName =
+    senderName
+      .replace(/[\r\n]+/g, ' ')
+      .trim()
+      .slice(0, 80) || 'Quelqu’un'
+  const safeRecipientName = escapeHtml(recipientName)
+  const safeSenderName = escapeHtml(plainSenderName)
+  const safePreview = escapeHtml(messagePreview)
+  const conversationUrl = `${PLATFORM_URL}/messages?conv=${encodeURIComponent(conversationId)}`
+
+  const html = emailLayout(`
+    <h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Nouveau message</h1>
+    <p style="color:#999;font-size:14px;margin:0 0 24px;">
+      Bonjour ${safeRecipientName}, <strong style="color:#fff;">${safeSenderName}</strong> vient de te contacter sur 318 LEGAACY.
+    </p>
+
+    <div style="background:#13131a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="color:#ddd;font-size:14px;line-height:1.6;margin:0;">${safePreview}</p>
+    </div>
+
+    ${button('Ouvrir la conversation', conversationUrl)}
+    <p style="color:#666;font-size:11px;text-align:center;margin:0;">
+      Les prochains messages resteront visibles dans ton espace Messages.
+    </p>
+  `)
+
+  return sendEmail(to, `💬 Nouveau message de ${plainSenderName} — 318 LEGAACY`, html)
 }
 
 export async function sendOutbidEmail(params: {

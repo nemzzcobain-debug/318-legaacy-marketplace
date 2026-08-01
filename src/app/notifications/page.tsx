@@ -6,8 +6,20 @@ import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import { resolveNotificationLink } from '@/lib/notification-links'
 import {
-  Bell, Check, CheckCheck, Gavel, TrendingUp, CreditCard,
-  Shield, AlertCircle, X, Trash2, Loader2, Filter, Music
+  Bell,
+  Check,
+  CheckCheck,
+  Gavel,
+  TrendingUp,
+  CreditCard,
+  Shield,
+  AlertCircle,
+  X,
+  Trash2,
+  Loader2,
+  Filter,
+  Music,
+  MessageCircle,
 } from 'lucide-react'
 
 interface Notification {
@@ -30,6 +42,7 @@ const NOTIFICATION_ICONS: Record<string, any> = {
   PRODUCER_APPROVED: Shield,
   PRODUCER_REJECTED: X,
   NEW_BEAT: Music,
+  NEW_MESSAGE: MessageCircle,
   SYSTEM: Bell,
 }
 
@@ -43,6 +56,7 @@ const NOTIFICATION_COLORS: Record<string, string> = {
   PRODUCER_APPROVED: 'text-green-400 bg-green-500/10',
   PRODUCER_REJECTED: 'text-red-400 bg-red-500/10',
   NEW_BEAT: 'text-[#e11d48] bg-[#e11d48]/10',
+  NEW_MESSAGE: 'text-cyan-400 bg-cyan-500/10',
   SYSTEM: 'text-gray-400 bg-gray-500/10',
 }
 
@@ -56,6 +70,7 @@ const TYPE_LABELS: Record<string, string> = {
   PRODUCER_APPROVED: 'Producteur approuvé',
   PRODUCER_REJECTED: 'Producteur refusé',
   NEW_BEAT: 'Nouveau beat',
+  NEW_MESSAGE: 'Nouveau message',
   SYSTEM: 'Système',
 }
 
@@ -64,7 +79,7 @@ function formatDate(dateStr: string): string {
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-  if (diff < 60) return 'À l\'instant'
+  if (diff < 60) return "À l'instant"
   if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`
   if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`
   if (diff < 172800) return 'Hier'
@@ -102,7 +117,8 @@ export default function NotificationsPage() {
           setNotifications(data.notifications || [])
           setUnreadCount(data.unreadCount || 0)
         }
-      } catch {} finally {
+      } catch {
+      } finally {
         setLoading(false)
       }
     }
@@ -116,8 +132,8 @@ export default function NotificationsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ notificationIds: ids }),
     })
-    setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, read: true } : n))
-    setUnreadCount(prev => Math.max(0, prev - ids.length))
+    setNotifications((prev) => prev.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)))
+    setUnreadCount((prev) => Math.max(0, prev - ids.length))
     setSelectedIds(new Set())
   }
 
@@ -127,7 +143,7 @@ export default function NotificationsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ markAllRead: true }),
     })
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
     setUnreadCount(0)
   }
 
@@ -137,12 +153,12 @@ export default function NotificationsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ notificationIds: ids }),
     })
-    setNotifications(prev => prev.filter(n => !ids.includes(n.id)))
+    setNotifications((prev) => prev.filter((n) => !ids.includes(n.id)))
     setSelectedIds(new Set())
   }
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -168,7 +184,9 @@ export default function NotificationsPage() {
           <div>
             <h1 className="text-2xl font-black text-white">Notifications</h1>
             <p className="text-sm text-gray-400 mt-1">
-              {unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}` : 'Tout est à jour'}
+              {unreadCount > 0
+                ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}`
+                : 'Tout est à jour'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -201,10 +219,13 @@ export default function NotificationsPage() {
 
         {/* Filters */}
         <div className="flex gap-2 mb-4">
-          {(['all', 'unread'] as const).map(f => (
+          {(['all', 'unread'] as const).map((f) => (
             <button
               key={f}
-              onClick={() => { setFilter(f); setLoading(true) }}
+              onClick={() => {
+                setFilter(f)
+                setLoading(true)
+              }}
               className={`px-4 py-2 rounded-full text-xs font-semibold border transition ${
                 filter === f
                   ? 'text-red-500 bg-red-500/10 border-red-500/30'
@@ -241,7 +262,10 @@ export default function NotificationsPage() {
                 >
                   {/* Checkbox */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); toggleSelect(notif.id) }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleSelect(notif.id)
+                    }}
                     className={`w-5 h-5 rounded border flex-shrink-0 mt-1 flex items-center justify-center transition ${
                       isSelected
                         ? 'bg-red-500 border-red-500'
@@ -273,19 +297,19 @@ export default function NotificationsPage() {
                     }}
                   >
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider ${colorClass.split(' ')[0]}`}>
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider ${colorClass.split(' ')[0]}`}
+                      >
                         {TYPE_LABELS[notif.type] || notif.type}
                       </span>
-                      {!notif.read && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                      )}
+                      {!notif.read && <div className="w-1.5 h-1.5 rounded-full bg-red-500" />}
                     </div>
-                    <h4 className={`text-sm font-semibold ${notif.read ? 'text-gray-300' : 'text-white'}`}>
+                    <h4
+                      className={`text-sm font-semibold ${notif.read ? 'text-gray-300' : 'text-white'}`}
+                    >
                       {notif.title}
                     </h4>
-                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                      {notif.message}
-                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{notif.message}</p>
                     <span className="text-[10px] text-gray-600 mt-1.5 block">
                       {formatDate(notif.createdAt)}
                     </span>
@@ -302,8 +326,7 @@ export default function NotificationsPage() {
               <p className="text-sm text-gray-600">
                 {filter === 'unread'
                   ? 'Tu es à jour ! Toutes les notifications ont été lues.'
-                  : 'Les alertes d\'enchères, paiements et mises à jour apparaîtront ici.'
-                }
+                  : "Les alertes d'enchères, paiements et mises à jour apparaîtront ici."}
               </p>
             </div>
           )}

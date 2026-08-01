@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendNewMessageEmail } from '@/lib/emails/resend'
+import { sendPushToUser } from '@/lib/web-push'
 
 // SECURITY FIX M3: Rate limiting sur l'envoi de messages (30/min par user)
 const msgRateMap = new Map<string, { count: number; resetAt: number }>()
@@ -31,10 +33,7 @@ setInterval(() => {
 }, 60_000)
 
 // GET — Messages d'une conversation
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -105,10 +104,7 @@ export async function GET(
 }
 
 // POST — Envoyer un message
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -119,10 +115,7 @@ export async function POST(
 
     // SECURITY FIX M3: Rate limit par utilisateur
     if (!checkMsgRate(userId)) {
-      return NextResponse.json(
-        { error: 'Trop de messages. Attendez un moment.' },
-        { status: 429 }
-      )
+      return NextResponse.json({ error: 'Trop de messages. Attendez un moment.' }, { status: 429 })
     }
 
     const { id: conversationId } = await params
@@ -133,13 +126,25 @@ export async function POST(
     }
 
     if (content.length > 2000) {
-      return NextResponse.json({ error: 'Message trop long (max 2000 caractères)' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Message trop long (max 2000 caractères)' },
+        { status: 400 }
+      )
     }
 
     // Vérifier que l'utilisateur fait partie de la conversation
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      select: { user1Id: true, user2Id: true },
+      select: {
+        user1Id: true,
+        user2Id: true,
+        user1: {
+          select: { id: true, email: true, name: true, displayName: true },
+        },
+        user2: {
+          select: { id: true, email: true, name: true, displayName: true },
+        },
+      },
     })
 
     if (!conversation) {
@@ -150,52 +155,96 @@ export async function POST(
       return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
     }
 
-    // Creer le message
-    const message = await prisma.message.create({
-      data: {
-        content: content.trim(),
-        senderId: userId,
-        conversationId,
-      },
-      select: {
-        id: true,
-        content: true,
-        read: true,
-        senderId: true,
-        createdAt: true,
-        sender: {
-          select: { id: true, name: true, displayName: true, avatar: true },
+    const recipient = conversation.user1Id === userId ? conversation.user2 : conversation.user1
+    const cleanContent = content.trim()
+    const notificationPreview = cleanContent.replace(/\s+/g, ' ').substring(0, 160)
+    const messageLink = `/messages?conv=${conversationId}`
+
+    // Le message, la conversation et la notification interne sont atomiques :
+    // en cas d'erreur, on n'enregistre pas un message sans prévenir son destinataire.
+    const result = await prisma.$transaction(async (tx) => {
+      const unreadBefore = await tx.message.count({
+        where: {
+          conversationId,
+          senderId: userId,
+          read: false,
         },
-      },
+      })
+
+      const message = await tx.message.create({
+        data: {
+          content: cleanContent,
+          senderId: userId,
+          conversationId,
+        },
+        select: {
+          id: true,
+          content: true,
+          read: true,
+          senderId: true,
+          createdAt: true,
+          sender: {
+            select: { id: true, name: true, displayName: true, avatar: true },
+          },
+        },
+      })
+
+      await tx.conversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessage: cleanContent.substring(0, 100),
+          lastMessageAt: new Date(),
+        },
+      })
+
+      const senderName = message.sender.displayName || message.sender.name || 'Quelqu’un'
+      await tx.notification.create({
+        data: {
+          type: 'NEW_MESSAGE',
+          title: `Nouveau message de ${senderName}`,
+          message: notificationPreview,
+          link: messageLink,
+          userId: recipient.id,
+        },
+      })
+
+      return {
+        message,
+        senderName,
+        // Un seul email tant que la conversation n'a pas été lue, pour éviter le spam.
+        shouldSendEmail: unreadBefore === 0,
+      }
     })
 
-    // Mettre a jour la conversation
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: {
-        lastMessage: content.trim().substring(0, 100),
-        lastMessageAt: new Date(),
-      },
+    const deliveryTasks: Array<Promise<unknown>> = [
+      sendPushToUser(recipient.id, {
+        title: `Nouveau message de ${result.senderName}`,
+        body: notificationPreview,
+        url: messageLink,
+        tag: `message-${conversationId}`,
+      }),
+    ]
+
+    if (result.shouldSendEmail && recipient.email) {
+      deliveryTasks.push(
+        sendNewMessageEmail({
+          to: recipient.email,
+          recipientName: recipient.displayName || recipient.name || 'membre',
+          senderName: result.senderName,
+          messagePreview: notificationPreview,
+          conversationId,
+        })
+      )
+    }
+
+    const deliveryResults = await Promise.allSettled(deliveryTasks)
+    deliveryResults.forEach((deliveryResult) => {
+      if (deliveryResult.status === 'rejected') {
+        console.warn('[MESSAGES] Notification externe échouée:', String(deliveryResult.reason))
+      }
     })
 
-    // Creer une notification pour le destinataire
-    const recipientId = conversation.user1Id === userId
-      ? conversation.user2Id
-      : conversation.user1Id
-
-    const senderName = session.user.name || 'Quelqu\'un'
-
-    await prisma.notification.create({
-      data: {
-        type: 'SYSTEM',
-        title: `Nouveau message de ${senderName}`,
-        message: content.trim().substring(0, 100),
-        link: `/messages?conv=${conversationId}`,
-        userId: recipientId,
-      },
-    })
-
-    return NextResponse.json({ message })
+    return NextResponse.json({ message: result.message })
   } catch (error: any) {
     console.error('Erreur envoi message:', String(error))
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

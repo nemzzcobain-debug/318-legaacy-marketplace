@@ -4,8 +4,20 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
-  Bell, Check, CheckCheck, Gavel, TrendingUp, CreditCard,
-  Shield, AlertCircle, X, Trash2, ChevronRight, Volume2, Music
+  Bell,
+  Check,
+  CheckCheck,
+  Gavel,
+  TrendingUp,
+  CreditCard,
+  Shield,
+  AlertCircle,
+  X,
+  Trash2,
+  ChevronRight,
+  Volume2,
+  Music,
+  MessageCircle,
 } from 'lucide-react'
 import PushNotificationToggle from './PushNotificationToggle'
 import { resolveNotificationLink } from '@/lib/notification-links'
@@ -30,6 +42,7 @@ const NOTIFICATION_ICONS: Record<string, any> = {
   PRODUCER_APPROVED: Shield,
   PRODUCER_REJECTED: X,
   NEW_BEAT: Music,
+  NEW_MESSAGE: MessageCircle,
   SYSTEM: Bell,
 }
 
@@ -43,6 +56,7 @@ const NOTIFICATION_COLORS: Record<string, string> = {
   PRODUCER_APPROVED: 'text-green-400 bg-green-500/10',
   PRODUCER_REJECTED: 'text-red-400 bg-red-500/10',
   NEW_BEAT: 'text-[#e11d48] bg-[#e11d48]/10',
+  NEW_MESSAGE: 'text-cyan-400 bg-cyan-500/10',
   SYSTEM: 'text-gray-400 bg-gray-500/10',
 }
 
@@ -51,7 +65,7 @@ function timeAgo(dateStr: string): string {
   const date = new Date(dateStr)
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-  if (diff < 60) return 'À l\'instant'
+  if (diff < 60) return "À l'instant"
   if (diff < 3600) return `Il y a ${Math.floor(diff / 60)}min`
   if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`
   if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)}j`
@@ -150,10 +164,8 @@ export default function NotificationBell() {
         body: JSON.stringify({ notificationIds: ids }),
       })
 
-      setNotifications(prev =>
-        prev.map(n => ids.includes(n.id) ? { ...n, read: true } : n)
-      )
-      setUnreadCount(prev => Math.max(0, prev - ids.length))
+      setNotifications((prev) => prev.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)))
+      setUnreadCount((prev) => Math.max(0, prev - ids.length))
     } catch {}
   }
 
@@ -166,7 +178,7 @@ export default function NotificationBell() {
         body: JSON.stringify({ markAllRead: true }),
       })
 
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
       setUnreadCount(0)
     } catch {}
   }
@@ -207,7 +219,13 @@ export default function NotificationBell() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-12 w-[min(380px,calc(100vw-1rem))] max-h-[620px] bg-[#111111] border border-[#222222] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden z-50" id="notifications-dropdown" role="dialog" aria-label="Notifications" aria-modal="true">
+        <div
+          className="absolute right-0 top-12 w-[min(380px,calc(100vw-1rem))] max-h-[620px] bg-[#111111] border border-[#222222] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden z-50"
+          id="notifications-dropdown"
+          role="dialog"
+          aria-label="Notifications"
+          aria-modal="true"
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#222222]">
             <div className="flex items-center gap-2">
@@ -233,7 +251,12 @@ export default function NotificationBell() {
           <PushNotificationToggle />
 
           {/* List */}
-          <div className="overflow-y-auto max-h-[360px]" role="log" aria-live="polite" aria-label="Liste des notifications">
+          <div
+            className="overflow-y-auto max-h-[360px]"
+            role="log"
+            aria-live="polite"
+            aria-label="Liste des notifications"
+          >
             {notifications.length > 0 ? (
               notifications.map((notif) => {
                 const Icon = NOTIFICATION_ICONS[notif.type] || Bell
@@ -249,14 +272,18 @@ export default function NotificationBell() {
                     `}
                   >
                     {/* Icon */}
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${colorClass}`}>
+                    <div
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${colorClass}`}
+                    >
                       <Icon size={16} />
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <p className={`text-xs font-semibold leading-tight ${notif.read ? 'text-gray-300' : 'text-white'}`}>
+                        <p
+                          className={`text-xs font-semibold leading-tight ${notif.read ? 'text-gray-300' : 'text-white'}`}
+                        >
                           {notif.title}
                         </p>
                         {!notif.read && (
@@ -293,7 +320,10 @@ export default function NotificationBell() {
           {notifications.length > 0 && (
             <div className="border-t border-[#222222] p-2">
               <button
-                onClick={() => { router.push('/notifications'); setOpen(false) }}
+                onClick={() => {
+                  router.push('/notifications')
+                  setOpen(false)
+                }}
                 className="w-full py-2 text-xs font-semibold text-red-500 hover:bg-red-500/5 rounded-lg transition"
               >
                 Voir toutes les notifications
