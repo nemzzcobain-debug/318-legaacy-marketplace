@@ -1,7 +1,13 @@
 import { createHash } from 'crypto'
-import { getLicenseDetails, normalizePublicLicenseType } from '@/lib/licenses'
+import {
+  getLicenseDetails,
+  normalizePublicLicenseType,
+  PUBLISHING_PARTICIPATION_EFFECTIVE_AT,
+  PUBLISHING_PARTICIPATION_PERCENT,
+} from '@/lib/licenses'
 
-export const LICENSE_CONTRACT_VERSION = '318-LICENCE-2026-07'
+const PREVIOUS_LICENSE_CONTRACT_VERSION = '318-LICENCE-2026-07'
+export const LICENSE_CONTRACT_VERSION = '318-LICENCE-2026-08'
 
 export interface LicenseContractData {
   purchaseId: string
@@ -49,7 +55,7 @@ const LICENSE_CLAUSES = {
     files: 'Fichier MP3 uniquement.',
     rights: [
       "Droit d'intégrer le beat dans une seule oeuvre musicale originale.",
-      "Diffusion autorisée dans la limite cumulée de 5 000 écoutes ou vues.",
+      'Diffusion autorisée dans la limite cumulée de 5 000 écoutes ou vues.',
       'Usage promotionnel et non commercial uniquement.',
       "Aucune revente, sous-licence ou distribution du beat seul n'est autorisée.",
     ],
@@ -151,8 +157,7 @@ class ContractLayout {
     align: 'left' | 'right' = 'left'
   ) {
     const safeValue = escapePdfText(value)
-    const adjustedX =
-      align === 'right' ? x - cleanPdfText(value).length * size * 0.5 : x
+    const adjustedX = align === 'right' ? x - cleanPdfText(value).length * size * 0.5 : x
     this.currentPage.push(
       `BT ${COLORS[color]} rg /${font === 'bold' ? 'F2' : 'F1'} ${size} Tf ${adjustedX.toFixed(
         2
@@ -173,9 +178,7 @@ class ContractLayout {
   section(value: string) {
     // Garde le titre avec au moins le premier paragraphe ou la première puce.
     this.ensureHeight(72)
-    this.currentPage.push(
-      `${COLORS.red} rg ${MARGIN} ${this.y - 5} 4 18 re f`
-    )
+    this.currentPage.push(`${COLORS.red} rg ${MARGIN} ${this.y - 5} 4 18 re f`)
     this.text(MARGIN + 13, this.y, 12, 'bold', value.toUpperCase(), 'white')
     this.y -= 27
   }
@@ -218,15 +221,18 @@ class ContractLayout {
     const gap = 14
     const width = (CONTENT_WIDTH - gap) / 2
     const bottom = this.y - 86
-    this.currentPage.push(
-      `0.10 0.10 0.13 rg ${MARGIN} ${bottom} ${width} 88 re f`
-    )
-    this.currentPage.push(
-      `0.10 0.10 0.13 rg ${MARGIN + width + gap} ${bottom} ${width} 88 re f`
-    )
+    this.currentPage.push(`0.10 0.10 0.13 rg ${MARGIN} ${bottom} ${width} 88 re f`)
+    this.currentPage.push(`0.10 0.10 0.13 rg ${MARGIN + width + gap} ${bottom} ${width} 88 re f`)
     this.text(MARGIN + 12, this.y - 17, 8, 'bold', 'LE PRODUCTEUR', 'red')
     this.text(MARGIN + 12, this.y - 36, 9.5, 'bold', producerName, 'white')
-    this.text(MARGIN + 12, this.y - 57, 7.8, 'regular', 'Licence proposée via son compte vérifié', 'muted')
+    this.text(
+      MARGIN + 12,
+      this.y - 57,
+      7.8,
+      'regular',
+      'Licence proposée via son compte vérifié',
+      'muted'
+    )
     this.text(MARGIN + width + gap + 12, this.y - 17, 8, 'bold', "L'ACHETEUR", 'red')
     this.text(MARGIN + width + gap + 12, this.y - 36, 9.5, 'bold', buyerName, 'white')
     this.text(
@@ -246,9 +252,7 @@ class ContractLayout {
       page.push(`${COLORS.muted} RG 0.5 w ${MARGIN} 49 m ${PAGE_WIDTH - MARGIN} 49 l S`)
       const footer =
         'Document généré automatiquement et conservé avec la preuve de paiement Stripe.'
-      page.push(
-        `BT ${COLORS.muted} rg /F1 7 Tf ${MARGIN} 31 Td (${escapePdfText(footer)}) Tj ET`
-      )
+      page.push(`BT ${COLORS.muted} rg /F1 7 Tf ${MARGIN} 31 Td (${escapePdfText(footer)}) Tj ET`)
       page.push(
         `BT ${COLORS.muted} rg /F1 7 Tf ${PAGE_WIDTH - MARGIN - 36} 31 Td (Page ${
           index + 1
@@ -262,7 +266,10 @@ class ContractLayout {
 function createPdfDocument(pageStreams: string[]): Buffer {
   const pageCount = pageStreams.length
   const firstPageObjectId = 5
-  const pageObjectIds = Array.from({ length: pageCount }, (_, index) => firstPageObjectId + index * 2)
+  const pageObjectIds = Array.from(
+    { length: pageCount },
+    (_, index) => firstPageObjectId + index * 2
+  )
   const objects: Array<{ id: number; body: Buffer }> = [
     { id: 1, body: Buffer.from('<< /Type /Catalog /Pages 2 0 R >>', 'latin1') },
     {
@@ -337,12 +344,21 @@ function createPdfDocument(pageStreams: string[]): Buffer {
   return Buffer.concat(chunks)
 }
 
-export function getContractReference(purchaseId: string): string {
-  const digest = createHash('sha256').update(`${LICENSE_CONTRACT_VERSION}:${purchaseId}`).digest('hex')
+export function getLicenseContractVersion(purchasedAt: Date): string {
+  return purchasedAt >= PUBLISHING_PARTICIPATION_EFFECTIVE_AT
+    ? LICENSE_CONTRACT_VERSION
+    : PREVIOUS_LICENSE_CONTRACT_VERSION
+}
+
+export function getContractReference(purchaseId: string, purchasedAt?: Date): string {
+  const version = purchasedAt ? getLicenseContractVersion(purchasedAt) : LICENSE_CONTRACT_VERSION
+  const digest = createHash('sha256').update(`${version}:${purchaseId}`).digest('hex')
   return `318-${digest.slice(0, 12).toUpperCase()}`
 }
 
-export function getContractFileName(data: Pick<LicenseContractData, 'purchaseId' | 'beat'>): string {
+export function getContractFileName(
+  data: Pick<LicenseContractData, 'purchaseId' | 'beat'>
+): string {
   const title = data.beat.title
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -356,7 +372,9 @@ export function generateLicenseContractPdf(data: LicenseContractData): Buffer {
   const licenseType = normalizePublicLicenseType(data.licenseType)
   const license = getLicenseDetails(licenseType)
   const clauses = LICENSE_CLAUSES[licenseType]
-  const reference = getContractReference(data.purchaseId)
+  const contractVersion = getLicenseContractVersion(data.purchasedAt)
+  const reference = getContractReference(data.purchaseId, data.purchasedAt)
+  const publishingParticipationApplies = data.purchasedAt >= PUBLISHING_PARTICIPATION_EFFECTIVE_AT
   const purchasedAt = new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'long',
     timeStyle: 'short',
@@ -382,9 +400,12 @@ export function generateLicenseContractPdf(data: LicenseContractData): Buffer {
   layout.detail('Intermédiaire technique', '318 LEGAACY Marketplace - 318marketplace.com')
 
   layout.section('Beat et transaction')
-  layout.detail('Beat', `${data.beat.title} (${data.beat.genre}, ${data.beat.bpm} BPM${data.beat.key ? `, ${data.beat.key}` : ''})`)
+  layout.detail(
+    'Beat',
+    `${data.beat.title} (${data.beat.genre}, ${data.beat.bpm} BPM${data.beat.key ? `, ${data.beat.key}` : ''})`
+  )
   layout.detail('Identifiant du beat', data.beat.id)
-  layout.detail('Référence du contrat', `${reference} - version ${LICENSE_CONTRACT_VERSION}`)
+  layout.detail('Référence du contrat', `${reference} - version ${contractVersion}`)
   layout.detail('Date de conclusion', purchasedAt)
   layout.detail('Type de vente', data.purchaseType === 'AUCTION' ? 'Enchère' : 'Achat direct')
   layout.detail('Prix payé', amount)
@@ -402,14 +423,30 @@ export function generateLicenseContractPdf(data: LicenseContractData): Buffer {
   layout.bullet(
     "Sauf mention contraire, le producteur reste titulaire de ses droits d'auteur et de ses droits moraux. Le crédit « Prod. by " +
       data.producer.name +
-      " » doit apparaître lorsque le format de diffusion le permet."
+      ' » doit apparaître lorsque le format de diffusion le permet.'
   )
   layout.bullet(
     "Le producteur garantit disposer des droits nécessaires sur le beat et déclare qu'il ne contient pas de sample non autorisé. Tout sample ou élément tiers déclaré séparément reste soumis à ses propres autorisations."
   )
   layout.bullet(
-    "Toute utilisation illicite, diffamatoire ou portant atteinte aux droits de tiers est interdite. Les obligations de déclaration auprès des sociétés de gestion collective restent à la charge des parties."
+    'Toute utilisation illicite, diffamatoire ou portant atteinte aux droits de tiers est interdite. Les obligations de déclaration auprès des sociétés de gestion collective restent à la charge des parties.'
   )
+
+  if (publishingParticipationApplies) {
+    layout.section(`Participation de ${PUBLISHING_PARTICIPATION_PERCENT} % sur les éditions`)
+    layout.paragraph(
+      `En contrepartie des services de mise en relation, de sélection, de contractualisation et de suivi fournis par 318 LEGAACY Marketplace, 318 LEGAACY perçoit une participation contractuelle égale à ${PUBLISHING_PARTICIPATION_PERCENT} % des revenus nets d'édition effectivement encaissés au titre de l'oeuvre musicale incorporant le beat.`
+    )
+    layout.bullet(
+      "Les revenus d'édition concernés sont les sommes liées à l'exploitation de la composition musicale, notamment au titre de la reproduction mécanique, de la représentation publique et de la synchronisation. Sont exclus le prix de vente de la licence, les revenus du master et les droits voisins."
+    )
+    layout.bullet(
+      "Cette participation financière ne constitue ni une cession de droits d'auteur, ni une attribution de qualité d'auteur, de compositeur, d'éditeur ou de copropriétaire à 318 LEGAACY. Les droits moraux et les quotes-parts d'auteur et de compositeur restent inchangés."
+    )
+    layout.bullet(
+      "Elle s'applique pendant la durée et sur le territoire d'exploitation autorisés par la licence. La partie qui encaisse ces revenus transmet à 318 LEGAACY une reddition de comptes annuelle et règle la somme due dans les trente jours suivant la demande de paiement correspondante."
+    )
+  }
 
   layout.section('Acceptation, preuve et droit applicable')
   layout.paragraph(

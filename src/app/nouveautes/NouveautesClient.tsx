@@ -788,6 +788,11 @@ export default function NouveautesClient({ preselectedBeatId }: NouveautesClient
                             <span>{finalPrice} EUR</span>
                           </div>
                           <div className="border-t border-[#1e1e2e] my-3" />
+                          <div className="mb-3 rounded-xl border border-red-500/20 bg-red-500/[0.06] p-3 text-[10px] leading-4 text-gray-400">
+                            318 LEGAACY perçoit 5 % des revenus nets d&apos;édition générés par le
+                            morceau, sans acquérir de droits d&apos;auteur et hors revenus du
+                            master.
+                          </div>
                           <div className="flex items-center justify-between mb-4">
                             <span className="text-sm font-bold text-white">Total</span>
                             <span className="text-lg font-black text-white">{finalPrice} EUR</span>
