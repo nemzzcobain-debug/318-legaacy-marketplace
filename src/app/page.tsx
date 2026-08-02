@@ -1200,19 +1200,25 @@ export default function Home() {
                       >
                         <div className="flex gap-3 lg:contents">
                           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a0a2e] via-[#111] to-[#0a0a1a] lg:h-[76px] lg:w-[76px]">
-                            {currentBeat.coverImage && (
-                              <Image
-                                src={currentBeat.coverImage}
-                                alt={currentBeat.title}
-                                fill
-                                sizes="76px"
-                                className="absolute inset-0 object-cover opacity-75 transition duration-500 group-hover:scale-105 group-hover:opacity-90"
-                              />
-                            )}
-                            <div className="absolute inset-0 bg-black/20" />
-                            <span className="absolute left-2 top-2 rounded-md bg-black/65 px-1.5 py-0.5 text-[8px] font-black text-gray-300 backdrop-blur">
-                              #{String(beatIndex + 1).padStart(2, '0')}
-                            </span>
+                            <Link
+                              href={actionHref}
+                              aria-label={`Voir les détails de ${currentBeat.title}`}
+                              className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-400"
+                            >
+                              {currentBeat.coverImage && (
+                                <Image
+                                  src={currentBeat.coverImage}
+                                  alt={currentBeat.title}
+                                  fill
+                                  sizes="76px"
+                                  className="absolute inset-0 object-cover opacity-75 transition duration-500 group-hover:scale-105 group-hover:opacity-90"
+                                />
+                              )}
+                              <div className="absolute inset-0 bg-black/20" />
+                              <span className="absolute left-2 top-2 rounded-md bg-black/65 px-1.5 py-0.5 text-[8px] font-black text-gray-300 backdrop-blur">
+                                #{String(beatIndex + 1).padStart(2, '0')}
+                              </span>
+                            </Link>
                             <button
                               type="button"
                               onClick={() => togglePlay(currentBeat.id, currentBeat.audioUrl)}
@@ -1221,7 +1227,7 @@ export default function Home() {
                                   ? `Mettre ${currentBeat.title} en pause`
                                   : `Écouter ${currentBeat.title}`
                               }
-                              className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white text-black shadow-xl transition hover:scale-105"
+                              className="absolute bottom-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white text-black shadow-xl transition hover:scale-105"
                             >
                               {playingId === currentBeat.id ? (
                                 <Pause size={14} fill="currentColor" />
@@ -1233,18 +1239,27 @@ export default function Home() {
 
                           <div className="min-w-0 self-center">
                             <div className="flex items-center gap-2">
-                              <h3 className="truncate text-base font-black text-white transition group-hover:text-red-400">
+                              <Link
+                                href={actionHref}
+                                className="truncate rounded text-base font-black text-white transition hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                              >
                                 {currentBeat.title}
-                              </h3>
+                              </Link>
                               <WaveformVisual active={playingId === currentBeat.id} />
                             </div>
-                            <div className="mt-1 flex items-center gap-1.5">
-                              <span className="truncate text-xs font-medium text-gray-500">
-                                {currentBeat.producer.name}
-                              </span>
+                            <Link
+                              href={`/producer/${currentBeat.producer.id}`}
+                              className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate rounded text-xs font-semibold text-gray-400 underline decoration-transparent underline-offset-4 transition hover:text-white hover:decoration-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                              aria-label={`Voir le profil de ${currentBeat.producer.name}`}
+                            >
+                              <span className="truncate">{currentBeat.producer.name}</span>
                               <BadgeCheck size={12} className="shrink-0 text-red-400" />
-                            </div>
-                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            </Link>
+                            <Link
+                              href={actionHref}
+                              className="mt-2 flex flex-wrap items-center gap-1.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                              aria-label={`Voir les informations de ${currentBeat.title}`}
+                            >
                               <span className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-gray-500">
                                 {currentBeat.genre}
                               </span>
@@ -1263,7 +1278,7 @@ export default function Home() {
                                   Licence {getLicenseDetails(auction.licenseType).label}
                                 </span>
                               )}
-                            </div>
+                            </Link>
                             {auction && (
                               <p className="mt-1.5 text-[9px] font-semibold text-gray-600">
                                 {getLicenseDetails(auction.licenseType).shortDescription}
@@ -1290,9 +1305,7 @@ export default function Home() {
                             ) : (
                               <>
                                 <div className="mt-0.5 text-xl font-black text-white lg:mt-0">
-                                  {currentBeat.directPrice
-                                    ? `${currentBeat.directPrice}€`
-                                    : '—'}
+                                  {currentBeat.directPrice ? `${currentBeat.directPrice}€` : '—'}
                                 </div>
                                 <span className="text-[9px] text-gray-600">
                                   {currentBeat.directPrice ? 'Achat direct' : 'En attente'}

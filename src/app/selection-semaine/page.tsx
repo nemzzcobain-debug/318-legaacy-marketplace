@@ -69,9 +69,7 @@ export default function WeeklySelectionPage() {
         setBeats(data.beats || [])
       } catch (loadError) {
         setError(
-          loadError instanceof Error
-            ? loadError.message
-            : 'Impossible de charger la sélection'
+          loadError instanceof Error ? loadError.message : 'Impossible de charger la sélection'
         )
       } finally {
         setLoading(false)
@@ -176,21 +174,27 @@ export default function WeeklySelectionPage() {
                 >
                   <div className="flex gap-3 lg:contents">
                     <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a0a2e] via-[#111] to-[#0a0a1a] lg:h-[76px] lg:w-[76px]">
-                      {beat.coverImage ? (
-                        <Image
-                          src={beat.coverImage}
-                          alt={beat.title}
-                          fill
-                          className="object-cover opacity-80 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <Music size={22} className="text-gray-600" />
-                        </div>
-                      )}
-                      <span className="absolute left-2 top-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[8px] font-black text-gray-300">
-                        #{String(index + 1).padStart(2, '0')}
-                      </span>
+                      <Link
+                        href={actionHref}
+                        aria-label={`Voir les détails de ${beat.title}`}
+                        className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-400"
+                      >
+                        {beat.coverImage ? (
+                          <Image
+                            src={beat.coverImage}
+                            alt={beat.title}
+                            fill
+                            className="object-cover opacity-80 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Music size={22} className="text-gray-600" />
+                          </div>
+                        )}
+                        <span className="absolute left-2 top-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[8px] font-black text-gray-300">
+                          #{String(index + 1).padStart(2, '0')}
+                        </span>
+                      </Link>
                       <button
                         type="button"
                         onClick={() => togglePlay(beat.id, beat.audioUrl)}
@@ -199,7 +203,7 @@ export default function WeeklySelectionPage() {
                             ? `Mettre ${beat.title} en pause`
                             : `Écouter ${beat.title}`
                         }
-                        className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white text-black shadow-xl transition hover:scale-105"
+                        className="absolute bottom-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white text-black shadow-xl transition hover:scale-105"
                       >
                         {playingId === beat.id ? (
                           <Pause size={14} fill="currentColor" />
@@ -210,17 +214,25 @@ export default function WeeklySelectionPage() {
                     </div>
 
                     <div className="min-w-0 self-center">
-                      <h2 className="truncate text-base font-black transition group-hover:text-red-400">
+                      <Link
+                        href={actionHref}
+                        className="block truncate text-base font-black transition hover:text-red-400 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                      >
                         {beat.title}
-                      </h2>
+                      </Link>
                       <Link
                         href={`/producer/${beat.producer.id}`}
-                        className="mt-1 flex items-center gap-1.5 truncate text-xs font-medium text-gray-500 hover:text-white"
+                        className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate rounded text-xs font-semibold text-gray-400 underline decoration-transparent underline-offset-4 transition hover:text-white hover:decoration-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                        aria-label={`Voir le profil de ${beat.producer.name}`}
                       >
                         {beat.producer.name}
                         <BadgeCheck size={12} className="shrink-0 text-red-400" />
                       </Link>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
+                      <Link
+                        href={actionHref}
+                        className="mt-2 flex flex-wrap gap-1.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                        aria-label={`Voir les informations de ${beat.title}`}
+                      >
                         {[beat.genre, `${beat.bpm} BPM`, beat.key].filter(Boolean).map((label) => (
                           <span
                             key={label}
@@ -236,7 +248,7 @@ export default function WeeklySelectionPage() {
                             {beat.auction.licenseType}
                           </span>
                         )}
-                      </div>
+                      </Link>
                     </div>
                   </div>
 
