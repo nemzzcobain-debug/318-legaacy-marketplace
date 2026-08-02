@@ -779,8 +779,9 @@ export default function AuctionClient({ auctionId }: AuctionClientProps) {
                         Elle est définie par le beatmaker et ne change pas après ta mise.
                       </p>
                       <p className="mt-2 border-t border-red-500/10 pt-2 text-[9px] leading-4 text-zinc-500">
-                        318 LEGAACY perçoit 5 % des revenus nets d&apos;édition générés par le
-                        morceau, sans acquérir de droits d&apos;auteur et hors revenus du master.
+                        318 LEGAACY perçoit 5 % de la seule part des revenus nets d&apos;édition
+                        revenant au producteur/compositeur. Les parts de l&apos;artiste et des autres
+                        auteurs ne sont pas touchées.
                       </p>
                     </div>
                   </div>

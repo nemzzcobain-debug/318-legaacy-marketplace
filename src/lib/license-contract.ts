@@ -435,16 +435,19 @@ export function generateLicenseContractPdf(data: LicenseContractData): Buffer {
   if (publishingParticipationApplies) {
     layout.section(`Participation de ${PUBLISHING_PARTICIPATION_PERCENT} % sur les éditions`)
     layout.paragraph(
-      `En contrepartie des services de mise en relation, de sélection, de contractualisation et de suivi fournis par 318 LEGAACY Marketplace, 318 LEGAACY perçoit une participation contractuelle égale à ${PUBLISHING_PARTICIPATION_PERCENT} % des revenus nets d'édition effectivement encaissés au titre de l'oeuvre musicale incorporant le beat.`
+      `En contrepartie des services de mise en relation, de sélection, de contractualisation et de suivi fournis par 318 LEGAACY Marketplace, 318 LEGAACY perçoit une participation contractuelle égale à ${PUBLISHING_PARTICIPATION_PERCENT} % des revenus nets d'édition revenant au producteur/compositeur du beat au titre de l'oeuvre musicale qui l'incorpore.`
     )
     layout.bullet(
       "Les revenus d'édition concernés sont les sommes liées à l'exploitation de la composition musicale, notamment au titre de la reproduction mécanique, de la représentation publique et de la synchronisation. Sont exclus le prix de vente de la licence, les revenus du master et les droits voisins."
     )
     layout.bullet(
-      "Cette participation financière ne constitue ni une cession de droits d'auteur, ni une attribution de qualité d'auteur, de compositeur, d'éditeur ou de copropriétaire à 318 LEGAACY. Les droits moraux et les quotes-parts d'auteur et de compositeur restent inchangés."
+      "Le calcul porte exclusivement sur la part d'édition du producteur/compositeur du beat. Pour 100 EUR de revenus nets d'édition lui revenant, 5 EUR sont dus à 318 LEGAACY et il conserve 95 EUR. Les parts de l'artiste et des autres auteurs ou compositeurs ne sont pas affectées."
     )
     layout.bullet(
-      "Elle s'applique pendant la durée et sur le territoire d'exploitation autorisés par la licence. La partie qui encaisse ces revenus transmet à 318 LEGAACY une reddition de comptes annuelle et règle la somme due dans les trente jours suivant la demande de paiement correspondante."
+      "Cette participation ne constitue ni une cession de droits d'auteur, ni une attribution de qualité d'auteur, de compositeur, d'éditeur ou de copropriétaire à 318 LEGAACY. Les droits moraux restent inchangés."
+    )
+    layout.bullet(
+      "Elle s'applique pendant la durée et sur le territoire d'exploitation autorisés par la licence. Le producteur/compositeur, ou l'entité qui collecte sa part pour son compte, transmet à 318 LEGAACY une reddition de comptes annuelle et règle la somme due dans les trente jours suivant la demande de paiement correspondante."
     )
   }
 
