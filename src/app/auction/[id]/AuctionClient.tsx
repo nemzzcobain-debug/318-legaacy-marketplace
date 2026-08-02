@@ -778,6 +778,10 @@ export default function AuctionClient({ auctionId }: AuctionClientProps) {
                       <p className="mt-1 text-[9px] leading-4 text-zinc-600">
                         Elle est définie par le beatmaker et ne change pas après ta mise.
                       </p>
+                      <p className="mt-2 border-t border-red-500/10 pt-2 text-[9px] leading-4 text-zinc-500">
+                        318 LEGAACY perçoit 5 % des revenus nets d&apos;édition générés par le
+                        morceau, sans acquérir de droits d&apos;auteur et hors revenus du master.
+                      </p>
                     </div>
                   </div>
 

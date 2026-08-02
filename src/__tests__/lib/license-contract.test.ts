@@ -3,6 +3,8 @@ import {
   generateLicenseContractPdf,
   getContractFileName,
   getContractReference,
+  getLicenseContractVersion,
+  LICENSE_CONTRACT_VERSION,
   type LicenseContractData,
 } from '@/lib/license-contract'
 
@@ -45,12 +47,29 @@ describe('contrat de licence PDF', () => {
   })
 
   it('produit une référence stable et un nom de fichier sûr', () => {
-    expect(getContractReference(contractData.purchaseId)).toMatch(/^318-[A-F0-9]{12}$/)
-    expect(getContractReference(contractData.purchaseId)).toBe(
-      getContractReference(contractData.purchaseId)
+    expect(getContractReference(contractData.purchaseId, contractData.purchasedAt)).toMatch(
+      /^318-[A-F0-9]{12}$/
     )
-    expect(getContractFileName(contractData)).toBe(
-      'contrat-licence-Energie-Nocturne-test_318.pdf'
+    expect(getContractReference(contractData.purchaseId, contractData.purchasedAt)).toBe(
+      getContractReference(contractData.purchaseId, contractData.purchasedAt)
     )
+    expect(getContractFileName(contractData)).toBe('contrat-licence-Energie-Nocturne-test_318.pdf')
+  })
+
+  it('ajoute les 5 % sur les éditions uniquement aux nouveaux contrats', () => {
+    const previousPdf = generateLicenseContractPdf(contractData).toString('latin1')
+    const newContractData = {
+      ...contractData,
+      purchaseId: 'purchase_after_publishing_clause',
+      purchasedAt: new Date('2026-08-03T00:01:00+02:00'),
+    }
+    const newPdf = generateLicenseContractPdf(newContractData).toString('latin1')
+
+    expect(previousPdf).not.toContain('PARTICIPATION DE 5 % SUR LES ÉDITIONS')
+    expect(previousPdf).toContain('version 318-LICENCE-2026-07')
+    expect(newPdf).toContain('PARTICIPATION DE 5 % SUR LES ÉDITIONS')
+    expect(newPdf).toContain("% des revenus nets d'édition effectivement encaissés")
+    expect(newPdf).toContain(`version ${LICENSE_CONTRACT_VERSION}`)
+    expect(getLicenseContractVersion(newContractData.purchasedAt)).toBe(LICENSE_CONTRACT_VERSION)
   })
 })

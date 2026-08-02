@@ -73,6 +73,12 @@ export default function CGVPage() {
             <p>L&apos;achat d&apos;un beat via une enchère confère à l&apos;acheteur une <strong className="text-white">licence d&apos;utilisation</strong> dont les termes sont définis par le producteur (type de licence choisi lors de la mise en vente).</p>
             <p>Après confirmation du paiement, un contrat de licence individuel est généré au format PDF. Il reprend les parties, le beat, le prix, la transaction, les fichiers remis, les droits concédés et leurs limites. Ce document est joint à l&apos;email de confirmation et reste disponible dans l&apos;espace « Mes Achats ».</p>
             <p>Sauf licence exclusive mentionnant expressément le transfert de propriété, le producteur reste titulaire des droits d&apos;auteur sur ses compositions.</p>
+            <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-2">
+              <p><strong className="text-white">Participation sur les éditions à compter du 3 août 2026 :</strong></p>
+              <p>318 LEGAACY perçoit <strong className="text-red-400">5 % des revenus nets d&apos;édition effectivement encaissés</strong> au titre de l&apos;œuvre musicale incorporant le beat.</p>
+              <p>Cette participation ne transfère aucun droit d&apos;auteur à 318 LEGAACY et ne concerne ni les revenus du master, ni les droits voisins, ni le prix payé pour la licence.</p>
+              <p>La partie qui encaisse ces revenus fournit une reddition de comptes annuelle et règle la somme due dans les trente jours suivant la demande de paiement correspondante.</p>
+            </div>
             <p>L&apos;acheteur s&apos;engage a respecter les conditions de la licence acquise.</p>
           </div>
         </section>

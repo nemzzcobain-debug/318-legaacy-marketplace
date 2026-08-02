@@ -1,5 +1,8 @@
 export type PublicLicenseType = 'BASIC' | 'PREMIUM' | 'EXCLUSIVE'
 
+export const PUBLISHING_PARTICIPATION_PERCENT = 5
+export const PUBLISHING_PARTICIPATION_EFFECTIVE_AT = new Date('2026-08-03T00:00:00+02:00')
+
 export interface LicenseDetails {
   type: PublicLicenseType
   label: string
