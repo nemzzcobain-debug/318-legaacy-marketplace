@@ -75,9 +75,10 @@ export default function CGVPage() {
             <p>Sauf licence exclusive mentionnant expressément le transfert de propriété, le producteur reste titulaire des droits d&apos;auteur sur ses compositions.</p>
             <div className="bg-[#111] border border-[#1e1e2e] rounded-xl p-5 mt-3 space-y-2">
               <p><strong className="text-white">Participation sur les éditions à compter du 3 août 2026 :</strong></p>
-              <p>318 LEGAACY perçoit <strong className="text-red-400">5 % des revenus nets d&apos;édition effectivement encaissés</strong> au titre de l&apos;œuvre musicale incorporant le beat.</p>
+              <p>318 LEGAACY perçoit <strong className="text-red-400">5 % des revenus nets d&apos;édition revenant au producteur/compositeur du beat</strong> au titre de l&apos;œuvre musicale qui l&apos;incorpore.</p>
+              <p>Pour 100 EUR de revenus nets d&apos;édition revenant au producteur/compositeur, 5 EUR sont dus à 318 LEGAACY et il conserve 95 EUR. Les parts de l&apos;artiste et des autres auteurs ou compositeurs ne sont pas affectées.</p>
               <p>Cette participation ne transfère aucun droit d&apos;auteur à 318 LEGAACY et ne concerne ni les revenus du master, ni les droits voisins, ni le prix payé pour la licence.</p>
-              <p>La partie qui encaisse ces revenus fournit une reddition de comptes annuelle et règle la somme due dans les trente jours suivant la demande de paiement correspondante.</p>
+              <p>Le producteur/compositeur, ou l&apos;entité qui collecte sa part pour son compte, fournit une reddition de comptes annuelle et règle la somme due dans les trente jours suivant la demande de paiement correspondante.</p>
             </div>
             <p>L&apos;acheteur s&apos;engage a respecter les conditions de la licence acquise.</p>
           </div>

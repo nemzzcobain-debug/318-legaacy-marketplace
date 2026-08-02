@@ -471,9 +471,10 @@ export default function CheckoutPage() {
                   </>
                 )}
                 <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/[0.06] p-3 text-[10px] leading-4 text-gray-400">
-                  318 LEGAACY perçoit 5 % des revenus nets d&apos;édition générés par le morceau,
-                  sans acquérir de droits d&apos;auteur et hors revenus du master. Cette règle
-                  s&apos;applique aux achats conclus à compter du 3 août 2026.
+                  318 LEGAACY perçoit 5 % de la seule part des revenus nets d&apos;édition revenant
+                  au producteur/compositeur. Les parts de l&apos;artiste et des autres auteurs ne
+                  sont pas touchées. Cette règle s&apos;applique aux achats conclus à compter du 3
+                  août 2026.
                 </div>
               </div>
             </div>
