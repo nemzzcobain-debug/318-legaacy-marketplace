@@ -374,7 +374,7 @@ export default function UploadBeatPage() {
             headers: { 'Content-Type': stemContentType },
             body: stemFile,
           })
-          if (stemUploadRes.ok) {
+          if (!stemUploadRes.ok) { setError(`Échec de l'upload du stem « ${stemFile.name} » (${(stemFile.size / (1024 * 1024)).toFixed(1)} MB). Réessaie ou vérifie la taille du fichier.`); setUploading(false); return } if (stemUploadRes.ok) {
             uploadedStems.push({
               name: stemFile.name,
               url: stemData.privateUrl,
