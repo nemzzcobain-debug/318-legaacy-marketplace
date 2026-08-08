@@ -194,7 +194,7 @@ export default function BeatCard({ auction, onPlay, isPlaying }: Props) {
           {/* Stats */}
           <div className="flex justify-between mt-2.5 text-[10px] text-gray-400">
             <span className="flex items-center gap-1">
-              <Play size={10} /> {beat.plays}
+              <Play size={10} /> {beat.plays >= 20 ? beat.plays.toLocaleString() : '—'}
             </span>
             <span className="flex items-center gap-1">
               <Heart size={10} /> {beat._count?.likes || 0}
