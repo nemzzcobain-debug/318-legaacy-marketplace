@@ -1455,7 +1455,7 @@ export default function AdminPage() {
                         >
                           {beat.isFeatured ? '★ Retirer vedette' : '☆ Mettre en vedette'}
                         </button>
-                        <span className="text-xs text-gray-500">{beat._count?.likes || 0} ♥</span>
+                        <span className="text-xs text-gray-500">{beat.plays || 0} écoutes</span><span className="text-xs text-gray-500">{beat._count?.likes || 0} ♥</span>{beat.auctions?.[0]?.totalBids ? <span className="text-xs text-gray-500">{beat.auctions[0].totalBids} enchères</span> : null}
                       </div>
                     </div>
 
