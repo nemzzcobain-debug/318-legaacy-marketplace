@@ -1388,7 +1388,7 @@ export default function AdminPage() {
                           <p className="text-xs text-gray-400">
                             {beat.producer?.displayName || beat.producer?.name || 'Inconnu'}{' '}
                             &middot; {beat.genre || 'N/A'} &middot; {beat.bpm || '?'} BPM &middot;{' '}
-                            {beat.key || '?'}
+                            {beat.key || '?'} &middot; Uploadé le {formatDate(beat.createdAt)}
                           </p>
                           {!beat.audioUrl && (
                             <p className="text-xs text-red-400 mt-0.5">Pas de fichier audio</p>
