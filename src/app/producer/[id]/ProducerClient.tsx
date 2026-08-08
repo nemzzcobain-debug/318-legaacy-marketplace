@@ -326,7 +326,7 @@ export default function ProducerClient({ producerId }: ProducerClientProps) {
 
                       {/* Stats */}
                       <div className="hidden sm:flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1"><Play size={11} /> {beat.plays}</span>
+                        <span className="flex items-center gap-1"><Play size={11} /> {beat.plays >= 20 ? beat.plays.toLocaleString() : '—'}</span>
                         <LikeButton beatId={beat.id} initialCount={beat._count.likes} size="sm" />
                       </div>
 
