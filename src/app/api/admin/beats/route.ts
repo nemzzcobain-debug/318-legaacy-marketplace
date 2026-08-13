@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendBeatReviewDecisionEmail } from '@/lib/emails/resend'
 import { AI_REVIEW_STATUSES, parseRiskReasons } from '@/lib/beat-authenticity'
+import { isIrcamAiMusicConfigured } from '@/lib/ircam-ai-music'
 
 export async function GET(request: Request) {
   try {
@@ -123,6 +124,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       beats: beatsWithAdminPreviews,
+      aiAudioDetectorConfigured: isIrcamAiMusicConfigured(),
       pagination: {
         page,
         limit,

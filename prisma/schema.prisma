@@ -217,6 +217,15 @@ model Beat {
   aiDetectorVersion       String?
   aiSuspectedModel        String?
   aiAnalyzedAt            DateTime?
+  aiAudioProbability      Int?
+  aiAudioDetectorProvider String?
+  aiAudioDetectorVersion  String?
+  aiAudioSuspectedModel   String?
+  aiAudioSuspectedVersion String?
+  aiAudioScanStatus       String    @default("NOT_REQUESTED")
+  aiAudioScanJobId        String?
+  aiAudioScanError        String?
+  aiAudioScannedAt        DateTime?
   aiAdminNote             String?
   aiEvidenceRequestedAt   DateTime?
 

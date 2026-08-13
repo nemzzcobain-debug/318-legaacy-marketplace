@@ -247,7 +247,9 @@ export default function AdminPage() {
   const [beatsFilter, setBeatsFilter] = useState('')
   const [aiStatusFilter, setAiStatusFilter] = useState('')
   const [aiAuditStats, setAiAuditStats] = useState<any>(null)
+  const [aiAudioDetectorConfigured, setAiAudioDetectorConfigured] = useState(false)
   const [auditingCatalogue, setAuditingCatalogue] = useState(false)
+  const [audioAiScanId, setAudioAiScanId] = useState<string | null>(null)
   const [catalogueActionId, setCatalogueActionId] = useState<string | null>(null)
   const [beatStatusFilter, setBeatStatusFilter] = useState(
     initialTab === 'beats' && initialStatus && VALID_ADMIN_STATUSES.includes(initialStatus)
@@ -475,6 +477,7 @@ export default function AdminPage() {
         if (res.ok) {
           const data = await res.json()
           setAllBeats(data.beats || [])
+          setAiAudioDetectorConfigured(Boolean(data.aiAudioDetectorConfigured))
           setBeatsPagination({
             page: data.pagination.page,
             total: data.pagination.total,
@@ -562,6 +565,86 @@ export default function AdminPage() {
       window.alert('Erreur de connexion')
     } finally {
       setCatalogueActionId(null)
+    }
+  }
+
+  const runIrcamAudioScan = async (beat: any) => {
+    if (!aiAudioDetectorConfigured) {
+      window.alert(
+        "Le détecteur IRCAM est intégré mais son jeton API doit encore être ajouté dans Vercel."
+      )
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Envoyer temporairement le fichier audio de « ${beat.title} » à IRCAM Amplify pour analyse ?\n\nLe résultat restera un indice soumis à ta validation.`
+    )
+    if (!confirmed) return
+
+    setAudioAiScanId(beat.id)
+    try {
+      const startResponse = await fetch(`/api/admin/beats/${beat.id}/ai-scan`, {
+        method: 'POST',
+      })
+      const startData = await startResponse.json()
+      if (!startResponse.ok) {
+        window.alert(startData.error || "Impossible de démarrer l'analyse IRCAM")
+        return
+      }
+
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 3000))
+        const statusResponse = await fetch(`/api/admin/beats/${beat.id}/ai-scan`)
+        const statusData = await statusResponse.json()
+        if (!statusResponse.ok) {
+          window.alert(statusData.error || "Impossible de récupérer le résultat IRCAM")
+          return
+        }
+
+        const scan = statusData.scan
+        if (scan?.status === 'COMPLETED') {
+          const model = scan.suspectedModel
+            ? ` — modèle suspecté : ${scan.suspectedModel}${scan.suspectedVersion ? ` ${scan.suspectedVersion}` : ''}`
+            : ''
+          window.alert(`Analyse terminée : ${scan.probability ?? '—'} % de probabilité IA${model}.`)
+          await Promise.all([fetchAllBeats(beatsPagination.page), fetchAiAuditStats()])
+          return
+        }
+        if (scan?.status === 'FAILED') {
+          window.alert(scan.error || "L'analyse IRCAM a échoué")
+          await fetchAllBeats(beatsPagination.page)
+          return
+        }
+      }
+
+      window.alert(
+        "L'analyse IRCAM continue en arrière-plan. Utilise « Actualiser le résultat » dans quelques instants."
+      )
+      await fetchAllBeats(beatsPagination.page)
+    } catch {
+      window.alert("Erreur de connexion pendant l'analyse IRCAM")
+    } finally {
+      setAudioAiScanId(null)
+    }
+  }
+
+  const refreshIrcamAudioScan = async (beat: any) => {
+    setAudioAiScanId(beat.id)
+    try {
+      const response = await fetch(`/api/admin/beats/${beat.id}/ai-scan`)
+      const data = await response.json()
+      if (!response.ok) {
+        window.alert(data.error || "Impossible de récupérer le résultat IRCAM")
+        return
+      }
+      await Promise.all([fetchAllBeats(beatsPagination.page), fetchAiAuditStats()])
+      if (data.scan?.status === 'PROCESSING') {
+        window.alert('Analyse toujours en cours.')
+      }
+    } catch {
+      window.alert('Erreur de connexion')
+    } finally {
+      setAudioAiScanId(null)
     }
   }
 
@@ -1453,6 +1536,16 @@ export default function AdminPage() {
                     uniquement à prioriser ton contrôle : aucune prod n’est supprimée
                     automatiquement.
                   </p>
+                  <p
+                    className={`mt-2 text-xs font-bold ${
+                      aiAudioDetectorConfigured ? 'text-green-400' : 'text-amber-300'
+                    }`}
+                  >
+                    Détection audio IRCAM :{' '}
+                    {aiAudioDetectorConfigured
+                      ? 'active — analyse acoustique disponible sur chaque fiche'
+                      : 'intégrée — jeton API à configurer dans Vercel'}
+                  </p>
                 </div>
                 <button
                   onClick={runAuthenticityAudit}
@@ -1876,6 +1969,88 @@ export default function AdminPage() {
                                   </ul>
                                 </div>
                               )}
+                              <div className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                  <div>
+                                    <p className="text-xs font-bold uppercase tracking-wide text-cyan-300">
+                                      Analyse acoustique IRCAM Amplify
+                                    </p>
+                                    {beat.aiAudioScanStatus === 'COMPLETED' ? (
+                                      <div className="mt-2 space-y-1 text-sm text-gray-200">
+                                        <p>
+                                          Probabilité de génération IA :{' '}
+                                          <strong
+                                            className={
+                                              beat.aiAudioProbability >= 70
+                                                ? 'text-red-400'
+                                                : beat.aiAudioProbability >= 40
+                                                  ? 'text-amber-300'
+                                                  : 'text-green-400'
+                                            }
+                                          >
+                                            {beat.aiAudioProbability ?? '—'} %
+                                          </strong>
+                                        </p>
+                                        <p className="text-xs text-gray-400">
+                                          Modèle suspecté :{' '}
+                                          {beat.aiAudioSuspectedModel
+                                            ? `${beat.aiAudioSuspectedModel}${
+                                                beat.aiAudioSuspectedVersion
+                                                  ? ` ${beat.aiAudioSuspectedVersion}`
+                                                  : ''
+                                              }`
+                                            : 'aucun modèle identifié'}
+                                          {beat.aiAudioDetectorVersion
+                                            ? ` · Détecteur ${beat.aiAudioDetectorVersion}`
+                                            : ''}
+                                          {beat.aiAudioScannedAt
+                                            ? ` · ${formatDate(beat.aiAudioScannedAt)}`
+                                            : ''}
+                                        </p>
+                                      </div>
+                                    ) : beat.aiAudioScanStatus === 'PROCESSING' ? (
+                                      <p className="mt-2 text-xs text-cyan-200">Analyse en cours…</p>
+                                    ) : beat.aiAudioScanStatus === 'FAILED' ? (
+                                      <p className="mt-2 text-xs text-red-300">
+                                        Échec : {beat.aiAudioScanError || 'raison inconnue'}
+                                      </p>
+                                    ) : (
+                                      <p className="mt-2 text-xs text-gray-400">
+                                        Aucun fichier analysé acoustiquement pour le moment.
+                                      </p>
+                                    )}
+                                  </div>
+                                  <button
+                                    disabled={
+                                      audioAiScanId === beat.id ||
+                                      (!aiAudioDetectorConfigured &&
+                                        beat.aiAudioScanStatus !== 'PROCESSING')
+                                    }
+                                    onClick={() =>
+                                      beat.aiAudioScanStatus === 'PROCESSING'
+                                        ? refreshIrcamAudioScan(beat)
+                                        : runIrcamAudioScan(beat)
+                                    }
+                                    className="shrink-0 rounded-lg bg-cyan-500/15 px-3 py-2 text-xs font-black text-cyan-200 hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                    title={
+                                      aiAudioDetectorConfigured
+                                        ? 'Le résultat est un indice et ne provoque aucune suppression automatique.'
+                                        : 'Ajouter IRCAM_AMPLIFY_API_TOKEN dans Vercel pour activer le scan.'
+                                    }
+                                  >
+                                    {audioAiScanId === beat.id
+                                      ? 'Analyse…'
+                                      : beat.aiAudioScanStatus === 'PROCESSING'
+                                        ? 'Actualiser le résultat'
+                                        : beat.aiAudioScanStatus === 'COMPLETED'
+                                          ? "Relancer l'analyse"
+                                          : "Analyser l'audio"}
+                                  </button>
+                                </div>
+                                <p className="mt-2 text-[11px] text-gray-500">
+                                  Résultat indicatif : la décision finale reste une validation humaine.
+                                </p>
+                              </div>
                               {beat.aiAdminNote && (
                                 <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200">
                                   <strong>Note admin :</strong> {beat.aiAdminNote}
