@@ -15,6 +15,32 @@ export const AI_REVIEW_STATUSES = [
 
 export type AiReviewStatus = (typeof AI_REVIEW_STATUSES)[number]
 
+export const AUTHENTICITY_CATEGORIES = [
+  'HUMAN_CONFIRMED',
+  'POTENTIAL_AI',
+  'AI_CONFIRMED',
+  'UNVERIFIED',
+] as const
+
+export type AuthenticityCategory = (typeof AUTHENTICITY_CATEGORIES)[number]
+
+/**
+ * Transforme le statut technique en état lisible dans le catalogue admin.
+ * Seule une décision humaine explicite peut produire un état vert ou rouge.
+ */
+export function getAuthenticityCategory(status: string | null | undefined): AuthenticityCategory {
+  if (status === 'HUMAN_CONFIRMED') return 'HUMAN_CONFIRMED'
+  if (status === 'AI_REJECTED') return 'AI_CONFIRMED'
+  if (
+    status === 'REVIEW_RECOMMENDED' ||
+    status === 'REVIEW_REQUIRED' ||
+    status === 'EVIDENCE_REQUESTED'
+  ) {
+    return 'POTENTIAL_AI'
+  }
+  return 'UNVERIFIED'
+}
+
 type RiskInput = {
   declarationAcceptedAt: Date | null
   aiUsage: string | null
@@ -27,10 +53,7 @@ type RiskInput = {
 
 export type AuthenticityRisk = {
   score: number
-  status: Extract<
-    AiReviewStatus,
-    'LOW_RISK' | 'REVIEW_RECOMMENDED' | 'REVIEW_REQUIRED'
-  >
+  status: Extract<AiReviewStatus, 'LOW_RISK' | 'REVIEW_RECOMMENDED' | 'REVIEW_REQUIRED'>
   reasons: string[]
 }
 

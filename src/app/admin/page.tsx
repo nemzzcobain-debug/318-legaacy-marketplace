@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { getAuthenticityCategory } from '@/lib/beat-authenticity'
 
 interface Stats {
   totalUsers: number
@@ -123,6 +124,29 @@ const AI_USAGE_LABELS: Record<string, string> = {
   GENERATIVE: 'IA générative déclarée',
 }
 
+const AUTHENTICITY_DISPLAY = {
+  HUMAN_CONFIRMED: {
+    symbol: '✓',
+    label: 'Création humaine validée',
+    classes: 'border-green-500/40 bg-green-500/15 text-green-300',
+  },
+  POTENTIAL_AI: {
+    symbol: '!',
+    label: 'IA potentielle — à vérifier',
+    classes: 'border-orange-400/40 bg-orange-400/15 text-orange-300',
+  },
+  AI_CONFIRMED: {
+    symbol: '✕',
+    label: 'IA confirmée après contrôle',
+    classes: 'border-red-500/50 bg-red-500/15 text-red-300',
+  },
+  UNVERIFIED: {
+    symbol: '?',
+    label: 'Pas encore vérifiée',
+    classes: 'border-gray-500/40 bg-gray-500/10 text-gray-300',
+  },
+} as const
+
 const AUCTION_STATUS_LABELS: Record<string, string> = {
   PENDING_APPROVAL: 'En attente de validation du beat',
   SCHEDULED: 'Programmée',
@@ -179,6 +203,17 @@ function parseBeatTags(tags: unknown): string[] {
       .map((tag) => tag.trim())
       .filter(Boolean)
   }
+}
+
+function isBeatDeletionProtected(beat: any) {
+  return (
+    beat.status === 'SOLD' ||
+    (beat._count?.purchases || 0) > 0 ||
+    beat.auctions?.some(
+      (auction: any) =>
+        (auction.totalBids || 0) > 0 || (auction._count?.bids || 0) > 0
+    )
+  )
 }
 
 function StatCard({
@@ -1560,25 +1595,19 @@ export default function AdminPage() {
                 <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
                   {[
                     ['Total catalogue', aiAuditStats.total, 'text-white'],
+                    ['✓ Humain validé', aiAuditStats.humanConfirmed, 'text-green-400'],
                     [
-                      'Contrôle conseillé',
-                      aiAuditStats.reviewRecommended,
-                      'text-amber-300',
+                      '! IA potentielle',
+                      aiAuditStats.reviewRecommended +
+                        aiAuditStats.reviewRequired +
+                        aiAuditStats.evidenceRequested,
+                      'text-orange-300',
                     ],
+                    ['✕ IA confirmée', aiAuditStats.aiRejected, 'text-red-400'],
                     [
-                      'Contrôle prioritaire',
-                      aiAuditStats.reviewRequired,
-                      'text-red-400',
-                    ],
-                    [
-                      'Preuves demandées',
-                      aiAuditStats.evidenceRequested,
-                      'text-amber-300',
-                    ],
-                    [
-                      'Humain confirmé',
-                      aiAuditStats.humanConfirmed,
-                      'text-green-400',
+                      '? Non vérifiée',
+                      aiAuditStats.notAnalyzed + aiAuditStats.lowRisk,
+                      'text-gray-300',
                     ],
                   ].map(([label, value, color]) => (
                     <div key={String(label)} className="rounded-xl border border-white/10 bg-black/20 p-3">
@@ -1588,6 +1617,11 @@ export default function AdminPage() {
                   ))}
                 </div>
               )}
+              <p className="mt-3 text-xs leading-relaxed text-gray-500">
+                Vert et rouge correspondent à une décision administrative confirmée. Orange
+                signale uniquement un doute ou un contrôle à terminer ; ce n’est jamais une preuve
+                automatique d’utilisation de l’IA.
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-3 mb-6">
@@ -1665,6 +1699,9 @@ export default function AdminPage() {
                 const isPlaying = playingBeatId === beat.id
                 const isExpanded = beat.status === 'PENDING' || expandedBeatIds.has(beat.id)
                 const tags = parseBeatTags(beat.tags)
+                const authenticity =
+                  AUTHENTICITY_DISPLAY[getAuthenticityCategory(beat.aiReviewStatus)]
+                const deletionProtected = isBeatDeletionProtected(beat)
                 return (
                   <div
                     key={beat.id}
@@ -1748,21 +1785,41 @@ export default function AdminPage() {
                           {BEAT_STATUS_LABELS[beat.status] || beat.status}
                         </span>
                         <span
-                          className={`rounded px-2 py-1 text-xs font-bold ${
-                            beat.aiReviewStatus === 'HUMAN_CONFIRMED'
-                              ? 'bg-green-500/15 text-green-400'
-                              : beat.aiReviewStatus === 'REVIEW_REQUIRED' ||
-                                  beat.aiReviewStatus === 'AI_REJECTED'
-                                ? 'bg-red-500/15 text-red-400'
-                                : beat.aiReviewStatus === 'EVIDENCE_REQUESTED' ||
-                                    beat.aiReviewStatus === 'REVIEW_RECOMMENDED'
-                                  ? 'bg-amber-500/15 text-amber-300'
-                                  : 'bg-gray-500/15 text-gray-400'
-                          }`}
+                          className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-black ${authenticity.classes}`}
+                          aria-label={authenticity.label}
+                          title={`${authenticity.label} — ${AI_REVIEW_LABELS[beat.aiReviewStatus] || 'Non audité'}`}
                         >
-                          {AI_REVIEW_LABELS[beat.aiReviewStatus] || 'Non audité'}
-                          {typeof beat.aiRiskScore === 'number' ? ` · ${beat.aiRiskScore}/100` : ''}
+                          <span
+                            className="flex h-5 w-5 items-center justify-center rounded-full border border-current text-sm leading-none"
+                            aria-hidden="true"
+                          >
+                            {authenticity.symbol}
+                          </span>
+                          <span>{authenticity.label}</span>
+                          {typeof beat.aiRiskScore === 'number' && (
+                            <span className="font-medium opacity-70">{beat.aiRiskScore}/100</span>
+                          )}
                         </span>
+                        {beat.producer?.id && (
+                          <Link
+                            href={`/messages?to=${beat.producer.id}`}
+                            className="rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-600/30"
+                          >
+                            Contacter
+                          </Link>
+                        )}
+                        <button
+                          disabled={catalogueActionId === beat.id || deletionProtected}
+                          onClick={() => runCatalogueAction(beat, 'DELETE')}
+                          className="rounded-lg border border-red-500/50 bg-red-950/30 px-3 py-1.5 text-xs font-black text-red-300 hover:bg-red-900/40 disabled:cursor-not-allowed disabled:opacity-35"
+                          title={
+                            deletionProtected
+                              ? 'Suppression impossible : historique de vente ou d’enchères à conserver'
+                              : 'Supprimer définitivement cette prod et ses fichiers'
+                          }
+                        >
+                          Supprimer
+                        </button>
                         {beat.status !== 'PENDING' && (
                           <button
                             onClick={() =>
@@ -1813,14 +1870,6 @@ export default function AdminPage() {
                             des enchères ne peut pas être supprimée définitivement.
                           </p>
                           <div className="mt-4 flex flex-wrap gap-2">
-                            {beat.producer?.id && (
-                              <Link
-                                href={`/messages?to=${beat.producer.id}`}
-                                className="rounded-lg bg-blue-600/20 px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-600/30"
-                              >
-                                Envoyer un message
-                              </Link>
-                            )}
                             {beat.producer?.email && (
                               <a
                                 href={`mailto:${beat.producer.email}?subject=${encodeURIComponent(`318 LEGAACY — ${beat.title}`)}`}
@@ -1867,23 +1916,6 @@ export default function AdminPage() {
                               className="rounded-lg bg-red-500/15 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-500/25 disabled:opacity-50"
                             >
                               Refuser après contrôle
-                            </button>
-                            <button
-                              disabled={
-                                catalogueActionId === beat.id ||
-                                beat.status === 'SOLD' ||
-                                (beat._count?.purchases || 0) > 0 ||
-                                beat.auctions?.some(
-                                  (auction: any) =>
-                                    (auction.totalBids || 0) > 0 ||
-                                    (auction._count?.bids || 0) > 0
-                                )
-                              }
-                              onClick={() => runCatalogueAction(beat, 'DELETE')}
-                              className="rounded-lg border border-red-500/50 bg-red-950/30 px-3 py-2 text-xs font-black text-red-300 hover:bg-red-900/40 disabled:cursor-not-allowed disabled:opacity-35"
-                              title="Disponible uniquement sans achat ni enchère"
-                            >
-                              Supprimer définitivement
                             </button>
                           </div>
                         </section>
