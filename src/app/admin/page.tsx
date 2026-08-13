@@ -1464,9 +1464,14 @@ export default function AdminPage() {
               </div>
 
               {aiAuditStats && (
-                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
                   {[
                     ['Total catalogue', aiAuditStats.total, 'text-white'],
+                    [
+                      'Contrôle conseillé',
+                      aiAuditStats.reviewRecommended,
+                      'text-amber-300',
+                    ],
                     [
                       'Contrôle prioritaire',
                       aiAuditStats.reviewRequired,
