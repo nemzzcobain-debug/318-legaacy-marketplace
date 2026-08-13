@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendBeatReviewDecisionEmail } from '@/lib/emails/resend'
+import { AI_REVIEW_STATUSES, parseRiskReasons } from '@/lib/beat-authenticity'
 
 export async function GET(request: Request) {
   try {
@@ -17,6 +18,8 @@ export async function GET(request: Request) {
     const genre = searchParams.get('genre')
     const search = searchParams.get('search')
     const status = searchParams.get('status')
+    const aiStatus = searchParams.get('aiStatus')
+    const producerId = searchParams.get('producerId')
     const page = Number(searchParams.get('page') || 1)
     const limit = Number(searchParams.get('limit') || 20)
 
@@ -24,12 +27,16 @@ export async function GET(request: Request) {
 
     // Admin voit TOUS les beats (pas de filtre status par défaut)
     if (status) where.status = status
+    if (aiStatus && AI_REVIEW_STATUSES.includes(aiStatus as any)) where.aiReviewStatus = aiStatus
+    if (producerId) where.producerId = producerId
     if (genre) where.genre = genre
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { genre: { contains: search, mode: 'insensitive' } },
         { tags: { contains: search, mode: 'insensitive' } },
+        { producer: { name: { contains: search, mode: 'insensitive' } } },
+        { producer: { displayName: { contains: search, mode: 'insensitive' } } },
       ]
     }
 
@@ -43,10 +50,11 @@ export async function GET(request: Request) {
               name: true,
               displayName: true,
               avatar: true,
+              email: true,
             },
           },
           _count: {
-            select: { likes: true },
+            select: { likes: true, purchases: true },
           },
           auctions: {
             select: {
@@ -61,6 +69,7 @@ export async function GET(request: Request) {
               endTime: true,
               status: true,
               totalBids: true,
+              _count: { select: { bids: true } },
             },
             orderBy: { createdAt: 'desc' },
           },
@@ -98,6 +107,7 @@ export async function GET(request: Request) {
 
       return {
         ...publicBeat,
+        aiRiskReasons: parseRiskReasons(beat.aiRiskReasons),
         audioUrl: beat.audioUrl || audioOriginal ? `/api/admin/beats/${beat.id}/preview` : null,
         files: {
           hasPreview: Boolean(beat.audioUrl),

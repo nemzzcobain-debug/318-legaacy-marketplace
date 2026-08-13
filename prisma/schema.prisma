@@ -201,6 +201,25 @@ model Beat {
   rejectedAt      DateTime?
   plays           Int       @default(0)
 
+  // Authenticité / contrôle anti-IA
+  // aiUsage: NONE | ASSISTIVE_ONLY | GENERATIVE
+  // aiReviewStatus: NOT_ANALYZED | LOW_RISK | REVIEW_RECOMMENDED |
+  //                  REVIEW_REQUIRED | EVIDENCE_REQUESTED | HUMAN_CONFIRMED | AI_REJECTED
+  aiDeclarationVersion    String?
+  aiDeclarationAcceptedAt DateTime?
+  aiUsage                 String?
+  aiUsageDetails          String?
+  creationSoftware        String?
+  aiReviewStatus          String    @default("NOT_ANALYZED")
+  aiRiskScore             Int?
+  aiRiskReasons           String    @default("[]")
+  aiDetectorProvider      String?
+  aiDetectorVersion       String?
+  aiSuspectedModel        String?
+  aiAnalyzedAt            DateTime?
+  aiAdminNote             String?
+  aiEvidenceRequestedAt   DateTime?
+
   // Featured (admin selection)
   isFeatured    Boolean   @default(false)
   featuredOrder Int       @default(0)
@@ -222,7 +241,23 @@ model Beat {
   @@index([producerId])
   @@index([status])
   @@index([saleMode, status])
+  @@index([aiReviewStatus])
   @@index([genre])
+}
+
+// Journal des décisions sensibles prises depuis l'administration.
+// Les identifiants de cible sont conservés même si un élément est supprimé.
+model AdminActionLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String
+  targetType String
+  targetId   String
+  details    String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([targetType, targetId])
 }
 
 // ─── AUCTIONS (ENCHERES) ───

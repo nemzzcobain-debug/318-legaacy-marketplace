@@ -29,6 +29,7 @@ interface Producer {
   producerApprovedAt: string | null
   stripeGraceSuspendedAt: string | null
   stripeAccountId: string | null
+  deletedAt: string | null
   totalSales: number
   rating: number
   createdAt: string
@@ -103,6 +104,23 @@ const BEAT_STATUS_LABELS: Record<string, string> = {
   REJECTED: 'Refusé',
   SOLD: 'Vendu',
   DRAFT: 'Brouillon',
+  ARCHIVED: 'Archivé',
+}
+
+const AI_REVIEW_LABELS: Record<string, string> = {
+  NOT_ANALYZED: 'Non audité',
+  LOW_RISK: 'Risque faible',
+  REVIEW_RECOMMENDED: 'Contrôle conseillé',
+  REVIEW_REQUIRED: 'Contrôle prioritaire',
+  EVIDENCE_REQUESTED: 'Preuves demandées',
+  HUMAN_CONFIRMED: 'Création humaine confirmée',
+  AI_REJECTED: 'Refusé après contrôle IA',
+}
+
+const AI_USAGE_LABELS: Record<string, string> = {
+  NONE: 'Aucune IA déclarée',
+  ASSISTIVE_ONLY: "IA d'assistance déclarée",
+  GENERATIVE: 'IA générative déclarée',
 }
 
 const AUCTION_STATUS_LABELS: Record<string, string> = {
@@ -227,6 +245,10 @@ export default function AdminPage() {
   const [allBeats, setAllBeats] = useState<any[]>([])
   const [beatsPagination, setBeatsPagination] = useState({ page: 1, total: 0, totalPages: 0 })
   const [beatsFilter, setBeatsFilter] = useState('')
+  const [aiStatusFilter, setAiStatusFilter] = useState('')
+  const [aiAuditStats, setAiAuditStats] = useState<any>(null)
+  const [auditingCatalogue, setAuditingCatalogue] = useState(false)
+  const [catalogueActionId, setCatalogueActionId] = useState<string | null>(null)
   const [beatStatusFilter, setBeatStatusFilter] = useState(
     initialTab === 'beats' && initialStatus && VALID_ADMIN_STATUSES.includes(initialStatus)
       ? initialStatus
@@ -448,6 +470,7 @@ export default function AdminPage() {
         if (search) params.set('search', search)
         if (beatsFilter) params.set('genre', beatsFilter)
         if (beatStatusFilter) params.set('status', beatStatusFilter)
+        if (aiStatusFilter) params.set('aiStatus', aiStatusFilter)
         const res = await fetch(`/api/admin/beats?${params}`)
         if (res.ok) {
           const data = await res.json()
@@ -462,8 +485,112 @@ export default function AdminPage() {
         console.error(e)
       }
     },
-    [search, beatsFilter, beatStatusFilter]
+    [search, beatsFilter, beatStatusFilter, aiStatusFilter]
   )
+
+  const fetchAiAuditStats = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/authenticity-audit')
+      if (res.ok) setAiAuditStats(await res.json())
+    } catch (error) {
+      console.error(error)
+    }
+  }, [])
+
+  const runAuthenticityAudit = async () => {
+    const confirmed = window.confirm(
+      "Lancer l'audit de toutes les instrumentales ? Aucune prod ne sera supprimée automatiquement."
+    )
+    if (!confirmed) return
+    setAuditingCatalogue(true)
+    try {
+      const res = await fetch('/api/admin/authenticity-audit', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        window.alert(data.error || "Impossible de lancer l'audit")
+        return
+      }
+      window.alert(data.message)
+      await Promise.all([fetchAllBeats(1), fetchAiAuditStats()])
+    } catch {
+      window.alert('Erreur de connexion pendant l’audit')
+    } finally {
+      setAuditingCatalogue(false)
+    }
+  }
+
+  const runCatalogueAction = async (beat: any, action: string) => {
+    const actionLabels: Record<string, string> = {
+      SET_PENDING: 'remettre ce beat en attente et le masquer',
+      REQUEST_EVIDENCE: 'demander des preuves de création au beatmaker',
+      MARK_HUMAN: 'confirmer que cette création est humaine',
+      MARK_AI_REJECTED: 'refuser définitivement ce beat après contrôle',
+      ARCHIVE: 'archiver et retirer ce beat du catalogue',
+      DELETE: 'supprimer définitivement ce beat et ses fichiers',
+    }
+    const destructive = ['MARK_AI_REJECTED', 'ARCHIVE', 'DELETE'].includes(action)
+    if (!window.confirm(`Confirmer : ${actionLabels[action] || action} ?`)) return
+
+    let note = ''
+    if (['REQUEST_EVIDENCE', 'MARK_AI_REJECTED'].includes(action)) {
+      note =
+        window.prompt(
+          action === 'REQUEST_EVIDENCE'
+            ? 'Indique les preuves demandées (projet DAW, captures, exports intermédiaires…) :'
+            : 'Indique le motif précis du refus :'
+        )?.trim() || ''
+      if (!note) return
+    } else if (destructive) {
+      note = window.prompt('Note administrative facultative :')?.trim() || ''
+    }
+
+    setCatalogueActionId(beat.id)
+    try {
+      const res = await fetch('/api/admin/catalogue', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ beatId: beat.id, action, note }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        window.alert(data.error || 'Action impossible')
+        return
+      }
+      window.alert(data.message)
+      await Promise.all([fetchAllBeats(beatsPagination.page), fetchAiAuditStats(), fetchStats()])
+    } catch {
+      window.alert('Erreur de connexion')
+    } finally {
+      setCatalogueActionId(null)
+    }
+  }
+
+  const deactivateProducer = async (producer: Producer) => {
+    if (
+      !window.confirm(
+        `Désactiver le compte de ${producer.displayName || producer.name} ? Ses données financières seront conservées et cette action pourra être annulée en le réapprouvant.`
+      )
+    )
+      return
+    const reason = window.prompt('Motif de la désactivation :')?.trim()
+    if (!reason) return
+    try {
+      const res = await fetch('/api/admin/producers', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ producerId: producer.id, reason }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        window.alert(data.error || 'Désactivation impossible')
+        return
+      }
+      window.alert(data.message)
+      await Promise.all([fetchProducers(), fetchStats()])
+    } catch {
+      window.alert('Erreur de connexion')
+    }
+  }
 
   const reviewBeat = async (beatId: string, action: 'APPROVE' | 'REJECT') => {
     let reason = ''
@@ -601,6 +728,7 @@ export default function AdminPage() {
       if (activeTab === 'reports') fetchReports()
       if (activeTab === 'promos') fetchPromos()
       if (activeTab === 'beats') fetchAllBeats()
+      if (activeTab === 'beats') fetchAiAuditStats()
       if (activeTab === 'featured') fetchFeatured()
     }
   }, [
@@ -612,6 +740,7 @@ export default function AdminPage() {
     fetchReports,
     fetchPromos,
     fetchAllBeats,
+    fetchAiAuditStats,
     fetchFeatured,
   ])
 
@@ -947,7 +1076,7 @@ export default function AdminPage() {
                         <span
                           className={`${statusColors[p.producerStatus || 'PENDING']} text-white text-xs px-2 py-0.5 rounded-full`}
                         >
-                          {p.producerStatus || 'PENDING'}
+                          {p.deletedAt ? 'DÉSACTIVÉ' : p.producerStatus || 'PENDING'}
                         </span>
                       </div>
                       <p className="text-gray-400 text-sm">{p.email}</p>
@@ -969,7 +1098,29 @@ export default function AdminPage() {
                         {new Date(p.createdAt).toLocaleDateString('fr-FR')}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => {
+                          setSearch(p.displayName || p.name)
+                          setActiveTab('beats')
+                          setPreviousTab('producers')
+                        }}
+                        className="rounded-lg border border-[#343447] px-3 py-1.5 text-xs font-bold text-gray-200 hover:border-[#e11d48]/60"
+                      >
+                        Voir ses beats
+                      </button>
+                      <Link
+                        href={`/messages?to=${p.id}`}
+                        className="rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-600/30"
+                      >
+                        Envoyer un message
+                      </Link>
+                      <a
+                        href={`mailto:${p.email}`}
+                        className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-gray-200 hover:bg-white/15"
+                      >
+                        Contacter par email
+                      </a>
                       {p.producerStatus !== 'APPROVED' && (
                         <button
                           onClick={() =>
@@ -984,6 +1135,8 @@ export default function AdminPage() {
                         >
                           {p.producerStatus === 'SUSPENDED' && p.stripeGraceSuspendedAt
                             ? 'Accorder 7 jours'
+                            : p.deletedAt
+                              ? 'Réactiver'
                             : 'Approuver'}
                         </button>
                       )}
@@ -1001,6 +1154,14 @@ export default function AdminPage() {
                           className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-lg transition"
                         >
                           Suspendre
+                        </button>
+                      )}
+                      {!p.deletedAt && (
+                        <button
+                          onClick={() => deactivateProducer(p)}
+                          className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-500/20"
+                        >
+                          Désactiver le compte
                         </button>
                       )}
                     </div>
@@ -1283,6 +1444,54 @@ export default function AdminPage() {
         {/* BEATS TAB */}
         {activeTab === 'beats' && (
           <div>
+            <div className="mb-6 rounded-2xl border border-[#e11d48]/25 bg-gradient-to-br from-[#1b0b12] to-[#101018] p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-white">Catalogue et contrôle d’authenticité</h2>
+                  <p className="mt-1 max-w-3xl text-sm leading-relaxed text-gray-400">
+                    Toutes les instrumentales et tous les fichiers sont réunis ici. Le score sert
+                    uniquement à prioriser ton contrôle : aucune prod n’est supprimée
+                    automatiquement.
+                  </p>
+                </div>
+                <button
+                  onClick={runAuthenticityAudit}
+                  disabled={auditingCatalogue}
+                  className="shrink-0 rounded-xl bg-[#e11d48] px-5 py-3 text-sm font-black text-white hover:bg-[#be123c] disabled:opacity-50"
+                >
+                  {auditingCatalogue ? 'Audit en cours…' : 'Auditer toutes les prods'}
+                </button>
+              </div>
+
+              {aiAuditStats && (
+                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {[
+                    ['Total catalogue', aiAuditStats.total, 'text-white'],
+                    [
+                      'Contrôle prioritaire',
+                      aiAuditStats.reviewRequired,
+                      'text-red-400',
+                    ],
+                    [
+                      'Preuves demandées',
+                      aiAuditStats.evidenceRequested,
+                      'text-amber-300',
+                    ],
+                    [
+                      'Humain confirmé',
+                      aiAuditStats.humanConfirmed,
+                      'text-green-400',
+                    ],
+                  ].map(([label, value, color]) => (
+                    <div key={String(label)} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <p className="text-xs text-gray-500">{String(label)}</p>
+                      <p className={`mt-1 text-2xl font-black ${color}`}>{String(value)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-wrap gap-3 mb-6">
               <input
                 type="text"
@@ -1319,6 +1528,18 @@ export default function AdminPage() {
                 ))}
               </select>
               <select
+                value={aiStatusFilter}
+                onChange={(e) => setAiStatusFilter(e.target.value)}
+                className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+              >
+                <option value="">Tous les contrôles IA</option>
+                {Object.entries(AI_REVIEW_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <select
                 value={beatStatusFilter}
                 onChange={(e) => setBeatStatusFilter(e.target.value)}
                 className="bg-[#13131a] border border-[#1e1e2e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
@@ -1337,7 +1558,9 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <p className="text-sm text-gray-400 mb-4">{beatsPagination.total} beat(s) au total</p>
+            <p className="text-sm text-gray-400 mb-4">
+              {beatsPagination.total} beat(s) correspondant aux filtres
+            </p>
 
             <div className="space-y-3">
               {allBeats.map((beat: any) => {
@@ -1426,6 +1649,22 @@ export default function AdminPage() {
                         >
                           {BEAT_STATUS_LABELS[beat.status] || beat.status}
                         </span>
+                        <span
+                          className={`rounded px-2 py-1 text-xs font-bold ${
+                            beat.aiReviewStatus === 'HUMAN_CONFIRMED'
+                              ? 'bg-green-500/15 text-green-400'
+                              : beat.aiReviewStatus === 'REVIEW_REQUIRED' ||
+                                  beat.aiReviewStatus === 'AI_REJECTED'
+                                ? 'bg-red-500/15 text-red-400'
+                                : beat.aiReviewStatus === 'EVIDENCE_REQUESTED' ||
+                                    beat.aiReviewStatus === 'REVIEW_RECOMMENDED'
+                                  ? 'bg-amber-500/15 text-amber-300'
+                                  : 'bg-gray-500/15 text-gray-400'
+                          }`}
+                        >
+                          {AI_REVIEW_LABELS[beat.aiReviewStatus] || 'Non audité'}
+                          {typeof beat.aiRiskScore === 'number' ? ` · ${beat.aiRiskScore}/100` : ''}
+                        </span>
                         {beat.status !== 'PENDING' && (
                           <button
                             onClick={() =>
@@ -1455,12 +1694,102 @@ export default function AdminPage() {
                         >
                           {beat.isFeatured ? '★ Retirer vedette' : '☆ Mettre en vedette'}
                         </button>
-                        <span className="text-xs text-gray-500">{beat.plays || 0} écoutes</span><span className="text-xs text-gray-500">{beat._count?.likes || 0} ♥</span>{beat.auctions?.[0]?.totalBids ? <span className="text-xs text-gray-500">{beat.auctions[0].totalBids} enchères</span> : null}
+                        <span className="text-xs text-gray-500">{beat.plays || 0} écoutes</span>
+                        <span className="text-xs text-gray-500">
+                          {beat._count?.likes || 0} ♥
+                        </span>
+                        {beat.auctions?.[0]?.totalBids ? (
+                          <span className="text-xs text-gray-500">
+                            {beat.auctions[0].totalBids} enchères
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
                     {isExpanded && (
                       <div className="mt-5 space-y-4 border-t border-[#29293a] pt-5">
+                        <section className="rounded-xl border border-[#343447] bg-[#101018] p-4">
+                          <h3 className="text-sm font-bold text-white">Actions administratives</h3>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Les retraits sont confirmés et journalisés. Une prod avec un achat ou
+                            des enchères ne peut pas être supprimée définitivement.
+                          </p>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {beat.producer?.id && (
+                              <Link
+                                href={`/messages?to=${beat.producer.id}`}
+                                className="rounded-lg bg-blue-600/20 px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-600/30"
+                              >
+                                Envoyer un message
+                              </Link>
+                            )}
+                            {beat.producer?.email && (
+                              <a
+                                href={`mailto:${beat.producer.email}?subject=${encodeURIComponent(`318 LEGAACY — ${beat.title}`)}`}
+                                className="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold text-gray-200 hover:bg-white/15"
+                              >
+                                Contacter par email
+                              </a>
+                            )}
+                            <button
+                              disabled={catalogueActionId === beat.id}
+                              onClick={() => runCatalogueAction(beat, 'REQUEST_EVIDENCE')}
+                              className="rounded-lg bg-amber-500/15 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/25 disabled:opacity-50"
+                            >
+                              Demander des preuves
+                            </button>
+                            <button
+                              disabled={catalogueActionId === beat.id}
+                              onClick={() => runCatalogueAction(beat, 'MARK_HUMAN')}
+                              className="rounded-lg bg-green-500/15 px-3 py-2 text-xs font-bold text-green-300 hover:bg-green-500/25 disabled:opacity-50"
+                            >
+                              Confirmer création humaine
+                            </button>
+                            {beat.status !== 'PENDING' && beat.status !== 'SOLD' && (
+                              <button
+                                disabled={catalogueActionId === beat.id}
+                                onClick={() => runCatalogueAction(beat, 'SET_PENDING')}
+                                className="rounded-lg bg-yellow-500/15 px-3 py-2 text-xs font-bold text-yellow-300 hover:bg-yellow-500/25 disabled:opacity-50"
+                              >
+                                Mettre en attente
+                              </button>
+                            )}
+                            {beat.status !== 'SOLD' && beat.status !== 'ARCHIVED' && (
+                              <button
+                                disabled={catalogueActionId === beat.id}
+                                onClick={() => runCatalogueAction(beat, 'ARCHIVE')}
+                                className="rounded-lg border border-gray-500/30 px-3 py-2 text-xs font-bold text-gray-300 hover:bg-white/5 disabled:opacity-50"
+                              >
+                                Archiver / retirer
+                              </button>
+                            )}
+                            <button
+                              disabled={catalogueActionId === beat.id}
+                              onClick={() => runCatalogueAction(beat, 'MARK_AI_REJECTED')}
+                              className="rounded-lg bg-red-500/15 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-500/25 disabled:opacity-50"
+                            >
+                              Refuser après contrôle
+                            </button>
+                            <button
+                              disabled={
+                                catalogueActionId === beat.id ||
+                                beat.status === 'SOLD' ||
+                                (beat._count?.purchases || 0) > 0 ||
+                                beat.auctions?.some(
+                                  (auction: any) =>
+                                    (auction.totalBids || 0) > 0 ||
+                                    (auction._count?.bids || 0) > 0
+                                )
+                              }
+                              onClick={() => runCatalogueAction(beat, 'DELETE')}
+                              className="rounded-lg border border-red-500/50 bg-red-950/30 px-3 py-2 text-xs font-black text-red-300 hover:bg-red-900/40 disabled:cursor-not-allowed disabled:opacity-35"
+                              title="Disponible uniquement sans achat ni enchère"
+                            >
+                              Supprimer définitivement
+                            </button>
+                          </div>
+                        </section>
+
                         {beat.status === 'PENDING' && (
                           <div className="rounded-xl border border-yellow-500/25 bg-yellow-500/5 px-4 py-3">
                             <p className="text-sm font-bold text-yellow-300">
@@ -1491,6 +1820,72 @@ export default function AdminPage() {
                               : 'Une seule vente aux enchères. Les stems doivent être fournis au gagnant.'}
                           </p>
                         </div>
+
+                        <section className="rounded-xl border border-[#e11d48]/25 bg-[#160c12] p-4">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-sm font-bold text-white">Authenticité et usage de l’IA</h3>
+                              <dl className="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                                <div>
+                                  <dt className="text-xs text-gray-500">Déclaration</dt>
+                                  <dd className="mt-1 text-gray-200">
+                                    {beat.aiDeclarationAcceptedAt
+                                      ? `Acceptée le ${formatDate(beat.aiDeclarationAcceptedAt)}`
+                                      : 'Absente — beat historique'}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="text-xs text-gray-500">IA déclarée</dt>
+                                  <dd className="mt-1 text-gray-200">
+                                    {AI_USAGE_LABELS[beat.aiUsage] || 'Non renseignée'}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="text-xs text-gray-500">Logiciel de création</dt>
+                                  <dd className="mt-1 text-gray-200">
+                                    {beat.creationSoftware || 'Non renseigné'}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="text-xs text-gray-500">Dernier audit</dt>
+                                  <dd className="mt-1 text-gray-200">
+                                    {formatDate(beat.aiAnalyzedAt)}
+                                  </dd>
+                                </div>
+                              </dl>
+                              {beat.aiUsageDetails && (
+                                <p className="mt-3 text-sm text-gray-300">
+                                  <span className="font-bold text-white">Détails IA : </span>
+                                  {beat.aiUsageDetails}
+                                </p>
+                              )}
+                              {Array.isArray(beat.aiRiskReasons) && beat.aiRiskReasons.length > 0 && (
+                                <div className="mt-3 rounded-lg bg-black/25 p-3">
+                                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+                                    Signaux relevés — indicateurs, pas preuves
+                                  </p>
+                                  <ul className="mt-2 space-y-1 text-xs text-gray-300">
+                                    {beat.aiRiskReasons.map((reason: string) => (
+                                      <li key={reason}>— {reason}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {beat.aiAdminNote && (
+                                <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200">
+                                  <strong>Note admin :</strong> {beat.aiAdminNote}
+                                </p>
+                              )}
+                            </div>
+                            <div className="rounded-xl border border-white/10 bg-black/25 p-4 text-center lg:w-40">
+                              <p className="text-xs text-gray-500">Priorité de contrôle</p>
+                              <p className="mt-1 text-3xl font-black text-white">
+                                {typeof beat.aiRiskScore === 'number' ? beat.aiRiskScore : '—'}
+                              </p>
+                              <p className="text-xs text-gray-500">sur 100</p>
+                            </div>
+                          </div>
+                        </section>
 
                         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
                           <section className="rounded-xl border border-[#29293a] bg-[#101018] p-4">

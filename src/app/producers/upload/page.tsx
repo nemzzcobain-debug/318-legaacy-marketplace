@@ -84,6 +84,10 @@ export default function UploadBeatPage() {
   const [mood, setMood] = useState('')
   const [description, setDescription] = useState('')
   const [tags, setTags] = useState('')
+  const [aiUsage, setAiUsage] = useState<'NONE' | 'ASSISTIVE_ONLY' | 'GENERATIVE'>('NONE')
+  const [aiUsageDetails, setAiUsageDetails] = useState('')
+  const [creationSoftware, setCreationSoftware] = useState('')
+  const [aiDeclarationAccepted, setAiDeclarationAccepted] = useState(false)
 
   // Mode de vente : une enchère est toujours exclusive, le leasing ne l'est jamais.
   const [saleMode, setSaleMode] = useState<'AUCTION' | 'LEASING'>('AUCTION')
@@ -257,6 +261,24 @@ export default function UploadBeatPage() {
       setError('En leasing, renseigne au moins un prix pour le MP3 ou le WAV fourni.')
       return
     }
+    if (!creationSoftware.trim()) {
+      setError('Indique le logiciel ou le matériel utilisé pour composer ce beat.')
+      return
+    }
+    if (aiUsage === 'ASSISTIVE_ONLY' && !aiUsageDetails.trim()) {
+      setError("Précise l'outil d'assistance IA utilisé et son rôle.")
+      return
+    }
+    if (aiUsage === 'GENERATIVE') {
+      setError(
+        "318 LEGAACY n'accepte pas les instrumentales composées intégralement ou substantiellement par une IA générative."
+      )
+      return
+    }
+    if (!aiDeclarationAccepted) {
+      setError("Tu dois accepter la déclaration d'authenticité avant l'envoi.")
+      return
+    }
 
     setUploading(true)
     setError('')
@@ -293,6 +315,7 @@ export default function UploadBeatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          editBeatId,
           audioFileName,
           audioContentType: primaryAudioFile.type || (audioFile ? 'audio/mpeg' : 'audio/wav'),
           coverFileName,
@@ -374,7 +397,14 @@ export default function UploadBeatPage() {
             headers: { 'Content-Type': stemContentType },
             body: stemFile,
           })
-          if (!stemUploadRes.ok) { setError(`Échec de l'upload du stem « ${stemFile.name} » (${(stemFile.size / (1024 * 1024)).toFixed(1)} MB). Réessaie ou vérifie la taille du fichier.`); setUploading(false); return } if (stemUploadRes.ok) {
+          if (!stemUploadRes.ok) {
+            setError(
+              `Échec de l'upload du stem « ${stemFile.name} » (${(stemFile.size / (1024 * 1024)).toFixed(1)} MB). Réessaie ou vérifie la taille du fichier.`
+            )
+            setUploading(false)
+            return
+          }
+          if (stemUploadRes.ok) {
             uploadedStems.push({
               name: stemFile.name,
               url: stemData.privateUrl,
@@ -440,6 +470,10 @@ export default function UploadBeatPage() {
           auctionStartAt:
             enableAuction && auctionStartAt ? new Date(auctionStartAt).toISOString() : null,
           bidIncrement: enableAuction ? 5 : null, // Incrément fixe 5 EUR
+          aiDeclarationAccepted,
+          aiUsage,
+          aiUsageDetails: aiUsage === 'ASSISTIVE_ONLY' ? aiUsageDetails.trim() : null,
+          creationSoftware: creationSoftware.trim(),
         }),
       })
 
@@ -1266,6 +1300,84 @@ export default function UploadBeatPage() {
             />
           </div>
 
+          {/* Authenticité et usage de l'IA */}
+          <section className="space-y-4 rounded-2xl border border-[#e11d48]/30 bg-[#e11d48]/5 p-5">
+            <div>
+              <h2 className="text-base font-bold text-white">Authenticité de la création</h2>
+              <p className="mt-1 text-xs leading-relaxed text-gray-400">
+                Ces informations sont examinées par 318 LEGAACY. Un contrôle peut demander le
+                projet DAW, des exports intermédiaires ou des captures datées.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-white">
+                  Logiciel ou matériel de création <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={creationSoftware}
+                  onChange={(event) => setCreationSoftware(event.target.value)}
+                  placeholder="Ex. FL Studio 24, Ableton Live, MPC Live"
+                  className="w-full rounded-xl border border-[#2d2d40] bg-[#13131a] px-4 py-3 text-sm text-white outline-none focus:border-[#e11d48]"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-white">
+                  Usage de l&apos;IA <span className="text-red-400">*</span>
+                </label>
+                <select
+                  value={aiUsage}
+                  onChange={(event) =>
+                    setAiUsage(event.target.value as 'NONE' | 'ASSISTIVE_ONLY' | 'GENERATIVE')
+                  }
+                  className="w-full rounded-xl border border-[#2d2d40] bg-[#13131a] px-4 py-3 text-sm text-white outline-none focus:border-[#e11d48]"
+                >
+                  <option value="NONE">Aucune IA utilisée</option>
+                  <option value="ASSISTIVE_ONLY">IA d&apos;assistance uniquement</option>
+                  <option value="GENERATIVE">IA générative utilisée pour composer</option>
+                </select>
+              </div>
+            </div>
+
+            {aiUsage === 'ASSISTIVE_ONLY' && (
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-white">
+                  Outil utilisé et rôle exact <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={aiUsageDetails}
+                  onChange={(event) => setAiUsageDetails(event.target.value)}
+                  rows={2}
+                  placeholder="Ex. séparation de stems, nettoyage de bruit ou mastering — aucune composition générée"
+                  className="w-full resize-none rounded-xl border border-[#2d2d40] bg-[#13131a] px-4 py-3 text-sm text-white outline-none focus:border-[#e11d48]"
+                />
+              </div>
+            )}
+
+            {aiUsage === 'GENERATIVE' && (
+              <div className="rounded-xl border border-red-500/35 bg-red-500/10 p-3 text-sm text-red-300">
+                Les beats composés intégralement ou de manière substantielle par une IA générative
+                ne peuvent pas être envoyés sur 318 LEGAACY.
+              </div>
+            )}
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-4">
+              <input
+                type="checkbox"
+                checked={aiDeclarationAccepted}
+                onChange={(event) => setAiDeclarationAccepted(event.target.checked)}
+                className="mt-1 h-4 w-4 accent-[#e11d48]"
+              />
+              <span className="text-sm leading-relaxed text-gray-200">
+                Je certifie avoir personnellement composé cette instrumentale. Elle n&apos;a pas été
+                générée intégralement ou dans une partie substantielle par une IA générative. Je
+                peux fournir mon projet DAW et des preuves de création sur demande.
+              </span>
+            </label>
+          </section>
+
           {/* Error */}
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
@@ -1293,7 +1405,11 @@ export default function UploadBeatPage() {
               !bpm ||
               (enableAuction && (!startPrice || stemFiles.length === 0)) ||
               (saleMode === 'LEASING' &&
-                !((audioFile && Number(priceMp3) > 0) || (wavFile && Number(priceWav) > 0)))
+                !((audioFile && Number(priceMp3) > 0) || (wavFile && Number(priceWav) > 0))) ||
+              !creationSoftware.trim() ||
+              aiUsage === 'GENERATIVE' ||
+              (aiUsage === 'ASSISTIVE_ONLY' && !aiUsageDetails.trim()) ||
+              !aiDeclarationAccepted
             }
             className="w-full py-4 rounded-xl font-bold text-black text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
             style={{ background: 'linear-gradient(135deg, #e11d48 0%, #ff0033 100%)' }}

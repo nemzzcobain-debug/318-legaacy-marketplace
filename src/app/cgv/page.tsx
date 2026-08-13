@@ -14,7 +14,7 @@ export default function CGVPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-20">
         <h1 className="text-3xl font-black text-white mb-2">Conditions Générales de Vente</h1>
-        <p className="text-sm text-gray-500 mb-12">Dernière mise à jour : 2 avril 2026</p>
+        <p className="text-sm text-gray-500 mb-12">Dernière mise à jour : 13 août 2026</p>
 
         {/* Article 1 */}
         <section className="mb-10">
@@ -103,8 +103,14 @@ export default function CGVPage() {
               <p>— Que le beat ne contient aucun sample non autorisé</p>
               <p>— Que le contenu ne viole aucun droit de tiers</p>
               <p>— Disposer de la capacite juridique pour vendre des licences</p>
+              <p>— Avoir personnellement composé l&apos;instrumentale soumise</p>
+              <p>— Ne pas soumettre une instrumentale générée intégralement ou dans une partie substantielle par une IA générative</p>
+              <p>— Déclarer sincèrement tout outil d&apos;IA utilisé à des fins d&apos;assistance, sans génération de la composition</p>
+              <p>— Pouvoir fournir sur demande le projet DAW, des exports intermédiaires, des captures datées ou tout autre élément raisonnable de création</p>
             </div>
-            <p className="mt-3">En cas de litige relatif à la propriété intellectuelle, le producteur assume l&apos;entière responsabilité.</p>
+            <p className="mt-3">318 LEGAACY peut limiter le nombre de soumissions en attente, réaliser un audit technique ou documentaire, demander des preuves de création et masquer temporairement un beat pendant son examen.</p>
+            <p>Un score automatisé constitue uniquement un indicateur de priorité pour le contrôle humain. Aucune suppression n&apos;est décidée sur ce seul score. Une fausse déclaration ou un refus de fournir les éléments raisonnablement demandés peut entraîner le refus du beat ou la suspension du compte.</p>
+            <p>En cas de litige relatif à la propriété intellectuelle, le producteur assume l&apos;entière responsabilité.</p>
           </div>
         </section>
 

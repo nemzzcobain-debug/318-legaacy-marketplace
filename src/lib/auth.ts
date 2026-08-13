@@ -83,6 +83,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Aucun compte avec cet email')
         }
 
+        if (user.deletedAt) {
+          throw new Error('Ce compte a été désactivé. Contacte 318 LEGAACY.')
+        }
+
         // OAuth users trying to login with credentials
         if (!user.passwordHash) {
           throw new Error('Ce compte utilise une connexion Google. Connecte-toi avec Google.')
@@ -122,6 +126,8 @@ export const authOptions: NextAuthOptions = {
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email },
           })
+
+          if (existingUser?.deletedAt) return false
 
           if (existingUser && !existingUser.emailVerified) {
             // Auto-verify email for OAuth users
@@ -175,11 +181,11 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true },
+            select: { role: true, deletedAt: true },
           })
 
           if (dbUser) {
-            token.role = dbUser.role
+            token.role = dbUser.deletedAt ? 'DEACTIVATED' : dbUser.role
             if (dbUser.role === 'ADMIN') {
               token.needsOnboarding = false
             }

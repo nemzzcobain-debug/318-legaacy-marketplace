@@ -61,6 +61,27 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    const pendingCount =
+      user.role === 'ADMIN'
+        ? 0
+        : await prisma.beat.count({
+            where: {
+              producerId: user.id,
+              status: 'PENDING',
+              ...(body.editBeatId ? { id: { not: body.editBeatId } } : {}),
+            },
+          });
+    if (pendingCount >= 3) {
+      return NextResponse.json(
+        {
+          error:
+            'Tu as déjà 3 beats en attente de validation. Attends une décision avant un nouvel envoi.',
+          code: 'PENDING_BEAT_LIMIT',
+        },
+        { status: 409 }
+      );
+    }
+
     const { audioContentType, coverContentType, wavContentType, stems } = body;
     let { audioFileName, coverFileName, wavFileName } = body;
 

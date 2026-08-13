@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
         producerApprovedAt: true,
         stripeGraceSuspendedAt: true,
         stripeAccountId: true,
+        deletedAt: true,
         totalSales: true,
         rating: true,
         createdAt: true,
@@ -75,6 +76,7 @@ export async function PATCH(req: NextRequest) {
               producerStatus: status,
               producerApprovedAt: new Date(),
               stripeGraceSuspendedAt: null,
+              deletedAt: null,
             }
           : status === 'SUSPENDED'
             ? {
@@ -152,6 +154,82 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(producer)
   } catch (error) {
     console.error('Admin producer update error:', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}
+
+// Désactivation réversible. Les données financières et contractuelles sont conservées.
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    }
+
+    const { producerId, reason } = await req.json()
+    if (!producerId) {
+      return NextResponse.json({ error: 'Producteur requis' }, { status: 400 })
+    }
+
+    const producer = await prisma.user.findUnique({
+      where: { id: producerId },
+      select: { id: true, role: true, name: true, displayName: true, deletedAt: true },
+    })
+    if (!producer || producer.role !== 'PRODUCER') {
+      return NextResponse.json({ error: 'Producteur introuvable' }, { status: 404 })
+    }
+
+    const auctionsWithBids = await prisma.auction.count({
+      where: {
+        beat: { producerId: producer.id },
+        OR: [{ totalBids: { gt: 0 } }, { bids: { some: {} } }],
+        status: { in: ['ACTIVE', 'ENDING_SOON', 'SCHEDULED'] },
+      },
+    })
+    if (auctionsWithBids > 0) {
+      return NextResponse.json(
+        {
+          error:
+            'Ce compte possède une enchère active avec des mises. Termine ou annule proprement la procédure avant de le désactiver.',
+        },
+        { status: 409 }
+      )
+    }
+
+    const cleanReason = String(reason || 'Compte désactivé par l’administration').trim().slice(0, 1000)
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: producer.id },
+        data: { deletedAt: new Date(), producerStatus: 'SUSPENDED' },
+      }),
+      prisma.beat.updateMany({
+        where: { producerId: producer.id, status: { in: ['ACTIVE', 'PENDING'] } },
+        data: { status: 'ARCHIVED', isFeatured: false },
+      }),
+      prisma.auction.updateMany({
+        where: {
+          beat: { producerId: producer.id },
+          status: { in: ['ACTIVE', 'ENDING_SOON', 'SCHEDULED', 'PENDING_APPROVAL'] },
+        },
+        data: { status: 'CANCELLED' },
+      }),
+      prisma.adminActionLog.create({
+        data: {
+          adminId: session.user.id,
+          action: 'DEACTIVATE_PRODUCER',
+          targetType: 'PRODUCER',
+          targetId: producer.id,
+          details: JSON.stringify({ reason: cleanReason }),
+        },
+      }),
+    ])
+
+    return NextResponse.json({
+      success: true,
+      message: 'Compte désactivé. Les historiques financiers ont été conservés.',
+    })
+  } catch (error) {
+    console.error('Admin producer deactivate error:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

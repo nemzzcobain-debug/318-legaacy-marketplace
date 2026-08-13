@@ -1050,6 +1050,29 @@ export async function sendAdminNewBeatEmail(params: {
   return sendEmail(adminEmail, 'Beat a valider - ' + beatTitle, html)
 }
 
+export async function sendAuthenticityEvidenceRequestEmail(params: {
+  to: string
+  producerName: string
+  beatTitle: string
+  message: string
+}) {
+  const { to, producerName, beatTitle, message } = params
+  const html = emailLayout(
+    '<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Preuves de création demandées</h1>' +
+      '<p style="color:#999;font-size:14px;line-height:1.7;margin:0 0 18px;">Bonjour <strong style="color:#fff;">' +
+      escapeHtml(producerName) +
+      '</strong>, 318 LEGAACY effectue un contrôle d’authenticité pour <strong style="color:#fff;">' +
+      escapeHtml(beatTitle) +
+      '</strong>.</p>' +
+      '<div style="background:#13131a;border:1px solid #3f1d2b;border-radius:12px;padding:18px;color:#ddd;font-size:13px;line-height:1.7;">' +
+      escapeHtml(message) +
+      '</div>' +
+      '<p style="color:#999;font-size:13px;line-height:1.7;margin:18px 0 0;">Réponds depuis la messagerie de la marketplace avec ton projet DAW, des captures datées ou des exports intermédiaires.</p>' +
+      button('Ouvrir la messagerie', PLATFORM_URL + '/messages')
+  )
+  return sendEmail(to, 'Preuves de creation demandees - ' + beatTitle, html)
+}
+
 export async function sendAdminNewBidEmail(params: {
   adminEmail: string
   bidderName: string

@@ -11,6 +11,11 @@ import {
   sendNtfy,
 } from '@/lib/emails/resend'
 import { normalizeBeatSaleMode } from '@/lib/beat-sale-mode'
+import {
+  AI_DECLARATION_VERSION,
+  AI_USAGE_VALUES,
+  calculateAuthenticityRisk,
+} from '@/lib/beat-authenticity'
 
 const MAX_PUBLIC_PREVIEW_SECONDS = 60.5
 
@@ -136,7 +141,44 @@ export async function POST(req: NextRequest) {
       auctionDuration,
       auctionStartAt,
       bidIncrement,
+      // Déclaration d'authenticité
+      aiDeclarationAccepted,
+      aiUsage,
+      aiUsageDetails,
+      creationSoftware,
     } = body
+
+    if (aiDeclarationAccepted !== true) {
+      return NextResponse.json(
+        { error: "La déclaration d'authenticité est obligatoire pour envoyer un beat." },
+        { status: 400 }
+      )
+    }
+    if (!AI_USAGE_VALUES.includes(aiUsage)) {
+      return NextResponse.json({ error: "Indique clairement l'usage éventuel de l'IA." }, { status: 400 })
+    }
+    if (aiUsage === 'GENERATIVE') {
+      return NextResponse.json(
+        {
+          error:
+            "318 LEGAACY n'accepte pas les instrumentales composées intégralement ou substantiellement par une IA générative.",
+          code: 'GENERATIVE_AI_NOT_ALLOWED',
+        },
+        { status: 400 }
+      )
+    }
+    if (aiUsage === 'ASSISTIVE_ONLY' && !String(aiUsageDetails || '').trim()) {
+      return NextResponse.json(
+        { error: "Précise l'outil d'assistance IA utilisé et son rôle." },
+        { status: 400 }
+      )
+    }
+    if (!String(creationSoftware || '').trim()) {
+      return NextResponse.json(
+        { error: 'Indique le logiciel ou le matériel utilisé pour composer ce beat.' },
+        { status: 400 }
+      )
+    }
 
     // Validations des champs requis
     if (!title || !genre || !bpm || !audioUrl || (!audioOriginalUrl && !wavUrl)) {
@@ -276,6 +318,53 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (user.role !== 'ADMIN') {
+      const pendingCount = await prisma.beat.count({
+        where: {
+          producerId: user.id,
+          status: 'PENDING',
+          ...(editBeatId ? { id: { not: editBeatId } } : {}),
+        },
+      })
+      if (pendingCount >= 3) {
+        return NextResponse.json(
+          {
+            error:
+              'Tu as déjà 3 beats en attente de validation. Attends une décision avant un nouvel envoi.',
+            code: 'PENDING_BEAT_LIMIT',
+          },
+          { status: 409 }
+        )
+      }
+    }
+
+    const [producerBeatCount, uploadsIn24h, duplicateMetadataCount] = await Promise.all([
+      prisma.beat.count({ where: { producerId: user.id } }),
+      prisma.beat.count({
+        where: {
+          producerId: user.id,
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      }),
+      prisma.beat.count({
+        where: {
+          producerId: user.id,
+          bpm: bpmNum,
+          key: key || null,
+          duration,
+        },
+      }),
+    ])
+    const initialAuthenticityRisk = calculateAuthenticityRisk({
+      declarationAcceptedAt: new Date(),
+      aiUsage,
+      hasWav: Boolean(wavUrl),
+      hasStems: Boolean(parsedStems?.length),
+      producerBeatCount: producerBeatCount + (rejectedBeat ? 0 : 1),
+      producerMaxUploadsIn24h: uploadsIn24h + (rejectedBeat ? 0 : 1),
+      duplicateMetadataCount: duplicateMetadataCount + (rejectedBeat ? 0 : 1),
+    })
+
     const beatData = {
       title,
       description: description || null,
@@ -300,6 +389,20 @@ export async function POST(req: NextRequest) {
       rejectionType: null,
       rejectionReason: null,
       rejectedAt: null,
+      aiDeclarationVersion: AI_DECLARATION_VERSION,
+      aiDeclarationAcceptedAt: new Date(),
+      aiUsage,
+      aiUsageDetails: aiUsage === 'ASSISTIVE_ONLY' ? String(aiUsageDetails).trim() : null,
+      creationSoftware: String(creationSoftware).trim(),
+      aiReviewStatus: initialAuthenticityRisk.status,
+      aiRiskScore: initialAuthenticityRisk.score,
+      aiRiskReasons: JSON.stringify(initialAuthenticityRisk.reasons),
+      aiDetectorProvider: '318_METADATA_AUDIT',
+      aiDetectorVersion: '1.0',
+      aiSuspectedModel: null,
+      aiAnalyzedAt: new Date(),
+      aiAdminNote: null,
+      aiEvidenceRequestedAt: null,
     }
 
     // Un renvoi remplace le beat refusé afin de conserver son historique.
