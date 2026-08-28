@@ -403,6 +403,8 @@ export async function POST(req: NextRequest) {
       aiAnalyzedAt: new Date(),
       aiAdminNote: null,
       aiEvidenceRequestedAt: null,
+      aiEvidenceCode: null,
+      aiEvidenceExpiresAt: null,
     }
 
     // Un renvoi remplace le beat refusé afin de conserver son historique.

@@ -1990,6 +1990,21 @@ export default function AdminPage() {
                                   {beat.aiUsageDetails}
                                 </p>
                               )}
+                              {beat.aiReviewStatus === 'EVIDENCE_REQUESTED' &&
+                                beat.aiEvidenceCode &&
+                                beat.aiEvidenceExpiresAt && (
+                                  <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                                    <p className="text-xs font-bold uppercase tracking-wide text-amber-300">
+                                      Challenge de preuve en cours
+                                    </p>
+                                    <p className="mt-2 font-mono text-lg font-black tracking-wider text-white">
+                                      {beat.aiEvidenceCode}
+                                    </p>
+                                    <p className="mt-1 text-xs text-gray-300">
+                                      Échéance : {formatDate(beat.aiEvidenceExpiresAt)}
+                                    </p>
+                                  </div>
+                                )}
                               {Array.isArray(beat.aiRiskReasons) && beat.aiRiskReasons.length > 0 && (
                                 <div className="mt-3 rounded-lg bg-black/25 p-3">
                                   <p className="text-xs font-bold uppercase tracking-wide text-gray-400">

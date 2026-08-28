@@ -1055,8 +1055,15 @@ export async function sendAuthenticityEvidenceRequestEmail(params: {
   producerName: string
   beatTitle: string
   message: string
+  evidenceCode: string
+  evidenceExpiresAt: Date
 }) {
-  const { to, producerName, beatTitle, message } = params
+  const { to, producerName, beatTitle, message, evidenceCode, evidenceExpiresAt } = params
+  const deadline = new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'Europe/Paris',
+  }).format(evidenceExpiresAt)
   const html = emailLayout(
     '<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 8px;">Preuves de création demandées</h1>' +
       '<p style="color:#999;font-size:14px;line-height:1.7;margin:0 0 18px;">Bonjour <strong style="color:#fff;">' +
@@ -1067,7 +1074,14 @@ export async function sendAuthenticityEvidenceRequestEmail(params: {
       '<div style="background:#13131a;border:1px solid #3f1d2b;border-radius:12px;padding:18px;color:#ddd;font-size:13px;line-height:1.7;">' +
       escapeHtml(message) +
       '</div>' +
-      '<p style="color:#999;font-size:13px;line-height:1.7;margin:18px 0 0;">Réponds depuis la messagerie de la marketplace avec ton projet DAW, des captures datées ou des exports intermédiaires.</p>' +
+      '<p style="color:#999;font-size:13px;line-height:1.7;margin:18px 0 8px;">Ajoute ce code dans ton projet DAW comme nom de piste, marqueur ou note visible :</p>' +
+      '<div style="background:#050509;border:1px solid #e11d48;border-radius:12px;padding:16px;text-align:center;color:#fb7185;font-family:monospace;font-size:22px;font-weight:900;letter-spacing:2px;">' +
+      escapeHtml(evidenceCode) +
+      '</div>' +
+      '<p style="color:#999;font-size:13px;line-height:1.7;margin:12px 0 0;">Envoie ensuite une capture ou une courte vidéo montrant le code, la timeline et les pistes du projet. Le code est valable jusqu’au <strong style="color:#fff;">' +
+      escapeHtml(deadline) +
+      '</strong>.</p>' +
+      '<p style="color:#999;font-size:13px;line-height:1.7;margin:12px 0 0;">Réponds depuis la messagerie de la marketplace avec ton projet DAW, des captures datées ou des exports intermédiaires.</p>' +
       button('Ouvrir la messagerie', PLATFORM_URL + '/messages')
   )
   return sendEmail(to, 'Preuves de creation demandees - ' + beatTitle, html)

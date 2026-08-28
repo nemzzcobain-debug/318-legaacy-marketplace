@@ -228,6 +228,8 @@ model Beat {
   aiAudioScannedAt        DateTime?
   aiAdminNote             String?
   aiEvidenceRequestedAt   DateTime?
+  aiEvidenceCode          String?   @unique
+  aiEvidenceExpiresAt     DateTime?
 
   // Featured (admin selection)
   isFeatured    Boolean   @default(false)

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { randomBytes } from 'node:crypto'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { deleteFile, parseSupabaseUrl } from '@/lib/supabase'
@@ -15,6 +16,13 @@ const ACTIONS = [
   'ARCHIVE',
   'DELETE',
 ] as const
+
+const EVIDENCE_VALIDITY_DAYS = 7
+
+function createEvidenceCode() {
+  const value = randomBytes(6).toString('hex').toUpperCase()
+  return `318-${value.slice(0, 4)}-${value.slice(4, 8)}-${value.slice(8, 12)}`
+}
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -75,6 +83,10 @@ export async function PATCH(req: NextRequest) {
       const requestMessage =
         cleanNote ||
         'Merci de fournir le projet DAW, des captures datées ou des exports intermédiaires permettant de confirmer la création du beat.'
+      const evidenceCode = createEvidenceCode()
+      const evidenceExpiresAt = new Date(
+        now.getTime() + EVIDENCE_VALIDITY_DAYS * 24 * 60 * 60 * 1000
+      )
 
       await prisma.$transaction([
         prisma.beat.update({
@@ -82,6 +94,8 @@ export async function PATCH(req: NextRequest) {
           data: {
             aiReviewStatus: 'EVIDENCE_REQUESTED',
             aiEvidenceRequestedAt: now,
+            aiEvidenceCode: evidenceCode,
+            aiEvidenceExpiresAt: evidenceExpiresAt,
             aiAdminNote: requestMessage,
           },
         }),
@@ -90,7 +104,7 @@ export async function PATCH(req: NextRequest) {
             userId: beat.producer.id,
             type: 'SYSTEM',
             title: "Preuves de création demandées",
-            message: `318 LEGAACY demande des éléments de création pour « ${beat.title} ». ${requestMessage}`,
+            message: `318 LEGAACY demande des éléments de création pour « ${beat.title} ». Code unique à afficher dans ton projet : ${evidenceCode}. À envoyer sous 7 jours. ${requestMessage}`,
             link: '/messages',
           },
         }),
@@ -100,7 +114,12 @@ export async function PATCH(req: NextRequest) {
             action,
             targetType: 'BEAT',
             targetId: beat.id,
-            details: JSON.stringify({ note: requestMessage, producerId: beat.producer.id }),
+            details: JSON.stringify({
+              note: requestMessage,
+              producerId: beat.producer.id,
+              evidenceCode,
+              evidenceExpiresAt: evidenceExpiresAt.toISOString(),
+            }),
           },
         }),
       ])
@@ -111,10 +130,17 @@ export async function PATCH(req: NextRequest) {
           producerName: beat.producer.displayName || beat.producer.name || 'Producteur',
           beatTitle: beat.title,
           message: requestMessage,
+          evidenceCode,
+          evidenceExpiresAt,
         })
       }
 
-      return NextResponse.json({ success: true, message: 'Demande envoyée au beatmaker.' })
+      return NextResponse.json({
+        success: true,
+        message: `Demande envoyée avec le code ${evidenceCode}.`,
+        evidenceCode,
+        evidenceExpiresAt,
+      })
     }
 
     if (action === 'MARK_HUMAN') {

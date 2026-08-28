@@ -1590,6 +1590,9 @@ function ProducerBeatsTab({
                 const isHighlighted = highlightBeatId === beat.id
                 const isNew = beat.createdAt && isNewBeat(beat.createdAt)
                 const showNewBadge = isHighlighted || isNew
+                const evidenceExpired =
+                  beat.aiEvidenceExpiresAt &&
+                  new Date(beat.aiEvidenceExpiresAt).getTime() < Date.now()
 
                 return (
                   <div
@@ -1649,6 +1652,38 @@ function ProducerBeatsTab({
                             </p>
                           </div>
                         )}
+                        {beat.aiReviewStatus === 'EVIDENCE_REQUESTED' &&
+                          beat.aiEvidenceCode &&
+                          beat.aiEvidenceExpiresAt && (
+                            <div className="mt-2 max-w-xl rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                              <p className="text-xs font-bold text-amber-300">
+                                Preuves de création demandées
+                              </p>
+                              <p className="mt-1 text-xs leading-relaxed text-gray-300">
+                                Ajoute ce code comme nom de piste, marqueur ou note visible dans ton
+                                projet DAW, puis envoie une capture ou une courte vidéo montrant la
+                                timeline et les pistes.
+                              </p>
+                              <p className="mt-2 font-mono text-base font-black tracking-wider text-white">
+                                {beat.aiEvidenceCode}
+                              </p>
+                              <p
+                                className={`mt-1 text-xs ${evidenceExpired ? 'font-bold text-red-300' : 'text-gray-400'}`}
+                              >
+                                {evidenceExpired ? 'Code expiré' : 'À envoyer avant le'}{' '}
+                                {new Intl.DateTimeFormat('fr-FR', {
+                                  dateStyle: 'medium',
+                                  timeStyle: 'short',
+                                }).format(new Date(beat.aiEvidenceExpiresAt))}
+                              </p>
+                              <Link
+                                href="/messages"
+                                className="mt-2 inline-flex rounded-lg bg-amber-400 px-3 py-2 text-xs font-black text-black hover:bg-amber-300"
+                              >
+                                Envoyer mes preuves
+                              </Link>
+                            </div>
+                          )}
                       </div>
                     </div>
                     <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
