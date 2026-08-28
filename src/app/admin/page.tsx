@@ -98,6 +98,8 @@ const VALID_ADMIN_STATUSES = [
   'DISMISSED',
 ]
 
+const IRCAM_SCAN_COOLDOWN_MS = 15 * 60 * 1000
+
 const BEAT_STATUS_LABELS: Record<string, string> = {
   PENDING: 'En attente de validation',
   ACTIVE: 'Approuvé et en ligne',
@@ -1768,6 +1770,12 @@ export default function AdminPage() {
                 const authenticity =
                   AI_REVIEW_DISPLAY[beat.aiReviewStatus] || AI_REVIEW_DISPLAY.NOT_ANALYZED
                 const authenticityValidated = beat.aiReviewStatus === 'HUMAN_CONFIRMED'
+                const ircamScanCoolingDown = Boolean(
+                  beat.aiAudioScanStatus !== 'PROCESSING' &&
+                    beat.aiAudioScannedAt &&
+                    Date.now() - new Date(beat.aiAudioScannedAt).getTime() <
+                      IRCAM_SCAN_COOLDOWN_MS
+                )
                 const canRequestEvidence = [
                   'REVIEW_RECOMMENDED',
                   'REVIEW_REQUIRED',
@@ -2209,10 +2217,17 @@ export default function AdminPage() {
                                         Aucun fichier analysé acoustiquement pour le moment.
                                       </p>
                                     )}
+                                    {beat.aiReviewStatus === 'CONFLICT_REVIEW_REQUIRED' && (
+                                      <p className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-xs font-bold text-red-200">
+                                        Résultat contradictoire : le beat est temporairement masqué et
+                                        doit être réexaminé avant toute remise en ligne.
+                                      </p>
+                                    )}
                                   </div>
                                   <button
                                     disabled={
                                       audioAiScanId === beat.id ||
+                                      ircamScanCoolingDown ||
                                       (!aiAudioDetectorConfigured &&
                                         beat.aiAudioScanStatus !== 'PROCESSING')
                                     }
@@ -2223,13 +2238,17 @@ export default function AdminPage() {
                                     }
                                     className="shrink-0 rounded-lg bg-cyan-500/15 px-3 py-2 text-xs font-black text-cyan-200 hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     title={
-                                      aiAudioDetectorConfigured
+                                      ircamScanCoolingDown
+                                        ? 'Une nouvelle analyse sera disponible 15 minutes après la précédente.'
+                                        : aiAudioDetectorConfigured
                                         ? 'Le résultat est un indice et ne provoque aucune suppression automatique.'
                                         : 'Ajouter IRCAM_AMPLIFY_API_TOKEN dans Vercel pour activer le scan.'
                                     }
                                   >
                                     {audioAiScanId === beat.id
                                       ? 'Analyse…'
+                                      : ircamScanCoolingDown
+                                        ? 'Nouvelle analyse bientôt'
                                       : beat.aiAudioScanStatus === 'PROCESSING'
                                         ? 'Actualiser le résultat'
                                         : beat.aiAudioScanStatus === 'COMPLETED'
