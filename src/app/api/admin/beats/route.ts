@@ -183,6 +183,20 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Ce beat a déjà été examiné' }, { status: 409 })
     }
 
+    // La validation d'authenticité est une condition obligatoire de publication.
+    // Cette barrière serveur empêche de contourner l'interface administrateur.
+    if (action === 'APPROVE' && beat.aiReviewStatus !== 'HUMAN_CONFIRMED') {
+      return NextResponse.json(
+        {
+          error:
+            "La création humaine doit être confirmée dans le contrôle anti-IA avant de publier ce beat.",
+          code: 'AI_REVIEW_REQUIRED',
+          aiReviewStatus: beat.aiReviewStatus,
+        },
+        { status: 409 }
+      )
+    }
+
     const isStripeGraceSuspension =
       beat.producer.producerStatus === 'SUSPENDED' && Boolean(beat.producer.stripeGraceSuspendedAt)
     const usesAdminStripeOverride =

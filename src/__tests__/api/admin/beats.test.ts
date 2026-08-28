@@ -37,6 +37,7 @@ const stripeSuspendedBeat = {
   id: 'beat-1',
   title: 'Beat test',
   status: 'PENDING',
+  aiReviewStatus: 'HUMAN_CONFIRMED',
   saleMode: 'AUCTION',
   producer: {
     id: 'producer-1',
@@ -47,6 +48,16 @@ const stripeSuspendedBeat = {
     stripeGraceSuspendedAt: new Date('2026-08-01T10:00:00.000Z'),
   },
   auctions: [],
+}
+
+const unverifiedBeat = {
+  ...stripeSuspendedBeat,
+  aiReviewStatus: 'REVIEW_REQUIRED',
+  producer: {
+    ...stripeSuspendedBeat.producer,
+    producerStatus: 'APPROVED',
+    stripeGraceSuspendedAt: null,
+  },
 }
 
 describe('PATCH /api/admin/beats — dérogation Stripe', () => {
@@ -63,6 +74,25 @@ describe('PATCH /api/admin/beats — dérogation Stripe', () => {
     txMock.user.update.mockResolvedValue({})
     txMock.beat.update.mockResolvedValue({})
     txMock.notification.create.mockResolvedValue({})
+  })
+
+  it('bloque la publication tant que la création humaine n’est pas confirmée', async () => {
+    prismaMock.beat.findUnique.mockResolvedValue(unverifiedBeat)
+
+    const response = await PATCH(
+      new Request('http://localhost/api/admin/beats', {
+        method: 'PATCH',
+        body: JSON.stringify({ beatId: 'beat-1', action: 'APPROVE' }),
+      })
+    )
+    const body = await response.json()
+
+    expect(response.status).toBe(409)
+    expect(body).toMatchObject({
+      code: 'AI_REVIEW_REQUIRED',
+      aiReviewStatus: 'REVIEW_REQUIRED',
+    })
+    expect(prismaMock.$transaction).not.toHaveBeenCalled()
   })
 
   it('propose la dérogation sans publier automatiquement le beat', async () => {

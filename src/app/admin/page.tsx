@@ -1701,6 +1701,7 @@ export default function AdminPage() {
                 const tags = parseBeatTags(beat.tags)
                 const authenticity =
                   AUTHENTICITY_DISPLAY[getAuthenticityCategory(beat.aiReviewStatus)]
+                const authenticityValidated = beat.aiReviewStatus === 'HUMAN_CONFIRMED'
                 const deletionProtected = isBeatDeletionProtected(beat)
                 return (
                   <div
@@ -2347,7 +2348,13 @@ export default function AdminPage() {
                         </section>
 
                         {beat.status === 'PENDING' && (
-                          <div className="sticky bottom-3 z-10 flex flex-col gap-2 rounded-xl border border-[#343447] bg-[#111119]/95 p-3 shadow-2xl backdrop-blur sm:flex-row sm:justify-end">
+                          <div className="sticky bottom-3 z-10 flex flex-col gap-2 rounded-xl border border-[#343447] bg-[#111119]/95 p-3 shadow-2xl backdrop-blur sm:flex-row sm:items-center sm:justify-end">
+                            {!authenticityValidated && (
+                              <p className="text-xs font-semibold text-orange-300 sm:mr-auto sm:max-w-md">
+                                Validation anti-IA obligatoire : contrôle le beat puis utilise
+                                « Confirmer création humaine » avant de le publier.
+                              </p>
+                            )}
                             <button
                               disabled={reviewingBeatId === beat.id}
                               onClick={() => reviewBeat(beat.id, 'REJECT')}
@@ -2356,11 +2363,20 @@ export default function AdminPage() {
                               Refuser / demander des modifications
                             </button>
                             <button
-                              disabled={reviewingBeatId === beat.id}
+                              disabled={reviewingBeatId === beat.id || !authenticityValidated}
                               onClick={() => reviewBeat(beat.id, 'APPROVE')}
-                              className="rounded-lg bg-green-500 px-6 py-3 text-sm font-bold text-black hover:bg-green-400 disabled:opacity-50"
+                              className="rounded-lg bg-green-500 px-6 py-3 text-sm font-bold text-black hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-40"
+                              title={
+                                authenticityValidated
+                                  ? 'Approuver et publier ce beat'
+                                  : "Confirme d'abord la création humaine dans le contrôle anti-IA"
+                              }
                             >
-                              {reviewingBeatId === beat.id ? 'Traitement…' : 'Approuver et publier'}
+                              {reviewingBeatId === beat.id
+                                ? 'Traitement…'
+                                : authenticityValidated
+                                  ? 'Approuver et publier'
+                                  : "Valide d'abord l'authenticité"}
                             </button>
                           </div>
                         )}
