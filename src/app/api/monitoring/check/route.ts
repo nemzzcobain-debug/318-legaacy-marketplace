@@ -4,6 +4,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkOperationalHealth } from '@/lib/health'
 import { reportOperationalIssue } from '@/lib/monitoring'
+import { processPendingIrcamScans } from '@/lib/ircam-scan-processing'
 
 function isAuthorized(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET
@@ -17,6 +18,25 @@ export async function GET(request: NextRequest) {
   }
 
   const health = await checkOperationalHealth()
+  let ircamScans = {
+    configured: false,
+    checked: 0,
+    processing: 0,
+    completed: 0,
+    failed: 0,
+  }
+
+  try {
+    // Le cron poursuit les analyses même si l'administrateur a fermé son navigateur.
+    ircamScans = await processPendingIrcamScans(10)
+  } catch (error) {
+    await reportOperationalIssue({
+      area: 'health',
+      severity: 'warning',
+      message: 'Traitement automatique des analyses IRCAM indisponible',
+      context: { error: String(error) },
+    })
+  }
 
   if (!health.healthy) {
     await reportOperationalIssue({
@@ -42,6 +62,7 @@ export async function GET(request: NextRequest) {
         stripeWebhook: health.configuration.stripeWebhook,
         email: health.configuration.email,
         alertChannel: health.configuration.alertChannel,
+        ircamScans,
       },
     },
     {

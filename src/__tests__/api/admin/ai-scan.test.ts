@@ -80,12 +80,24 @@ describe('API admin — analyses audio IRCAM', () => {
   })
 
   it('refuse une deuxième analyse pendant qu’une analyse est en cours', async () => {
-    prismaMock.beat.findUnique.mockResolvedValue({
+    const processingBeat = {
       ...baseBeat,
       aiAudioScanStatus: 'PROCESSING',
       aiAudioScanJobId: 'job-1',
       aiAudioScannedAt: new Date(),
-    })
+    }
+    const conflictedBeat = {
+      ...baseBeat,
+      status: 'PENDING',
+      aiReviewStatus: 'CONFLICT_REVIEW_REQUIRED',
+      aiAudioScanStatus: 'COMPLETED',
+      aiAudioProbability: 98,
+      aiAudioScanJobId: 'job-1',
+      aiAudioScannedAt: new Date(),
+    }
+    prismaMock.beat.findUnique
+      .mockResolvedValueOnce(processingBeat)
+      .mockResolvedValueOnce(conflictedBeat)
 
     const response = await POST(new Request('http://localhost') as never, routeContext)
     const body = await response.json()
@@ -145,16 +157,6 @@ describe('API admin — analyses audio IRCAM', () => {
       suspectedModel: 'Suno',
       suspectedVersion: 'v4',
     })
-    prismaMock.beat.update.mockResolvedValue({
-      ...baseBeat,
-      status: 'PENDING',
-      aiReviewStatus: 'CONFLICT_REVIEW_REQUIRED',
-      aiAudioScanStatus: 'COMPLETED',
-      aiAudioProbability: 98,
-      aiAudioScanJobId: 'job-1',
-      aiAudioScannedAt: new Date(),
-    })
-
     const response = await GET(new Request('http://localhost') as never, routeContext)
 
     expect(response.status).toBe(200)
@@ -165,9 +167,13 @@ describe('API admin — analyses audio IRCAM', () => {
       },
       data: { status: 'PENDING_APPROVAL' },
     })
-    expect(prismaMock.beat.update).toHaveBeenCalledWith(
+    expect(prismaMock.beat.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'beat-1' },
+        where: expect.objectContaining({
+          id: 'beat-1',
+          aiAudioScanStatus: 'PROCESSING',
+          aiAudioScanJobId: 'job-1',
+        }),
         data: expect.objectContaining({
           status: 'PENDING',
           isFeatured: false,

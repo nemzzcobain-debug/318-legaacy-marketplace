@@ -10,70 +10,23 @@ import {
   isIrcamAiMusicConfigured,
   startIrcamAiMusicScan,
 } from '@/lib/ircam-ai-music'
+import {
+  finalizeIrcamScan,
+  IRCAM_SCAN_BEAT_SELECT,
+} from '@/lib/ircam-scan-processing'
 
 const TERMINAL_STATUSES = ['COMPLETED', 'FAILED']
 const SCAN_COOLDOWN_MS = 15 * 60 * 1000
-
-const BEAT_SCAN_SELECT = {
-  id: true,
-  title: true,
-  status: true,
-  producerId: true,
-  audioUrl: true,
-  audioOriginal: true,
-  audioWav: true,
-  aiReviewStatus: true,
-  aiAudioProbability: true,
-  aiAudioDetectorProvider: true,
-  aiAudioDetectorVersion: true,
-  aiAudioSuspectedModel: true,
-  aiAudioSuspectedVersion: true,
-  aiAudioScanStatus: true,
-  aiAudioScanJobId: true,
-  aiAudioScanError: true,
-  aiAudioScannedAt: true,
-} as const
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions)
   return session?.user?.role === 'ADMIN' ? session : null
 }
 
-function promoteReviewStatus(current: string, probability: number | undefined) {
-  if (probability === undefined) {
-    return current
-  }
-
-  if (
-    probability >= 70 &&
-    ['HUMAN_CONFIRMED', 'EVIDENCE_RECEIVED', 'REVIEW_IN_PROGRESS'].includes(current)
-  ) {
-    return 'CONFLICT_REVIEW_REQUIRED'
-  }
-
-  if (
-    [
-      'EVIDENCE_REQUESTED',
-      'EVIDENCE_EXPIRED',
-      'CONFLICT_REVIEW_REQUIRED',
-      'QUARANTINED',
-      'AI_REJECTED',
-    ].includes(current)
-  ) {
-    return current
-  }
-
-  if (probability >= 70) return 'REVIEW_REQUIRED'
-  if (probability >= 40 && ['NOT_ANALYZED', 'LOW_RISK'].includes(current)) {
-    return 'REVIEW_RECOMMENDED'
-  }
-  return current
-}
-
 async function getBeat(id: string) {
   return prisma.beat.findUnique({
     where: { id },
-    select: BEAT_SCAN_SELECT,
+    select: IRCAM_SCAN_BEAT_SELECT,
   })
 }
 
@@ -273,87 +226,12 @@ export async function GET(
       })
     }
 
-    const now = new Date()
-    const previousReviewStatus = beat.aiReviewStatus
-    const nextReviewStatus =
-      result.status === 'COMPLETED'
-        ? promoteReviewStatus(previousReviewStatus, result.probability)
-        : previousReviewStatus
-    const conflictCreated =
-      nextReviewStatus === 'CONFLICT_REVIEW_REQUIRED' &&
-      previousReviewStatus !== 'CONFLICT_REVIEW_REQUIRED'
-
-    beat = await prisma.$transaction(async (tx) => {
-      if (conflictCreated) {
-        await tx.auction.updateMany({
-          where: {
-            beatId: beat!.id,
-            status: { in: ['SCHEDULED', 'ACTIVE', 'ENDING_SOON'] },
-          },
-          data: { status: 'PENDING_APPROVAL' },
-        })
-      }
-
-      const updatedBeat = await tx.beat.update({
-        where: { id: beat!.id },
-        data:
-          result.status === 'COMPLETED'
-            ? {
-                aiAudioScanStatus: 'COMPLETED',
-                aiAudioProbability: result.probability,
-                aiAudioDetectorVersion: result.detectorVersion,
-                aiAudioSuspectedModel: result.suspectedModel,
-                aiAudioSuspectedVersion: result.suspectedVersion,
-                aiAudioScanError: null,
-                aiAudioScannedAt: now,
-                aiReviewStatus: nextReviewStatus,
-                ...(conflictCreated ? { status: 'PENDING', isFeatured: false } : {}),
-              }
-            : {
-                aiAudioScanStatus: 'FAILED',
-                aiAudioDetectorVersion: result.detectorVersion,
-                aiAudioScanError: result.error || 'Analyse audio impossible',
-                aiAudioScannedAt: now,
-              },
-        select: BEAT_SCAN_SELECT,
-      })
-
-      if (conflictCreated) {
-        await tx.notification.create({
-          data: {
-            userId: updatedBeat.producerId,
-            type: 'SYSTEM',
-            title: 'Contrôle anti-IA complémentaire',
-            message: `« ${updatedBeat.title} » est temporairement masqué pendant un nouvel examen administratif.`,
-            link: '/dashboard?tab=beats',
-          },
-        })
-      }
-
-      await tx.adminActionLog.create({
-        data: {
-          adminId: session.user.id,
-          action:
-            result.status === 'COMPLETED'
-              ? 'COMPLETE_IRCAM_AUDIO_SCAN'
-              : 'FAIL_IRCAM_AUDIO_SCAN',
-          targetType: 'BEAT',
-          targetId: updatedBeat.id,
-          details: JSON.stringify({
-            probability: result.probability,
-            suspectedModel: result.suspectedModel,
-            suspectedVersion: result.suspectedVersion,
-            detectorVersion: result.detectorVersion,
-            error: result.error,
-            previousReviewStatus,
-            nextReviewStatus,
-            conflictCreated,
-          }),
-        },
-      })
-
-      return updatedBeat
+    const finalized = await finalizeIrcamScan({
+      beat,
+      result,
+      actorId: session.user.id,
     })
+    beat = finalized.beat
 
     return NextResponse.json({ success: true, scan: publicScanState(beat) })
   } catch (error) {
