@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { getAuthenticityCategory } from '@/lib/beat-authenticity'
 
 interface Stats {
   totalUsers: number
@@ -112,8 +111,13 @@ const AI_REVIEW_LABELS: Record<string, string> = {
   NOT_ANALYZED: 'Non audité',
   LOW_RISK: 'Risque faible',
   REVIEW_RECOMMENDED: 'Contrôle conseillé',
-  REVIEW_REQUIRED: 'Contrôle prioritaire',
+  REVIEW_REQUIRED: 'À contrôler',
+  REVIEW_IN_PROGRESS: 'Contrôle en cours',
   EVIDENCE_REQUESTED: 'Preuves demandées',
+  EVIDENCE_RECEIVED: 'Preuves reçues',
+  EVIDENCE_EXPIRED: 'Délai de preuve expiré',
+  CONFLICT_REVIEW_REQUIRED: 'Conflit à examiner',
+  QUARANTINED: 'En quarantaine',
   HUMAN_CONFIRMED: 'Création humaine confirmée',
   AI_REJECTED: 'Refusé après contrôle IA',
 }
@@ -124,28 +128,71 @@ const AI_USAGE_LABELS: Record<string, string> = {
   GENERATIVE: 'IA générative déclarée',
 }
 
-const AUTHENTICITY_DISPLAY = {
+const AI_REVIEW_DISPLAY: Record<
+  string,
+  { symbol: string; label: string; classes: string }
+> = {
+  NOT_ANALYZED: {
+    symbol: '?',
+    label: 'Pas encore vérifiée',
+    classes: 'border-gray-500/40 bg-gray-500/10 text-gray-300',
+  },
+  LOW_RISK: {
+    symbol: '•',
+    label: 'Risque faible — à valider',
+    classes: 'border-slate-400/40 bg-slate-400/10 text-slate-300',
+  },
+  REVIEW_RECOMMENDED: {
+    symbol: '!',
+    label: 'Contrôle conseillé',
+    classes: 'border-yellow-400/40 bg-yellow-400/10 text-yellow-300',
+  },
+  REVIEW_REQUIRED: {
+    symbol: '!',
+    label: 'À contrôler',
+    classes: 'border-orange-400/40 bg-orange-400/15 text-orange-300',
+  },
+  REVIEW_IN_PROGRESS: {
+    symbol: '…',
+    label: 'Contrôle en cours',
+    classes: 'border-cyan-400/40 bg-cyan-400/10 text-cyan-300',
+  },
+  EVIDENCE_REQUESTED: {
+    symbol: '⌛',
+    label: 'Preuves demandées',
+    classes: 'border-amber-400/40 bg-amber-400/15 text-amber-300',
+  },
+  EVIDENCE_RECEIVED: {
+    symbol: '↓',
+    label: 'Preuves reçues',
+    classes: 'border-violet-400/40 bg-violet-400/15 text-violet-300',
+  },
+  EVIDENCE_EXPIRED: {
+    symbol: '!',
+    label: 'Délai de preuve expiré',
+    classes: 'border-red-400/40 bg-red-400/15 text-red-300',
+  },
+  CONFLICT_REVIEW_REQUIRED: {
+    symbol: '⚠',
+    label: 'Conflit à examiner',
+    classes: 'border-fuchsia-400/40 bg-fuchsia-400/15 text-fuchsia-300',
+  },
+  QUARANTINED: {
+    symbol: '⏸',
+    label: 'En quarantaine',
+    classes: 'border-rose-500/50 bg-rose-500/20 text-rose-200',
+  },
   HUMAN_CONFIRMED: {
     symbol: '✓',
     label: 'Création humaine validée',
     classes: 'border-green-500/40 bg-green-500/15 text-green-300',
   },
-  POTENTIAL_AI: {
-    symbol: '!',
-    label: 'IA potentielle — à vérifier',
-    classes: 'border-orange-400/40 bg-orange-400/15 text-orange-300',
-  },
-  AI_CONFIRMED: {
+  AI_REJECTED: {
     symbol: '✕',
     label: 'IA confirmée après contrôle',
     classes: 'border-red-500/50 bg-red-500/15 text-red-300',
   },
-  UNVERIFIED: {
-    symbol: '?',
-    label: 'Pas encore vérifiée',
-    classes: 'border-gray-500/40 bg-gray-500/10 text-gray-300',
-  },
-} as const
+}
 
 const AUCTION_STATUS_LABELS: Record<string, string> = {
   PENDING_APPROVAL: 'En attente de validation du beat',
@@ -560,22 +607,36 @@ export default function AdminPage() {
   const runCatalogueAction = async (beat: any, action: string) => {
     const actionLabels: Record<string, string> = {
       SET_PENDING: 'remettre ce beat en attente et le masquer',
+      START_REVIEW: 'commencer le contrôle administratif de ce beat',
       REQUEST_EVIDENCE: 'demander des preuves de création au beatmaker',
+      MARK_EVIDENCE_RECEIVED: 'confirmer la réception des preuves',
+      MARK_CONFLICT: 'signaler un conflit nécessitant un nouvel examen',
+      QUARANTINE: 'placer ce beat en quarantaine et bloquer les nouvelles enchères',
       MARK_HUMAN: 'confirmer que cette création est humaine',
       MARK_AI_REJECTED: 'refuser définitivement ce beat après contrôle',
       ARCHIVE: 'archiver et retirer ce beat du catalogue',
       DELETE: 'supprimer définitivement ce beat et ses fichiers',
     }
-    const destructive = ['MARK_AI_REJECTED', 'ARCHIVE', 'DELETE'].includes(action)
+    const destructive = ['MARK_AI_REJECTED', 'QUARANTINE', 'ARCHIVE', 'DELETE'].includes(action)
     if (!window.confirm(`Confirmer : ${actionLabels[action] || action} ?`)) return
 
     let note = ''
-    if (['REQUEST_EVIDENCE', 'MARK_AI_REJECTED'].includes(action)) {
+    if (
+      ['REQUEST_EVIDENCE', 'MARK_EVIDENCE_RECEIVED', 'MARK_CONFLICT', 'QUARANTINE', 'MARK_AI_REJECTED'].includes(
+        action
+      )
+    ) {
       note =
         window.prompt(
           action === 'REQUEST_EVIDENCE'
             ? 'Indique les preuves demandées (projet DAW, captures, exports intermédiaires…) :'
-            : 'Indique le motif précis du refus :'
+            : action === 'MARK_EVIDENCE_RECEIVED'
+              ? 'Indique les éléments reçus et où ils sont conservés :'
+              : action === 'MARK_CONFLICT'
+                ? 'Décris le conflit ou les informations contradictoires :'
+                : action === 'QUARANTINE'
+                  ? 'Indique le motif précis de la mise en quarantaine :'
+                  : 'Indique le motif précis du refus :'
         )?.trim() || ''
       if (!note) return
     } else if (destructive) {
@@ -1600,7 +1661,12 @@ export default function AdminPage() {
                       '! IA potentielle',
                       aiAuditStats.reviewRecommended +
                         aiAuditStats.reviewRequired +
-                        aiAuditStats.evidenceRequested,
+                        aiAuditStats.reviewInProgress +
+                        aiAuditStats.evidenceRequested +
+                        aiAuditStats.evidenceReceived +
+                        aiAuditStats.evidenceExpired +
+                        aiAuditStats.conflictReviewRequired +
+                        aiAuditStats.quarantined,
                       'text-orange-300',
                     ],
                     ['✕ IA confirmée', aiAuditStats.aiRejected, 'text-red-400'],
@@ -1700,8 +1766,30 @@ export default function AdminPage() {
                 const isExpanded = beat.status === 'PENDING' || expandedBeatIds.has(beat.id)
                 const tags = parseBeatTags(beat.tags)
                 const authenticity =
-                  AUTHENTICITY_DISPLAY[getAuthenticityCategory(beat.aiReviewStatus)]
+                  AI_REVIEW_DISPLAY[beat.aiReviewStatus] || AI_REVIEW_DISPLAY.NOT_ANALYZED
                 const authenticityValidated = beat.aiReviewStatus === 'HUMAN_CONFIRMED'
+                const canRequestEvidence = [
+                  'REVIEW_RECOMMENDED',
+                  'REVIEW_REQUIRED',
+                  'REVIEW_IN_PROGRESS',
+                  'EVIDENCE_REQUESTED',
+                  'EVIDENCE_RECEIVED',
+                  'EVIDENCE_EXPIRED',
+                  'CONFLICT_REVIEW_REQUIRED',
+                ].includes(beat.aiReviewStatus)
+                const canConfirmHuman = [
+                  'REVIEW_IN_PROGRESS',
+                  'EVIDENCE_RECEIVED',
+                  'CONFLICT_REVIEW_REQUIRED',
+                  'QUARANTINED',
+                ].includes(beat.aiReviewStatus)
+                const canRejectAfterReview = [
+                  'REVIEW_IN_PROGRESS',
+                  'EVIDENCE_RECEIVED',
+                  'EVIDENCE_EXPIRED',
+                  'CONFLICT_REVIEW_REQUIRED',
+                  'QUARANTINED',
+                ].includes(beat.aiReviewStatus)
                 const deletionProtected = isBeatDeletionProtected(beat)
                 return (
                   <div
@@ -1879,20 +1967,72 @@ export default function AdminPage() {
                                 Contacter par email
                               </a>
                             )}
-                            <button
-                              disabled={catalogueActionId === beat.id}
-                              onClick={() => runCatalogueAction(beat, 'REQUEST_EVIDENCE')}
-                              className="rounded-lg bg-amber-500/15 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/25 disabled:opacity-50"
-                            >
-                              Demander des preuves
-                            </button>
-                            <button
-                              disabled={catalogueActionId === beat.id}
-                              onClick={() => runCatalogueAction(beat, 'MARK_HUMAN')}
-                              className="rounded-lg bg-green-500/15 px-3 py-2 text-xs font-bold text-green-300 hover:bg-green-500/25 disabled:opacity-50"
-                            >
-                              Confirmer création humaine
-                            </button>
+                            {[
+                              'NOT_ANALYZED',
+                              'LOW_RISK',
+                              'REVIEW_RECOMMENDED',
+                              'REVIEW_REQUIRED',
+                              'EVIDENCE_EXPIRED',
+                            ].includes(beat.aiReviewStatus) && (
+                              <button
+                                disabled={catalogueActionId === beat.id}
+                                onClick={() => runCatalogueAction(beat, 'START_REVIEW')}
+                                className="rounded-lg bg-cyan-500/15 px-3 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/25 disabled:opacity-50"
+                              >
+                                Commencer le contrôle
+                              </button>
+                            )}
+                            {canRequestEvidence && (
+                              <button
+                                disabled={catalogueActionId === beat.id}
+                                onClick={() => runCatalogueAction(beat, 'REQUEST_EVIDENCE')}
+                                className="rounded-lg bg-amber-500/15 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/25 disabled:opacity-50"
+                              >
+                                {beat.aiReviewStatus === 'EVIDENCE_REQUESTED'
+                                  ? 'Générer un nouveau code'
+                                  : 'Demander des preuves'}
+                              </button>
+                            )}
+                            {['EVIDENCE_REQUESTED', 'EVIDENCE_EXPIRED'].includes(
+                              beat.aiReviewStatus
+                            ) && (
+                              <button
+                                disabled={catalogueActionId === beat.id}
+                                onClick={() => runCatalogueAction(beat, 'MARK_EVIDENCE_RECEIVED')}
+                                className="rounded-lg bg-violet-500/15 px-3 py-2 text-xs font-bold text-violet-300 hover:bg-violet-500/25 disabled:opacity-50"
+                              >
+                                Marquer preuves reçues
+                              </button>
+                            )}
+                            {beat.aiReviewStatus !== 'CONFLICT_REVIEW_REQUIRED' &&
+                              beat.aiReviewStatus !== 'AI_REJECTED' && (
+                                <button
+                                  disabled={catalogueActionId === beat.id}
+                                  onClick={() => runCatalogueAction(beat, 'MARK_CONFLICT')}
+                                  className="rounded-lg bg-fuchsia-500/15 px-3 py-2 text-xs font-bold text-fuchsia-300 hover:bg-fuchsia-500/25 disabled:opacity-50"
+                                >
+                                  Signaler un conflit
+                                </button>
+                              )}
+                            {beat.status !== 'SOLD' &&
+                              !['QUARANTINED', 'AI_REJECTED'].includes(beat.aiReviewStatus) && (
+                              <button
+                                disabled={catalogueActionId === beat.id}
+                                onClick={() => runCatalogueAction(beat, 'QUARANTINE')}
+                                className="rounded-lg bg-rose-500/15 px-3 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/25 disabled:opacity-50"
+                              >
+                                Mettre en quarantaine
+                              </button>
+                            )}
+                            {canConfirmHuman && (
+                                <button
+                                  disabled={catalogueActionId === beat.id}
+                                  onClick={() => runCatalogueAction(beat, 'MARK_HUMAN')}
+                                  className="rounded-lg bg-green-500/15 px-3 py-2 text-xs font-bold text-green-300 hover:bg-green-500/25 disabled:opacity-50"
+                                >
+                                  Confirmer création humaine
+                                </button>
+                              )}
                             {beat.status !== 'PENDING' && beat.status !== 'SOLD' && (
                               <button
                                 disabled={catalogueActionId === beat.id}
@@ -1911,13 +2051,15 @@ export default function AdminPage() {
                                 Archiver / retirer
                               </button>
                             )}
-                            <button
-                              disabled={catalogueActionId === beat.id}
-                              onClick={() => runCatalogueAction(beat, 'MARK_AI_REJECTED')}
-                              className="rounded-lg bg-red-500/15 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-500/25 disabled:opacity-50"
-                            >
-                              Refuser après contrôle
-                            </button>
+                            {canRejectAfterReview && (
+                              <button
+                                disabled={catalogueActionId === beat.id}
+                                onClick={() => runCatalogueAction(beat, 'MARK_AI_REJECTED')}
+                                className="rounded-lg bg-red-500/15 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-500/25 disabled:opacity-50"
+                              >
+                                Refuser après contrôle
+                              </button>
+                            )}
                           </div>
                         </section>
 

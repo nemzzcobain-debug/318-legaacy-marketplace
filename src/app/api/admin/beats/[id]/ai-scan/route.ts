@@ -21,7 +21,16 @@ async function requireAdmin() {
 function promoteReviewStatus(current: string, probability: number | undefined) {
   if (
     probability === undefined ||
-    ['EVIDENCE_REQUESTED', 'HUMAN_CONFIRMED', 'AI_REJECTED'].includes(current)
+    [
+      'REVIEW_IN_PROGRESS',
+      'EVIDENCE_REQUESTED',
+      'EVIDENCE_RECEIVED',
+      'EVIDENCE_EXPIRED',
+      'CONFLICT_REVIEW_REQUIRED',
+      'QUARANTINED',
+      'HUMAN_CONFIRMED',
+      'AI_REJECTED',
+    ].includes(current)
   ) {
     return current
   }

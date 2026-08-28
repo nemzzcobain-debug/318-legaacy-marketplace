@@ -204,7 +204,9 @@ model Beat {
   // Authenticité / contrôle anti-IA
   // aiUsage: NONE | ASSISTIVE_ONLY | GENERATIVE
   // aiReviewStatus: NOT_ANALYZED | LOW_RISK | REVIEW_RECOMMENDED |
-  //                  REVIEW_REQUIRED | EVIDENCE_REQUESTED | HUMAN_CONFIRMED | AI_REJECTED
+  //                  REVIEW_REQUIRED | REVIEW_IN_PROGRESS | EVIDENCE_REQUESTED |
+  //                  EVIDENCE_RECEIVED | EVIDENCE_EXPIRED | CONFLICT_REVIEW_REQUIRED |
+  //                  QUARANTINED | HUMAN_CONFIRMED | AI_REJECTED
   aiDeclarationVersion    String?
   aiDeclarationAcceptedAt DateTime?
   aiUsage                 String?

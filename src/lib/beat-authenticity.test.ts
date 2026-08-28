@@ -56,7 +56,16 @@ describe('getAuthenticityCategory', () => {
     expect(getAuthenticityCategory('AI_REJECTED')).toBe('AI_CONFIRMED')
   })
 
-  it.each(['REVIEW_RECOMMENDED', 'REVIEW_REQUIRED', 'EVIDENCE_REQUESTED'])(
+  it.each([
+    'REVIEW_RECOMMENDED',
+    'REVIEW_REQUIRED',
+    'REVIEW_IN_PROGRESS',
+    'EVIDENCE_REQUESTED',
+    'EVIDENCE_RECEIVED',
+    'EVIDENCE_EXPIRED',
+    'CONFLICT_REVIEW_REQUIRED',
+    'QUARANTINED',
+  ])(
     'classe %s en IA potentielle',
     (status) => {
       expect(getAuthenticityCategory(status)).toBe('POTENTIAL_AI')

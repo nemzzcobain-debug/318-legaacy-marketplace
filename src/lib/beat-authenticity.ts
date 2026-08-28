@@ -8,7 +8,12 @@ export const AI_REVIEW_STATUSES = [
   'LOW_RISK',
   'REVIEW_RECOMMENDED',
   'REVIEW_REQUIRED',
+  'REVIEW_IN_PROGRESS',
   'EVIDENCE_REQUESTED',
+  'EVIDENCE_RECEIVED',
+  'EVIDENCE_EXPIRED',
+  'CONFLICT_REVIEW_REQUIRED',
+  'QUARANTINED',
   'HUMAN_CONFIRMED',
   'AI_REJECTED',
 ] as const
@@ -34,7 +39,12 @@ export function getAuthenticityCategory(status: string | null | undefined): Auth
   if (
     status === 'REVIEW_RECOMMENDED' ||
     status === 'REVIEW_REQUIRED' ||
-    status === 'EVIDENCE_REQUESTED'
+    status === 'REVIEW_IN_PROGRESS' ||
+    status === 'EVIDENCE_REQUESTED' ||
+    status === 'EVIDENCE_RECEIVED' ||
+    status === 'EVIDENCE_EXPIRED' ||
+    status === 'CONFLICT_REVIEW_REQUIRED' ||
+    status === 'QUARANTINED'
   ) {
     return 'POTENTIAL_AI'
   }

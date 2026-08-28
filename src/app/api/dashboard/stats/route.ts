@@ -14,6 +14,15 @@ export async function GET() {
 
     const userId = (session.user as any).id
 
+    await prisma.beat.updateMany({
+      where: {
+        producerId: userId,
+        aiReviewStatus: 'EVIDENCE_REQUESTED',
+        aiEvidenceExpiresAt: { lt: new Date() },
+      },
+      data: { aiReviewStatus: 'EVIDENCE_EXPIRED' },
+    })
+
     // Parallel queries for performance
     const [
       beats,

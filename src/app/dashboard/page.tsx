@@ -1507,6 +1507,41 @@ function ProducerDashboard({ session }: { session: any }) {
 }
 
 // ─── Producer Beats Tab with Delete ───
+const PRODUCER_REVIEW_STATUS: Record<string, { label: string; classes: string }> = {
+  REVIEW_REQUIRED: {
+    label: 'À contrôler',
+    classes: 'bg-orange-500/15 text-orange-300',
+  },
+  REVIEW_IN_PROGRESS: {
+    label: 'Contrôle en cours',
+    classes: 'bg-cyan-500/15 text-cyan-300',
+  },
+  EVIDENCE_REQUESTED: {
+    label: 'Preuves demandées',
+    classes: 'bg-amber-500/15 text-amber-300',
+  },
+  EVIDENCE_RECEIVED: {
+    label: 'Preuves reçues',
+    classes: 'bg-violet-500/15 text-violet-300',
+  },
+  EVIDENCE_EXPIRED: {
+    label: 'Délai de preuve expiré',
+    classes: 'bg-red-500/15 text-red-300',
+  },
+  CONFLICT_REVIEW_REQUIRED: {
+    label: 'Contrôle complémentaire',
+    classes: 'bg-fuchsia-500/15 text-fuchsia-300',
+  },
+  QUARANTINED: {
+    label: 'En quarantaine',
+    classes: 'bg-rose-500/20 text-rose-200',
+  },
+  HUMAN_CONFIRMED: {
+    label: 'Authenticité validée',
+    classes: 'bg-green-500/15 text-green-300',
+  },
+}
+
 function ProducerBeatsTab({
   beats,
   togglePlay,
@@ -1590,6 +1625,7 @@ function ProducerBeatsTab({
                 const isHighlighted = highlightBeatId === beat.id
                 const isNew = beat.createdAt && isNewBeat(beat.createdAt)
                 const showNewBadge = isHighlighted || isNew
+                const producerReviewStatus = PRODUCER_REVIEW_STATUS[beat.aiReviewStatus]
                 const evidenceExpired =
                   beat.aiEvidenceExpiresAt &&
                   new Date(beat.aiEvidenceExpiresAt).getTime() < Date.now()
@@ -1630,6 +1666,13 @@ function ProducerBeatsTab({
                               </>
                             )}
                           </span>
+                          {producerReviewStatus && (
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${producerReviewStatus.classes}`}
+                            >
+                              {producerReviewStatus.label}
+                            </span>
+                          )}
                           {showNewBadge && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#e11d48]/15 text-[#e11d48] text-[10px] font-bold uppercase animate-pulse">
                               <Sparkles size={10} /> Nouveau
@@ -1684,6 +1727,28 @@ function ProducerBeatsTab({
                               </Link>
                             </div>
                           )}
+                        {['EVIDENCE_EXPIRED', 'CONFLICT_REVIEW_REQUIRED', 'QUARANTINED'].includes(
+                          beat.aiReviewStatus
+                        ) && (
+                          <div className="mt-2 max-w-xl rounded-lg border border-red-500/25 bg-red-500/5 p-3">
+                            <p className="text-xs font-bold text-red-300">
+                              {beat.aiReviewStatus === 'EVIDENCE_EXPIRED'
+                                ? 'Le délai de preuve est expiré'
+                                : beat.aiReviewStatus === 'QUARANTINED'
+                                  ? 'Beat temporairement placé en quarantaine'
+                                  : 'Un contrôle complémentaire est nécessaire'}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-300">
+                              Contacte 318 LEGAACY depuis la messagerie pour régulariser la situation.
+                            </p>
+                            <Link
+                              href="/messages"
+                              className="mt-2 inline-flex rounded-lg border border-red-400/30 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-500/10"
+                            >
+                              Contacter 318 LEGAACY
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">

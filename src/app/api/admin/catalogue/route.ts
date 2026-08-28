@@ -10,7 +10,11 @@ import { sendAuthenticityEvidenceRequestEmail } from '@/lib/emails/resend'
 
 const ACTIONS = [
   'SET_PENDING',
+  'START_REVIEW',
   'REQUEST_EVIDENCE',
+  'MARK_EVIDENCE_RECEIVED',
+  'MARK_CONFLICT',
+  'QUARANTINE',
   'MARK_HUMAN',
   'MARK_AI_REJECTED',
   'ARCHIVE',
@@ -22,6 +26,63 @@ const EVIDENCE_VALIDITY_DAYS = 7
 function createEvidenceCode() {
   const value = randomBytes(6).toString('hex').toUpperCase()
   return `318-${value.slice(0, 4)}-${value.slice(4, 8)}-${value.slice(8, 12)}`
+}
+
+const ACTION_ALLOWED_STATUSES: Partial<Record<(typeof ACTIONS)[number], string[]>> = {
+  START_REVIEW: [
+    'NOT_ANALYZED',
+    'LOW_RISK',
+    'REVIEW_RECOMMENDED',
+    'REVIEW_REQUIRED',
+    'EVIDENCE_EXPIRED',
+  ],
+  REQUEST_EVIDENCE: [
+    'REVIEW_RECOMMENDED',
+    'REVIEW_REQUIRED',
+    'REVIEW_IN_PROGRESS',
+    'EVIDENCE_REQUESTED',
+    'EVIDENCE_RECEIVED',
+    'EVIDENCE_EXPIRED',
+    'CONFLICT_REVIEW_REQUIRED',
+  ],
+  MARK_EVIDENCE_RECEIVED: ['EVIDENCE_REQUESTED', 'EVIDENCE_EXPIRED'],
+  MARK_CONFLICT: [
+    'NOT_ANALYZED',
+    'LOW_RISK',
+    'REVIEW_RECOMMENDED',
+    'REVIEW_REQUIRED',
+    'REVIEW_IN_PROGRESS',
+    'EVIDENCE_REQUESTED',
+    'EVIDENCE_RECEIVED',
+    'EVIDENCE_EXPIRED',
+    'QUARANTINED',
+    'HUMAN_CONFIRMED',
+  ],
+  QUARANTINE: [
+    'NOT_ANALYZED',
+    'LOW_RISK',
+    'REVIEW_RECOMMENDED',
+    'REVIEW_REQUIRED',
+    'REVIEW_IN_PROGRESS',
+    'EVIDENCE_REQUESTED',
+    'EVIDENCE_RECEIVED',
+    'EVIDENCE_EXPIRED',
+    'CONFLICT_REVIEW_REQUIRED',
+    'HUMAN_CONFIRMED',
+  ],
+  MARK_HUMAN: [
+    'REVIEW_IN_PROGRESS',
+    'EVIDENCE_RECEIVED',
+    'CONFLICT_REVIEW_REQUIRED',
+    'QUARANTINED',
+  ],
+  MARK_AI_REJECTED: [
+    'REVIEW_IN_PROGRESS',
+    'EVIDENCE_RECEIVED',
+    'EVIDENCE_EXPIRED',
+    'CONFLICT_REVIEW_REQUIRED',
+    'QUARANTINED',
+  ],
 }
 
 export async function PATCH(req: NextRequest) {
@@ -51,6 +112,17 @@ export async function PATCH(req: NextRequest) {
 
     if (!beat) return NextResponse.json({ error: 'Beat introuvable' }, { status: 404 })
 
+    const allowedStatuses = ACTION_ALLOWED_STATUSES[action as (typeof ACTIONS)[number]]
+    if (allowedStatuses && !allowedStatuses.includes(beat.aiReviewStatus)) {
+      return NextResponse.json(
+        {
+          error: `Cette action n'est pas autorisée depuis le statut « ${beat.aiReviewStatus} ».`,
+          code: 'INVALID_ADMIN_STATUS_TRANSITION',
+        },
+        { status: 409 }
+      )
+    }
+
     const bidsCount = beat.auctions.reduce(
       (sum, auction) => sum + Math.max(auction.totalBids, auction._count.bids),
       0
@@ -77,6 +149,29 @@ export async function PATCH(req: NextRequest) {
         },
         { status: 409 }
       )
+    }
+
+    if (action === 'START_REVIEW') {
+      await prisma.$transaction([
+        prisma.beat.update({
+          where: { id: beat.id },
+          data: {
+            aiReviewStatus: 'REVIEW_IN_PROGRESS',
+            aiAdminNote: cleanNote || 'Contrôle administratif en cours.',
+            aiAnalyzedAt: now,
+          },
+        }),
+        prisma.adminActionLog.create({
+          data: {
+            adminId: session.user.id,
+            action,
+            targetType: 'BEAT',
+            targetId: beat.id,
+            details: JSON.stringify({ note: cleanNote || null }),
+          },
+        }),
+      ])
+      return NextResponse.json({ success: true, message: 'Contrôle administratif commencé.' })
     }
 
     if (action === 'REQUEST_EVIDENCE') {
@@ -140,6 +235,151 @@ export async function PATCH(req: NextRequest) {
         message: `Demande envoyée avec le code ${evidenceCode}.`,
         evidenceCode,
         evidenceExpiresAt,
+      })
+    }
+
+    if (action === 'MARK_EVIDENCE_RECEIVED') {
+      if (!['EVIDENCE_REQUESTED', 'EVIDENCE_EXPIRED'].includes(beat.aiReviewStatus)) {
+        return NextResponse.json(
+          { error: "Aucune demande de preuve active n'est associée à ce beat." },
+          { status: 409 }
+        )
+      }
+      if (!cleanNote) {
+        return NextResponse.json(
+          { error: 'Indique les preuves reçues et leur emplacement de conservation.' },
+          { status: 400 }
+        )
+      }
+
+      await prisma.$transaction([
+        prisma.beat.update({
+          where: { id: beat.id },
+          data: {
+            aiReviewStatus: 'EVIDENCE_RECEIVED',
+            aiAdminNote: cleanNote,
+            aiAnalyzedAt: now,
+          },
+        }),
+        prisma.notification.create({
+          data: {
+            userId: beat.producer.id,
+            type: 'SYSTEM',
+            title: 'Preuves de création reçues',
+            message: `Les preuves concernant « ${beat.title} » ont bien été reçues et sont en cours d’examen.`,
+            link: '/dashboard?tab=beats',
+          },
+        }),
+        prisma.adminActionLog.create({
+          data: {
+            adminId: session.user.id,
+            action,
+            targetType: 'BEAT',
+            targetId: beat.id,
+            details: JSON.stringify({ note: cleanNote, evidenceCode: beat.aiEvidenceCode }),
+          },
+        }),
+      ])
+      return NextResponse.json({ success: true, message: 'Preuves marquées comme reçues.' })
+    }
+
+    if (action === 'MARK_CONFLICT') {
+      if (!cleanNote) {
+        return NextResponse.json({ error: 'Le motif du conflit est obligatoire.' }, { status: 400 })
+      }
+
+      await prisma.$transaction([
+        prisma.auction.updateMany({
+          where: {
+            beatId: beat.id,
+            status: { in: ['ACTIVE', 'ENDING_SOON', 'SCHEDULED'] },
+          },
+          data: { status: 'PENDING_APPROVAL' },
+        }),
+        prisma.beat.update({
+          where: { id: beat.id },
+          data: {
+            status: 'PENDING',
+            isFeatured: false,
+            aiReviewStatus: 'CONFLICT_REVIEW_REQUIRED',
+            aiAdminNote: cleanNote,
+          },
+        }),
+        prisma.notification.create({
+          data: {
+            userId: beat.producer.id,
+            type: 'SYSTEM',
+            title: 'Contrôle complémentaire requis',
+            message: `« ${beat.title} » est temporairement masqué pendant l’examen d’informations contradictoires.`,
+            link: '/dashboard?tab=beats',
+          },
+        }),
+        prisma.adminActionLog.create({
+          data: {
+            adminId: session.user.id,
+            action,
+            targetType: 'BEAT',
+            targetId: beat.id,
+            details: JSON.stringify({ note: cleanNote, bidsPreserved: bidsCount }),
+          },
+        }),
+      ])
+      return NextResponse.json({ success: true, message: 'Conflit signalé, beat masqué.' })
+    }
+
+    if (action === 'QUARANTINE') {
+      if (beat.status === 'SOLD' || beat._count.purchases > 0) {
+        return NextResponse.json(
+          { error: 'Un beat déjà vendu ne peut pas être placé en quarantaine.' },
+          { status: 409 }
+        )
+      }
+      if (!cleanNote) {
+        return NextResponse.json(
+          { error: 'Le motif de la mise en quarantaine est obligatoire.' },
+          { status: 400 }
+        )
+      }
+
+      await prisma.$transaction([
+        prisma.auction.updateMany({
+          where: {
+            beatId: beat.id,
+            status: { in: ['ACTIVE', 'ENDING_SOON', 'SCHEDULED'] },
+          },
+          data: { status: 'PENDING_APPROVAL' },
+        }),
+        prisma.beat.update({
+          where: { id: beat.id },
+          data: {
+            status: 'PENDING',
+            isFeatured: false,
+            aiReviewStatus: 'QUARANTINED',
+            aiAdminNote: cleanNote,
+          },
+        }),
+        prisma.notification.create({
+          data: {
+            userId: beat.producer.id,
+            type: 'SYSTEM',
+            title: 'Beat placé en quarantaine',
+            message: `« ${beat.title} » est temporairement masqué. Motif : ${cleanNote}`,
+            link: '/dashboard?tab=beats',
+          },
+        }),
+        prisma.adminActionLog.create({
+          data: {
+            adminId: session.user.id,
+            action,
+            targetType: 'BEAT',
+            targetId: beat.id,
+            details: JSON.stringify({ note: cleanNote, bidsPreserved: bidsCount }),
+          },
+        }),
+      ])
+      return NextResponse.json({
+        success: true,
+        message: 'Beat placé en quarantaine. Les enchères existantes sont conservées.',
       })
     }
 

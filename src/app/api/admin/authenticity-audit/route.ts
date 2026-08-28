@@ -27,7 +27,12 @@ export async function GET() {
     lowRisk: counts.LOW_RISK || 0,
     reviewRecommended: counts.REVIEW_RECOMMENDED || 0,
     reviewRequired: counts.REVIEW_REQUIRED || 0,
+    reviewInProgress: counts.REVIEW_IN_PROGRESS || 0,
     evidenceRequested: counts.EVIDENCE_REQUESTED || 0,
+    evidenceReceived: counts.EVIDENCE_RECEIVED || 0,
+    evidenceExpired: counts.EVIDENCE_EXPIRED || 0,
+    conflictReviewRequired: counts.CONFLICT_REVIEW_REQUIRED || 0,
+    quarantined: counts.QUARANTINED || 0,
     humanConfirmed: counts.HUMAN_CONFIRMED || 0,
     aiRejected: counts.AI_REJECTED || 0,
     method: 'METADATA_AND_BEHAVIOUR',
@@ -100,7 +105,18 @@ export async function POST() {
   const updates = []
 
   for (const beat of beats) {
-    if (['HUMAN_CONFIRMED', 'AI_REJECTED'].includes(beat.aiReviewStatus)) {
+    if (
+      [
+        'REVIEW_IN_PROGRESS',
+        'EVIDENCE_REQUESTED',
+        'EVIDENCE_RECEIVED',
+        'EVIDENCE_EXPIRED',
+        'CONFLICT_REVIEW_REQUIRED',
+        'QUARANTINED',
+        'HUMAN_CONFIRMED',
+        'AI_REJECTED',
+      ].includes(beat.aiReviewStatus)
+    ) {
       preserved += 1
       continue
     }
@@ -123,8 +139,7 @@ export async function POST() {
         data: {
           aiRiskScore: risk.score,
           aiRiskReasons: JSON.stringify(risk.reasons),
-          aiReviewStatus:
-            beat.aiReviewStatus === 'EVIDENCE_REQUESTED' ? 'EVIDENCE_REQUESTED' : risk.status,
+          aiReviewStatus: risk.status,
           aiDetectorProvider: '318_METADATA_AUDIT',
           aiDetectorVersion: '1.0',
           aiAnalyzedAt: new Date(),

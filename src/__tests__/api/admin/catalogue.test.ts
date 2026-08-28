@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const { prismaMock, getServerSessionMock, sendEvidenceEmailMock } = vi.hoisted(() => ({
   prismaMock: {
     beat: { findUnique: vi.fn(), update: vi.fn() },
+    auction: { updateMany: vi.fn() },
     notification: { create: vi.fn() },
     adminActionLog: { create: vi.fn() },
     $transaction: vi.fn(),
@@ -29,6 +30,7 @@ describe('PATCH /api/admin/catalogue — challenge de preuve', () => {
       id: 'beat-1',
       title: 'Beat contrôlé',
       status: 'PENDING',
+      aiReviewStatus: 'REVIEW_IN_PROGRESS',
       producer: {
         id: 'producer-1',
         email: 'producer@example.com',
@@ -39,6 +41,7 @@ describe('PATCH /api/admin/catalogue — challenge de preuve', () => {
       _count: { purchases: 0 },
     })
     prismaMock.beat.update.mockResolvedValue({})
+    prismaMock.auction.updateMany.mockResolvedValue({ count: 1 })
     prismaMock.notification.create.mockResolvedValue({})
     prismaMock.adminActionLog.create.mockResolvedValue({})
     prismaMock.$transaction.mockResolvedValue([])
@@ -86,5 +89,91 @@ describe('PATCH /api/admin/catalogue — challenge de preuve', () => {
         evidenceExpiresAt: updateData.aiEvidenceExpiresAt,
       })
     )
+  })
+
+  it('marque les preuves comme reçues avec une trace obligatoire', async () => {
+    prismaMock.beat.findUnique.mockResolvedValue({
+      id: 'beat-1',
+      title: 'Beat contrôlé',
+      status: 'PENDING',
+      aiReviewStatus: 'EVIDENCE_REQUESTED',
+      aiEvidenceCode: '318-AAAA-BBBB-CCCC',
+      producer: {
+        id: 'producer-1',
+        email: 'producer@example.com',
+        name: 'Beatmaker',
+        displayName: 'Beatmaker 318',
+      },
+      auctions: [],
+      _count: { purchases: 0 },
+    })
+
+    const response = await PATCH(
+      new Request('http://localhost/api/admin/catalogue', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          beatId: 'beat-1',
+          action: 'MARK_EVIDENCE_RECEIVED',
+          note: 'Vidéo et projet DAW conservés dans le dossier de contrôle.',
+        }),
+      }) as never
+    )
+
+    expect(response.status).toBe(200)
+    expect(prismaMock.beat.update).toHaveBeenCalledWith({
+      where: { id: 'beat-1' },
+      data: expect.objectContaining({
+        aiReviewStatus: 'EVIDENCE_RECEIVED',
+        aiAdminNote: 'Vidéo et projet DAW conservés dans le dossier de contrôle.',
+      }),
+    })
+  })
+
+  it('met en quarantaine sans effacer les enchères déjà placées', async () => {
+    prismaMock.beat.findUnique.mockResolvedValue({
+      id: 'beat-1',
+      title: 'Beat contrôlé',
+      status: 'ACTIVE',
+      aiReviewStatus: 'REVIEW_REQUIRED',
+      producer: {
+        id: 'producer-1',
+        email: 'producer@example.com',
+        name: 'Beatmaker',
+        displayName: 'Beatmaker 318',
+      },
+      auctions: [
+        { id: 'auction-1', status: 'ACTIVE', totalBids: 2, _count: { bids: 2 } },
+      ],
+      _count: { purchases: 0 },
+    })
+
+    const response = await PATCH(
+      new Request('http://localhost/api/admin/catalogue', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          beatId: 'beat-1',
+          action: 'QUARANTINE',
+          note: 'Authenticité à vérifier avant toute nouvelle enchère.',
+        }),
+      }) as never
+    )
+
+    expect(response.status).toBe(200)
+    expect(prismaMock.auction.updateMany).toHaveBeenCalledWith({
+      where: {
+        beatId: 'beat-1',
+        status: { in: ['ACTIVE', 'ENDING_SOON', 'SCHEDULED'] },
+      },
+      data: { status: 'PENDING_APPROVAL' },
+    })
+    expect(prismaMock.beat.update).toHaveBeenCalledWith({
+      where: { id: 'beat-1' },
+      data: expect.objectContaining({
+        status: 'PENDING',
+        aiReviewStatus: 'QUARANTINED',
+      }),
+    })
   })
 })

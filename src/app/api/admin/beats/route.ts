@@ -15,6 +15,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 
+    await prisma.beat.updateMany({
+      where: {
+        aiReviewStatus: 'EVIDENCE_REQUESTED',
+        aiEvidenceExpiresAt: { lt: new Date() },
+      },
+      data: { aiReviewStatus: 'EVIDENCE_EXPIRED' },
+    })
+
     const { searchParams } = new URL(request.url)
     const genre = searchParams.get('genre')
     const search = searchParams.get('search')
