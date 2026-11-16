@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { reportOperationalIssue } from '@/lib/monitoring'
 import Stripe from 'stripe'
+import { completeAuctionSale, sendAuctionSaleMessages } from '@/lib/auction-sale'
 import {
   sendPaymentReceivedEmail,
   sendGuestPurchaseEmail,
@@ -46,6 +47,19 @@ async function markEventProcessed(eventId: string, eventType: string): Promise<b
     // Autre erreur DB → on traite quand même (mieux que de perdre un événement)
     logger.error('[WEBHOOK] Erreur idempotence DB:', { error: err?.message })
     return true
+  }
+}
+
+// Si le traitement échoue, on libère l'événement pour que le réessai Stripe le rejoue.
+// Sans cela, l'événement resterait « traité » alors que rien n'a été enregistré.
+async function unmarkEventProcessed(eventId: string) {
+  try {
+    await prisma.stripeEvent.deleteMany({ where: { id: eventId } })
+  } catch (err: any) {
+    logger.error('[WEBHOOK] Impossible de libérer un événement en échec:', {
+      eventId,
+      error: err?.message,
+    })
   }
 }
 
@@ -133,6 +147,7 @@ export async function POST(req: NextRequest) {
     })
     return NextResponse.json({ received: true })
   } catch (err: any) {
+    await unmarkEventProcessed(event.id)
     await reportOperationalIssue({
       area: 'webhook',
       severity: 'critical',
@@ -148,187 +163,95 @@ export async function POST(req: NextRequest) {
   }
 }
 
+function parseAmount(value: string | undefined | null): number | undefined {
+  if (!value) return undefined
+  const parsed = parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+// Finalisation commune aux paiements d'enchère (Checkout Session ou PaymentIntent).
+async function finalizeAuctionPayment({
+  auctionId,
+  paymentIntentId,
+  buyerId,
+  buyNow,
+  commission,
+  producerPayout,
+  source,
+}: {
+  auctionId: string
+  paymentIntentId: string
+  buyerId?: string | null
+  buyNow?: boolean
+  commission?: number
+  producerPayout?: number
+  source: string
+}) {
+  const result = await completeAuctionSale({
+    auctionId,
+    paymentIntentId,
+    buyerId,
+    buyNow,
+    commission,
+    producerPayout,
+  })
+
+  if (result.outcome === 'COMPLETED') {
+    sendAuctionSaleMessages(result)
+    if (!result.purchase) {
+      await reportOperationalIssue({
+        area: 'webhook',
+        severity: 'critical',
+        message: 'Paiement encaissé sans acheteur identifié : achat à rattacher manuellement',
+        context: { auctionId, paymentIntentId, source },
+      })
+    }
+    if (isDev) logger.debug(`[WEBHOOK] ✓ Enchère ${auctionId} complétée (${source})`)
+    return
+  }
+
+  if (result.outcome === 'CONFLICT') {
+    // Le paiement est encaissé mais l'enchère ne peut pas lui être attribuée :
+    // un humain doit rembourser. On ne rejoue pas l'événement (ça ne changerait rien).
+    await reportOperationalIssue({
+      area: 'webhook',
+      severity: 'critical',
+      message: `Paiement à rembourser manuellement : ${result.reason}`,
+      context: { auctionId, paymentIntentId, source },
+    })
+    return
+  }
+
+  if (result.outcome === 'NOT_FOUND') {
+    logger.error(`[WEBHOOK] Enchère ${auctionId} introuvable (${source})`)
+  }
+}
+
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   const metadata = session.metadata || {}
-  const { auctionId, userId, producerId, commission, producerPayout } = metadata
+  const { auctionId, userId, commission, producerPayout } = metadata
 
   if (!auctionId) {
     logger.error('[WEBHOOK] checkout.session.completed sans auctionId dans metadata')
     return
   }
 
+  const paymentIntentId =
+    typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id
+  if (!paymentIntentId) {
+    logger.error(`[WEBHOOK] checkout.session.completed sans payment_intent (${auctionId})`)
+    return
+  }
+
   try {
-    const existingAuction = await prisma.auction.findUnique({
-      where: { id: auctionId },
+    await finalizeAuctionPayment({
+      auctionId,
+      paymentIntentId,
+      buyerId: userId || null,
+      commission: parseAmount(commission),
+      producerPayout: parseAmount(producerPayout),
+      source: 'checkout.session.completed',
     })
-
-    if (!existingAuction || existingAuction.status === 'COMPLETED') return
-
-    const auction = await prisma.auction.findUnique({
-      where: { id: auctionId },
-      include: {
-        beat: { include: { producer: true } },
-        winner: true,
-      },
-    })
-
-    if (!auction) return
-
-    // Mettre à jour l'enchère comme payée
-    await prisma.auction.update({
-      where: { id: auctionId },
-      data: {
-        status: 'COMPLETED',
-        paidAt: new Date(),
-        stripePaymentId: session.payment_intent as string,
-        commissionAmount: commission ? parseFloat(commission) : undefined,
-        producerPayout: producerPayout ? parseFloat(producerPayout) : undefined,
-      },
-    })
-
-    // Mettre à jour le beat comme vendu
-    await prisma.beat.update({
-      where: { id: auction.beatId },
-      data: { status: 'SOLD' },
-    })
-
-    // TASK48: Creer un enregistrement Purchase pour l'achat via enchère
-    const buyerId = userId || auction.winnerId
-    const purchaseAmount = auction.finalPrice || auction.currentBid
-    const commissionAmt = commission ? parseFloat(commission) : auction.commissionAmount || 0
-    const payoutAmt = producerPayout ? parseFloat(producerPayout) : auction.producerPayout || 0
-    let completedPurchase: Awaited<ReturnType<typeof prisma.purchase.create>> | null = null
-
-    if (buyerId) {
-      completedPurchase = await prisma.purchase.create({
-        data: {
-          buyerId,
-          beatId: auction.beatId,
-          type: 'AUCTION',
-          licenseType: auction.winningLicense || auction.licenseType,
-          amount: purchaseAmount,
-          commission: commissionAmt,
-          producerPayout: payoutAmt,
-          stripePaymentId: session.payment_intent as string,
-          status: 'COMPLETED',
-          auctionId,
-        },
-      })
-    }
-
-    // Incrémenter les ventes du producteur
-    if (producerId) {
-      await prisma.user.update({
-        where: { id: producerId },
-        data: { totalSales: { increment: 1 } },
-      })
-    }
-
-    // Incrémenter les achats de l'acheteur
-    if (buyerId) {
-      await prisma.user.update({
-        where: { id: buyerId },
-        data: { totalPurchases: { increment: 1 } },
-      })
-    }
-
-    // Notifier le producteur
-    await prisma.notification.create({
-      data: {
-        type: 'PAYMENT_RECEIVED',
-        title: 'Paiement reçu !',
-        message: `Votre beat "${auction.beat.title}" a été vendu. Votre part: ${producerPayout || auction.producerPayout || 0}€`,
-        link: '/dashboard?tab=earnings',
-        userId: auction.beat.producerId,
-      },
-    })
-
-    // Notifier l'acheteur
-    if (buyerId) {
-      await prisma.notification.create({
-        data: {
-          type: 'AUCTION_WON',
-          title: 'Achat confirmé !',
-          message: `Votre beat "${auction.beat.title}" est prêt à être téléchargé.`,
-          link: `/dashboard?tab=purchases`,
-          userId: buyerId,
-        },
-      })
-    }
-
-    // Envoyer les emails (non-bloquant)
-    const payoutAmount = producerPayout ? parseFloat(producerPayout) : auction.producerPayout || 0
-    const commissionAmount = commission ? parseFloat(commission) : auction.commissionAmount || 0
-    const finalPrice = auction.finalPrice || auction.currentBid
-
-    sendNtfy('Vente finalisee', `${auction.beat.title} vendu pour ${finalPrice} EUR`, 'high').catch(
-      () => {}
-    )
-
-    if (auction.beat.producer?.email) {
-      sendPaymentReceivedEmail({
-        to: auction.beat.producer.email,
-        producerName: auction.beat.producer.displayName || auction.beat.producer.name,
-        beatTitle: auction.beat.title,
-        buyerName: auction.winner?.displayName || auction.winner?.name || 'Acheteur',
-        finalPrice,
-        commission: commissionAmount,
-        payout: payoutAmount,
-        license: auction.winningLicense || auction.licenseType,
-      }).catch((e) => logger.error('[WEBHOOK] Erreur envoi email:', { error: e?.message }))
-    }
-
-    if (completedPurchase && buyerId) {
-      const buyer =
-        auction.winner?.id === buyerId
-          ? auction.winner
-          : await prisma.user.findUnique({ where: { id: buyerId } })
-
-      if (buyer?.email) {
-        const contractData: LicenseContractData = {
-          purchaseId: completedPurchase.id,
-          purchaseType: completedPurchase.type,
-          transactionId: completedPurchase.stripePaymentId,
-          purchasedAt: completedPurchase.createdAt,
-          amount: completedPurchase.amount,
-          licenseType: completedPurchase.licenseType,
-          buyer: {
-            name: buyer.displayName || buyer.name,
-            email: buyer.email,
-          },
-          producer: {
-            name: auction.beat.producer?.displayName || auction.beat.producer?.name || 'Producteur',
-            email: auction.beat.producer?.email || '',
-          },
-          beat: {
-            id: auction.beat.id,
-            title: auction.beat.title,
-            genre: auction.beat.genre,
-            bpm: auction.beat.bpm,
-            key: auction.beat.key,
-          },
-        }
-        const contractPdf = generateLicenseContractPdf(contractData)
-        sendPurchaseConfirmedEmail({
-          to: buyer.email,
-          buyerName: buyer.displayName || buyer.name,
-          beatTitle: auction.beat.title,
-          producerName:
-            auction.beat.producer?.displayName || auction.beat.producer?.name || 'Producteur',
-          licenseType: completedPurchase.licenseType,
-          finalPrice: completedPurchase.amount,
-          purchaseId: completedPurchase.id,
-          contractAttachment: {
-            filename: getContractFileName(contractData),
-            content: contractPdf,
-          },
-        }).catch((e) =>
-          logger.error('[WEBHOOK] Erreur envoi contrat acheteur:', { error: e?.message })
-        )
-      }
-    }
-
-    if (isDev) logger.debug(`[WEBHOOK] ✓ Enchère ${auctionId} complétée`)
   } catch (err: any) {
     logger.error(`[WEBHOOK] Erreur checkout (${auctionId}):`, { error: err.message })
     throw err
@@ -344,174 +267,20 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     return
   }
 
-  // ─── Paiement d'enchère gagnée ───
+  // ─── Paiement d'enchère gagnée ou achat immédiat ───
   const auctionId = metadata.auctionId
   if (!auctionId) return
 
   try {
-    const existingAuction = await prisma.auction.findUnique({
-      where: { id: auctionId },
+    await finalizeAuctionPayment({
+      auctionId,
+      paymentIntentId: paymentIntent.id,
+      buyerId: metadata.buyerId || null,
+      buyNow: metadata.buyNow === 'true',
+      commission: parseAmount(metadata.commission),
+      producerPayout: parseAmount(metadata.producerPayout),
+      source: 'payment_intent.succeeded',
     })
-
-    if (!existingAuction || existingAuction.status === 'COMPLETED') return
-
-    const auction = await prisma.auction.findUnique({
-      where: { id: auctionId },
-      include: {
-        beat: { include: { producer: true } },
-        winner: true,
-      },
-    })
-
-    if (!auction) return
-
-    await prisma.auction.update({
-      where: { id: auctionId },
-      data: {
-        status: 'COMPLETED',
-        paidAt: new Date(),
-        stripePaymentId: paymentIntent.id,
-      },
-    })
-
-    await prisma.beat.update({
-      where: { id: auction.beatId },
-      data: { status: 'SOLD' },
-    })
-
-    await prisma.user.update({
-      where: { id: auction.beat.producerId },
-      data: { totalSales: { increment: 1 } },
-    })
-
-    if (auction.winnerId) {
-      await prisma.user.update({
-        where: { id: auction.winnerId },
-        data: { totalPurchases: { increment: 1 } },
-      })
-    }
-
-    const purchaseAmount = auction.finalPrice || auction.currentBid
-    const commissionAmount = metadata.commission
-      ? parseFloat(metadata.commission)
-      : auction.commissionAmount || 0
-    const payoutAmount = metadata.producerPayout
-      ? parseFloat(metadata.producerPayout)
-      : auction.producerPayout || 0
-    let completedPurchase: Awaited<ReturnType<typeof prisma.purchase.create>> | null = null
-
-    if (auction.winnerId) {
-      const existingPurchase = await prisma.purchase.findFirst({
-        where: {
-          auctionId,
-          buyerId: auction.winnerId,
-          status: 'COMPLETED',
-        },
-      })
-      completedPurchase =
-        existingPurchase ||
-        (await prisma.purchase.create({
-          data: {
-            buyerId: auction.winnerId,
-            beatId: auction.beatId,
-            type: 'AUCTION',
-            licenseType: auction.winningLicense || auction.licenseType,
-            amount: purchaseAmount,
-            commission: commissionAmount,
-            producerPayout: payoutAmount,
-            stripePaymentId: paymentIntent.id,
-            status: 'COMPLETED',
-            auctionId,
-          },
-        }))
-    }
-
-    await prisma.notification.create({
-      data: {
-        type: 'PAYMENT_RECEIVED',
-        title: 'Paiement reçu !',
-        message: `Votre beat "${auction.beat.title}" a été vendu pour ${auction.finalPrice || auction.currentBid}€. Votre part: ${auction.producerPayout}€`,
-        link: '/dashboard?tab=earnings',
-        userId: auction.beat.producerId,
-      },
-    })
-
-    if (auction.winnerId) {
-      await prisma.notification.create({
-        data: {
-          type: 'AUCTION_WON',
-          title: 'Paiement confirmé !',
-          message: `Votre achat de "${auction.beat.title}" est confirmé. Vous pouvez télécharger votre beat.`,
-          link: `/dashboard?tab=purchases`,
-          userId: auction.winnerId,
-        },
-      })
-    }
-
-    sendNtfy(
-      'Vente finalisee',
-      `${auction.beat.title} vendu pour ${purchaseAmount} EUR`,
-      'high'
-    ).catch(() => {})
-
-    if (auction.beat.producer?.email) {
-      sendPaymentReceivedEmail({
-        to: auction.beat.producer.email,
-        producerName: auction.beat.producer.displayName || auction.beat.producer.name,
-        beatTitle: auction.beat.title,
-        buyerName: auction.winner?.displayName || auction.winner?.name || 'Acheteur',
-        finalPrice: purchaseAmount,
-        commission: commissionAmount,
-        payout: payoutAmount,
-        license: auction.winningLicense || auction.licenseType,
-      }).catch((e) =>
-        logger.error('[WEBHOOK] Erreur envoi email producteur:', { error: e?.message })
-      )
-    }
-
-    if (completedPurchase && auction.winner?.email) {
-      const contractData: LicenseContractData = {
-        purchaseId: completedPurchase.id,
-        purchaseType: completedPurchase.type,
-        transactionId: completedPurchase.stripePaymentId,
-        purchasedAt: completedPurchase.createdAt,
-        amount: completedPurchase.amount,
-        licenseType: completedPurchase.licenseType,
-        buyer: {
-          name: auction.winner.displayName || auction.winner.name,
-          email: auction.winner.email,
-        },
-        producer: {
-          name: auction.beat.producer.displayName || auction.beat.producer.name,
-          email: auction.beat.producer.email,
-        },
-        beat: {
-          id: auction.beat.id,
-          title: auction.beat.title,
-          genre: auction.beat.genre,
-          bpm: auction.beat.bpm,
-          key: auction.beat.key,
-        },
-      }
-      const contractPdf = generateLicenseContractPdf(contractData)
-      sendPurchaseConfirmedEmail({
-        to: auction.winner.email,
-        buyerName: auction.winner.displayName || auction.winner.name,
-        beatTitle: auction.beat.title,
-        producerName: auction.beat.producer.displayName || auction.beat.producer.name,
-        licenseType: completedPurchase.licenseType,
-        finalPrice: completedPurchase.amount,
-        purchaseId: completedPurchase.id,
-        contractAttachment: {
-          filename: getContractFileName(contractData),
-          content: contractPdf,
-        },
-      }).catch((e) =>
-        logger.error('[WEBHOOK] Erreur envoi contrat acheteur:', { error: e?.message })
-      )
-    }
-
-    if (isDev) logger.debug(`[WEBHOOK] ✓ PaymentIntent ${auctionId} complété`)
   } catch (err: any) {
     logger.error(`[WEBHOOK] Erreur PaymentIntent (${auctionId}):`, { error: err.message })
     throw err
@@ -535,88 +304,114 @@ async function handleDirectPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent
       return
     }
 
-    // Si licence EXCLUSIVE, marquer le beat comme vendu
-    if (licenseType === 'EXCLUSIVE' && beat.saleMode !== 'LEASING') {
-      await prisma.beat.update({
-        where: { id: beatId },
-        data: { status: 'SOLD' },
-      })
-
-      // Retirer de la playlist Nouveautés
-      const nouveautesPlaylist = await prisma.playlist.findFirst({
-        where: { name: 'Nouveautés', visibility: 'PUBLIC' },
-        select: { id: true },
-      })
-      if (nouveautesPlaylist) {
-        await prisma.playlistBeat.deleteMany({
-          where: { playlistId: nouveautesPlaylist.id, beatId },
-        })
-      }
-    }
-
-    // Incrémenter les ventes du producteur
-    await prisma.user.update({
-      where: { id: beat.producerId },
-      data: { totalSales: { increment: 1 } },
-    })
-
-    // Trouver l'acheteur via l'email du PaymentIntent
     const buyerEmail = paymentIntent.receipt_email
     const finalPriceAmount = paymentIntent.amount / 100
     const commissionAmt = commission ? parseFloat(commission) : 0
     const payoutAmt = producerPayout ? parseFloat(producerPayout) : 0
-    let buyer: Awaited<ReturnType<typeof prisma.user.findFirst>> = null
-    let completedPurchase: Awaited<ReturnType<typeof prisma.purchase.create>> | null = null
+    const payoutAmount = payoutAmt
 
-    if (buyerEmail) {
-      buyer = await prisma.user.findFirst({
-        where: { email: buyerEmail },
+    // Toutes les écritures dans une seule transaction : soit la vente est entièrement
+    // enregistrée, soit rien ne l'est et le réessai Stripe repart de zéro.
+    const sale = await prisma.$transaction(async (tx) => {
+      const alreadyRecorded = await tx.purchase.findFirst({
+        where: { stripePaymentId: paymentIntent.id },
       })
-      if (buyer) {
-        await prisma.user.update({
-          where: { id: buyer.id },
-          data: { totalPurchases: { increment: 1 } },
+      if (alreadyRecorded) return null
+
+      // Si licence EXCLUSIVE, marquer le beat comme vendu
+      if (licenseType === 'EXCLUSIVE' && beat.saleMode !== 'LEASING') {
+        await tx.beat.update({
+          where: { id: beatId },
+          data: { status: 'SOLD' },
         })
 
-        // TASK48: Creer un enregistrement Purchase pour l'achat direct
-        completedPurchase = await prisma.purchase.create({
-          data: {
-            buyerId: buyer.id,
-            beatId,
-            type: 'DIRECT',
-            licenseType,
-            amount: finalPriceAmount,
-            commission: commissionAmt,
-            producerPayout: payoutAmt,
-            stripePaymentId: paymentIntent.id,
-            status: 'COMPLETED',
-          },
+        // Retirer de la playlist Nouveautés
+        const nouveautesPlaylist = await tx.playlist.findFirst({
+          where: { name: 'Nouveautés', visibility: 'PUBLIC' },
+          select: { id: true },
         })
-
-        // Notifier l'acheteur
-        await prisma.notification.create({
-          data: {
-            type: 'AUCTION_WON',
-            title: 'Achat confirmé !',
-            message: `Votre achat de "${beat.title}" (Licence ${licenseType}) est confirmé.`,
-            link: '/dashboard?tab=purchases',
-            userId: buyer.id,
-          },
-        })
+        if (nouveautesPlaylist) {
+          await tx.playlistBeat.deleteMany({
+            where: { playlistId: nouveautesPlaylist.id, beatId },
+          })
+        }
       }
-    }
 
-    // Notifier le producteur
-    const payoutAmount = producerPayout ? parseFloat(producerPayout) : 0
-    await prisma.notification.create({
-      data: {
-        type: 'PAYMENT_RECEIVED',
-        title: 'Vente directe !',
-        message: `Votre beat "${beat.title}" a été vendu (Licence ${licenseType}). Votre part: ${payoutAmount}€`,
-        link: '/dashboard?tab=earnings',
-        userId: beat.producerId,
-      },
+      // Incrémenter les ventes du producteur
+      await tx.user.update({
+        where: { id: beat.producerId },
+        data: { totalSales: { increment: 1 } },
+      })
+
+      // Trouver l'acheteur via l'email du PaymentIntent
+      let txBuyer: Awaited<ReturnType<typeof prisma.user.findFirst>> = null
+      let txPurchase: Awaited<ReturnType<typeof prisma.purchase.create>> | null = null
+
+      if (buyerEmail) {
+        txBuyer = await tx.user.findFirst({
+          where: { email: buyerEmail },
+        })
+        if (txBuyer) {
+          await tx.user.update({
+            where: { id: txBuyer.id },
+            data: { totalPurchases: { increment: 1 } },
+          })
+
+          // TASK48: Creer un enregistrement Purchase pour l'achat direct
+          txPurchase = await tx.purchase.create({
+            data: {
+              buyerId: txBuyer.id,
+              beatId,
+              type: 'DIRECT',
+              licenseType,
+              amount: finalPriceAmount,
+              commission: commissionAmt,
+              producerPayout: payoutAmt,
+              stripePaymentId: paymentIntent.id,
+              status: 'COMPLETED',
+            },
+          })
+
+          // Notifier l'acheteur
+          await tx.notification.create({
+            data: {
+              type: 'AUCTION_WON',
+              title: 'Achat confirmé !',
+              message: `Votre achat de "${beat.title}" (Licence ${licenseType}) est confirmé.`,
+              link: '/dashboard?tab=purchases',
+              userId: txBuyer.id,
+            },
+          })
+        }
+      }
+
+      // Notifier le producteur
+      await tx.notification.create({
+        data: {
+          type: 'PAYMENT_RECEIVED',
+          title: 'Vente directe !',
+          message: `Votre beat "${beat.title}" a été vendu (Licence ${licenseType}). Votre part: ${payoutAmount}€`,
+          link: '/dashboard?tab=earnings',
+          userId: beat.producerId,
+        },
+      })
+
+      return { buyer: txBuyer, completedPurchase: txPurchase }
     })
+
+    // Paiement déjà enregistré (événement rejoué) : rien à refaire.
+    if (!sale) return
+
+    const { buyer, completedPurchase } = sale
+
+    if (!completedPurchase) {
+      await reportOperationalIssue({
+        area: 'webhook',
+        severity: 'critical',
+        message: 'Achat direct encaissé sans compte acheteur : achat à rattacher manuellement',
+        context: { beatId, paymentIntentId: paymentIntent.id },
+      })
+    }
 
     sendNtfy(
       'Vente finalisee',
@@ -755,52 +550,88 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
 }
 
 async function handleChargeRefunded(charge: Stripe.Charge) {
+  const paymentIntentId =
+    typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id
   const auctionId = charge.metadata?.auctionId
-  if (!auctionId) return
+
+  // Un remboursement partiel ne doit pas annuler la vente : un humain tranche.
+  if (!charge.refunded) {
+    await reportOperationalIssue({
+      area: 'webhook',
+      severity: 'warning',
+      message: 'Remboursement partiel reçu : aucune annulation automatique',
+      context: { paymentIntentId, auctionId, amountRefunded: charge.amount_refunded / 100 },
+    })
+    return
+  }
 
   try {
-    const auction = await prisma.auction.findUnique({
-      where: { id: auctionId },
-      include: {
-        beat: { include: { producer: true } },
-      },
-    })
+    await prisma.$transaction(async (tx) => {
+      // L'acheteur perd l'accès au téléchargement dès que l'achat est remboursé.
+      if (paymentIntentId) {
+        await tx.purchase.updateMany({
+          where: { stripePaymentId: paymentIntentId, status: 'COMPLETED' },
+          data: { status: 'REFUNDED' },
+        })
+      }
 
-    if (!auction) return
+      if (!auctionId) return
 
-    await prisma.auction.update({
-      where: { id: auctionId },
-      data: { status: 'CANCELLED' },
-    })
-
-    await prisma.beat.update({
-      where: { id: auction.beatId },
-      data: { status: 'ACTIVE' },
-    })
-
-    await prisma.user.update({
-      where: { id: auction.beat.producerId },
-      data: { totalSales: { decrement: 1 } },
-    })
-
-    if (auction.winnerId) {
-      await prisma.user.update({
-        where: { id: auction.winnerId },
-        data: { totalPurchases: { decrement: 1 } },
-      })
-
-      await prisma.notification.create({
-        data: {
-          type: 'SYSTEM',
-          title: 'Remboursement traité',
-          message: `Votre remboursement de ${charge.amount_refunded / 100}€ a été accepté et sera crédité sous 5 à 10 jours ouvrables.`,
-          link: '/dashboard?tab=purchases',
-          userId: auction.winnerId,
+      const auction = await tx.auction.findUnique({
+        where: { id: auctionId },
+        include: {
+          beat: { include: { producer: true } },
         },
       })
-    }
+
+      if (!auction) return
+
+      // Garde atomique : un remboursement rejoué ne décrémente pas deux fois les compteurs.
+      const cancelled = await tx.auction.updateMany({
+        where: { id: auctionId, status: { not: 'CANCELLED' } },
+        data: { status: 'CANCELLED' },
+      })
+      if (cancelled.count !== 1) return
+
+      await tx.purchase.updateMany({
+        where: { auctionId, status: 'COMPLETED' },
+        data: { status: 'REFUNDED' },
+      })
+
+      await tx.beat.update({
+        where: { id: auction.beatId },
+        data: { status: 'ACTIVE' },
+      })
+
+      // Les compteurs n'ont été incrémentés que si la vente avait été payée.
+      if (!auction.paidAt) return
+
+      await tx.user.update({
+        where: { id: auction.beat.producerId },
+        data: { totalSales: { decrement: 1 } },
+      })
+
+      if (auction.winnerId) {
+        await tx.user.update({
+          where: { id: auction.winnerId },
+          data: { totalPurchases: { decrement: 1 } },
+        })
+
+        await tx.notification.create({
+          data: {
+            type: 'SYSTEM',
+            title: 'Remboursement traité',
+            message: `Votre remboursement de ${charge.amount_refunded / 100}€ a été accepté et sera crédité sous 5 à 10 jours ouvrables.`,
+            link: '/dashboard?tab=purchases',
+            userId: auction.winnerId,
+          },
+        })
+      }
+    })
   } catch (err: any) {
-    logger.error(`[WEBHOOK] Erreur Refund (${auctionId}):`, { error: err.message })
+    logger.error(`[WEBHOOK] Erreur Refund (${auctionId || paymentIntentId}):`, {
+      error: err.message,
+    })
     throw err
   }
 }
