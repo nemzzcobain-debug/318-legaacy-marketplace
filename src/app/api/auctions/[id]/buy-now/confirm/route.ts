@@ -5,6 +5,13 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { completeAuctionSale, sendAuctionSaleMessages } from '@/lib/auction-sale'
+
+function parseAmount(value: string | undefined | null): number | undefined {
+  if (!value) return undefined
+  const parsed = parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
 
 // POST /api/auctions/[id]/buy-now/confirm — Finaliser apres paiement réussi
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -19,15 +26,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
-      include: {
-        beat: {
-          include: { producer: true },
-        },
-      },
+      select: { id: true, status: true, buyNowPrice: true, stripePaymentId: true, winnerId: true },
     })
 
     if (!auction) {
       return NextResponse.json({ error: 'Enchere introuvable' }, { status: 404 })
+    }
+
+    if (!auction.buyNowPrice) {
+      return NextResponse.json({ error: 'Pas de prix achat immédiat' }, { status: 400 })
+    }
+
+    // Le webhook Stripe a pu finaliser la vente avant le retour du navigateur.
+    if (auction.status === 'COMPLETED' && auction.winnerId === userId) {
+      return NextResponse.json({
+        success: true,
+        message: `Achat confirmé pour ${auction.buyNowPrice} EUR`,
+      })
     }
 
     // Vérifier que l'enchère est encore active (pas déjà finalisée)
@@ -35,83 +50,61 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Cette enchère n'est plus active" }, { status: 400 })
     }
 
-    if (!auction.buyNowPrice) {
-      return NextResponse.json({ error: 'Pas de prix achat immédiat' }, { status: 400 })
-    }
-
     // BUG FIX 4: Vérifier le paiement Stripe AVANT de finaliser
     if (!auction.stripePaymentId) {
       return NextResponse.json({ error: 'Aucun paiement Stripe associe' }, { status: 400 })
     }
 
+    let paymentIntent
     try {
-      const paymentIntent = await stripe.paymentIntents.retrieve(auction.stripePaymentId)
-      if (paymentIntent.status !== 'succeeded') {
-        return NextResponse.json(
-          { error: `Paiement non confirmé (statut: ${paymentIntent.status})` },
-          { status: 402 }
-        )
-      }
+      paymentIntent = await stripe.paymentIntents.retrieve(auction.stripePaymentId)
     } catch (stripeErr) {
       console.error('Erreur vérification Stripe:', String(stripeErr))
       return NextResponse.json({ error: 'Impossible de vérifiér le paiement' }, { status: 500 })
     }
 
-    // Finaliser l'enchère : déclarer le gagnant (paiement vérifié)
-    await prisma.auction.update({
-      where: { id: auctionId },
-      data: {
-        status: 'COMPLETED',
-        winnerId: userId,
-        finalPrice: auction.buyNowPrice,
-        winningLicense: 'EXCLUSIVE',
-        endTime: new Date(),
-        paidAt: new Date(),
-      },
+    if (paymentIntent.status !== 'succeeded') {
+      return NextResponse.json(
+        { error: `Paiement non confirmé (statut: ${paymentIntent.status})` },
+        { status: 402 }
+      )
+    }
+
+    // Le paiement doit concerner CETTE enchère et appartenir à CET utilisateur :
+    // sans ce contrôle, n'importe quel compte connecté pourrait se déclarer gagnant
+    // juste après le paiement d'un autre.
+    const metadata = paymentIntent.metadata || {}
+    const sessionEmail = session.user.email?.toLowerCase()
+    const paidByThisUser = metadata.buyerId
+      ? metadata.buyerId === userId
+      : Boolean(sessionEmail) && paymentIntent.receipt_email?.toLowerCase() === sessionEmail
+
+    if (metadata.auctionId !== auctionId || !paidByThisUser) {
+      return NextResponse.json(
+        { error: "Ce paiement n'est pas associé à votre compte" },
+        { status: 403 }
+      )
+    }
+
+    const result = await completeAuctionSale({
+      auctionId,
+      paymentIntentId: paymentIntent.id,
+      buyerId: userId,
+      buyNow: true,
+      commission: parseAmount(metadata.commission),
+      producerPayout: parseAmount(metadata.producerPayout),
     })
 
-    // Mettre a jour le statut du beat
-    await prisma.beat.update({
-      where: { id: auction.beatId },
-      data: { status: 'SOLD' },
-    })
-
-    // Notifier le producteur
-    try {
-      const buyerName = session.user.name || 'Un acheteur'
-      await prisma.notification.create({
-        data: {
-          type: 'AUCTION_WON',
-          title: `Achat immédiat sur "${auction.beat.title}"`,
-          message: `${buyerName} a achete "${auction.beat.title}" en achat immédiat pour ${auction.buyNowPrice} EUR`,
-          link: `/auction/${auctionId}`,
-          userId: auction.beat.producerId,
-        },
-      })
-
-      // Notifier les autres enchérisseurs
-      const otherBidders = await prisma.bid.findMany({
-        where: {
-          auctionId,
-          userId: { not: userId },
-        },
-        select: { userId: true },
-        distinct: ['userId'],
-      })
-
-      if (otherBidders.length > 0) {
-        await prisma.notification.createMany({
-          data: otherBidders.map((b) => ({
-            type: 'AUCTION_ENDED',
-            title: `Enchere terminée — "${auction.beat.title}"`,
-            message: `L'enchère sur "${auction.beat.title}" s'est terminée par un achat immédiat.`,
-            link: `/auction/${auctionId}`,
-            userId: b.userId,
-          })),
-        })
+    if (result.outcome === 'COMPLETED') {
+      sendAuctionSaleMessages(result)
+    } else if (result.outcome === 'ALREADY_COMPLETED') {
+      if (result.purchase && result.purchase.buyerId !== userId) {
+        return NextResponse.json({ error: "Cette enchère n'est plus active" }, { status: 409 })
       }
-    } catch (notifErr) {
-      console.warn('[BUY-NOW] Erreur notification bidders:', String(notifErr))
+    } else if (result.outcome === 'CONFLICT') {
+      return NextResponse.json({ error: "Cette enchère n'est plus active" }, { status: 409 })
+    } else {
+      return NextResponse.json({ error: 'Enchere introuvable' }, { status: 404 })
     }
 
     return NextResponse.json({

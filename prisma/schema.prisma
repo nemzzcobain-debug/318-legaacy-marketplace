@@ -651,7 +651,8 @@ model Purchase {
   producerPayout Float // Part du producteur
 
   // Stripe
-  stripePaymentId String?
+  // Unique : filet de sécurité base contre l'enregistrement en double d'un même paiement
+  stripePaymentId String? @unique
   status          String  @default("PENDING") // PENDING, COMPLETED, REFUNDED
 
   // Lien optionnel vers l'enchere (si achat via enchère)
@@ -663,7 +664,6 @@ model Purchase {
   @@index([buyerId])
   @@index([beatId])
   @@index([status])
-  @@index([stripePaymentId])
 }
 
 // ─── STRIPE EVENTS (IDEMPOTENCE WEBHOOK) ───
