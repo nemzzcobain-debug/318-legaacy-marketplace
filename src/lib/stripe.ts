@@ -202,6 +202,7 @@ export async function createAuctionPaymentIntent({
   buyerEmail,
   beatTitle,
   licenseType,
+  extraMetadata,
 }: {
   amount: number
   producerStripeAccountId: string
@@ -209,6 +210,8 @@ export async function createAuctionPaymentIntent({
   buyerEmail: string
   beatTitle: string
   licenseType: string
+  /** Métadonnées additionnelles (ex. buyerId / buyNow pour l'achat immédiat). */
+  extraMetadata?: Record<string, string>
 }) {
   const { commission, producerPayout } = calculatePaymentSplit(amount)
 
@@ -231,6 +234,7 @@ export async function createAuctionPaymentIntent({
       licenseType,
       commission: commission.toString(),
       producerPayout: producerPayout.toString(),
+      ...extraMetadata,
     },
     receipt_email: buyerEmail,
     description: `318 LEGAACY - ${beatTitle} (Licence ${licenseType})`,
@@ -256,6 +260,7 @@ export async function createHeldPaymentIntent({
   beatTitle,
   licenseType,
   producerId,
+  extraMetadata,
 }: {
   amount: number
   auctionId: string
@@ -263,6 +268,8 @@ export async function createHeldPaymentIntent({
   beatTitle: string
   licenseType: string
   producerId: string
+  /** Métadonnées additionnelles (ex. buyerId / buyNow pour l'achat immédiat). */
+  extraMetadata?: Record<string, string>
 }) {
   const { commission, producerPayout } = calculatePaymentSplit(amount)
   const amountInCents = Math.round(amount * 100)
@@ -279,6 +286,7 @@ export async function createHeldPaymentIntent({
       producerPayout: producerPayout.toString(),
       producerId,
       held: 'true',
+      ...extraMetadata,
     },
     receipt_email: buyerEmail,
     description: `318 LEGAACY - ${beatTitle} (Licence ${licenseType}) [Paiement retenu]`,
