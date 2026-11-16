@@ -3,7 +3,7 @@ export const revalidate = 3600
 
 import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
-import { getPublicLiveAuctionWhere } from '@/lib/public-catalog'
+import { getPublicLiveAuctionWhere, PUBLIC_BEAT_WHERE } from '@/lib/public-catalog'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.318marketplace.com'
@@ -89,6 +89,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   } catch {}
 
+  // Public beats (leasing + enchères) : une page indexable par beat
+  let beatPages: MetadataRoute.Sitemap = []
+  try {
+    const beats = await prisma.beat.findMany({
+      where: PUBLIC_BEAT_WHERE,
+      select: { id: true, updatedAt: true },
+      orderBy: { createdAt: 'desc' },
+      take: 5000,
+    })
+    beatPages = beats.map((b) => ({
+      url: `${siteUrl}/beat/${b.id}`,
+      lastModified: b.updatedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+  } catch {}
+
   // Producers
   let producerPages: MetadataRoute.Sitemap = []
   try {
@@ -121,5 +138,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   } catch {}
 
-  return [...staticPages, ...auctionPages, ...producerPages, ...playlistPages]
+  return [...staticPages, ...auctionPages, ...beatPages, ...producerPages, ...playlistPages]
 }
