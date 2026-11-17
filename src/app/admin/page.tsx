@@ -809,7 +809,7 @@ export default function AdminPage() {
         const producerName = data.producerName || 'ce beatmaker'
         const confirmed = window.confirm(
           `${producerName} est bloqué car son délai Stripe Connect est expiré.\n\n` +
-            `Veux-tu lui accorder 7 jours supplémentaires et approuver ce beat ?\n\n` +
+            `Veux-tu lui accorder 14 jours supplémentaires et approuver ce beat ?\n\n` +
             `Stripe restera obligatoire à la fin de ce nouveau délai.`
         )
         if (!confirmed) return
@@ -824,7 +824,7 @@ export default function AdminPage() {
       }
       if (data.stripeGraceExtended) {
         window.alert(
-          'Beat approuvé. Le beatmaker dispose maintenant de 7 jours supplémentaires pour terminer Stripe Connect.'
+          'Beat approuvé. Le beatmaker dispose maintenant de 14 jours supplémentaires pour terminer Stripe Connect.'
         )
       }
       await fetchAllBeats(beatsPagination.page)
@@ -932,7 +932,7 @@ export default function AdminPage() {
   ) => {
     if (options?.isStripeGraceExtension) {
       const confirmed = window.confirm(
-        `Accorder 7 jours supplémentaires à ${options.producerName || 'ce beatmaker'} pour terminer Stripe Connect ?`
+        `Accorder 14 jours supplémentaires à ${options.producerName || 'ce beatmaker'} pour terminer Stripe Connect ?`
       )
       if (!confirmed) return
     }
@@ -949,7 +949,7 @@ export default function AdminPage() {
         return
       }
       if (options?.isStripeGraceExtension) {
-        window.alert('Le compte est réactivé pour 7 jours supplémentaires.')
+        window.alert('Le compte est réactivé pour 14 jours supplémentaires.')
       }
       fetchProducers()
       fetchStats()
@@ -1315,7 +1315,7 @@ export default function AdminPage() {
                           className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg transition"
                         >
                           {p.producerStatus === 'SUSPENDED' && p.stripeGraceSuspendedAt
-                            ? 'Accorder 7 jours'
+                            ? 'Accorder 14 jours'
                             : p.deletedAt
                               ? 'Réactiver'
                             : 'Approuver'}
