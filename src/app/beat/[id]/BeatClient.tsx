@@ -322,7 +322,7 @@ export default function BeatClient({ beat }: { beat: PublicBeat }) {
             )}
 
             {beat.description && (
-              <section className="mt-8">
+              <section className="reveal mt-8">
                 <h2 className="text-lg font-bold text-white">À propos de ce beat</h2>
                 <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-300">
                   {beat.description}
@@ -330,7 +330,7 @@ export default function BeatClient({ beat }: { beat: PublicBeat }) {
               </section>
             )}
 
-            <section className="mt-8">
+            <section className="reveal mt-8">
               <h2 className="text-lg font-bold text-white">Licences disponibles</h2>
               <ul className="mt-3 space-y-2">
                 {(['BASIC', 'PREMIUM', 'EXCLUSIVE'] as const)
@@ -354,7 +354,7 @@ export default function BeatClient({ beat }: { beat: PublicBeat }) {
             </section>
 
             {beat.tags.length > 0 && (
-              <section className="mt-8">
+              <section className="reveal mt-8">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-white">
                   <Tag size={16} /> Tags
                 </h2>
