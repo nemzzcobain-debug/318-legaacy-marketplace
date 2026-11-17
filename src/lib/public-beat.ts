@@ -29,6 +29,8 @@ export type PublicBeat = {
   duration: number | null
   coverImage: string | null
   previewUrl: string | null
+  /** false pour les anciens beats dont l'audio public est le morceau entier (pas un extrait de 60 s). */
+  previewIsExcerpt: boolean
   plays: number
   createdAt: string
   updatedAt: string
@@ -200,6 +202,7 @@ export function toPublicBeat(
     duration: row.duration,
     coverImage: row.coverImage,
     previewUrl,
+    previewIsExcerpt: getLegacyBeatFileType(row.audioUrl) === null,
     plays: row.plays,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

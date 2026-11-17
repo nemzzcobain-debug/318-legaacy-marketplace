@@ -313,9 +313,11 @@ export default function BeatClient({ beat }: { beat: PublicBeat }) {
                   producer={beat.producer.name}
                   coverImage={beat.coverImage || undefined}
                 />
-                <p className="mt-2 text-[11px] text-gray-500">
-                  Extrait de 60 secondes. Le fichier complet est livré après l&apos;achat.
-                </p>
+                {beat.previewIsExcerpt && (
+                  <p className="mt-2 text-[11px] text-gray-500">
+                    Extrait de 60 secondes. Le fichier complet est livré après l&apos;achat.
+                  </p>
+                )}
               </section>
             )}
 

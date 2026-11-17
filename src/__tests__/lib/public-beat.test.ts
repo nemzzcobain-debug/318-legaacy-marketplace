@@ -187,6 +187,16 @@ describe('toPublicBeat', () => {
   })
 })
 
+describe('previewIsExcerpt', () => {
+  it("distingue l'extrait de 60 s d'un ancien beat dont l'audio public est complet", () => {
+    expect(toPublicBeat(row(), null, NOW).previewIsExcerpt).toBe(true)
+    const legacy = row({
+      audioUrl: 'https://x.supabase.co/storage/v1/object/public/beats/u/ancien-beat.mp3',
+    })
+    expect(toPublicBeat(legacy, null, NOW).previewIsExcerpt).toBe(false)
+  })
+})
+
 describe('parseBeatTags', () => {
   it('lit le format JSON et les anciens tags séparés par des virgules', () => {
     expect(parseBeatTags('["dark"," 808 ",""]')).toEqual(['dark', '808'])
