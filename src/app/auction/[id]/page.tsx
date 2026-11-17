@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!auction) {
       return {
-        title: 'Enchère non trouvée | 318 LEGAACY',
+        title: { absolute: 'Enchère non trouvée | 318 LEGAACY' },
         description: 'Cette enchère n\'existe pas ou a été supprimée.',
       }
     }
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : `Participez à l'enchère "${beat.title}" de ${producer} sur 318 LEGAACY Marketplace. Enchère actuelle: ${auction.currentBid} EUR`
 
     return {
-      title,
+      title: { absolute: title },
       description,
       openGraph: {
         title,
@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } catch (error) {
     console.error('Error generating metadata for auction:', error)
     return {
-      title: 'Enchère | 318 LEGAACY',
+      title: { absolute: 'Enchère | 318 LEGAACY' },
       description: 'Découvrez les enchères de beats sur 318 LEGAACY Marketplace',
     }
   }

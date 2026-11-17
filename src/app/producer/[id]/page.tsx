@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!producer) {
       return {
-        title: 'Producteur non trouvé | 318 LEGAACY',
+        title: { absolute: 'Producteur non trouvé | 318 LEGAACY' },
         description: 'Ce producteur n\'existe pas ou a été supprimé.',
       }
     }
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : `Découvrez les beats de ${displayName} sur 318 LEGAACY Marketplace. Un producteur de beats professionnel.`
 
     return {
-      title,
+      title: { absolute: title },
       description,
       openGraph: {
         title,
@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } catch (error) {
     console.error('Error generating metadata for producer:', error)
     return {
-      title: 'Producteur | 318 LEGAACY',
+      title: { absolute: 'Producteur | 318 LEGAACY' },
       description: 'Découvrez les producteurs de beats sur 318 LEGAACY Marketplace',
     }
   }

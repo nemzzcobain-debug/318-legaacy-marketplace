@@ -224,3 +224,115 @@ export function BreadcrumbJsonLd({ items }: BreadcrumbJsonLdProps) {
     />
   )
 }
+
+// ─── BEAT (page publique /beat/[id]) ───
+
+interface BeatJsonLdProps {
+  beat: {
+    id: string
+    title: string
+    genre: string
+    bpm: number
+    key: string | null
+    duration?: string
+    coverImage: string | null
+    previewUrl: string | null
+    createdAt: string
+    tags: string[]
+    producer: { id: string; name: string }
+    offers: Array<{ type: string; label: string; price: number }>
+    liveAuction: { id: string; currentBid: number; endTime: string } | null
+  }
+  description: string
+  siteUrl?: string
+}
+
+export function BeatJsonLd({
+  beat,
+  description,
+  siteUrl = 'https://www.318marketplace.com',
+}: BeatJsonLdProps) {
+  const url = `${siteUrl}/beat/${beat.id}`
+  const producerUrl = `${siteUrl}/producer/${beat.producer.id}`
+  const image = beat.coverImage || undefined
+
+  const recording: Record<string, unknown> = {
+    '@type': 'MusicRecording',
+    '@id': `${url}#recording`,
+    name: beat.title,
+    url,
+    genre: beat.genre,
+    byArtist: { '@type': 'Person', name: beat.producer.name, url: producerUrl },
+    datePublished: beat.createdAt.slice(0, 10),
+    ...(beat.duration && { duration: beat.duration }),
+    ...(image && { image }),
+    ...(beat.tags.length > 0 && { keywords: beat.tags.join(', ') }),
+    ...(beat.previewUrl && {
+      audio: {
+        '@type': 'AudioObject',
+        contentUrl: beat.previewUrl,
+        encodingFormat: /\.wav(\?|$)/i.test(beat.previewUrl) ? 'audio/wav' : 'audio/mpeg',
+        name: `${beat.title} (extrait)`,
+      },
+    }),
+  }
+
+  const graph: Record<string, unknown>[] = [recording]
+
+  const offers = beat.offers.map((offer) => ({
+    '@type': 'Offer',
+    name: `Licence ${offer.label}`,
+    price: offer.price.toFixed(2),
+    priceCurrency: 'EUR',
+    availability: 'https://schema.org/InStock',
+    url,
+  }))
+
+  let productOffers: Record<string, unknown> | null = null
+  if (offers.length === 1) {
+    productOffers = offers[0]
+  } else if (offers.length > 1) {
+    const prices = beat.offers.map((offer) => offer.price)
+    productOffers = {
+      '@type': 'AggregateOffer',
+      lowPrice: Math.min(...prices).toFixed(2),
+      highPrice: Math.max(...prices).toFixed(2),
+      priceCurrency: 'EUR',
+      offerCount: offers.length,
+      offers,
+    }
+  } else if (beat.liveAuction) {
+    productOffers = {
+      '@type': 'Offer',
+      price: beat.liveAuction.currentBid.toFixed(2),
+      priceCurrency: 'EUR',
+      availability: 'https://schema.org/InStock',
+      priceValidUntil: beat.liveAuction.endTime.slice(0, 10),
+      url: `${siteUrl}/auction/${beat.liveAuction.id}`,
+    }
+  }
+
+  if (productOffers) {
+    graph.push({
+      '@type': 'Product',
+      '@id': `${url}#product`,
+      name: beat.title,
+      description,
+      url,
+      category: 'Instrumentale',
+      brand: { '@type': 'Brand', name: beat.producer.name },
+      subjectOf: { '@id': `${url}#recording` },
+      ...(image && { image }),
+      offers: productOffers,
+    })
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: safeJsonLd({ '@context': 'https://schema.org', '@graph': graph }),
+      }}
+    />
+  )
+}

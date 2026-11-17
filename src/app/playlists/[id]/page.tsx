@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!playlist || playlist.visibility !== 'PUBLIC') {
       return {
-        title: 'Playlist non trouvée | 318 LEGAACY',
+        title: { absolute: 'Playlist non trouvée | 318 LEGAACY' },
         description: 'Cette playlist n\'existe pas ou n\'est pas publique.',
       }
     }
@@ -56,7 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : `Écoutez la playlist "${playlist.name}" de ${author} avec ${playlist._count.beats} beats sur 318 LEGAACY Marketplace`
 
     return {
-      title,
+      title: { absolute: title },
       description,
       openGraph: {
         title,
@@ -84,7 +84,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } catch (error) {
     console.error('Error generating metadata for playlist:', error)
     return {
-      title: 'Playlist | 318 LEGAACY',
+      title: { absolute: 'Playlist | 318 LEGAACY' },
       description: 'Découvrez les playlists de beats sur 318 LEGAACY Marketplace',
     }
   }

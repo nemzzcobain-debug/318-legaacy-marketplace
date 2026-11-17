@@ -315,7 +315,15 @@ export default function ProducerClient({ producerId }: ProducerClientProps) {
 
                       {/* Beat info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-white truncate">{beat.title}</h3>
+                        <h3 className="text-sm font-bold text-white truncate">
+                          {beat.status === 'ACTIVE' ? (
+                            <Link href={`/beat/${beat.id}`} className="hover:text-[#fb7185] transition">
+                              {beat.title}
+                            </Link>
+                          ) : (
+                            beat.title
+                          )}
+                        </h3>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <span className="text-[10px] text-gray-500 bg-white/5 rounded px-1.5 py-0.5">{beat.genre}</span>
                           <span className="text-[10px] text-gray-500">{beat.bpm} BPM</span>

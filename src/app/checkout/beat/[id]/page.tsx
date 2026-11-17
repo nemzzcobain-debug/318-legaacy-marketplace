@@ -156,10 +156,12 @@ export default function BeatCheckoutPage() {
   const LicenseIcon = licenseMeta.icon
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    // Un invité qui vient de lancer son achat (secret de paiement présent) doit pouvoir payer
+    // sans compte : l'API d'achat et le webhook gèrent les invités (email + lien magique).
+    if (status === 'unauthenticated' && !loading2 && !clientSecretParam) {
       router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`)
     }
-  }, [status, router])
+  }, [status, router, loading2, clientSecretParam])
 
   if (status === 'loading' || loading2) {
     return (
