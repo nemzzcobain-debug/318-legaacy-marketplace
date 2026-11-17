@@ -4,6 +4,7 @@ import { getConfiguredLicensePrices } from '@/lib/beat-pricing'
 import { getLegacyBeatFileType } from '@/lib/legacy-beat-files'
 import { normalizeBeatSaleMode, type BeatSaleMode } from '@/lib/beat-sale-mode'
 import { getStreamUrl, parseSupabaseUrl } from '@/lib/supabase'
+import { calculateFinalPrice } from '@/lib/stripe'
 
 /**
  * Données publiques d'un beat pour sa page indexable `/beat/[id]`.
@@ -146,7 +147,12 @@ export function parseBeatTags(raw: string | null | undefined): string[] {
 export function toPublicBeat(
   row: PublicBeatRow,
   previewUrl: string | null,
-  now: Date = new Date()
+  now: Date = new Date(),
+  /**
+   * Base de l'ancien calcul de prix (vente exclusive sans prix configuré) :
+   * mise de départ de la dernière enchère terminée, ou 20 €. Même règle que l'API d'achat.
+   */
+  legacyBasePrice: number | null = null
 ): PublicBeat {
   const saleMode = normalizeBeatSaleMode(row.saleMode)
 
@@ -172,7 +178,12 @@ export function toPublicBeat(
       EXCLUSIVE: saleMode !== 'LEASING' && Boolean(row.stemsUrl || row.stemsFiles),
     }
     offers = (['BASIC', 'PREMIUM', 'EXCLUSIVE'] as const).flatMap((type) => {
-      const price = prices[type]
+      // Prix fixé par le producteur, sinon ancien calcul (jamais en leasing).
+      const price =
+        prices[type] ??
+        (saleMode !== 'LEASING' && legacyBasePrice !== null
+          ? calculateFinalPrice(legacyBasePrice, type)
+          : null)
       return price !== null && available[type] ? [{ type, price }] : []
     })
   }
@@ -230,7 +241,23 @@ export async function getPublicBeat(id: string): Promise<PublicBeat | null> {
     select: PUBLIC_BEAT_SELECT,
   })
   if (!row) return null
-  return toPublicBeat(row as PublicBeatRow, resolvePreviewUrl(row.audioUrl))
+
+  let legacyBasePrice: number | null = null
+  if (normalizeBeatSaleMode(row.saleMode) !== 'LEASING' && row.auctions.length === 0) {
+    const lastAuction = await prisma.auction.findFirst({
+      where: { beatId: row.id, status: { in: ['ENDED', 'COMPLETED', 'CANCELLED'] } },
+      orderBy: { endTime: 'desc' },
+      select: { startPrice: true },
+    })
+    legacyBasePrice = lastAuction?.startPrice || 20
+  }
+
+  return toPublicBeat(
+    row as PublicBeatRow,
+    resolvePreviewUrl(row.audioUrl),
+    new Date(),
+    legacyBasePrice
+  )
 }
 
 function formatEuro(value: number): string {
