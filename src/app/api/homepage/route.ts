@@ -61,10 +61,8 @@ async function getNouveautesPreview() {
         audioUrl: streamUrl,
         producer: pb.beat.producer.displayName || pb.beat.producer.name,
         price:
-          getLowestConfiguredPrice(pb.beat) ??
-          lastAuction?.buyNowPrice ??
-          lastAuction?.startPrice ??
-          20,
+          // Prix affiché = prix facturé par l'API d'achat (base startPrice).
+          getLowestConfiguredPrice(pb.beat) ?? (lastAuction?.startPrice || 20),
       }
     })
     return results
