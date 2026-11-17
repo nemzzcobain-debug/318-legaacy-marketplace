@@ -237,6 +237,7 @@ interface BeatJsonLdProps {
     duration?: string
     coverImage: string | null
     previewUrl: string | null
+    previewIsExcerpt?: boolean
     createdAt: string
     tags: string[]
     producer: { id: string; name: string }
@@ -272,7 +273,7 @@ export function BeatJsonLd({
         '@type': 'AudioObject',
         contentUrl: beat.previewUrl,
         encodingFormat: /\.wav(\?|$)/i.test(beat.previewUrl) ? 'audio/wav' : 'audio/mpeg',
-        name: `${beat.title} (extrait)`,
+        name: beat.previewIsExcerpt ? `${beat.title} (extrait)` : beat.title,
       },
     }),
   }
