@@ -219,7 +219,7 @@ export async function PATCH(request: Request) {
         isStripeGraceSuspension
           ? {
               error:
-                'Le délai Stripe Connect de ce beatmaker est expiré. Tu peux lui accorder 7 jours supplémentaires.',
+                'Le délai Stripe Connect de ce beatmaker est expiré. Tu peux lui accorder 14 jours supplémentaires.',
               code: 'PRODUCER_STRIPE_SUSPENDED',
               canOverrideStripeGrace: true,
               producerId: beat.producer.id,
@@ -242,7 +242,7 @@ export async function PATCH(request: Request) {
     await prisma.$transaction(async (tx) => {
       if (usesAdminStripeOverride) {
         // Dérogation volontaire et temporaire : l'admin réactive le producteur
-        // pour 7 jours, mais Stripe Connect reste obligatoire après ce délai.
+        // pour 14 jours, mais Stripe Connect reste obligatoire après ce délai.
         await tx.user.update({
           where: { id: beat.producer.id },
           data: {
@@ -258,7 +258,7 @@ export async function PATCH(request: Request) {
             type: 'SYSTEM',
             title: 'Délai Stripe Connect prolongé',
             message:
-              '318 LEGAACY t’accorde 7 jours supplémentaires pour terminer Stripe Connect. Ton beat peut être publié, mais l’inscription Stripe reste obligatoire.',
+              '318 LEGAACY t’accorde 14 jours supplémentaires pour terminer Stripe Connect. Ton beat peut être publié, mais l’inscription Stripe reste obligatoire.',
             link: '/dashboard?tab=settings',
           },
         })
