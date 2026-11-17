@@ -366,7 +366,8 @@ export async function GET() {
           }
         }
 
-        const legacyBasePrice = lastAuction?.buyNowPrice || lastAuction?.startPrice || 20
+        // Même base que l'API d'achat (startPrice) : le prix affiché = le prix facturé.
+        const legacyBasePrice = lastAuction?.startPrice || 20
         const legacyFileType = getLegacyBeatFileType(pb.beat.audioUrl)
         const saleMode = pb.beat.saleMode === 'LEASING' ? 'LEASING' : 'AUCTION'
         const configuredPrices = getConfiguredLicensePrices(pb.beat)

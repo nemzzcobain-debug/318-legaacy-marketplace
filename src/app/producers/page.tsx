@@ -187,7 +187,7 @@ export default function ProducersPage() {
               <Link
                 href={`/producer/${producer.id}`}
                 key={producer.id}
-                className="bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5 text-center hover:border-[#e11d4830] transition-colors cursor-pointer block"
+                className="reveal card-lift bg-[#13131a] border border-[#1e1e2e] rounded-xl p-5 text-center hover:border-[#e11d4830] hover:shadow-xl hover:shadow-red-950/20 cursor-pointer block"
               >
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-2xl font-extrabold text-white mx-auto mb-3 border-2 border-[#e11d48]">
                   {producer.avatar || producer.name[0]}

@@ -173,7 +173,7 @@ function MarketplaceExplorerContent() {
     .filter(Boolean).length
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#08080a] text-white">
+    <div className="relative min-h-screen overflow-clip bg-[#08080a] text-white">
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-x-0 top-0 h-[560px] bg-[radial-gradient(circle_at_15%_0%,rgba(225,29,72,0.17),transparent_40%),radial-gradient(circle_at_85%_4%,rgba(127,29,29,0.12),transparent_34%)]"
@@ -595,7 +595,7 @@ function MarketplaceExplorerContent() {
                   return (
                     <div
                       key={auction.id}
-                      className="group overflow-hidden rounded-[22px] border border-white/10 bg-[#101014]/95 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-red-500/25 hover:shadow-2xl hover:shadow-red-950/10"
+                      className="reveal group overflow-hidden rounded-[22px] border border-white/10 bg-[#101014]/95 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-red-500/25 hover:shadow-2xl hover:shadow-red-950/10"
                     >
                       {/* Cover */}
                       <div className="relative h-44 overflow-hidden bg-gradient-to-br from-[#1a0a2e] via-[#111111] to-[#0a0a1a]">
