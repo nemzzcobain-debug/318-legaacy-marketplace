@@ -228,3 +228,93 @@ body {
 .bg-brand-card-hover { background: var(--bg-hover); }
 .border-brand-border { border-color: var(--border-primary); }
 .text-brand { color: var(--brand-red); }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOTION SYSTEM — 318 Marketplace
+   Règles : on n'anime que opacity / translate / scale (GPU, pas de
+   reflow). Tout ce qui bouge en dehors des micro-interactions est
+   désactivé si l'utilisateur a demandé « réduire les animations ».
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --dur-fast: 160ms;
+  --dur-base: 280ms;
+  --dur-slow: 520ms;
+}
+
+/* Révélation au scroll : CSS pur (scroll-driven), zéro JS.
+   Navigateurs non compatibles → contenu affiché normalement. */
+@keyframes reveal-up {
+  from { opacity: 0; translate: 0 28px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal-up var(--ease-out-quart) both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 240px;
+    }
+  }
+}
+
+/* Entrée de page : opacité seule (une translation casserait les
+   éléments position:fixed pendant l'animation). */
+@keyframes page-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .page-enter { animation: page-enter var(--dur-base) var(--ease-out-quart); }
+}
+
+/* Menus déroulants (classes déjà utilisées par ShareButton /
+   LanguageSelector mais jamais définies jusqu'ici). */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    translate: 0 var(--tw-enter-translate-y, 0);
+    scale: var(--tw-enter-scale, 1);
+  }
+}
+.animate-in { animation: enter var(--dur-base) var(--ease-out-expo); }
+.fade-in { --tw-enter-opacity: 0; }
+.slide-in-from-top-1 { --tw-enter-translate-y: -0.25rem; }
+.slide-in-from-top-2 { --tw-enter-translate-y: -0.5rem; }
+.zoom-in-95 { --tw-enter-scale: 0.95; }
+
+/* Retour tactile : un bouton qui s'enfonce légèrement au clic. */
+:where(button:not(:disabled), a[role='button']) {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform, scale;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out-quart);
+}
+:where(button:not(:disabled), a[role='button']):active {
+  scale: 0.97;
+}
+
+/* Cartes : lévitation douce + zoom de pochette au survol. */
+.card-lift {
+  transition: transform var(--dur-base) var(--ease-out-expo),
+    border-color var(--dur-base) ease, box-shadow var(--dur-base) ease;
+}
+@media (hover: hover) {
+  .card-lift:hover { transform: translateY(-4px); }
+}
+.cover-zoom { transition: scale var(--dur-slow) var(--ease-out-expo); }
+@media (hover: hover) {
+  .group:hover .cover-zoom { scale: 1.05; }
+}
+
+/* Accessibilité : animations quasi coupées si demandé. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-spin { animation-duration: 1s !important; animation-iteration-count: infinite !important; }
+}

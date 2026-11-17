@@ -920,7 +920,7 @@ export default function Home() {
 
         {/* ═══════════ LIVE AUCTIONS ═══════════ */}
         <section className="px-4 pb-16 md:pb-24">
-          <div className="max-w-6xl mx-auto">
+          <div className="reveal max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-6 md:mb-10">
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -1126,11 +1126,11 @@ export default function Home() {
         </section>
 
         {/* ═══════════ SELECTION EN VEDETTE ═══════════ */}
-        <section className="relative overflow-hidden border-t border-[#1a1a1a] px-4 py-20">
+        <section className="relative overflow-clip border-t border-[#1a1a1a] px-4 py-20">
           {/* Lueur discrète, cohérente avec la salle des ventes */}
           <div className="pointer-events-none absolute left-1/2 top-0 h-[380px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-radial from-[#E50914]/10 via-transparent to-transparent blur-3xl" />
 
-          <div className="relative z-10 mx-auto max-w-6xl">
+          <div className="reveal relative z-10 mx-auto max-w-6xl">
             {/* Header */}
             <div className="mb-8 max-w-2xl">
               <div className="mb-3 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#ff4d5f]">
@@ -1399,10 +1399,10 @@ export default function Home() {
         </section>
 
         {/* ═══════════ NOUVEAUTES SECTION ═══════════ */}
-        <section className="px-4 py-20 border-t border-[#1a1a1a] relative overflow-hidden">
+        <section className="px-4 py-20 border-t border-[#1a1a1a] relative overflow-clip">
           <div className="absolute top-0 left-0 w-[500px] h-[400px] bg-gradient-radial from-[#e11d48]/8 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
 
-          <div className="max-w-6xl mx-auto relative z-10">
+          <div className="reveal max-w-6xl mx-auto relative z-10">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               {/* Left: Text content */}
               <div>
@@ -1560,10 +1560,10 @@ export default function Home() {
 
         {/* ═══════════ FEATURED PRODUCERS ═══════════ */}
         {homepage && homepage.featuredProducers.length > 0 && (
-          <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-hidden">
+          <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-clip">
             <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-radial from-purple-900/10 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
 
-            <div className="max-w-6xl mx-auto relative z-10">
+            <div className="reveal max-w-6xl mx-auto relative z-10">
               <div className="flex items-center justify-between mb-10">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -1638,11 +1638,11 @@ export default function Home() {
 
         {/* ═══════════ PLATFORM STATS ═══════════ */}
         {homepage && (
-          <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-hidden">
+          <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-clip">
             <div className="absolute inset-0 bg-gradient-to-b from-red-900/5 via-transparent to-transparent pointer-events-none" />
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-radial from-red-900/8 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
 
-            <div className="max-w-5xl mx-auto relative z-10">
+            <div className="reveal max-w-5xl mx-auto relative z-10">
               <div className="text-center mb-14">
                 <div className="inline-flex items-center gap-2 text-sm font-bold text-red-400 mb-3">
                   <BarChart3 size={14} /> {t('stats.badge')}
@@ -1719,7 +1719,7 @@ export default function Home() {
 
         {/* ═══════════ HOW IT WORKS ═══════════ */}
         <section className="px-4 py-24 border-t border-[#1a1a1a]">
-          <div className="max-w-5xl mx-auto">
+          <div className="reveal max-w-5xl mx-auto">
             <div className="text-center mb-14">
               <h2 className="text-3xl md:text-4xl font-black text-white mb-3">
                 {t('howItWorks.title')}
@@ -1788,10 +1788,10 @@ export default function Home() {
         </section>
 
         {/* ═══════════ WHY 318 LEGAACY ═══════════ */}
-        <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-hidden">
+        <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-clip">
           <div className="absolute top-20 left-0 w-[300px] h-[300px] bg-gradient-radial from-red-900/5 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
 
-          <div className="max-w-5xl mx-auto relative z-10">
+          <div className="reveal max-w-5xl mx-auto relative z-10">
             <div className="text-center mb-14">
               <h2 className="text-3xl md:text-4xl font-black text-white mb-3">
                 {t('why318.title')}
@@ -1871,11 +1871,11 @@ export default function Home() {
         </section>
 
         {/* ═══════════ CTA FINAL ═══════════ */}
-        <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-hidden">
+        <section className="px-4 py-24 border-t border-[#1a1a1a] relative overflow-clip">
           <div className="absolute inset-0 bg-gradient-to-t from-red-900/8 via-transparent to-transparent pointer-events-none" />
           <FloatingParticles />
 
-          <div className="max-w-3xl mx-auto text-center relative z-10">
+          <div className="reveal max-w-3xl mx-auto text-center relative z-10">
             <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-4 py-1.5 text-xs font-bold text-red-400 mb-6">
               <Flame size={12} /> {t('ctaFinal.badge')}
             </div>
