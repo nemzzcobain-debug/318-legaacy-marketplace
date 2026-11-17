@@ -56,20 +56,20 @@ describe('délai Stripe Connect producteur', () => {
     mocks.push.mockResolvedValue({ sent: 1, failed: 0, removed: 0 })
   })
 
-  it('accorde exactement sept jours après l’approbation', () => {
+  it('accorde exactement quatorze jours après l’approbation', () => {
     const approvedAt = new Date('2026-07-29T10:00:00.000Z')
     const deadline = getStripeGraceDeadline(approvedAt)
 
-    expect(STRIPE_GRACE_DAYS).toBe(7)
-    expect(STRIPE_GRACE_HOURS).toBe(168)
-    expect(deadline?.toISOString()).toBe('2026-08-05T10:00:00.000Z')
+    expect(STRIPE_GRACE_DAYS).toBe(14)
+    expect(STRIPE_GRACE_HOURS).toBe(336)
+    expect(deadline?.toISOString()).toBe('2026-08-12T10:00:00.000Z')
   })
 
   it('programme le rappel exactement 48 heures avant la fin', () => {
     const approvedAt = new Date('2026-07-29T10:00:00.000Z')
 
     expect(STRIPE_GRACE_REMINDER_HOURS).toBe(48)
-    expect(getStripeGraceReminderAt(approvedAt)?.toISOString()).toBe('2026-08-03T10:00:00.000Z')
+    expect(getStripeGraceReminderAt(approvedAt)?.toISOString()).toBe('2026-08-10T10:00:00.000Z')
   })
 
   it('réactive un compte suspendu encore couvert par le nouveau délai', async () => {
@@ -89,8 +89,8 @@ describe('délai Stripe Connect producteur', () => {
     expect(access).toEqual({
       allowed: true,
       status: 'grace_period',
-      deadline: new Date('2026-08-05T10:00:00.000Z'),
-      remainingMs: 5 * 24 * 60 * 60 * 1000,
+      deadline: new Date('2026-08-12T10:00:00.000Z'),
+      remainingMs: 12 * 24 * 60 * 60 * 1000,
     })
     expect(mocks.updateMany).toHaveBeenCalledWith({
       where: {
@@ -118,7 +118,7 @@ describe('délai Stripe Connect producteur', () => {
       },
     ])
 
-    const result = await sendStripeGraceReminders(new Date('2026-08-03T10:00:00.000Z'))
+    const result = await sendStripeGraceReminders(new Date('2026-08-10T10:00:00.000Z'))
 
     expect(result).toEqual({
       checked: 1,
@@ -137,7 +137,7 @@ describe('délai Stripe Connect producteur', () => {
     expect(mocks.reminderEmail).toHaveBeenCalledWith({
       to: 'producer@example.com',
       name: 'Beatmaker 318',
-      deadline: new Date('2026-08-05T10:00:00.000Z'),
+      deadline: new Date('2026-08-12T10:00:00.000Z'),
     })
     expect(mocks.push).toHaveBeenCalledOnce()
   })
@@ -155,7 +155,7 @@ describe('délai Stripe Connect producteur', () => {
     ])
     mocks.readiness.mockResolvedValue('ready')
 
-    const result = await sendStripeGraceReminders(new Date('2026-08-03T10:00:00.000Z'))
+    const result = await sendStripeGraceReminders(new Date('2026-08-10T10:00:00.000Z'))
 
     expect(result.reminded).toBe(0)
     expect(mocks.notificationCreate).not.toHaveBeenCalled()
