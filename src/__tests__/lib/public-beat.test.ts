@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: { beat: { findFirst: vi.fn() } },
+  prismaMock: { beat: { findFirst: vi.fn() }, auction: { findFirst: vi.fn() } },
 }))
 
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }))
@@ -80,6 +80,25 @@ describe('toPublicBeat', () => {
   it("vente exclusive sans enchère : l'exclusive est proposée si les stems existent", () => {
     const beat = toPublicBeat(row({ saleMode: 'AUCTION' }), null, NOW)
     expect(beat.offers.map((o) => o.type)).toEqual(['BASIC', 'PREMIUM', 'EXCLUSIVE'])
+  })
+
+  it("vente exclusive sans prix configuré : même calcul que l'API d'achat (base × licence)", () => {
+    const beat = toPublicBeat(
+      row({ saleMode: 'AUCTION', priceMp3: null, priceWav: null, priceStems: null }),
+      null,
+      NOW,
+      30
+    )
+    expect(beat.offers).toEqual([
+      { type: 'BASIC', price: 30 },
+      { type: 'PREMIUM', price: 75 },
+      { type: 'EXCLUSIVE', price: 300 },
+    ])
+  })
+
+  it("leasing sans prix configuré : aucune licence (l'ancien calcul ne s'applique pas)", () => {
+    const beat = toPublicBeat(row({ priceMp3: null, priceWav: null }), null, NOW, 30)
+    expect(beat.offers).toEqual([])
   })
 
   it('ne propose pas une licence sans prix ou sans fichier livrable', () => {
@@ -212,6 +231,19 @@ describe('getPublicBeat', () => {
     expect(prismaMock.beat.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: { AND: [PUBLIC_BEAT_WHERE, { id: 'beat-1' }] } })
     )
+  })
+
+  it("prend la mise de départ de la dernière enchère terminée (ou 20 €) pour l'ancien calcul", async () => {
+    prismaMock.beat.findFirst.mockResolvedValue(
+      row({ saleMode: 'AUCTION', priceMp3: null, priceWav: null, priceStems: null })
+    )
+    prismaMock.auction.findFirst.mockResolvedValue(null)
+    const beat = await getPublicBeat('beat-1')
+    expect(beat?.offers[0]).toEqual({ type: 'BASIC', price: 20 })
+
+    prismaMock.auction.findFirst.mockResolvedValue({ startPrice: 40 })
+    const beat2 = await getPublicBeat('beat-1')
+    expect(beat2?.offers[0]).toEqual({ type: 'BASIC', price: 40 })
   })
 
   it("convertit l'aperçu en URL de streaming publique", async () => {
