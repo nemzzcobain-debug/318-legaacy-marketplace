@@ -6,7 +6,7 @@ import {
 } from '@/lib/emails/resend'
 import { sendPushToUser } from '@/lib/web-push'
 
-export const STRIPE_GRACE_DAYS = 7
+export const STRIPE_GRACE_DAYS = 14
 export const STRIPE_GRACE_HOURS = STRIPE_GRACE_DAYS * 24
 export const STRIPE_GRACE_REMINDER_HOURS = 48
 const STRIPE_GRACE_MS = STRIPE_GRACE_HOURS * 60 * 60 * 1000
@@ -54,13 +54,13 @@ async function notifyStripeSuspension(user: ProducerAccessUser) {
         type: 'SYSTEM',
         title: 'Compte beatmaker temporairement suspendu',
         message:
-          'Le délai de 7 jours est terminé. Termine ton inscription Stripe Connect pour réactiver automatiquement tes publications.',
+          'Le délai de 14 jours est terminé. Termine ton inscription Stripe Connect pour réactiver automatiquement tes publications.',
         link: '/dashboard?tab=settings',
       },
     }),
     sendPushToUser(user.id, {
       title: 'Inscription Stripe requise',
-      body: 'Ton délai de 7 jours est terminé. Termine Stripe Connect pour réactiver ton compte beatmaker.',
+      body: 'Ton délai de 14 jours est terminé. Termine Stripe Connect pour réactiver ton compte beatmaker.',
       url: '/dashboard?tab=settings',
       tag: `stripe-grace-suspended-${user.id}`,
     }),
@@ -129,7 +129,7 @@ async function restoreExtendedStripeGraceProducer(
         type: 'SYSTEM',
         title: 'Délai Stripe Connect prolongé',
         message:
-          'Ton délai Stripe Connect passe à 7 jours. Ton compte beatmaker est réactivé jusqu’à la nouvelle échéance.',
+          'Ton délai Stripe Connect passe à 14 jours. Ton compte beatmaker est réactivé jusqu’à la nouvelle échéance.',
         link: '/dashboard?tab=settings',
       },
     })
@@ -194,7 +194,7 @@ export async function enforceProducerStripeAccess(
       allowed: false,
       status: 'stripe_suspended',
       message:
-        'Ton délai de 7 jours est terminé. Termine ton inscription Stripe Connect pour réactiver ton compte beatmaker.',
+        'Ton délai de 14 jours est terminé. Termine ton inscription Stripe Connect pour réactiver ton compte beatmaker.',
       deadline: extendedDeadline,
       remainingMs: 0,
     }
@@ -267,7 +267,7 @@ export async function enforceProducerStripeAccess(
     allowed: false,
     status: 'stripe_suspended',
     message:
-      'Ton délai de 7 jours est terminé. Termine ton inscription Stripe Connect pour réactiver ton compte beatmaker.',
+      'Ton délai de 14 jours est terminé. Termine ton inscription Stripe Connect pour réactiver ton compte beatmaker.',
     deadline,
     remainingMs: 0,
   }
