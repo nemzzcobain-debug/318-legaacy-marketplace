@@ -599,7 +599,7 @@ export default function AuctionClient({ auctionId }: AuctionClientProps) {
                       )}
                     </span>
                     <span className="block text-[11px] text-zinc-600">
-                      Beatmaker • {producer.totalSales} ventes
+                      Beatmaker vérifié
                     </span>
                   </div>
                 </Link>
