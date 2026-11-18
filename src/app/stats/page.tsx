@@ -16,12 +16,14 @@ interface PublicStats {
     totalBeats: number
     totalAuctions: number
     activeAuctions: number
-    completedAuctions: number
     totalBids: number
-    totalVolume: number
-    avgPrice: number
-    maxPrice: number
+    // Champs de ventes : présents uniquement pour l'admin
+    completedAuctions?: number
+    totalVolume?: number
+    avgPrice?: number
+    maxPrice?: number
   }
+  salesVisible?: boolean
   topGenres: { name: string; count: number }[]
   recentSales: {
     id: string
@@ -155,13 +157,18 @@ export default function StatsPage() {
           <StatCard icon={Music} label="Beats actifs" value={overview.totalBeats} color="red" />
           <StatCard icon={Gavel} label="Enchères totales" value={overview.totalAuctions} color="orange" />
           <StatCard icon={Zap} label="Enchères en cours" value={overview.activeAuctions} color="green" />
-          <StatCard icon={Trophy} label="Ventes complétées" value={overview.completedAuctions} color="yellow" />
+          {stats.salesVisible && (
+            <StatCard icon={Trophy} label="Ventes complétées (admin)" value={overview.completedAuctions ?? 0} color="yellow" />
+          )}
           <StatCard icon={Target} label="Total des bids" value={overview.totalBids} color="blue" />
-          <StatCard icon={DollarSign} label="Volume total" value={Math.round(overview.totalVolume)} suffix=" EUR" color="green" />
+          {stats.salesVisible && (
+            <StatCard icon={DollarSign} label="Volume total (admin)" value={Math.round(overview.totalVolume ?? 0)} suffix=" EUR" color="green" />
+          )}
         </div>
 
         {/* Prix moyens */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
+          {stats.salesVisible && (
           <div className="bg-[#111] border border-[#222] rounded-2xl p-6">
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
               <TrendingUp size={16} className="text-green-500" />
@@ -169,15 +176,16 @@ export default function StatsPage() {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-2xl font-black text-white">{overview.avgPrice.toFixed(0)}&euro;</p>
+                <p className="text-2xl font-black text-white">{(overview.avgPrice ?? 0).toFixed(0)}&euro;</p>
                 <p className="text-xs text-gray-500">Prix moyen</p>
               </div>
               <div>
-                <p className="text-2xl font-black text-white">{overview.maxPrice.toFixed(0)}&euro;</p>
+                <p className="text-2xl font-black text-white">{(overview.maxPrice ?? 0).toFixed(0)}&euro;</p>
                 <p className="text-xs text-gray-500">Vente record</p>
               </div>
             </div>
           </div>
+          )}
 
           {/* Top Genres */}
           <div className="bg-[#111] border border-[#222] rounded-2xl p-6">
