@@ -1653,7 +1653,7 @@ export default function Home() {
                 <p className="text-gray-500 max-w-lg mx-auto">{t('stats.subtitle')}</p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 {[
                   {
                     label: t('stats.availableBeats'),
@@ -1680,15 +1680,6 @@ export default function Home() {
                     gradient: 'from-blue-500/20 to-blue-900/5',
                     border: 'border-blue-500/15',
                     iconColor: 'text-blue-400',
-                    href: '/marketplace',
-                  },
-                  {
-                    label: t('stats.salesCompleted'),
-                    value: homepage.stats.totalCompleted,
-                    icon: TrendingUp,
-                    gradient: 'from-green-500/20 to-green-900/5',
-                    border: 'border-green-500/15',
-                    iconColor: 'text-green-400',
                     href: '/marketplace',
                   },
                 ].map(({ label, value, icon: Icon, gradient, border, iconColor, href }) => (
