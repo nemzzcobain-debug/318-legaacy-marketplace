@@ -2,9 +2,12 @@
 // Statistiques agrégées publiques (pas besoin d'auth)
 
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export const revalidate = 300 // Cache 5 minutes
+// Dynamique : les chiffres de ventes ne sont renvoyés qu'à l'admin.
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
@@ -98,6 +101,30 @@ export async function GET() {
       take: 6,
     })
 
+    const session = await getServerSession(authOptions)
+    const isAdmin = session?.user?.role === 'ADMIN'
+
+    // Public : aucun chiffre de vente (nombre, volume, prix, dernières ventes, classement).
+    if (!isAdmin) {
+      return NextResponse.json({
+        overview: {
+          totalUsers,
+          totalProducers,
+          totalBeats,
+          totalAuctions,
+          activeAuctions,
+          totalBids,
+        },
+        topGenres: topGenres.map((g) => ({
+          name: g.genre,
+          count: g._count.genre,
+        })),
+        recentSales: [],
+        topProducers: [],
+        salesVisible: false,
+      })
+    }
+
     return NextResponse.json({
       overview: {
         totalUsers,
@@ -117,6 +144,7 @@ export async function GET() {
       })),
       recentSales: recentCompleted,
       topProducers,
+      salesVisible: true,
     })
   } catch (error) {
     console.error('Public stats error:', error)

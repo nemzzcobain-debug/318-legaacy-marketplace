@@ -153,7 +153,6 @@ interface ProducerJsonLdProps {
     displayName?: string | null
     bio?: string | null
     avatar?: string | null
-    totalSales: number
     rating: number
   }
   totalBeats: number
@@ -176,14 +175,6 @@ export function ProducerJsonLd({ producer, totalBeats, totalFollowers, siteUrl =
       '@type': 'Organization',
       name: '318 LEGAACY Marketplace',
     },
-    ...(producer.rating > 0 ? {
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: producer.rating.toFixed(1),
-        bestRating: '5',
-        ratingCount: String(producer.totalSales || 1),
-      },
-    } : {}),
     interactionStatistic: [
       {
         '@type': 'InteractionCounter',

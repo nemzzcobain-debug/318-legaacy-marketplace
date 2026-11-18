@@ -198,19 +198,6 @@ export default function ProducersPage() {
                   <Shield size={14} className="text-[#e11d48]" />
                 </h3>
 
-                {producer.totalSales > 200 ? (
-                  <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#e11d4815] text-[#e11d48]">
-                    Top Seller
-                  </span>
-                ) : producer.totalSales > 50 ? (
-                  <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#667eea15] text-[#667eea]">
-                    Certifié
-                  </span>
-                ) : (
-                  <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2ed57315] text-[#2ed573]">
-                    Nouveau
-                  </span>
-                )}
 
                 <p className="text-xs text-gray-500 mt-2 line-clamp-2">
                   {producer.producerBio || producer.name}
@@ -219,9 +206,6 @@ export default function ProducersPage() {
                 <div className="flex justify-center gap-4 mt-3 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
                     <Star size={11} /> {producer.rating.toFixed(1)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <BarChart3 size={11} /> {producer.totalSales} ventes
                   </span>
                   <span className="flex items-center gap-1">
                     <Music size={11} /> {producer._count?.beats || 0}

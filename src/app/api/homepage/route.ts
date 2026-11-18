@@ -126,7 +126,6 @@ export async function GET() {
           displayName: true,
           avatar: true,
           producerBio: true,
-          totalSales: true,
           _count: {
             select: {
               beats: true,
@@ -194,15 +193,13 @@ export async function GET() {
           totalAuctions,
           totalProducers,
           totalBids,
-          totalCompleted,
-          totalRevenue: totalRevenue._sum.finalPrice || 0,
+          // Ventes et chiffre d'affaires : réservés à l'admin (non publics).
         },
         featuredProducers: featuredProducers.map((p) => ({
           id: p.id,
           name: p.displayName || p.name,
           avatar: p.avatar,
           bio: p.producerBio,
-          totalSales: p.totalSales,
           totalBeats: p._count.beats,
           totalFollowers: 0,
         })),

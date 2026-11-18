@@ -18,7 +18,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName: true,
         producerBio: true,
         bio: true,
-        totalSales: true,
         rating: true,
         producerStatus: true,
         _count: { select: { beats: true, followers: true } },
@@ -35,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const name = producer.displayName || producer.name
     const title = `${name} — Producteur vérifié sur 318 LEGAACY`
     const bio = producer.producerBio || producer.bio || ''
-    const description = `${name} est producteur vérifié sur 318 LEGAACY. ${producer._count.beats} beats, ${producer._count.followers} abonnés, ${producer.totalSales} ventes.${bio ? ' ' + bio.slice(0, 120) : ''}`
+    const description = `${name} est producteur vérifié sur 318 LEGAACY. ${producer._count.beats} beats, ${producer._count.followers} abonnés.${bio ? ' ' + bio.slice(0, 120) : ''}`
     const ogUrl = `${siteUrl}/api/og?title=${encodeURIComponent(name)}&producer=${encodeURIComponent('Producteur vérifié')}`
 
     return {

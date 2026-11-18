@@ -20,7 +20,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         producerBio: true,
         bio: true,
         rating: true,
-        totalSales: true,
         beats: {
           select: { id: true },
         },
@@ -98,7 +97,6 @@ export default async function ProducerPage({ params }: ProducerPageProps) {
         bio: true,
         producerBio: true,
         rating: true,
-        totalSales: true,
         beats: {
           select: { id: true },
         },
@@ -117,7 +115,6 @@ export default async function ProducerPage({ params }: ProducerPageProps) {
           avatar: producer.avatar,
           bio: producer.producerBio || producer.bio,
           rating: producer.rating,
-          totalSales: producer.totalSales,
         },
         totalBeats: producer.beats.length,
         totalFollowers: producer.followers.length,

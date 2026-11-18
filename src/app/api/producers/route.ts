@@ -24,7 +24,6 @@ export async function GET(request: Request) {
           bio: true,
           producerBio: true,
           rating: true,
-          totalSales: true,
           createdAt: true,
           _count: {
             select: {

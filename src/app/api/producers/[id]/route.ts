@@ -27,7 +27,6 @@ export async function GET(
         producerStatus: true,
         role: true,
         rating: true,
-        totalSales: true,
         createdAt: true,
         beats: {
           where: {
@@ -118,11 +117,15 @@ export async function GET(
     let stats: any = {
       totalBeats: producer._count.beats,
       totalAuctions,
-      completedAuctions,
       totalPlays: totalPlays._sum.plays || 0,
       totalLikes,
       totalFollowers,
       memberSince: producer.createdAt,
+    }
+
+    // Nombre de ventes : visible uniquement par le producteur lui-même ou l'admin.
+    if (session?.user?.id === id || session?.user?.role === 'ADMIN') {
+      stats.completedAuctions = completedAuctions
     }
 
     // Only include revenue data if the requesting user IS the producer
