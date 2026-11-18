@@ -245,10 +245,9 @@ export default function ProducerClient({ producerId }: ProducerClientProps) {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           {[
             { label: 'Beats', value: producer.stats.totalBeats, icon: Disc, color: 'text-red-500 bg-red-500/10' },
-            { label: 'Ventes', value: producer.stats.completedAuctions, icon: DollarSign, color: 'text-green-400 bg-green-500/10' },
             { label: 'Ecoutes', value: producer.stats.totalPlays.toLocaleString(), icon: Headphones, color: 'text-blue-400 bg-blue-500/10' },
             { label: 'Followers', value: producer.stats.totalFollowers, icon: Users, color: 'text-purple-400 bg-purple-500/10' },
           ].map(({ label, value, icon: Icon, color }) => (
@@ -450,7 +449,6 @@ export default function ProducerClient({ producerId }: ProducerClientProps) {
                 <div className="space-y-1.5 text-xs text-gray-400">
                   <div className="flex justify-between"><span>Beats créés</span><span className="text-white">{producer.stats.totalBeats}</span></div>
                   <div className="flex justify-between"><span>Enchères lancées</span><span className="text-white">{producer.stats.totalAuctions}</span></div>
-                  <div className="flex justify-between"><span>Ventes complétées</span><span className="text-white">{producer.stats.completedAuctions}</span></div>
                   <div className="flex justify-between"><span>Total écoutes</span><span className="text-white">{producer.stats.totalPlays.toLocaleString()}</span></div>
                 </div>
               </div>
@@ -467,7 +465,6 @@ export default function ProducerClient({ producerId }: ProducerClientProps) {
                   </div>
                   <div className="flex justify-between"><span>Followers</span><span className="text-white">{producer.stats.totalFollowers}</span></div>
                   <div className="flex justify-between"><span>Total likes</span><span className="text-white">{producer.stats.totalLikes}</span></div>
-                  <div className="flex justify-between"><span>Ventes totales</span><span className="text-white">{producer.totalSales}</span></div>
                   <div className="flex justify-between">
                     <span>Statut</span>
                     <span className={producer.producerStatus === 'APPROVED' ? 'text-green-400' : 'text-yellow-400'}>
