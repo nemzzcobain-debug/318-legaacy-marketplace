@@ -49,8 +49,7 @@ export async function GET(request: Request) {
                   displayName: true,
                   avatar: true,
                   rating: true,
-                  totalSales: true,
-                  producerStatus: true,
+                          producerStatus: true,
                 },
               },
               _count: {
