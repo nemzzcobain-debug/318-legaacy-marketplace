@@ -28,7 +28,7 @@ export async function GET(
         beat: {
           include: {
             producer: {
-              select: { id: true, name: true, displayName: true, avatar: true, producerStatus: true, rating: true, totalSales: true }
+              select: { id: true, name: true, displayName: true, avatar: true, producerStatus: true, rating: true }
             }
           }
         },
